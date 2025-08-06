@@ -401,10 +401,11 @@ Eliminate unwanted gifts, reduce shopping stress, and make every gift meaningful
 
 ### Technical Stack Decision (Updated)
 - **Backend**: Next.js 14 (modular monolith approach)
+- **Authentication**: Firebase Auth (free tier)
+- **Database**: PostgreSQL on Render.com
 - **Mobile**: Flutter for cross-platform efficiency
 - **Web**: Next.js with Tailwind CSS
-- **Database**: Supabase (Auth + PostgreSQL)
-- **Infrastructure**: Vercel
+- **Infrastructure**: Cloudflare Pages
 - **CDN**: Cloudflare with R2 storage
 
 ---

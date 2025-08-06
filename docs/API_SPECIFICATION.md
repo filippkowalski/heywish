@@ -11,10 +11,13 @@ Local: http://localhost:8080/v1
 
 ### Headers
 ```http
-Authorization: Bearer {jwt_token}
+Authorization: Bearer {firebase_id_token}
 Content-Type: application/json
 X-API-Version: 1.0
 ```
+
+### Firebase Token Verification
+All API requests must include a valid Firebase ID token (including anonymous users). The backend verifies the token using Firebase Admin SDK and retrieves/creates the user record in PostgreSQL. Anonymous users are automatically created on first visit and can use all features without signing up.
 
 ### Rate Limiting
 ```http
@@ -27,48 +30,42 @@ X-RateLimit-Reset: 1640995200
 
 ### Authentication Endpoints
 
-#### POST /auth/signup
-Create new user account.
+#### POST /auth/sync
+Sync Firebase authenticated user with our database. Called after Firebase authentication.
 
 **Request:**
 ```json
 {
-  "email": "user@example.com",
-  "password": "SecurePass123!",
-  "username": "johndoe",
-  "fullName": "John Doe",
-  "acceptedTerms": true
+  "firebaseToken": "eyJhbGciOiJSUzI1NiIs...",
+  "username": "johndoe", // optional, for initial setup
+  "fullName": "John Doe" // optional, for initial setup
 }
 ```
 
-**Response (201):**
+**Response (200):**
 ```json
 {
   "user": {
     "id": "550e8400-e29b-41d4-a716-446655440000",
+    "firebaseUid": "AbcDef123456",
     "email": "user@example.com",
     "username": "johndoe",
     "fullName": "John Doe",
     "avatarUrl": null,
     "createdAt": "2024-01-15T10:00:00Z"
   },
-  "tokens": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
-    "expiresIn": 900
-  }
+  "isNewUser": false
 }
 ```
 
-#### POST /auth/login
-Authenticate existing user.
+**Note**: User signup/login is handled entirely by Firebase Auth on the client side. This endpoint syncs the authenticated user with our PostgreSQL database.
 
-**Request:**
-```json
-{
-  "email": "user@example.com",
-  "password": "SecurePass123!"
-}
+#### GET /auth/verify
+Verify Firebase token and get user data.
+
+**Headers:**
+```http
+Authorization: Bearer {firebase_id_token}
 ```
 
 **Response (200):**
@@ -76,45 +73,49 @@ Authenticate existing user.
 {
   "user": {
     "id": "550e8400-e29b-41d4-a716-446655440000",
+    "firebaseUid": "AbcDef123456",
     "email": "user@example.com",
     "username": "johndoe"
   },
-  "tokens": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
-    "expiresIn": 900
-  }
+  "tokenValid": true
 }
 ```
 
-#### POST /auth/refresh
-Refresh access token.
+#### POST /auth/logout
+Logout user (optional, mainly for session cleanup).
 
-**Request:**
-```json
-{
-  "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
-}
+**Headers:**
+```http
+Authorization: Bearer {firebase_id_token}
 ```
 
 **Response (200):**
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-  "expiresIn": 900
+  "success": true,
+  "message": "Logged out successfully"
 }
 ```
 
-#### POST /auth/social
-Social authentication (Google/Apple).
+**Note**: Token refresh is handled automatically by Firebase SDK on the client side.
 
-**Request:**
+#### POST /auth/delete
+Delete user account (GDPR compliance).
+
+**Headers:**
+```http
+Authorization: Bearer {firebase_id_token}
+```
+
+**Response (200):**
 ```json
 {
-  "provider": "google",
-  "idToken": "eyJhbGciOiJSUzI1NiIs..."
+  "success": true,
+  "message": "Account deleted successfully"
 }
 ```
+
+**Note**: This deletes the user from our PostgreSQL database. Firebase account deletion should be handled separately on the client side.
 
 ### Wishlist Endpoints
 

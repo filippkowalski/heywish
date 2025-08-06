@@ -42,13 +42,14 @@ HeyWish is a multi-platform wishlist application designed to compete with GoWish
 
 ### Tech Stack
 - **Backend**: Next.js 14 (App Router) - Modular monolith
-- **Database**: Supabase (Auth + PostgreSQL)
+- **Authentication**: Firebase Auth (free tier)
+- **Database**: PostgreSQL on Render.com
 - **Mobile**: Flutter (iOS & Android)
 - **Web**: Next.js + Tailwind CSS
 - **Browser Extension**: Chrome Manifest V3
-- **Infrastructure**: Vercel
+- **Infrastructure**: Cloudflare Pages
 - **CDN/Storage**: Cloudflare + R2
-- **Scraping**: Official APIs first (Amazon, Target), Browserless.io fallback
+- **Scraping**: Official APIs first (Amazon, Target), Cloudflare browser rendering https://developers.cloudflare.com/browser-rendering/rest-api/json-endpoint/ fallback
 
 ### Architecture Approach
 - **Modular Monolith**: Next.js API routes organized by domain
@@ -74,17 +75,14 @@ HeyWish is a multi-platform wishlist application designed to compete with GoWish
 - Public profile pages
 
 ### Phase 3: Monetization (Month 4)
-- Amazon & Target affiliate integration
-- Basic price updates via cron job
+- Amazon & Target (and all the others that are worth adding) affiliate integration
 - Premium themes and vanity URLs launch
-- Email notifications for major price drops
+- Email and app notifications for major price drops (let's sure we ask for notification permission during onboarding)
 
 ### Phase 4: Growth & SEO (Month 5)
 - SEO-optimized public wishlists
-- AI-generated daily gift guides
+- Chatbot where a user can ask about gift ideas
 - Blog with auto-generated content
-- Widget support for mobile
-- Influencer partnership program
 - Advanced social features
 
 ## 📱 Platform-Specific Features
@@ -93,8 +91,6 @@ HeyWish is a multi-platform wishlist application designed to compete with GoWish
 - Native share sheet integration
 - Push notifications
 - Offline wishlist access
-- Camera scanning for products
-- Biometric authentication
 
 ### Web (React)
 - Responsive design
@@ -138,37 +134,6 @@ HeyWish is a multi-platform wishlist application designed to compete with GoWish
 - API response time < 200ms
 - Uptime > 99.9%
 
-## 🔒 Security & Privacy
-
-- End-to-end encryption for sensitive data
-- GDPR/CCPA compliant
-- Regular security audits
-- OAuth 2.0 authentication
-- Rate limiting & DDoS protection
-
-## 👥 Team Structure
-
-### Required Roles
-- Full-stack developers (3)
-- Flutter developer (1)
-- UI/UX designer (1)
-- Product manager (1)
-- DevOps engineer (1)
-- Marketing specialist (1)
-
-## 🚦 Getting Started
-
-1. Clone repository
-2. Install dependencies
-3. Set up environment variables
-4. Run development servers
-5. Access at localhost:3000 (web), :8080 (API)
-
-## 📞 Contact
-
-- Email: team@heywish.com
-- Slack: heywish.slack.com
-- Documentation: docs.heywish.com
 
 ---
 

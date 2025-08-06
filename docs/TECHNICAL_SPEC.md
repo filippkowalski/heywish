@@ -13,41 +13,101 @@
 │  /api/users    │  /api/social     │  /api/scrape       │
 └─────────────────────────────────────────────────────────┘
                            │
-                           ▼
-                ┌──────────────────────┐
-                │     PostgreSQL       │
-                │   (via Supabase)     │
-                └──────────────────────┘
+                    ┌──────┴──────┐
+                    ▼             ▼
+         ┌──────────────┐  ┌──────────────┐
+         │ Firebase Auth│  │  PostgreSQL  │
+         │   (Free)     │  │  (Render)    │
+         └──────────────┘  └──────────────┘
                            │
                            ▼
                 ┌──────────────────────┐
                 │    Redis Cache       │
-                │  (Session + Data)    │
+                │  (Render/Upstash)    │
                 └──────────────────────┘
 ```
 
 ### Architecture Principles
 - **Modular Monolith**: All logic in Next.js API routes, organized by domain
-- **Database**: Single PostgreSQL instance via Supabase
-- **Caching**: Redis for sessions and frequently accessed data
-- **Deployment**: Vercel for Next.js app
+- **Authentication**: Firebase Auth (free tier, no Identity Platform)
+- **Database**: PostgreSQL hosted on Render.com
+- **Caching**: Redis via Render or Upstash for sessions and frequently accessed data
+- **Deployment**: Cloudflare Pages for Next.js app
 - **Mobile**: Flutter apps consume the same API
 
-### 1.2 Database Schema (PostgreSQL)
+### 1.2 Authentication Flow (Firebase + PostgreSQL)
+
+#### Anonymous Users Support
+```javascript
+// Users can browse and create wishlists without signing up
+// 1. On first visit, create anonymous Firebase user
+// 2. Store wishlist data with anonymous UID
+// 3. When user decides to sign up, link anonymous account
+
+const initializeUser = async () => {
+  // Check if user is already signed in
+  const currentUser = firebase.auth().currentUser;
+  
+  if (!currentUser) {
+    // Create anonymous user
+    const { user } = await firebase.auth().signInAnonymously();
+    await syncUserToDatabase(user, true); // isAnonymous flag
+  }
+};
+
+const convertAnonymousToFull = async (email, password) => {
+  const credential = firebase.auth.EmailAuthProvider.credential(email, password);
+  const { user } = await firebase.auth().currentUser.linkWithCredential(credential);
+  
+  // Update user record from anonymous to registered
+  await db.query(`
+    UPDATE users 
+    SET email = $1, is_anonymous = false, upgraded_at = NOW()
+    WHERE firebase_uid = $2
+  `, [email, user.uid]);
+};
+```
+
+#### Firebase to Database Sync
+```javascript
+const syncUserToDatabase = async (firebaseUser, isAnonymous = false) => {
+  const { uid, email, displayName, photoURL, providerData } = firebaseUser;
+  const provider = providerData?.[0]?.providerId || 'anonymous';
+  
+  // Upsert user in PostgreSQL
+  await db.query(`
+    INSERT INTO users (firebase_uid, email, full_name, avatar_url, auth_provider, is_anonymous)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    ON CONFLICT (firebase_uid) 
+    DO UPDATE SET 
+      email = EXCLUDED.email,
+      full_name = EXCLUDED.full_name,
+      avatar_url = EXCLUDED.avatar_url,
+      last_login = NOW(),
+      is_anonymous = EXCLUDED.is_anonymous
+  `, [uid, email, displayName, photoURL, provider, isAnonymous]);
+};
+```
+
+### 1.3 Database Schema (PostgreSQL on Render)
 
 #### Users Table
 ```sql
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email VARCHAR(255) UNIQUE NOT NULL,
+    firebase_uid VARCHAR(128) UNIQUE NOT NULL, -- Firebase UID
+    email VARCHAR(255) UNIQUE, -- Nullable for anonymous users
     username VARCHAR(100) UNIQUE,
     full_name VARCHAR(255),
     avatar_url TEXT,
-    auth_provider ENUM('email', 'google', 'apple'),
+    auth_provider VARCHAR(50), -- 'anonymous', 'password', 'google.com', 'apple.com'
+    is_anonymous BOOLEAN DEFAULT false,
+    upgraded_at TIMESTAMP, -- When anonymous user converted to registered
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
+    last_login TIMESTAMP,
     deleted_at TIMESTAMP,
-    subscription_tier ENUM('free', 'premium') DEFAULT 'free',
+    subscription_tier VARCHAR(20) DEFAULT 'free',
     notification_preferences JSONB,
     profile_data JSONB
 );
@@ -353,12 +413,15 @@ jobs:
 
 ## 6. Security Implementation
 
-### 6.1 Authentication Flow (JWT)
-1. User logs in with credentials
-2. Server validates and generates JWT + Refresh token
-3. JWT expires in 15 minutes, Refresh token in 30 days
-4. Client stores tokens securely (Keychain/Keystore)
-5. Auto-refresh on 401 responses
+### 6.1 Authentication Flow (Firebase)
+1. On first visit, create anonymous Firebase user automatically
+2. Anonymous users can create wishlists and add items without signup
+3. When ready to sign up, link anonymous account to email/Google/Apple
+4. Firebase returns ID token (JWT) valid for 1 hour
+5. Client includes Firebase ID token in all API requests
+6. Backend verifies token with Firebase Admin SDK
+7. Sync user data to PostgreSQL (anonymous or registered)
+8. Auto-refresh handled by Firebase SDK
 
 ### 6.2 Rate Limiting
 - Authentication: 5 requests per minute
@@ -366,11 +429,13 @@ jobs:
 - Scraping: 10 requests per minute per user
 - Price checks: 1000 per day per user
 
-### 6.3 Data Encryption
-- Passwords: bcrypt with salt rounds = 12
-- Sensitive data: AES-256 encryption
+### 6.3 Data Security
+- Passwords: Handled by Firebase Auth (no passwords stored in our DB)
+- Firebase ID tokens: Verified on each API request
+- Sensitive data: AES-256 encryption for PII
 - API communication: TLS 1.3
-- Database: Encryption at rest
+- Database: Render PostgreSQL with encryption at rest
+- Connection: SSL required for database connections
 
 ## 7. Monitoring & Analytics
 
