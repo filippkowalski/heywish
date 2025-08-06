@@ -2,29 +2,36 @@
 
 ## 1. System Architecture
 
-### 1.1 Microservices Architecture
+### 1.1 Next.js Monolith Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                      API Gateway                         │
-│                   (Express + Auth)                       │
-└─────────────┬───────────────────────────────────────────┘
-              │
-    ┌─────────┼─────────┬──────────┬──────────┬──────────┐
-    ▼         ▼         ▼          ▼          ▼          ▼
-┌────────┐┌────────┐┌────────┐┌────────┐┌────────┐┌────────┐
-│  User  ││Wishlist││Product ││ Social ││Notif.  ││Analytics│
-│Service ││Service ││Service ││Service ││Service ││Service │
-└────────┘└────────┘└────────┘└────────┘└────────┘└────────┘
-    │         │         │          │          │          │
-    └─────────┴─────────┴──────────┴──────────┴──────────┘
+│                   Next.js Application                    │
+│                  (API Routes + React)                    │
+├─────────────────────────────────────────────────────────┤
+│  /api/auth     │  /api/wishlists  │  /api/wishes       │
+│  /api/users    │  /api/social     │  /api/scrape       │
+└─────────────────────────────────────────────────────────┘
                            │
-                    ┌──────┴──────┐
-                    │  PostgreSQL  │
-                    │    Redis     │
-                    │Elasticsearch │
-                    └──────────────┘
+                           ▼
+                ┌──────────────────────┐
+                │     PostgreSQL       │
+                │   (via Supabase)     │
+                └──────────────────────┘
+                           │
+                           ▼
+                ┌──────────────────────┐
+                │    Redis Cache       │
+                │  (Session + Data)    │
+                └──────────────────────┘
 ```
+
+### Architecture Principles
+- **Modular Monolith**: All logic in Next.js API routes, organized by domain
+- **Database**: Single PostgreSQL instance via Supabase
+- **Caching**: Redis for sessions and frequently accessed data
+- **Deployment**: Vercel for Next.js app
+- **Mobile**: Flutter apps consume the same API
 
 ### 1.2 Database Schema (PostgreSQL)
 
@@ -90,20 +97,8 @@ CREATE TABLE wishes (
 );
 ```
 
-#### Price Tracking Table
-```sql
-CREATE TABLE price_tracking (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    wish_id UUID REFERENCES wishes(id),
-    price DECIMAL(10, 2),
-    currency VARCHAR(3),
-    is_on_sale BOOLEAN DEFAULT FALSE,
-    sale_percentage INTEGER,
-    tracked_at TIMESTAMP DEFAULT NOW(),
-    source VARCHAR(50),
-    metadata JSONB
-);
-```
+-- Price tracking removed for MVP phase
+-- Prices will be stored directly in wishes table and updated periodically
 
 ### 1.3 API Endpoints
 
@@ -190,15 +185,16 @@ URL Input → Strategy Selector → Scraper
 | Best Buy | Commerce API | Browserless.io | 4 hours |
 | Others | Browserless.io | Manual entry | 4 hours |
 
-### 2.4 Price Tracking Service (Separate Worker)
+### 2.4 Price Updates (Simplified)
 
 ```javascript
-// Runs as separate Vercel Function or AWS Lambda
-interface PriceTrackingConfig {
-  database: 'Separate PostgreSQL or TimescaleDB',
-  schedule: 'Every 4 hours for active items',
-  queue: 'BullMQ or AWS SQS',
-  notifications: 'Email/Push when price drops >10%'
+// Simple cron job in Next.js API route
+// Runs daily to update prices for active wishes
+export async function updatePrices() {
+  // Fetch wishes that need price updates
+  // Scrape current prices
+  // Update wishes table directly
+  // No separate infrastructure needed
 }
 ```
 

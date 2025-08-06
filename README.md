@@ -42,20 +42,18 @@ HeyWish is a multi-platform wishlist application designed to compete with GoWish
 
 ### Tech Stack
 - **Backend**: Next.js 14 (App Router) - Modular monolith
-- **Database**: Supabase (Auth + PostgreSQL + Realtime)
-- **Price Tracking DB**: Separate PostgreSQL instance or TimescaleDB
+- **Database**: Supabase (Auth + PostgreSQL)
 - **Mobile**: Flutter (iOS & Android)
 - **Web**: Next.js + Tailwind CSS
 - **Browser Extension**: Chrome Manifest V3
-- **Infrastructure**: Vercel (main app), AWS Lambda (price tracking)
+- **Infrastructure**: Vercel
 - **CDN/Storage**: Cloudflare + R2
 - **Scraping**: Official APIs first (Amazon, Target), Browserless.io fallback
 
 ### Architecture Approach
-- **Modular Monolith**: Start with Next.js API routes, extract services later
-- **Separate Price Service**: Independent worker for price tracking
+- **Modular Monolith**: Next.js API routes organized by domain
+- **Simple Caching**: Redis for sessions and frequently accessed data
 - **Edge Caching**: Cloudflare for static assets and API responses
-- **Queue System**: For async price updates and notifications
 
 ## 🚀 Product Roadmap
 
@@ -77,10 +75,9 @@ HeyWish is a multi-platform wishlist application designed to compete with GoWish
 
 ### Phase 3: Monetization (Month 4)
 - Amazon & Target affiliate integration
-- Price tracking service (separate worker)
+- Basic price updates via cron job
 - Premium themes and vanity URLs launch
-- Basic analytics dashboard
-- Email notifications for price drops
+- Email notifications for major price drops
 
 ### Phase 4: Growth & SEO (Month 5)
 - SEO-optimized public wishlists

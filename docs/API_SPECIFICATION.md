@@ -434,58 +434,8 @@ Get activity feed.
 }
 ```
 
-### Price Tracking Endpoints
-
-#### GET /prices/:wishId/history
-Get price history for an item.
-
-**Response (200):**
-```json
-{
-  "priceHistory": [
-    {
-      "price": 349.99,
-      "currency": "USD",
-      "trackedAt": "2024-01-15T00:00:00Z",
-      "isOnSale": false
-    },
-    {
-      "price": 299.99,
-      "currency": "USD",
-      "trackedAt": "2024-01-16T00:00:00Z",
-      "isOnSale": true,
-      "salePercentage": 14
-    }
-  ],
-  "currentPrice": 299.99,
-  "lowestPrice": 279.99,
-  "highestPrice": 399.99,
-  "averagePrice": 340.50
-}
-```
-
-#### POST /prices/alerts
-Create price alert.
-
-**Request:**
-```json
-{
-  "wishId": "wish-001",
-  "targetPrice": 250.00,
-  "alertType": "below_price",
-  "channels": ["email", "push"]
-}
-```
-
-**Response (201):**
-```json
-{
-  "id": "alert-001",
-  "wishId": "wish-001",
-  "targetPrice": 250.00,
-  "status": "active"
-}
-```
+-- Price tracking endpoints removed for MVP phase
+-- Prices are stored directly in the wishes table
 
 ### User Profile Endpoints
 
@@ -566,27 +516,7 @@ Global search across wishlists and items.
 }
 ```
 
-### Analytics Endpoints (Premium)
-
-#### GET /analytics/spending
-Get spending analytics.
-
-**Response (200):**
-```json
-{
-  "totalTracked": 5420.50,
-  "savedAmount": 823.40,
-  "byCategory": {
-    "electronics": 2340.00,
-    "books": 450.50,
-    "clothing": 1230.00
-  },
-  "byMonth": [
-    {"month": "2024-01", "amount": 450.00},
-    {"month": "2024-02", "amount": 680.00}
-  ]
-}
-```
+-- Analytics endpoints removed for MVP phase
 
 ## Error Responses
 
@@ -615,51 +545,8 @@ Get spending analytics.
 - `SERVER_ERROR` - Internal server error
 - `SCRAPING_ERROR` - Failed to scrape URL
 
-## WebSocket Events
-
-### Connection
-```javascript
-ws://api.heywish.com/v1/realtime
-```
-
-### Events
-
-#### price_update
-```json
-{
-  "event": "price_update",
-  "data": {
-    "wishId": "wish-001",
-    "oldPrice": 349.99,
-    "newPrice": 299.99,
-    "percentChange": -14.3
-  }
-}
-```
-
-#### friend_activity
-```json
-{
-  "event": "friend_activity",
-  "data": {
-    "userId": "user-456",
-    "action": "added_wish",
-    "wishTitle": "New Book"
-  }
-}
-```
-
-#### reservation_update
-```json
-{
-  "event": "reservation_update",
-  "data": {
-    "wishId": "wish-001",
-    "status": "reserved",
-    "reservedBy": "anonymous"
-  }
-}
-```
+-- WebSocket/real-time events removed for MVP phase
+-- May be added in future iterations
 
 ## SDK Examples
 

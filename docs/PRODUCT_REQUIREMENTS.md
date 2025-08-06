@@ -339,9 +339,8 @@ Eliminate unwanted gifts, reduce shopping stress, and make every gift meaningful
 
 ### Phase 3: Monetization (Month 4)
 - Amazon & Target affiliate integration
-- Separate price tracking service
+- Basic price updates via cron
 - Premium tier launch (themes, vanity URLs)
-- Basic analytics
 - 5,000 users target
 
 ### Phase 4: Growth & SEO (Month 5+)
@@ -404,9 +403,8 @@ Eliminate unwanted gifts, reduce shopping stress, and make every gift meaningful
 - **Backend**: Next.js 14 (modular monolith approach)
 - **Mobile**: Flutter for cross-platform efficiency
 - **Web**: Next.js with Tailwind CSS
-- **Database**: Supabase (Auth + PostgreSQL + Realtime)
-- **Price Tracking**: Separate service with own database
-- **Infrastructure**: Vercel + AWS Lambda for workers
+- **Database**: Supabase (Auth + PostgreSQL)
+- **Infrastructure**: Vercel
 - **CDN**: Cloudflare with R2 storage
 
 ---
