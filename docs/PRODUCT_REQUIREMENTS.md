@@ -8,12 +8,14 @@ Create the world's most intuitive and intelligent wishlist platform that transfo
 ### Mission
 Eliminate unwanted gifts, reduce shopping stress, and make every gift meaningful through smart technology and social connectivity.
 
-### Success Metrics
-- 100K registered users in Year 1
-- 70% MAU/registered user ratio
+### Success Metrics (Revised for Year 1)
+- 25K registered users
+- 15% MAU/registered user ratio initially
 - 40% of users creating 3+ wishlists
-- 25% share-to-purchase conversion rate
+- 20% share-to-purchase conversion rate
+- 10% premium conversion rate
 - NPS score > 50
+- Focus on retention over acquisition
 
 ## 2. User Personas
 
@@ -31,11 +33,12 @@ Eliminate unwanted gifts, reduce shopping stress, and make every gift meaningful
 - **Goals**: Find perfect gifts quickly
 - **Tech Level**: High
 
-#### Emma - The Social Influencer (22)
-- **Needs**: Share style preferences, inspire followers
+#### Emma - The Social Influencer (22) - PRIMARY TARGET
+- **Needs**: Share style preferences, inspire followers, TikTok-ready content
 - **Pain Points**: Constantly asked "where did you get that?"
-- **Goals**: Curate aesthetic wishlists, earn from recommendations
+- **Goals**: Curate aesthetic wishlists, viral sharing potential
 - **Tech Level**: Very High
+- **Key Platform**: TikTok, Instagram
 
 ### Secondary Personas
 - **Groups/Families**: Coordinating group gifts
@@ -152,27 +155,48 @@ Eliminate unwanted gifts, reduce shopping stress, and make every gift meaningful
 - Save items from feed
 - Filter by friend/occasion
 
-### 3.5 Premium Features
+### 3.5 Premium Features ($4.99/month)
 
-#### Advanced Analytics
-**User Story**: As a premium user, I want detailed insights so I can optimize my shopping.
-
-**Acceptance Criteria**:
-- Spending analytics
-- Price prediction models
-- Best time to buy recommendations
-- Savings reports
-- Gift giving history
-
-#### Priority Support
-**User Story**: As a premium user, I want fast support so issues are resolved quickly.
+#### Vanity & Customization
+**User Story**: As a premium user, I want to personalize my wishlist experience.
 
 **Acceptance Criteria**:
-- 24-hour response time
-- Live chat support
-- Dedicated support email
-- Priority bug fixes
-- Early access to features
+- Custom themes and color schemes
+- Vanity URLs (username.heywish.com)
+- Exclusive wishlist templates
+- Custom cover images and backgrounds
+- Remove HeyWish branding
+
+#### Advanced Features
+**User Story**: As a premium user, I want enhanced tools and insights.
+
+**Acceptance Criteria**:
+- Advanced analytics dashboard
+- Unlimited price tracking alerts
+- Priority customer support
+- Early access to new features
+- Bulk import/export tools
+
+### 3.6 Social Feed Features
+
+#### Activity Feed
+**User Story**: As a user, I want to see what my friends are wishing for in an Instagram-style feed.
+
+**Acceptance Criteria**:
+- Infinite scroll feed of friend activity
+- Like and comment on wishes
+- Share wishes to my own lists
+- Follow/unfollow friends
+- Discover trending items
+
+#### TikTok Integration
+**User Story**: As a user, I want to share my wishlists on TikTok.
+
+**Acceptance Criteria**:
+- Generate shareable wishlist videos/cards
+- QR codes for easy following
+- Trending sounds integration
+- Viral-optimized templates
 
 ## 4. Platform-Specific Requirements
 
@@ -297,40 +321,46 @@ Eliminate unwanted gifts, reduce shopping stress, and make every gift meaningful
 
 ## 8. Launch Strategy
 
-### MVP Launch (Month 1-3)
-- Core wishlist features
-- Basic social sharing
-- Web + mobile apps
-- 5 beta testers → 500 beta users
+### Phase 1: Foundation (Months 1-2)
+- Supabase setup and core infrastructure
+- Basic wishlist CRUD operations
+- Flutter mobile apps (iOS/Android)
+- Chrome extension with one-click save
+- Simple sharing and reservation system
+- 100 beta testers
 
-### Growth Phase (Month 4-6)
-- Price tracking
-- Browser extension
-- Friend system
-- Marketing campaigns
+### Phase 2: Social & Virality (Month 3)
+- Instagram-style social feed
+- Following/followers system
+- TikTok-optimized sharing features
+- Share sheet integrations
+- Public profile pages
+- 1,000 users target
+
+### Phase 3: Monetization (Month 4)
+- Amazon & Target affiliate integration
+- Separate price tracking service
+- Premium tier launch (themes, vanity URLs)
+- Basic analytics
 - 5,000 users target
 
-### Monetization Phase (Month 7-9)
-- Premium tier
-- Affiliate partnerships
-- Merchant tools
-- 25,000 users target
-
-### Scale Phase (Month 10-12)
-- International expansion
-- Advanced features
-- B2B offerings
-- 100,000 users target
+### Phase 4: Growth & SEO (Month 5+)
+- SEO-optimized pages
+- AI-generated content strategy
+- Widget support
+- Influencer partnerships
+- 25,000 users target by end of year
 
 ## 9. Success Criteria
 
-### Key Results (Year 1)
-- 100,000 registered users
-- 500,000 wishlists created
-- 2,000,000 items saved
-- $10M GMV tracked
-- 5% premium conversion
+### Key Results (Year 1 - Revised)
+- 25,000 registered users
+- 100,000 wishlists created
+- 500,000 items saved
+- $5M GMV tracked
+- 10% premium conversion
 - 50+ NPS score
+- Focus on retention metrics over vanity metrics
 
 ### Quality Metrics
 - < 1% crash rate
@@ -370,12 +400,14 @@ Eliminate unwanted gifts, reduce shopping stress, and make every gift meaningful
 - 85% of people maintain wish lists
 - 40% CAGR in social commerce
 
-### Technical Stack Decision
-- **Backend**: Node.js for JavaScript everywhere
-- **Mobile**: Flutter for code reuse
-- **Web**: React for component ecosystem
-- **Database**: PostgreSQL for relationships
-- **Cache**: Redis for performance
+### Technical Stack Decision (Updated)
+- **Backend**: Next.js 14 (modular monolith approach)
+- **Mobile**: Flutter for cross-platform efficiency
+- **Web**: Next.js with Tailwind CSS
+- **Database**: Supabase (Auth + PostgreSQL + Realtime)
+- **Price Tracking**: Separate service with own database
+- **Infrastructure**: Vercel + AWS Lambda for workers
+- **CDN**: Cloudflare with R2 storage
 
 ---
 

@@ -180,15 +180,27 @@ URL Input → Strategy Selector → Scraper
 }
 ```
 
-### 2.3 Scraping Strategies by Domain
+### 2.3 Data Source Priority by Merchant
 
-| Domain | Strategy | Fallback | Cache TTL |
-|--------|----------|----------|-----------|
-| amazon.com | Platform API | Cloudflare BR | 1 hour |
-| ebay.com | Platform API | Cloudflare BR | 30 min |
-| shopify stores | JSON endpoint | Cloudflare BR | 4 hours |
-| etsy.com | Cloudflare BR | Manual | 2 hours |
-| default | Lightweight | Cloudflare BR | 4 hours |
+| Merchant | Primary Source | Fallback | Cache TTL |
+|----------|---------------|----------|-----------|
+| Amazon | Product Advertising API | Browserless.io | 1 hour |
+| Target | Target API | Browserless.io | 2 hours |
+| Walmart | Affiliate API | Browserless.io | 2 hours |
+| Best Buy | Commerce API | Browserless.io | 4 hours |
+| Others | Browserless.io | Manual entry | 4 hours |
+
+### 2.4 Price Tracking Service (Separate Worker)
+
+```javascript
+// Runs as separate Vercel Function or AWS Lambda
+interface PriceTrackingConfig {
+  database: 'Separate PostgreSQL or TimescaleDB',
+  schedule: 'Every 4 hours for active items',
+  queue: 'BullMQ or AWS SQS',
+  notifications: 'Email/Push when price drops >10%'
+}
+```
 
 ## 3. Mobile App Architecture (Flutter)
 

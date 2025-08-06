@@ -2,91 +2,93 @@
 
 ## 🎯 Executive Summary
 
-HeyWish is a multi-platform wishlist application designed to compete with GoWish by offering superior user experience, advanced price tracking, and innovative social features. The platform enables users to save, organize, and share items they want from any online store, while providing intelligent price monitoring and group gifting capabilities.
+HeyWish is a multi-platform wishlist application designed to compete with GoWish by offering a modern, fast, and social-first experience targeting younger demographics. The platform enables users to save, organize, and share items they want from any online store, with a focus on social discovery and viral sharing through platforms like TikTok.
 
 ### Key Differentiators
-- **AI-powered price predictions** - Know when to buy
-- **Group gifting** - Pool money for expensive gifts  
-- **Visual wishboards** - Pinterest-style inspiration
-- **One-click saving** - Seamless from any website
-- **Smart notifications** - Real-time sale alerts
+- **Social Feed** - Instagram-style discovery of friend wishlists
+- **TikTok-Ready** - Optimized for viral sharing with younger audiences
+- **Lightning Fast** - Modern tech stack with sub-second load times
+- **Smart Price Tracking** - Real-time alerts when prices drop
+- **AI Gift Concierge** - Personalized gift suggestions based on social activity
 
 ## 📊 Business Model
 
 ### Revenue Streams
-1. **Affiliate Commissions** (Primary - 60% of revenue)
-   - 2-8% commission on purchases through platform
-   - Target: 0.3-0.5% take rate on GMV
+1. **Affiliate Commissions** (Primary - 80% of revenue)
+   - Amazon (3-5%), Target (2-3%), Walmart (2-4%)
+   - Focus on high-volume, free-to-use model
    
-2. **Premium Subscriptions** ($4.99/month - 25% of revenue)
-   - Unlimited price alerts
-   - Advanced analytics
+2. **Premium Subscriptions** ($4.99/month - 20% of revenue)
+   - Custom themes and vanity URLs
+   - Advanced analytics and insights
    - Priority support
-   - Early sale access
+   - Exclusive wishlist templates
+   - No core features gated - purely cosmetic/convenience
    
-3. **B2B Services** (15% of revenue)
-   - Merchant dashboards ($99-999/month)
-   - API access for retailers
-   - Consumer insights & analytics
+3. **Future Monetization** (Post-MVP)
+   - Merchant partnerships
+   - Sponsored gift guides
+   - Virtual gift cards marketplace
 
-### Target Metrics (Year 1)
-- 100,000 registered users
-- 500,000 wishes created
-- $10M GMV tracked
-- $50K MRR by month 12
+### Target Metrics (Year 1 - Revised)
+- 25,000 registered users
+- 100,000 wishes created
+- $5M GMV tracked
+- $30K MRR by month 12
+- 15% MAU/registered ratio
+- 10% premium conversion rate
 
 ## 🏗️ Technical Architecture
 
 ### Tech Stack
-- **Backend**: Node.js + TypeScript, Express/Fastify
-- **Database**: PostgreSQL (primary), Redis (cache), Elasticsearch (search)
+- **Backend**: Next.js 14 (App Router) - Modular monolith
+- **Database**: Supabase (Auth + PostgreSQL + Realtime)
+- **Price Tracking DB**: Separate PostgreSQL instance or TimescaleDB
 - **Mobile**: Flutter (iOS & Android)
-- **Web**: React + Next.js + Tailwind CSS
+- **Web**: Next.js + Tailwind CSS
 - **Browser Extension**: Chrome Manifest V3
-- **Infrastructure**: AWS/GCP, Cloudflare Workers
-- **Scraping**: Cloudflare Browser Rendering API
+- **Infrastructure**: Vercel (main app), AWS Lambda (price tracking)
+- **CDN/Storage**: Cloudflare + R2
+- **Scraping**: Official APIs first (Amazon, Target), Browserless.io fallback
 
-### Core Services
-1. User Service (Auth, Profiles)
-2. Wishlist Service (CRUD, Sharing)
-3. Product Service (Scraping, Price Tracking)
-4. Social Service (Friends, Activity Feed)
-5. Notification Service (Push, Email, SMS)
-6. Analytics Service (ML, Recommendations)
+### Architecture Approach
+- **Modular Monolith**: Start with Next.js API routes, extract services later
+- **Separate Price Service**: Independent worker for price tracking
+- **Edge Caching**: Cloudflare for static assets and API responses
+- **Queue System**: For async price updates and notifications
 
 ## 🚀 Product Roadmap
 
-### Phase 1: MVP (Months 1-3)
-- ✅ User authentication (Social + Email)
-- ✅ Create/manage wishlists
-- ✅ Add items via URL or manually
-- ✅ Share lists & reserve items
-- ✅ Basic friend system
-- ✅ Mobile apps (iOS/Android)
-- ✅ Web application
-- ✅ Chrome extension
+### Phase 1: Foundation (Months 1-2)
+- ✅ Supabase setup (Auth + Database)
+- ✅ Next.js app with core wishlist CRUD
+- ✅ Mobile apps (Flutter for iOS/Android)
+- ✅ Chrome extension with one-click save
+- ✅ Basic sharing and reservation system
+- ✅ Responsive web application
 
-### Phase 2: Growth (Months 4-6)
-- Price tracking & alerts
-- Group gifting functionality
-- Visual wishboards
-- Enhanced social features
-- Offline mode
-- Gift suggestions AI
+### Phase 2: Social & Virality (Month 3)
+- Social feed implementation
+- Following/followers system
+- TikTok-optimized sharing cards
+- Deep integration with iOS/Android share sheets
+- Activity notifications
+- Public profile pages
 
-### Phase 3: Monetization (Months 7-9)
-- Premium tier launch
-- Affiliate partnerships
-- Merchant dashboard
-- Advanced analytics
-- B2B API offerings
+### Phase 3: Monetization (Month 4)
+- Amazon & Target affiliate integration
+- Price tracking service (separate worker)
+- Premium themes and vanity URLs launch
+- Basic analytics dashboard
+- Email notifications for price drops
 
-### Phase 4: Scale (Months 10-12)
-- International expansion
-- Voice assistant integration
-- AR try-on features
-- Virtual gift cards
-- Marketplace features
+### Phase 4: Growth & SEO (Month 5)
+- SEO-optimized public wishlists
+- AI-generated daily gift guides
+- Blog with auto-generated content
+- Widget support for mobile
+- Influencer partnership program
+- Advanced social features
 
 ## 📱 Platform-Specific Features
 
