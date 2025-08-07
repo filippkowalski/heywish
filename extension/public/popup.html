@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HeyWish</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Loading State -->
+    <div id="loading" class="container">
+      <div class="header">
+        <img src="icons/icon48.png" alt="HeyWish" class="logo">
+        <h1>HeyWish</h1>
+      </div>
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Not Logged In State -->
+    <div id="login" class="container hidden">
+      <div class="header">
+        <img src="icons/icon48.png" alt="HeyWish" class="logo">
+        <h1>HeyWish</h1>
+      </div>
+      <p class="message">Sign in to save items to your wishlists</p>
+      <button id="loginBtn" class="btn btn-primary">
+        Sign In
+      </button>
+      <button id="continueAnonymous" class="btn btn-secondary">
+        Continue without signing in
+      </button>
+    </div>
+
+    <!-- Product Detected State -->
+    <div id="product" class="container hidden">
+      <div class="header">
+        <img src="icons/icon48.png" alt="HeyWish" class="logo">
+        <h1>HeyWish</h1>
+        <button id="settingsBtn" class="icon-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 1v6m0 6v6m4.22-13.22l4.24 4.24M1.54 1.54l4.24 4.24M20.46 20.46l-4.24-4.24M1.54 20.46l4.24-4.24"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div id="productInfo" class="product-info">
+        <img id="productImage" class="product-image" alt="Product">
+        <div class="product-details">
+          <h2 id="productTitle" class="product-title"></h2>
+          <p id="productPrice" class="product-price"></p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="wishlistSelect">Add to wishlist:</label>
+        <select id="wishlistSelect" class="select">
+          <option value="">Loading wishlists...</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="notes">Notes (optional):</label>
+        <textarea id="notes" class="textarea" placeholder="Size, color, preferences..."></textarea>
+      </div>
+
+      <button id="saveBtn" class="btn btn-primary">
+        Save to Wishlist
+      </button>
+
+      <div id="successMessage" class="success-message hidden">
+        ✓ Item saved successfully!
+      </div>
+    </div>
+
+    <!-- No Product State -->
+    <div id="noProduct" class="container hidden">
+      <div class="header">
+        <img src="icons/icon48.png" alt="HeyWish" class="logo">
+        <h1>HeyWish</h1>
+      </div>
+      <p class="message">No product detected on this page</p>
+      <p class="sub-message">Navigate to a product page to save items</p>
+      <button id="manualAddBtn" class="btn btn-secondary">
+        Add Manually
+      </button>
+    </div>
+
+    <!-- Settings Menu -->
+    <div id="settings" class="container hidden">
+      <div class="header">
+        <button id="backBtn" class="icon-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+        <h1>Settings</h1>
+      </div>
+      
+      <div class="user-info">
+        <p id="userEmail"></p>
+      </div>
+
+      <button id="dashboardBtn" class="btn btn-secondary">
+        Open Dashboard
+      </button>
+      
+      <button id="logoutBtn" class="btn btn-danger">
+        Sign Out
+      </button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

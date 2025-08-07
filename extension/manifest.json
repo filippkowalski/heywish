@@ -6,7 +6,9 @@
   "permissions": [
     "activeTab",
     "storage",
-    "contextMenus"
+    "contextMenus",
+    "scripting",
+    "tabs"
   ],
   "host_permissions": [
     "https://heywish.com/*",

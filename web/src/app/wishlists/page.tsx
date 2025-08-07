@@ -79,9 +79,14 @@ export default function WishlistsPage() {
   };
 
   const copyShareLink = (token: string) => {
-    const url = `${window.location.origin}/shared/${token}`;
+    const url = `${window.location.origin}/w/${token}`;
     navigator.clipboard.writeText(url);
-    alert('Share link copied to clipboard!');
+    // Show a nicer toast notification instead of alert
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+    toast.textContent = 'Share link copied to clipboard!';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
   };
 
   if (authLoading || loading) {
@@ -197,15 +202,17 @@ export default function WishlistsPage() {
                       >
                         Edit
                       </Link>
-                      <button
-                        onClick={() => copyShareLink(wishlist.share_token)}
-                        className="px-4 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
-                        title="Copy share link"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.024A9.003 9.003 0 0112 3a9.003 9.003 0 012 18 9.003 9.003 0 01-5.716-2.318m11.432 0A9.003 9.003 0 0112 3a9.003 9.003 0 00-5.716 2.318m11.432 13.364A9.003 9.003 0 0112 21a9.003 9.003 0 01-5.716-2.318m11.432 0L21 21m-3.284-2.318l3.284 3.284" />
-                        </svg>
-                      </button>
+                      {wishlist.visibility === 'public' && (
+                        <button
+                          onClick={() => copyShareLink(wishlist.share_token)}
+                          className="px-4 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
+                          title="Copy share link"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.024A9.003 9.003 0 0112 3a9.003 9.003 0 012 18 9.003 9.003 0 01-5.716-2.318m11.432 0A9.003 9.003 0 0112 3a9.003 9.003 0 00-5.716 2.318m11.432 13.364A9.003 9.003 0 0112 21a9.003 9.003 0 01-5.716-2.318m11.432 0L21 21m-3.284-2.318l3.284 3.284" />
+                          </svg>
+                        </button>
+                      )}
                       <button
                         onClick={() => deleteWishlist(wishlist.id)}
                         className="px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition"

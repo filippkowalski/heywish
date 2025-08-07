@@ -165,12 +165,12 @@ export default function NewWishlistPage() {
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
                 >
                   <option value="private">Private - Only you can see</option>
-                  <option value="link_only">Link Only - Anyone with the link</option>
-                  <option value="friends">Friends - Your friends can see</option>
-                  <option value="public">Public - Everyone can see</option>
+                  <option value="public">Public - Anyone with the link can view and reserve items</option>
                 </select>
                 <p className="mt-1 text-sm text-gray-500">
-                  Choose who can view your wishlist
+                  {formData.visibility === 'private' 
+                    ? 'Your wishlist will be private. Only you can view and manage it.'
+                    : 'You can share your wishlist link with friends and family. They can view and secretly reserve items.'}
                 </p>
               </div>
 
