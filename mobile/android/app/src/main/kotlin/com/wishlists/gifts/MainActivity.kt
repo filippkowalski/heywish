@@ -1,4 +1,4 @@
-package com.heywish.heywish
+package com.wishlists.gifts
 
 import io.flutter.embedding.android.FlutterActivity
 

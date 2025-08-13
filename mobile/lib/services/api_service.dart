@@ -1,127 +1,134 @@
 import 'package:dio/dio.dart';
-import 'auth_service.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiService {
-  final AuthService _authService;
   late final Dio _dio;
+  String? _authToken;
   
-  static const String baseUrl = 'http://localhost:3000/api'; // Change for production
+  static final ApiService _instance = ApiService._internal();
   
-  ApiService(this._authService) {
+  factory ApiService() => _instance;
+  
+  ApiService._internal() {
     _dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
+      baseUrl: dotenv.env['API_BASE_URL'] ?? 'https://openai-rewrite.onrender.com/heywish/v1',
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 15),
+      headers: {
+        'Content-Type': 'application/json',
+      },
     ));
     
-    // Add auth interceptor
     _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        final token = await _authService.getIdToken();
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
+      onRequest: (options, handler) {
+        if (_authToken != null) {
+          options.headers['Authorization'] = 'Bearer $_authToken';
         }
+        debugPrint('REQUEST[${options.method}] => PATH: ${options.path}');
         handler.next(options);
+      },
+      onResponse: (response, handler) {
+        debugPrint('RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions.path}');
+        handler.next(response);
+      },
+      onError: (error, handler) {
+        debugPrint('ERROR[${error.response?.statusCode}] => PATH: ${error.requestOptions.path}');
+        handler.next(error);
       },
     ));
   }
   
-  // Wishlists
-  Future<List<dynamic>> getWishlists() async {
-    try {
-      final response = await _dio.get('/wishlists');
-      return response.data['wishlists'];
-    } catch (e) {
-      print('Error fetching wishlists: $e');
-      rethrow;
-    }
+  void setAuthToken(String? token) {
+    _authToken = token;
   }
   
-  Future<Map<String, dynamic>> getWishlist(String id) async {
+  void clearAuthToken() {
+    _authToken = null;
+  }
+  
+  Future<dynamic> get(String path, {Map<String, dynamic>? queryParameters}) async {
     try {
-      final response = await _dio.get('/wishlists/$id');
+      final response = await _dio.get(path, queryParameters: queryParameters);
       return response.data;
-    } catch (e) {
-      print('Error fetching wishlist: $e');
-      rethrow;
+    } on DioException catch (e) {
+      throw _handleError(e);
     }
   }
   
-  Future<Map<String, dynamic>> createWishlist(Map<String, dynamic> data) async {
+  Future<dynamic> post(String path, dynamic data) async {
     try {
-      final response = await _dio.post('/wishlists', data: data);
+      final response = await _dio.post(path, data: data);
       return response.data;
-    } catch (e) {
-      print('Error creating wishlist: $e');
-      rethrow;
+    } on DioException catch (e) {
+      throw _handleError(e);
     }
   }
   
-  Future<Map<String, dynamic>> updateWishlist(String id, Map<String, dynamic> data) async {
+  Future<dynamic> put(String path, dynamic data) async {
     try {
-      final response = await _dio.put('/wishlists/$id', data: data);
+      final response = await _dio.put(path, data: data);
       return response.data;
-    } catch (e) {
-      print('Error updating wishlist: $e');
-      rethrow;
+    } on DioException catch (e) {
+      throw _handleError(e);
     }
   }
   
-  Future<void> deleteWishlist(String id) async {
+  Future<dynamic> patch(String path, dynamic data) async {
     try {
-      await _dio.delete('/wishlists/$id');
-    } catch (e) {
-      print('Error deleting wishlist: $e');
-      rethrow;
-    }
-  }
-  
-  // Wishes
-  Future<Map<String, dynamic>> addWish(Map<String, dynamic> data) async {
-    try {
-      final response = await _dio.post('/wishes', data: data);
+      final response = await _dio.patch(path, data: data);
       return response.data;
-    } catch (e) {
-      print('Error adding wish: $e');
-      rethrow;
+    } on DioException catch (e) {
+      throw _handleError(e);
     }
   }
   
-  Future<void> deleteWish(String id) async {
+  Future<dynamic> delete(String path) async {
     try {
-      await _dio.delete('/wishes/$id');
-    } catch (e) {
-      print('Error deleting wish: $e');
-      rethrow;
+      final response = await _dio.delete(path);
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
     }
   }
   
-  Future<void> reserveWish(String id) async {
-    try {
-      await _dio.post('/wishes/$id/reserve');
-    } catch (e) {
-      print('Error reserving wish: $e');
-      rethrow;
-    }
-  }
-  
-  Future<void> unreserveWish(String id) async {
-    try {
-      await _dio.delete('/wishes/$id/reserve');
-    } catch (e) {
-      print('Error unreserving wish: $e');
-      rethrow;
-    }
-  }
-  
-  // Scraping
-  Future<Map<String, dynamic>> scrapeProduct(String url) async {
-    try {
-      final response = await _dio.post('/scrape', data: {'url': url});
-      return response.data['product'];
-    } catch (e) {
-      print('Error scraping product: $e');
-      rethrow;
+  String _handleError(DioException error) {
+    switch (error.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return 'Connection timeout. Please check your internet connection.';
+      
+      case DioExceptionType.badResponse:
+        final statusCode = error.response?.statusCode;
+        final message = error.response?.data?['message'] ?? 'An error occurred';
+        
+        switch (statusCode) {
+          case 400:
+            return 'Bad request: $message';
+          case 401:
+            return 'Unauthorized. Please sign in again.';
+          case 403:
+            return 'Forbidden. You don\'t have permission to access this resource.';
+          case 404:
+            return 'Resource not found.';
+          case 500:
+            return 'Server error. Please try again later.';
+          default:
+            return message;
+        }
+      
+      case DioExceptionType.cancel:
+        return 'Request cancelled.';
+      
+      case DioExceptionType.unknown:
+        if (error.error?.toString().contains('SocketException') ?? false) {
+          return 'No internet connection.';
+        }
+        return 'An unexpected error occurred.';
+      
+      default:
+        return 'An error occurred. Please try again.';
     }
   }
 }

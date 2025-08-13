@@ -1,136 +1,162 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase;
+import 'package:flutter/foundation.dart';
+import 'api_service.dart';
+import '../models/user.dart';
 
-class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final Dio _dio = Dio();
-  static const String baseUrl = 'https://heywish.com/api'; // Change for development
+class AuthService extends ChangeNotifier {
+  final firebase.FirebaseAuth _firebaseAuth = firebase.FirebaseAuth.instance;
+  final ApiService _apiService = ApiService();
   
-  User? get currentUser => _auth.currentUser;
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  User? _currentUser;
+  firebase.User? _firebaseUser;
   
-  // Initialize and create anonymous user if needed
-  Future<void> initialize() async {
-    final user = _auth.currentUser;
-    if (user == null) {
-      await signInAnonymously();
+  User? get currentUser => _currentUser;
+  firebase.User? get firebaseUser => _firebaseUser;
+  bool get isAuthenticated => _firebaseUser != null;
+  bool get isAnonymous => _firebaseUser?.isAnonymous ?? true;
+  
+  AuthService() {
+    _firebaseAuth.authStateChanges().listen(_onAuthStateChanged);
+  }
+  
+  Future<void> _onAuthStateChanged(firebase.User? firebaseUser) async {
+    _firebaseUser = firebaseUser;
+    
+    if (firebaseUser != null) {
+      // Sync with backend
+      await syncUserWithBackend();
     } else {
-      await _syncWithBackend(user);
+      _currentUser = null;
+    }
+    
+    notifyListeners();
+  }
+  
+  Future<void> syncUserWithBackend() async {
+    if (_firebaseUser == null) return;
+    
+    try {
+      final idToken = await _firebaseUser!.getIdToken();
+      _apiService.setAuthToken(idToken);
+      
+      final response = await _apiService.post('/auth/sync', {
+        'firebase_uid': _firebaseUser!.uid,
+        'email': _firebaseUser!.email,
+        'full_name': _firebaseUser!.displayName,
+        'is_anonymous': _firebaseUser!.isAnonymous,
+      });
+      
+      _currentUser = User.fromJson(response['user']);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error syncing user: $e');
     }
   }
   
-  // Sign in anonymously
-  Future<User?> signInAnonymously() async {
+  Future<void> signInAnonymously() async {
     try {
-      final result = await _auth.signInAnonymously();
-      if (result.user != null) {
-        await _syncWithBackend(result.user!);
-      }
-      return result.user;
+      await _firebaseAuth.signInAnonymously();
     } catch (e) {
-      print('Error signing in anonymously: $e');
+      debugPrint('Error signing in anonymously: $e');
       rethrow;
     }
   }
   
-  // Sign in with email and password
-  Future<User?> signInWithEmail(String email, String password) async {
+  Future<void> signInWithEmail(String email, String password) async {
     try {
-      final result = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      if (result.user != null) {
-        await _syncWithBackend(result.user!);
+      // If currently anonymous, link the account
+      if (_firebaseUser?.isAnonymous ?? false) {
+        final credential = firebase.EmailAuthProvider.credential(
+          email: email,
+          password: password,
+        );
+        await _firebaseUser!.linkWithCredential(credential);
+      } else {
+        await _firebaseAuth.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
       }
-      return result.user;
     } catch (e) {
-      print('Error signing in with email: $e');
+      debugPrint('Error signing in with email: $e');
       rethrow;
     }
   }
   
-  // Sign up with email and password
-  Future<User?> signUpWithEmail(String email, String password, {String? username}) async {
+  Future<void> signUpWithEmail(String email, String password, String name) async {
     try {
-      final result = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      if (result.user != null) {
-        await _syncWithBackend(result.user!, username: username);
-      }
-      return result.user;
-    } catch (e) {
-      print('Error signing up: $e');
-      rethrow;
-    }
-  }
-  
-  // Upgrade anonymous account
-  Future<User?> upgradeAnonymousAccount(String email, String password) async {
-    try {
-      final user = _auth.currentUser;
-      if (user == null || !user.isAnonymous) {
-        throw Exception('No anonymous user to upgrade');
+      // If currently anonymous, link the account
+      if (_firebaseUser?.isAnonymous ?? false) {
+        final credential = firebase.EmailAuthProvider.credential(
+          email: email,
+          password: password,
+        );
+        final userCredential = await _firebaseUser!.linkWithCredential(credential);
+        
+        // Update display name
+        await userCredential.user!.updateDisplayName(name);
+      } else {
+        final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+        
+        // Update display name
+        await userCredential.user!.updateDisplayName(name);
       }
       
-      final credential = EmailAuthProvider.credential(
-        email: email,
-        password: password,
-      );
-      
-      final result = await user.linkWithCredential(credential);
-      if (result.user != null) {
-        await _syncWithBackend(result.user!);
-      }
-      return result.user;
+      // Sync with backend
+      await syncUserWithBackend();
     } catch (e) {
-      print('Error upgrading account: $e');
+      debugPrint('Error signing up: $e');
       rethrow;
     }
   }
   
-  // Sign out
+  Future<void> signInWithGoogle() async {
+    try {
+      // TODO: Implement Google Sign In
+      // Requires google_sign_in package and configuration
+      throw UnimplementedError('Google Sign In not yet implemented');
+    } catch (e) {
+      debugPrint('Error signing in with Google: $e');
+      rethrow;
+    }
+  }
+  
+  Future<void> signInWithApple() async {
+    try {
+      // TODO: Implement Apple Sign In
+      // Requires sign_in_with_apple package and configuration
+      throw UnimplementedError('Apple Sign In not yet implemented');
+    } catch (e) {
+      debugPrint('Error signing in with Apple: $e');
+      rethrow;
+    }
+  }
+  
   Future<void> signOut() async {
-    await _auth.signOut();
-    // Clear any local data
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-  }
-  
-  // Sync user with backend
-  Future<void> _syncWithBackend(User user, {String? username}) async {
     try {
-      final token = await user.getIdToken();
-      
-      final response = await _dio.post(
-        '$baseUrl/auth/sync',
-        data: {
-          'firebaseToken': token,
-          if (username != null) 'username': username,
-        },
-      );
-      
-      // Store user data locally
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('userId', response.data['user']['id']);
-      await prefs.setString('userEmail', response.data['user']['email'] ?? '');
-      await prefs.setBool('isAnonymous', response.data['user']['isAnonymous'] ?? false);
+      await _firebaseAuth.signOut();
+      _currentUser = null;
+      _apiService.clearAuthToken();
+      notifyListeners();
     } catch (e) {
-      print('Error syncing with backend: $e');
-      // Don't throw - allow offline usage
+      debugPrint('Error signing out: $e');
+      rethrow;
     }
   }
   
-  // Get Firebase ID token for API calls
+  Future<void> resetPassword(String email) async {
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      debugPrint('Error resetting password: $e');
+      rethrow;
+    }
+  }
+  
   Future<String?> getIdToken() async {
-    try {
-      return await _auth.currentUser?.getIdToken();
-    } catch (e) {
-      print('Error getting ID token: $e');
-      return null;
-    }
+    return await _firebaseUser?.getIdToken();
   }
 }

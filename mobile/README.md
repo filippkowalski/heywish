@@ -1,6 +1,6 @@
-# heywish
+# gifts
 
-HeyWish - Next-generation wishlist platform
+A new Flutter project.
 
 ## Getting Started
 

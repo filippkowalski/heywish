@@ -1,22 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'config/firebase_options.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import 'theme/app_theme.dart';
 import 'services/auth_service.dart';
-import 'services/api_service.dart';
+import 'services/wishlist_service.dart';
+import 'services/preferences_service.dart';
 import 'screens/splash_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
-import 'screens/dashboard_screen.dart';
-import 'screens/wishlists/wishlists_screen.dart';
 import 'screens/wishlists/wishlist_detail_screen.dart';
-import 'screens/public_wishlist_screen.dart';
+import 'screens/wishlists/wishlist_new_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  
+  // Load environment variables (optional in development)
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (e) {
+    debugPrint('Warning: Could not load .env file: $e');
+  }
+  
+  // Initialize Firebase
+  await Firebase.initializeApp();
+  
+  // Initialize preferences
+  await PreferencesService().initialize();
+  
   runApp(const HeyWishApp());
 }
 
@@ -25,97 +40,56 @@ class HeyWishApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'HeyWish',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.purple,
-        primaryColor: const Color(0xFF8B5CF6),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF8B5CF6),
-        ),
-        useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
-        ),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (_) => WishlistService()),
+        ChangeNotifierProvider.value(value: PreferencesService()),
+      ],
+      child: MaterialApp.router(
+        title: 'HeyWish',
+        theme: AppTheme.lightTheme(),
+        darkTheme: AppTheme.darkTheme(),
+        themeMode: ThemeMode.system,
+        routerConfig: _router,
       ),
-      home: const AppWrapper(),
-      routes: {
-        '/home': (context) => const HomeScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignUpScreen(),
-        '/dashboard': (context) => const DashboardScreen(),
-        '/wishlists': (context) => const WishlistsScreen(),
-      },
-      onGenerateRoute: (settings) {
-        if (settings.name != null && settings.name!.startsWith('/wishlist/')) {
-          final wishlistId = settings.name!.substring('/wishlist/'.length);
-          return MaterialPageRoute(
-            builder: (context) => WishlistDetailScreen(wishlistId: wishlistId),
-          );
-        } else if (settings.name != null && settings.name!.startsWith('/w/')) {
-          // Public wishlist deep link
-          final shareToken = settings.name!.substring('/w/'.length);
-          return MaterialPageRoute(
-            builder: (context) => PublicWishlistScreen(shareToken: shareToken),
-          );
-        }
-        return null;
-      },
     );
   }
 }
 
-class AppWrapper extends StatefulWidget {
-  const AppWrapper({super.key});
-
-  @override
-  State<AppWrapper> createState() => _AppWrapperState();
-}
-
-class _AppWrapperState extends State<AppWrapper> {
-  late final AuthService _authService;
-  late final ApiService _apiService;
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _authService = AuthService();
-    _apiService = ApiService(_authService);
-    _initializeApp();
-  }
-
-  Future<void> _initializeApp() async {
-    await _authService.initialize();
-    setState(() {
-      _isInitialized = true;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_isInitialized) {
-      return const SplashScreen();
-    }
-
-    return StreamBuilder(
-      stream: _authService.authStateChanges,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SplashScreen();
-        }
-
-        final user = snapshot.data;
-        if (user == null) {
-          return const HomeScreen();
-        } else if (user.isAnonymous) {
-          return HomeScreen(authService: _authService, apiService: _apiService);
-        } else {
-          return DashboardScreen(authService: _authService, apiService: _apiService);
-        }
+final _router = GoRouter(
+  initialLocation: '/',
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingScreen(),
+    ),
+    GoRoute(
+      path: '/home',
+      builder: (context, state) => const HomeScreen(),
+    ),
+    GoRoute(
+      path: '/auth/login',
+      builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: '/auth/signup',
+      builder: (context, state) => const SignupScreen(),
+    ),
+    GoRoute(
+      path: '/wishlists/new',
+      builder: (context, state) => const WishlistNewScreen(),
+    ),
+    GoRoute(
+      path: '/wishlists/:id',
+      builder: (context, state) {
+        final id = state.pathParameters['id']!;
+        return WishlistDetailScreen(wishlistId: id);
       },
-    );
-  }
-}
+    ),
+  ],
+);

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
-import '../../services/api_service.dart';
+import '../../services/wishlist_service.dart';
+import '../../models/wishlist.dart';
+import '../../theme/app_theme.dart';
 
 class WishlistsScreen extends StatefulWidget {
   const WishlistsScreen({super.key});
@@ -10,434 +14,413 @@ class WishlistsScreen extends StatefulWidget {
 }
 
 class _WishlistsScreenState extends State<WishlistsScreen> {
-  final _authService = AuthService();
-  late final ApiService _apiService;
-  List<dynamic> _wishlists = [];
-  bool _isLoading = true;
-
   @override
   void initState() {
     super.initState();
-    _apiService = ApiService(_authService);
-    _loadWishlists();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadWishlists();
+    });
   }
 
   Future<void> _loadWishlists() async {
-    try {
-      final wishlists = await _apiService.getWishlists();
-      setState(() {
-        _wishlists = wishlists;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to load wishlists'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  void _showCreateWishlistDialog() {
-    final titleController = TextEditingController();
-    final descriptionController = TextEditingController();
-    bool isPublic = false;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Create Wishlist'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Title',
-                    hintText: 'Birthday Wishlist',
-                    border: OutlineInputBorder(),
-                  ),
-                  textCapitalization: TextCapitalization.words,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Description (optional)',
-                    hintText: 'Things I want for my birthday',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 16),
-                CheckboxListTile(
-                  title: const Text('Make Public'),
-                  subtitle: const Text('Anyone with the link can view'),
-                  value: isPublic,
-                  onChanged: (value) {
-                    setDialogState(() {
-                      isPublic = value ?? false;
-                    });
-                  },
-                  controlAffinity: ListTileControlAffinity.leading,
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (titleController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please enter a title'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                  return;
-                }
-
-                try {
-                  await _apiService.createWishlist({
-                    'title': titleController.text,
-                    'description': descriptionController.text,
-                    'is_public': isPublic,
-                  });
-                  
-                  if (mounted) {
-                    Navigator.pop(context);
-                    _loadWishlists();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Wishlist created successfully'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Failed to create wishlist'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text('Create'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _deleteWishlist(String id) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Wishlist'),
-        content: const Text('Are you sure you want to delete this wishlist? This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      try {
-        await _apiService.deleteWishlist(id);
-        _loadWishlists();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Wishlist deleted'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to delete wishlist'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  void _shareWishlist(Map<String, dynamic> wishlist) {
-    final shareUrl = 'https://heywish.app/w/${wishlist['share_token']}';
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Share Wishlist'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Share this link with friends and family:'),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: SelectableText(
-                shareUrl,
-                style: const TextStyle(fontSize: 12),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // TODO: Implement share functionality
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Link copied to clipboard'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text('Copy Link'),
-          ),
-        ],
-      ),
-    );
+    final wishlistService = context.read<WishlistService>();
+    await wishlistService.fetchWishlists();
   }
 
   @override
   Widget build(BuildContext context) {
+    final authService = context.watch<AuthService>();
+    final wishlistService = context.watch<WishlistService>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Wishlists'),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showCreateWishlistDialog,
-        backgroundColor: Theme.of(context).primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
+        actions: [
+          if (authService.isAnonymous)
+            TextButton(
+              onPressed: () {
+                context.push('/auth/signup');
+              },
+              child: const Text('Sign Up'),
+            ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _loadWishlists,
-        child: _isLoading
+        child: wishlistService.isLoading
             ? const Center(child: CircularProgressIndicator())
-            : _wishlists.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
+            : wishlistService.error != null
+                ? _buildErrorState(wishlistService.error!)
+                : wishlistService.wishlists.isEmpty
+                    ? _buildEmptyState(context)
+                    : _buildContent(wishlistService.wishlists),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 80,
+              color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Something went wrong',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: _loadWishlists,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try Again'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(List<Wishlist> wishlists) {
+    return CustomScrollView(
+      slivers: [
+        // Header with stats
+        SliverToBoxAdapter(
+          child: _buildStatsHeader(wishlists),
+        ),
+        
+        // Quick actions
+        SliverToBoxAdapter(
+          child: _buildQuickActions(),
+        ),
+        
+        // Wishlists grid
+        SliverPadding(
+          padding: const EdgeInsets.all(16.0),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.8,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final wishlist = wishlists[index];
+                return _WishlistCard(wishlist: wishlist);
+              },
+              childCount: wishlists.length,
+            ),
+          ),
+        ),
+        
+        // Bottom spacing
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 100),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsHeader(List<Wishlist> wishlists) {
+    final totalWishes = wishlists.fold<int>(0, (sum, w) => sum + w.wishCount);
+    final totalReserved = wishlists.fold<int>(0, (sum, w) => sum + w.reservedCount);
+
+    return Container(
+      margin: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primaryColor.withOpacity(0.1),
+            AppTheme.coralColor.withOpacity(0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Your Wishlist Overview',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _buildStatCard('Lists', '${wishlists.length}', Icons.list_alt),
+              const SizedBox(width: 16),
+              _buildStatCard('Items', '$totalWishes', Icons.card_giftcard),
+              const SizedBox(width: 16),
+              _buildStatCard('Reserved', '$totalReserved', Icons.check_circle),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String label, String value, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: AppTheme.primaryColor, size: 24),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActions() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Quick Actions',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _buildActionButton(
+                'Create List',
+                Icons.add_circle,
+                AppTheme.primaryColor,
+                () => context.push('/wishlists/new'),
+              ),
+              const SizedBox(width: 12),
+              _buildActionButton(
+                'Browse Ideas',
+                Icons.lightbulb_outline,
+                AppTheme.coralColor,
+                () {
+                  // TODO: Navigate to browse/discover
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Browse feature coming soon!')),
+                  );
+                },
+              ),
+              const SizedBox(width: 12),
+              _buildActionButton(
+                'Share',
+                Icons.share,
+                AppTheme.skyColor,
+                () {
+                  // TODO: Share functionality
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Share feature coming soon!')),
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton(String label, IconData icon, Color color, VoidCallback onTap) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.2)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 24),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.card_giftcard_outlined,
+              size: 80,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No wishlists yet',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Create your first wishlist and start adding items you love',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () {
+                context.push('/wishlists/new');
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Create Wishlist'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+}
+
+class _WishlistCard extends StatelessWidget {
+  final Wishlist wishlist;
+
+  const _WishlistCard({required this.wishlist});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          context.push('/wishlists/${wishlist.id}');
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 120,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+              ),
+              child: wishlist.coverImageUrl != null
+                  ? Image.network(
+                      wishlist.coverImageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
                           Icons.card_giftcard,
-                          size: 80,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'No wishlists yet',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Create your first wishlist to get started',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          onPressed: _showCreateWishlistDialog,
-                          icon: const Icon(Icons.add),
-                          label: const Text('Create Wishlist'),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
-                      ],
+                          size: 48,
+                          color: AppTheme.primaryColor,
+                        );
+                      },
+                    )
+                  : const Icon(
+                      Icons.card_giftcard,
+                      size: 48,
+                      color: AppTheme.primaryColor,
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _wishlists.length,
-                    itemBuilder: (context, index) {
-                      final wishlist = _wishlists[index];
-                      final itemCount = (wishlist['wishes'] as List?)?.length ?? 0;
-                      
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.pushNamed(context, '/wishlist/${wishlist['id']}');
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            wishlist['title'] ?? 'Untitled',
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          if (wishlist['description'] != null &&
-                                              wishlist['description'].isNotEmpty) ...[
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              wishlist['description'],
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.grey[600],
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ),
-                                    PopupMenuButton(
-                                      itemBuilder: (context) => [
-                                        const PopupMenuItem(
-                                          value: 'edit',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.edit, size: 20),
-                                              SizedBox(width: 8),
-                                              Text('Edit'),
-                                            ],
-                                          ),
-                                        ),
-                                        if (wishlist['is_public'] == true)
-                                          const PopupMenuItem(
-                                            value: 'share',
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.share, size: 20),
-                                                SizedBox(width: 8),
-                                                Text('Share'),
-                                              ],
-                                            ),
-                                          ),
-                                        const PopupMenuItem(
-                                          value: 'delete',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.delete, size: 20, color: Colors.red),
-                                              SizedBox(width: 8),
-                                              Text('Delete', style: TextStyle(color: Colors.red)),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                      onSelected: (value) {
-                                        switch (value) {
-                                          case 'edit':
-                                            // TODO: Implement edit
-                                            break;
-                                          case 'share':
-                                            _shareWishlist(wishlist);
-                                            break;
-                                          case 'delete':
-                                            _deleteWishlist(wishlist['id']);
-                                            break;
-                                        }
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.card_giftcard,
-                                      size: 16,
-                                      color: Colors.grey[600],
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '$itemCount items',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Icon(
-                                      wishlist['is_public'] == true
-                                          ? Icons.public
-                                          : Icons.lock,
-                                      size: 16,
-                                      color: Colors.grey[600],
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      wishlist['is_public'] == true ? 'Public' : 'Private',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      wishlist.name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${wishlist.wishCount} items',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    if (wishlist.reservedCount > 0)
+                      Text(
+                        '${wishlist.reservedCount} reserved',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppTheme.mintColor,
                             ),
-                          ),
+                      ),
+                    const Spacer(),
+                    if (wishlist.isPublic)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
                         ),
-                      );
-                    },
-                  ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.skyColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Public',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: AppTheme.skyColor,
+                              ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
