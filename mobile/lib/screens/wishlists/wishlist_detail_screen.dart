@@ -95,25 +95,6 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
                                       wishlist.description!,
                                       style: Theme.of(context).textTheme.bodyLarge,
                                     ),
-                                    if (wishlist.eventDate != null) ...[
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.calendar_today,
-                                            size: 16,
-                                            color: AppTheme.gray400,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            _formatDate(wishlist.eventDate!),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium,
-                                          ),
-                                        ],
-                                      ),
-                                    ],
                                   ],
                                 ),
                               ),

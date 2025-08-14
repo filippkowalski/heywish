@@ -23,22 +23,10 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
   final _descriptionController = TextEditingController();
   
   String _selectedVisibility = 'private';
-  String? _selectedOccasionType;
-  DateTime? _selectedEventDate;
   bool _isLoading = false;
   Wishlist? _wishlist;
 
   final List<String> _visibilityOptions = ['private', 'public'];
-  final List<String> _occasionTypes = [
-    'Birthday',
-    'Christmas', 
-    'Wedding',
-    'Anniversary',
-    'Graduation',
-    'Baby Shower',
-    'Holiday',
-    'Other'
-  ];
 
   @override
   void initState() {
@@ -61,8 +49,6 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
       _nameController.text = _wishlist!.name;
       _descriptionController.text = _wishlist!.description ?? '';
       _selectedVisibility = _wishlist!.visibility;
-      _selectedOccasionType = _wishlist!.occasionType;
-      _selectedEventDate = _wishlist!.eventDate;
       setState(() {});
     }
   }
@@ -82,8 +68,6 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
           ? null 
           : _descriptionController.text.trim(),
         visibility: _selectedVisibility,
-        occasionType: _selectedOccasionType,
-        eventDate: _selectedEventDate,
       );
 
       if (success && mounted) {
@@ -111,26 +95,6 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
     }
   }
 
-  Future<void> _selectDate() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _selectedEventDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
-    );
-
-    if (date != null) {
-      setState(() {
-        _selectedEventDate = date;
-      });
-    }
-  }
-
-  void _clearDate() {
-    setState(() {
-      _selectedEventDate = null;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -198,78 +162,6 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
                               ),
                               maxLines: 3,
                               textCapitalization: TextCapitalization.sentences,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Occasion & Date
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Occasion Details',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            DropdownButtonFormField<String>(
-                              value: _selectedOccasionType,
-                              decoration: const InputDecoration(
-                                labelText: 'Occasion Type (Optional)',
-                                prefixIcon: Icon(Icons.celebration),
-                                border: OutlineInputBorder(),
-                              ),
-                              items: [
-                                const DropdownMenuItem<String>(
-                                  value: null,
-                                  child: Text('Select occasion type'),
-                                ),
-                                ..._occasionTypes.map((type) => DropdownMenuItem(
-                                  value: type,
-                                  child: Text(type),
-                                )),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedOccasionType = value;
-                                });
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            // Event Date
-                            InkWell(
-                              onTap: _selectDate,
-                              child: InputDecorator(
-                                decoration: InputDecoration(
-                                  labelText: 'Event Date (Optional)',
-                                  prefixIcon: const Icon(Icons.calendar_today),
-                                  border: const OutlineInputBorder(),
-                                  suffixIcon: _selectedEventDate != null
-                                      ? IconButton(
-                                          icon: const Icon(Icons.clear),
-                                          onPressed: _clearDate,
-                                        )
-                                      : const Icon(Icons.arrow_drop_down),
-                                ),
-                                child: Text(
-                                  _selectedEventDate != null
-                                      ? '${_selectedEventDate!.day}/${_selectedEventDate!.month}/${_selectedEventDate!.year}'
-                                      : 'Select event date',
-                                  style: TextStyle(
-                                    color: _selectedEventDate != null
-                                        ? Theme.of(context).textTheme.bodyLarge?.color
-                                        : Theme.of(context).hintColor,
-                                  ),
-                                ),
-                              ),
                             ),
                           ],
                         ),

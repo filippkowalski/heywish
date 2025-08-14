@@ -15,24 +15,8 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  String? _selectedOccasion;
-  DateTime? _eventDate;
   bool _isPublic = false;
   bool _isLoading = false;
-
-  final List<String> _occasions = [
-    'Birthday',
-    'Christmas',
-    'Wedding',
-    'Anniversary',
-    'Baby Shower',
-    'Graduation',
-    'Housewarming',
-    'Valentine\'s Day',
-    'Mother\'s Day',
-    'Father\'s Day',
-    'Other',
-  ];
 
   @override
   void dispose() {
@@ -54,8 +38,6 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
             description: _descriptionController.text.trim().isEmpty
                 ? null
                 : _descriptionController.text.trim(),
-            occasionType: _selectedOccasion,
-            eventDate: _eventDate,
             visibility: _isPublic ? 'public' : 'private',
           );
 
@@ -87,20 +69,6 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
     }
   }
 
-  Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _eventDate ?? DateTime.now().add(const Duration(days: 30)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
-    );
-
-    if (picked != null && picked != _eventDate) {
-      setState(() {
-        _eventDate = picked;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,62 +116,6 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
                             hintText: 'Add a description for your wishlist',
                           ),
                           maxLines: 3,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Event Details',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          value: _selectedOccasion,
-                          decoration: const InputDecoration(
-                            labelText: 'Occasion (Optional)',
-                            prefixIcon: Icon(Icons.celebration),
-                          ),
-                          items: _occasions.map((occasion) {
-                            return DropdownMenuItem(
-                              value: occasion,
-                              child: Text(occasion),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedOccasion = value;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        InkWell(
-                          onTap: _selectDate,
-                          child: InputDecorator(
-                            decoration: const InputDecoration(
-                              labelText: 'Event Date (Optional)',
-                              prefixIcon: Icon(Icons.calendar_today),
-                              suffixIcon: Icon(Icons.arrow_drop_down),
-                            ),
-                            child: Text(
-                              _eventDate != null
-                                  ? '${_eventDate!.day}/${_eventDate!.month}/${_eventDate!.year}'
-                                  : 'Select a date',
-                              style: _eventDate != null
-                                  ? Theme.of(context).textTheme.bodyLarge
-                                  : Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.copyWith(color: AppTheme.gray400),
-                            ),
-                          ),
                         ),
                       ],
                     ),

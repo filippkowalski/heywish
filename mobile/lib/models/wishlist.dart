@@ -5,8 +5,6 @@ class Wishlist {
   final String userId;
   final String name;
   final String? description;
-  final String? occasionType;
-  final DateTime? eventDate;
   final String visibility;
   final String? shareToken;
   final String? coverImageUrl;
@@ -21,8 +19,6 @@ class Wishlist {
     required this.userId,
     required this.name,
     this.description,
-    this.occasionType,
-    this.eventDate,
     this.visibility = 'private',
     this.shareToken,
     this.coverImageUrl,
@@ -41,10 +37,6 @@ class Wishlist {
       userId: json['user_id'].toString(),
       name: json['name'] ?? '',
       description: json['description'],
-      occasionType: json['occasion_type'],
-      eventDate: json['event_date'] != null 
-          ? DateTime.parse(json['event_date']) 
-          : null,
       visibility: json['visibility'] ?? 'private',
       shareToken: json['share_token'],
       coverImageUrl: json['cover_image_url'],
@@ -68,8 +60,6 @@ class Wishlist {
       'user_id': userId,
       'name': name,
       'description': description,
-      'occasion_type': occasionType,
-      'event_date': eventDate?.toIso8601String(),
       'visibility': visibility,
       'share_token': shareToken,
       'cover_image_url': coverImageUrl,

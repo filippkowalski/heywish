@@ -139,16 +139,12 @@ class WishlistService extends ChangeNotifier {
   Future<Wishlist?> createWishlist({
     required String name,
     String? description,
-    String? occasionType,
-    DateTime? eventDate,
     String visibility = 'private',
   }) async {
     try {
       final response = await _apiService.post('/wishlists', {
         'name': name,
         'description': description,
-        'occasion_type': occasionType,
-        'event_date': eventDate?.toIso8601String(),
         'visibility': visibility,
       });
       
@@ -171,16 +167,12 @@ class WishlistService extends ChangeNotifier {
     String id, {
     String? name,
     String? description,
-    String? occasionType,
-    DateTime? eventDate,
     String? visibility,
   }) async {
     try {
       final data = <String, dynamic>{};
       if (name != null) data['name'] = name;
       if (description != null) data['description'] = description;
-      if (occasionType != null) data['occasion_type'] = occasionType;
-      if (eventDate != null) data['event_date'] = eventDate.toIso8601String();
       if (visibility != null) data['visibility'] = visibility;
       
       await _apiService.patch('/wishlists/$id', data);
