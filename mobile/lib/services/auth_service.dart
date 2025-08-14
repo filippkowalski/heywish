@@ -23,8 +23,8 @@ class AuthService extends ChangeNotifier {
     _firebaseUser = firebaseUser;
     
     if (firebaseUser != null) {
-      // Sync with backend
-      await syncUserWithBackend();
+      // Sync with backend with retries
+      await syncUserWithBackend(retries: 3);
     } else {
       _currentUser = null;
     }
@@ -32,24 +32,30 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
   
-  Future<void> syncUserWithBackend() async {
+  Future<void> syncUserWithBackend({int retries = 1}) async {
     if (_firebaseUser == null) return;
     
-    try {
-      final idToken = await _firebaseUser!.getIdToken();
-      _apiService.setAuthToken(idToken);
-      
-      final response = await _apiService.post('/auth/sync', {
-        'firebase_uid': _firebaseUser!.uid,
-        'email': _firebaseUser!.email,
-        'full_name': _firebaseUser!.displayName,
-        'is_anonymous': _firebaseUser!.isAnonymous,
-      });
-      
-      _currentUser = User.fromJson(response['user']);
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error syncing user: $e');
+    for (int attempt = 1; attempt <= retries; attempt++) {
+      try {
+        final idToken = await _firebaseUser!.getIdToken();
+        _apiService.setAuthToken(idToken);
+        
+        final response = await _apiService.post('/auth/sync', {
+          'firebase_uid': _firebaseUser!.uid,
+          'email': _firebaseUser!.email,
+          'full_name': _firebaseUser!.displayName,
+          'is_anonymous': _firebaseUser!.isAnonymous,
+        });
+        
+        _currentUser = User.fromJson(response['user']);
+        notifyListeners();
+        return; // Success, exit retry loop
+      } catch (e) {
+        debugPrint('Error syncing user (attempt $attempt/$retries): $e');
+        if (attempt < retries) {
+          await Future.delayed(Duration(seconds: attempt * 2)); // Exponential backoff
+        }
+      }
     }
   }
   
