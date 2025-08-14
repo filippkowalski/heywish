@@ -17,41 +17,20 @@ When implementing features, use these technologies:
 - **Authentication**: Firebase Auth (free tier, no Identity Platform)
 - **Database**: PostgreSQL hosted on Render.com
 - **Mobile**: Flutter
-- **Styling**: Tailwind CSS
+- **Styling**: Tailwind CSS (for web)
 - **Infrastructure**: Cloudflare Pages for deployment
-- **CDN/Storage**: Cloudflare R2
-- **Caching**: Redis on Render or Upstash
+- **CDN/Storage**: Cloudflare R2 (images storage)
 
 ## Architecture Principles
 
 - **Modular Monolith**: Use Next.js API routes organized by domain (auth, wishlists, wishes, users, social)
 - **Authentication Flow**: Firebase handles auth, sync users to PostgreSQL on first login
 - **Database**: Single PostgreSQL instance on Render.com
-- **No Microservices**: Avoid splitting into separate services for MVP
-- **No Complex Price Tracking**: Simple cron jobs, not separate infrastructure
-- **No Real-time Features**: Skip WebSocket/real-time for MVP
 
 ## Key Documentation Files
 
 Review these files for context:
-- `docs/PRODUCT_REQUIREMENTS.md` - User stories, personas, feature requirements
-- `docs/TECHNICAL_SPEC.md` - Database schema, architecture patterns
-- `docs/API_SPECIFICATION.md` - API endpoints and data structures
 - `docs/DESIGN_SYSTEM.md` - UI components and styling guidelines
-
-## Initial Setup Commands (When Implemented)
-
-Since the project hasn't been initialized yet, when starting implementation:
-
-```bash
-# For Next.js web app
-npx create-next-app@14 . --typescript --tailwind --app --src-dir
-npm install firebase firebase-admin pg @types/pg
-
-# For Flutter mobile app (in separate directory)
-flutter create mobile --org com.heywish
-flutter pub add firebase_core firebase_auth
-```
 
 ## Database Schema
 
@@ -79,11 +58,6 @@ Use the PostgreSQL schema defined in `docs/TECHNICAL_SPEC.md`:
 4. Item reservation system
 5. Manual product entry and URL scraping
 
-Avoid implementing these for MVP:
-- Complex price tracking infrastructure
-- Real-time WebSocket features
-- Analytics dashboards
-- Multiple payment providers
 
 ## API Structure
 
@@ -94,10 +68,58 @@ Follow the REST API patterns in `docs/API_SPECIFICATION.md`:
 - JSON request/response format
 - Key auth endpoints: `/api/auth/sync`, `/api/auth/verify`
 
-## Key Business Metrics
+## WEB Guideliness
+- Shadcn design, black and white, elegant, sleek
+- Tailwind.css, React
+- Please use the playwright MCP server when making visual changes to the front-end website to check your work
 
-The project targets:
-- 25,000 registered users in Year 1
-- 10% premium conversion rate
-- Revenue from affiliate commissions (80%) and premium subscriptions (20%)
-- Focus on retention over acquisition
+## Backend API
+
+The HeyWish API is implemented as a separate Express.js service with the following features:
+
+### API Structure
+- **Base URL**: `http://localhost:8080/v1` (development)
+- **Authentication**: Firebase ID token verification
+- **Database**: PostgreSQL with Row Level Security (RLS)
+- **File Storage**: Cloudflare R2 for images
+
+### Key Endpoints
+- `POST /auth/sync` - Sync Firebase user with PostgreSQL
+- `GET /wishlists` - Get user's wishlists
+- `POST /wishlists` - Create new wishlist
+- `POST /wishes` - Add item to wishlist
+- `GET /public/wishlists/:token` - Public wishlist sharing
+
+### Database Schema
+- `users` - User accounts synced from Firebase
+- `wishlists` - User wishlists with visibility settings
+- `wishes` - Individual wish items with reservation system
+- `friendships` - Social connections
+- `activities` - Activity feed
+
+### Services
+- `HeyWishAPIService` - Main API logic and database operations
+- `CloudflareR2Service` - Image upload and storage management
+
+### Security
+- Firebase Admin SDK for token verification
+- Row Level Security policies for data isolation
+- Rate limiting and CORS protection
+- Secure image upload with validation
+
+## TODO Before Release
+
+### Backend Setup
+- **Database Migration**: Run initial schema migration on production database
+- **Environment Variables**: Configure all production environment variables
+- **Firebase Service Account**: Set up production Firebase service account key
+- **Cloudflare R2**: Configure production R2 bucket and access keys
+- **SSL/HTTPS**: Ensure all API connections use HTTPS in production
+
+### Firebase Configuration for Production
+- **Android Google Sign-in**: Generate SHA-1 fingerprint for production release key and update Firebase configuration
+  - Generate release keystore: `keytool -genkey -v -keystore release-key.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000`
+  - Get SHA-1 fingerprint: `keytool -list -v -keystore release-key.keystore -alias release`
+  - Add SHA-1 to Firebase Project Settings > Your apps > Android app
+  - Download and replace `google-services.json` file
+  - Required for Google Sign-in to work in production builds

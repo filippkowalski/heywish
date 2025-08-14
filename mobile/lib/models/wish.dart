@@ -46,29 +46,33 @@ class Wish {
 
   factory Wish.fromJson(Map<String, dynamic> json) {
     return Wish(
-      id: json['id'].toString(),
-      wishlistId: json['wishlist_id'].toString(),
-      title: json['title'],
-      description: json['description'],
+      id: json['id']?.toString() ?? '',
+      wishlistId: json['wishlist_id']?.toString() ?? '',
+      title: json['title']?.toString() ?? 'Untitled',
+      description: json['description']?.toString(),
       price: json['price']?.toDouble(),
-      currency: json['currency'] ?? 'USD',
-      url: json['url'],
-      images: json['images'] != null 
+      currency: json['currency']?.toString() ?? 'USD',
+      url: json['url']?.toString(),
+      images: json['images'] != null && json['images'] is List
           ? List<String>.from(json['images'])
           : [],
-      brand: json['brand'],
-      category: json['category'],
+      brand: json['brand']?.toString(),
+      category: json['category']?.toString(),
       priority: json['priority'] ?? 1,
       quantity: json['quantity'] ?? 1,
-      status: json['status'] ?? 'available',
-      reservedBy: json['reserved_by'],
+      status: json['status']?.toString() ?? 'available',
+      reservedBy: json['reserved_by']?.toString(),
       reservedAt: json['reserved_at'] != null 
           ? DateTime.parse(json['reserved_at']) 
           : null,
-      reserverName: json['reserver_name'],
-      notes: json['notes'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      reserverName: json['reserver_name']?.toString(),
+      notes: json['notes']?.toString(),
+      createdAt: DateTime.parse(
+        json['created_at'] ?? json['addedAt'] ?? DateTime.now().toIso8601String()
+      ),
+      updatedAt: DateTime.parse(
+        json['updated_at'] ?? json['addedAt'] ?? DateTime.now().toIso8601String()
+      ),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:io';
 
 class ApiService {
   late final Dio _dio;
@@ -11,10 +12,16 @@ class ApiService {
   factory ApiService() => _instance;
   
   ApiService._internal() {
+    // Use localhost in debug mode, production URL in release mode
+    final baseUrl = kDebugMode 
+        ? 'http://localhost:10001/heywish/v1'
+        : 'https://openai-rewrite.onrender.com/heywish/v1';
+        
     _dio = Dio(BaseOptions(
-      baseUrl: dotenv.env['API_BASE_URL'] ?? 'https://openai-rewrite.onrender.com/heywish/v1',
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 15),
+      baseUrl: baseUrl,
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      sendTimeout: const Duration(seconds: 10),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -25,15 +32,25 @@ class ApiService {
         if (_authToken != null) {
           options.headers['Authorization'] = 'Bearer $_authToken';
         }
-        debugPrint('REQUEST[${options.method}] => PATH: ${options.path}');
+        debugPrint('🚀 API REQUEST[${options.method}] => ${baseUrl}${options.path}');
+        debugPrint('🚀 Headers: ${options.headers}');
+        if (options.data != null) {
+          debugPrint('🚀 Request Data: ${options.data}');
+        }
         handler.next(options);
       },
       onResponse: (response, handler) {
-        debugPrint('RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions.path}');
+        debugPrint('✅ API RESPONSE[${response.statusCode}] => ${response.requestOptions.path}');
+        debugPrint('✅ Response Data: ${response.data}');
         handler.next(response);
       },
       onError: (error, handler) {
-        debugPrint('ERROR[${error.response?.statusCode}] => PATH: ${error.requestOptions.path}');
+        debugPrint('❌ API ERROR[${error.response?.statusCode}] => ${error.requestOptions.path}');
+        debugPrint('❌ Error Type: ${error.type}');
+        debugPrint('❌ Error Message: ${error.message}');
+        if (error.response?.data != null) {
+          debugPrint('❌ Error Response Data: ${error.response?.data}');
+        }
         handler.next(error);
       },
     ));
@@ -88,6 +105,33 @@ class ApiService {
       final response = await _dio.delete(path);
       return response.data;
     } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+  
+  Future<String?> uploadImage(File imageFile) async {
+    try {
+      debugPrint('🖼️  API: Starting image upload...');
+      
+      // Create form data
+      final formData = FormData.fromMap({
+        'image': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: 'image.${imageFile.path.split('.').last}',
+        ),
+      });
+      
+      final response = await _dio.post('/upload/image', data: formData);
+      debugPrint('🖼️  API: Image upload response: ${response.data}');
+      
+      // Extract the image URL from the response
+      if (response.data != null && response.data['imageUrl'] != null) {
+        return response.data['imageUrl'] as String;
+      }
+      
+      return null;
+    } on DioException catch (e) {
+      debugPrint('❌ API: Image upload error: ${e.message}');
       throw _handleError(e);
     }
   }

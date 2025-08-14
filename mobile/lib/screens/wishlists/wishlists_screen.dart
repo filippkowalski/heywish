@@ -14,6 +14,9 @@ class WishlistsScreen extends StatefulWidget {
 }
 
 class _WishlistsScreenState extends State<WishlistsScreen> {
+  bool _hasLoadedOnce = false;
+  bool _hasCompletedInitialLoad = false;
+
   @override
   void initState() {
     super.initState();
@@ -21,10 +24,43 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
       _loadWishlists();
     });
   }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Try loading wishlists when authentication state changes, but only once
+    final authService = context.watch<AuthService>();
+    if (authService.isAuthenticated && authService.currentUser != null && !_hasLoadedOnce) {
+      _hasLoadedOnce = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadWishlists();
+      });
+    }
+  }
 
   Future<void> _loadWishlists() async {
+    print('🔄 WishlistsScreen: Loading wishlists...');
     final wishlistService = context.read<WishlistService>();
-    await wishlistService.fetchWishlists();
+    final authService = context.read<AuthService>();
+    
+    // Wait for authentication and user sync to complete first
+    if (!authService.isAuthenticated || authService.currentUser == null) {
+      print('⏳ WishlistsScreen: Waiting for authentication and user sync...');
+      return;
+    }
+    
+    try {
+      await wishlistService.fetchWishlists();
+      print('✅ WishlistsScreen: Wishlists loaded successfully');
+    } catch (e) {
+      print('❌ WishlistsScreen: Failed to load wishlists: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _hasCompletedInitialLoad = true;
+        });
+      }
+    }
   }
 
   @override
@@ -46,14 +82,74 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _loadWishlists,
-        child: wishlistService.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : wishlistService.error != null
-                ? _buildErrorState(wishlistService.error!)
-                : wishlistService.wishlists.isEmpty
-                    ? _buildEmptyState(context)
-                    : _buildContent(wishlistService.wishlists),
+        onRefresh: () async {
+          // Don't reset the _hasCompletedInitialLoad flag during refresh
+          final wishlistService = context.read<WishlistService>();
+          final authService = context.read<AuthService>();
+          
+          if (authService.isAuthenticated && authService.currentUser != null) {
+            await wishlistService.fetchWishlists();
+          }
+        },
+        child: !_hasCompletedInitialLoad
+            ? _buildInitialLoadingState(context)
+            : wishlistService.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : wishlistService.error != null
+                    ? _buildErrorState(wishlistService.error!)
+                    : wishlistService.wishlists.isEmpty
+                        ? _buildEmptyState(context)
+                        : _buildContent(wishlistService.wishlists),
+      ),
+    );
+  }
+
+  Widget _buildInitialLoadingState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(40),
+              ),
+              child: Icon(
+                Icons.card_giftcard,
+                size: 40,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Loading your wishlists...',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Getting everything ready',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: 200,
+              child: LinearProgressIndicator(
+                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

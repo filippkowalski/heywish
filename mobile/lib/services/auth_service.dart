@@ -37,8 +37,12 @@ class AuthService extends ChangeNotifier {
     
     for (int attempt = 1; attempt <= retries; attempt++) {
       try {
-        final idToken = await _firebaseUser!.getIdToken();
+        final idToken = await _firebaseUser!.getIdToken(true); // Force refresh token
         _apiService.setAuthToken(idToken);
+        
+        debugPrint('🔄 AuthService: Syncing user with backend (attempt $attempt/$retries)');
+        debugPrint('🔄 AuthService: Firebase UID: ${_firebaseUser!.uid}');
+        debugPrint('🔄 AuthService: Is anonymous: ${_firebaseUser!.isAnonymous}');
         
         final response = await _apiService.post('/auth/sync', {
           'firebase_uid': _firebaseUser!.uid,
@@ -48,12 +52,15 @@ class AuthService extends ChangeNotifier {
         });
         
         _currentUser = User.fromJson(response['user']);
+        debugPrint('✅ AuthService: User synced successfully - ID: ${_currentUser?.id}');
         notifyListeners();
         return; // Success, exit retry loop
       } catch (e) {
-        debugPrint('Error syncing user (attempt $attempt/$retries): $e');
+        debugPrint('❌ AuthService: Error syncing user (attempt $attempt/$retries): $e');
         if (attempt < retries) {
           await Future.delayed(Duration(seconds: attempt * 2)); // Exponential backoff
+        } else {
+          debugPrint('❌ AuthService: All sync attempts failed');
         }
       }
     }

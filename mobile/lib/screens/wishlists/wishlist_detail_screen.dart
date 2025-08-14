@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
 import '../../services/wishlist_service.dart';
 import '../../models/wish.dart';
 import '../../theme/app_theme.dart';
@@ -21,7 +24,9 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _loadWishlist();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadWishlist();
+    });
   }
 
   Future<void> _loadWishlist() async {
@@ -35,20 +40,22 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
         title: Text(wishlist?.name ?? 'Loading...'),
         actions: [
           if (wishlist != null)
             IconButton(
               icon: const Icon(Icons.share),
-              onPressed: () {
-                // TODO: Implement share functionality
-              },
+              onPressed: () => _shareWishlist(wishlist),
             ),
           if (wishlist != null)
             PopupMenuButton<String>(
               onSelected: (value) {
                 if (value == 'edit') {
-                  // TODO: Navigate to edit screen
+                  context.push('/wishlists/${widget.wishlistId}/edit');
                 } else if (value == 'delete') {
                   _showDeleteConfirmation();
                 }
@@ -124,7 +131,10 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {
                                 final wish = wishlist.wishes![index];
-                                return _WishCard(wish: wish);
+                                return _WishCard(
+                                  wish: wish,
+                                  wishlistId: widget.wishlistId,
+                                );
                               },
                               childCount: wishlist.wishes!.length,
                             ),
@@ -178,10 +188,7 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
   }
 
   void _showAddWishDialog() {
-    // TODO: Implement add wish dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Add item coming soon')),
-    );
+    context.push('/wishlists/${widget.wishlistId}/add-item');
   }
 
   void _showDeleteConfirmation() async {
@@ -219,12 +226,76 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
+
+  Future<void> _shareWishlist(dynamic wishlist) async {
+    try {
+      // For now, we'll create a simple sharing message
+      // In a full implementation, you'd generate a proper public URL
+      final shareText = '''
+Check out my wishlist: ${wishlist.name}
+
+${wishlist.description ?? 'A collection of things I\'d love to have!'}
+
+Items: ${wishlist.wishes?.length ?? 0}
+
+Created with HeyWish 🎁
+''';
+
+      // Show sharing options
+      await showModalBottomSheet<void>(
+        context: context,
+        builder: (BuildContext context) {
+          return SafeArea(
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.share),
+                  title: const Text('Share via...'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await Share.share(shareText, subject: 'Check out my wishlist: ${wishlist.name}');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.copy),
+                  title: const Text('Copy to clipboard'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Clipboard.setData(ClipboardData(text: shareText));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Wishlist details copied to clipboard')),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.link),
+                  title: const Text('Generate share link'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // TODO: Generate and copy actual share link
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Share link generation coming soon!')),
+                    );
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to share: $e')),
+      );
+    }
+  }
 }
 
 class _WishCard extends StatelessWidget {
   final Wish wish;
+  final String wishlistId;
 
-  const _WishCard({required this.wish});
+  const _WishCard({required this.wish, required this.wishlistId});
 
   @override
   Widget build(BuildContext context) {
@@ -232,7 +303,7 @@ class _WishCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to wish detail or edit
+          context.push('/wishlists/$wishlistId/items/${wish.id}');
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -329,8 +400,17 @@ class _WishCard extends StatelessWidget {
               if (wish.url != null)
                 IconButton(
                   icon: const Icon(Icons.open_in_new),
-                  onPressed: () {
-                    // TODO: Open product URL
+                  onPressed: () async {
+                    final uri = Uri.parse(wish.url!);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Could not open URL')),
+                        );
+                      }
+                    }
                   },
                 ),
             ],

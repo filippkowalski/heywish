@@ -39,7 +39,7 @@ class Wishlist {
     return Wishlist(
       id: json['id'].toString(),
       userId: json['user_id'].toString(),
-      name: json['name'],
+      name: json['name'] ?? '',
       description: json['description'],
       occasionType: json['occasion_type'],
       eventDate: json['event_date'] != null 
@@ -48,8 +48,12 @@ class Wishlist {
       visibility: json['visibility'] ?? 'private',
       shareToken: json['share_token'],
       coverImageUrl: json['cover_image_url'],
-      wishCount: json['item_count'] ?? 0,
-      reservedCount: json['reserved_count'] ?? 0,
+      wishCount: (json['item_count'] is String) 
+          ? int.tryParse(json['item_count']) ?? 0 
+          : json['item_count'] ?? 0,
+      reservedCount: (json['reserved_count'] is String) 
+          ? int.tryParse(json['reserved_count']) ?? 0 
+          : json['reserved_count'] ?? 0,
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
       wishes: json['items'] != null

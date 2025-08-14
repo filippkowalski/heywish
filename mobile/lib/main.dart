@@ -15,6 +15,10 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/wishlists/wishlist_detail_screen.dart';
 import 'screens/wishlists/wishlist_new_screen.dart';
+import 'screens/wishlists/add_wish_screen.dart';
+import 'screens/wishlists/wish_detail_screen.dart';
+import 'screens/wishlists/edit_wishlist_screen.dart';
+import 'screens/wishlists/edit_wish_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,6 +55,7 @@ class HeyWishApp extends StatelessWidget {
         theme: AppTheme.lightTheme(),
         darkTheme: AppTheme.darkTheme(),
         themeMode: ThemeMode.system,
+        debugShowCheckedModeBanner: false,
         routerConfig: _router,
       ),
     );
@@ -89,6 +94,42 @@ final _router = GoRouter(
       builder: (context, state) {
         final id = state.pathParameters['id']!;
         return WishlistDetailScreen(wishlistId: id);
+      },
+    ),
+    GoRoute(
+      path: '/wishlists/:id/add-item',
+      builder: (context, state) {
+        final id = state.pathParameters['id']!;
+        return AddWishScreen(wishlistId: id);
+      },
+    ),
+    GoRoute(
+      path: '/wishlists/:wishlistId/items/:wishId',
+      builder: (context, state) {
+        final wishlistId = state.pathParameters['wishlistId']!;
+        final wishId = state.pathParameters['wishId']!;
+        return WishDetailScreen(
+          wishlistId: wishlistId,
+          wishId: wishId,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/wishlists/:id/edit',
+      builder: (context, state) {
+        final id = state.pathParameters['id']!;
+        return EditWishlistScreen(wishlistId: id);
+      },
+    ),
+    GoRoute(
+      path: '/wishlists/:wishlistId/items/:wishId/edit',
+      builder: (context, state) {
+        final wishlistId = state.pathParameters['wishlistId']!;
+        final wishId = state.pathParameters['wishId']!;
+        return EditWishScreen(
+          wishlistId: wishlistId,
+          wishId: wishId,
+        );
       },
     ),
   ],

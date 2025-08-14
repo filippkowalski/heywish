@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'dart:io';
 import 'api_service.dart';
 import '../models/wishlist.dart';
 import '../models/wish.dart';
@@ -17,19 +18,35 @@ class WishlistService extends ChangeNotifier {
   String? get error => _error;
   
   Future<void> fetchWishlists() async {
+    // Prevent multiple simultaneous requests
+    if (_isLoading) {
+      print('📋 WishlistService: Already loading, skipping request');
+      return;
+    }
+    
+    print('📋 WishlistService: Starting fetchWishlists...');
     _isLoading = true;
     _error = null;
     notifyListeners();
     
     try {
+      print('📋 WishlistService: Making API call to /wishlists');
       final response = await _apiService.get('/wishlists');
-      _wishlists = (response['wishlists'] as List)
-          .map((json) => Wishlist.fromJson(json))
-          .toList();
+      print('📋 WishlistService: API response received: $response');
+      
+      if (response != null && response['wishlists'] != null) {
+        _wishlists = (response['wishlists'] as List)
+            .map((json) => Wishlist.fromJson(json))
+            .toList();
+        print('📋 WishlistService: Parsed ${_wishlists.length} wishlists');
+      } else {
+        print('📋 WishlistService: Response is null or missing wishlists key');
+        _wishlists = [];
+      }
       _error = null;
     } catch (e) {
       _error = e.toString();
-      debugPrint('Error fetching wishlists: $e');
+      print('❌ WishlistService: Error fetching wishlists: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -137,8 +154,8 @@ class WishlistService extends ChangeNotifier {
     }
   }
   
-  Future<Wish?> addWish(
-    String wishlistId, {
+  Future<bool> addWish({
+    required String wishlistId,
     required String title,
     String? description,
     double? price,
@@ -147,38 +164,63 @@ class WishlistService extends ChangeNotifier {
     List<String>? images,
     String? brand,
     String? category,
-    int priority = 1,
+    String? priority,
     int quantity = 1,
     String? notes,
+    File? imageFile,
   }) async {
+    print('🎁 WishlistService: Starting addWish...');
+    print('🎁 WishlistService: wishlistId: $wishlistId');
+    print('🎁 WishlistService: title: $title');
+    print('🎁 WishlistService: description: $description');
+    print('🎁 WishlistService: price: $price');
+    
     try {
-      await _apiService.post('/wishes', {
-        'wishlist_id': wishlistId,
+      final requestData = {
+        'wishlistId': wishlistId,
         'title': title,
         'description': description,
         'price': price,
         'currency': currency ?? 'USD',
         'url': url,
         'images': images ?? [],
-        'brand': brand,
-        'category': category,
-        'priority': priority,
+        'priority': priority != null ? int.tryParse(priority) ?? 1 : 1,
         'quantity': quantity,
         'notes': notes,
-      });
+      };
+      
+      print('🎁 WishlistService: Request data: $requestData');
+      
+      // If there's an image file, upload it first
+      if (imageFile != null) {
+        try {
+          print('🎁 WishlistService: Uploading image...');
+          final imageUrl = await _apiService.uploadImage(imageFile);
+          if (imageUrl != null) {
+            requestData['images'] = [imageUrl];
+            print('🎁 WishlistService: Image uploaded: $imageUrl');
+          }
+        } catch (imageError) {
+          print('⚠️  WishlistService: Image upload failed: $imageError');
+          // Continue without image - don't fail the entire request
+        }
+      }
+      
+      final response = await _apiService.post('/wishes', requestData);
+      print('🎁 WishlistService: API response: $response');
       
       // Refresh the current wishlist
       if (_currentWishlist?.id == wishlistId) {
+        print('🎁 WishlistService: Refreshing wishlist $wishlistId');
         await fetchWishlist(wishlistId);
       }
       
-      // Return the newly created wish from current wishlist
-      return _currentWishlist?.wishes?.where((w) => w.title == title).firstOrNull;
+      return true;
     } catch (e) {
       _error = e.toString();
-      debugPrint('Error adding wish: $e');
+      print('❌ WishlistService: Error adding wish: $e');
       notifyListeners();
-      return null;
+      return false;
     }
   }
   
@@ -204,8 +246,6 @@ class WishlistService extends ChangeNotifier {
       if (currency != null) data['currency'] = currency;
       if (url != null) data['url'] = url;
       if (images != null) data['images'] = images;
-      if (brand != null) data['brand'] = brand;
-      if (category != null) data['category'] = category;
       if (priority != null) data['priority'] = priority;
       if (quantity != null) data['quantity'] = quantity;
       if (notes != null) data['notes'] = notes;
