@@ -17,14 +17,19 @@ class WishlistService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   
-  Future<void> fetchWishlists() async {
+  /// Get a cached wishlist by ID, useful for instant access
+  Wishlist? getCachedWishlist(String id) {
+    return _wishlists.where((w) => w.id == id).firstOrNull;
+  }
+  
+  Future<void> fetchWishlists({bool preloadItems = true}) async {
     // Prevent multiple simultaneous requests
     if (_isLoading) {
       print('📋 WishlistService: Already loading, skipping request');
       return;
     }
     
-    print('📋 WishlistService: Starting fetchWishlists...');
+    print('📋 WishlistService: Starting fetchWishlists (preloadItems: $preloadItems)...');
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -39,6 +44,12 @@ class WishlistService extends ChangeNotifier {
             .map((json) => Wishlist.fromJson(json))
             .toList();
         print('📋 WishlistService: Parsed ${_wishlists.length} wishlists');
+        
+        // Preload all wishlist details with items if requested
+        if (preloadItems && _wishlists.isNotEmpty) {
+          print('📋 WishlistService: Preloading items for ${_wishlists.length} wishlists...');
+          await _preloadWishlistItems();
+        }
       } else {
         print('📋 WishlistService: Response is null or missing wishlists key');
         _wishlists = [];
@@ -53,14 +64,68 @@ class WishlistService extends ChangeNotifier {
     }
   }
   
+  Future<void> _preloadWishlistItems() async {
+    try {
+      // Fetch details for all wishlists concurrently
+      final futures = _wishlists.map((wishlist) async {
+        try {
+          print('📋 WishlistService: Preloading items for wishlist ${wishlist.id}...');
+          final response = await _apiService.get('/wishlists/${wishlist.id}');
+          if (response != null && response['wishlist'] != null) {
+            final detailedWishlist = Wishlist.fromJson(response['wishlist']);
+            print('📋 WishlistService: Loaded ${detailedWishlist.wishes?.length ?? 0} items for ${wishlist.name}');
+            return detailedWishlist;
+          }
+        } catch (e) {
+          print('⚠️  WishlistService: Failed to preload items for wishlist ${wishlist.id}: $e');
+          // Return original wishlist if detailed fetch fails
+          return wishlist;
+        }
+        return wishlist;
+      }).toList();
+      
+      // Wait for all requests to complete
+      final detailedWishlists = await Future.wait(futures);
+      
+      // Update the wishlists with detailed data
+      _wishlists = detailedWishlists;
+      
+      print('✅ WishlistService: Successfully preloaded items for all wishlists');
+      notifyListeners();
+    } catch (e) {
+      print('❌ WishlistService: Error during preloading: $e');
+      // Don't throw error here - we still have basic wishlist data
+    }
+  }
+  
   Future<void> fetchWishlist(String id) async {
+    print('📋 WishlistService: fetchWishlist called for ID: $id');
+    
+    // Check if we already have this wishlist with items preloaded
+    final cachedWishlist = _wishlists.where((w) => w.id == id).firstOrNull;
+    if (cachedWishlist != null && cachedWishlist.wishes != null) {
+      print('📋 WishlistService: Using cached wishlist data for ${cachedWishlist.name}');
+      _currentWishlist = cachedWishlist;
+      notifyListeners();
+      return;
+    }
+    
     _isLoading = true;
     _error = null;
     notifyListeners();
     
     try {
+      print('📋 WishlistService: Fetching wishlist details from API...');
       final response = await _apiService.get('/wishlists/$id');
       _currentWishlist = Wishlist.fromJson(response['wishlist']);
+      
+      // Update the cached wishlist in the main list if it exists
+      final index = _wishlists.indexWhere((w) => w.id == id);
+      if (index != -1) {
+        _wishlists[index] = _currentWishlist!;
+        print('📋 WishlistService: Updated cached wishlist data');
+      }
+      
       _error = null;
     } catch (e) {
       _error = e.toString();
@@ -90,8 +155,8 @@ class WishlistService extends ChangeNotifier {
       // The response structure needs to match our API
       final wishlistData = response is Map<String, dynamic> ? response : {'id': response['id'], 'name': response['name']};
       
-      // Refresh wishlists to get updated data
-      await fetchWishlists();
+      // Refresh wishlists to get updated data (with preloading)
+      await fetchWishlists(preloadItems: true);
       
       return _wishlists.where((w) => w.id == wishlistData['id'].toString()).firstOrNull;
     } catch (e) {
@@ -120,8 +185,8 @@ class WishlistService extends ChangeNotifier {
       
       await _apiService.patch('/wishlists/$id', data);
       
-      // Refresh both lists and current wishlist
-      await fetchWishlists();
+      // Refresh both lists and current wishlist (with preloading)
+      await fetchWishlists(preloadItems: true);
       if (_currentWishlist?.id == id) {
         await fetchWishlist(id);
       }
@@ -209,10 +274,15 @@ class WishlistService extends ChangeNotifier {
       final response = await _apiService.post('/wishes', requestData);
       print('🎁 WishlistService: API response: $response');
       
-      // Refresh the current wishlist
-      if (_currentWishlist?.id == wishlistId) {
-        print('🎁 WishlistService: Refreshing wishlist $wishlistId');
-        await fetchWishlist(wishlistId);
+      // Refresh the current wishlist and cached data
+      print('🎁 WishlistService: Refreshing wishlist $wishlistId');
+      await fetchWishlist(wishlistId);
+      
+      // Also refresh the cached wishlist in the main list
+      final index = _wishlists.indexWhere((w) => w.id == wishlistId);
+      if (index != -1 && _currentWishlist != null) {
+        _wishlists[index] = _currentWishlist!;
+        print('🎁 WishlistService: Updated cached wishlist in main list');
       }
       
       return true;
@@ -252,9 +322,15 @@ class WishlistService extends ChangeNotifier {
       
       await _apiService.patch('/wishes/$wishId', data);
       
-      // Refresh the current wishlist
+      // Refresh the current wishlist and cached data
       if (_currentWishlist != null) {
         await fetchWishlist(_currentWishlist!.id);
+        
+        // Also refresh the cached wishlist in the main list
+        final index = _wishlists.indexWhere((w) => w.id == _currentWishlist!.id);
+        if (index != -1) {
+          _wishlists[index] = _currentWishlist!;
+        }
       }
       
       return true;
@@ -270,9 +346,15 @@ class WishlistService extends ChangeNotifier {
     try {
       await _apiService.delete('/wishes/$wishId');
       
-      // Refresh the current wishlist
+      // Refresh the current wishlist and cached data
       if (_currentWishlist != null) {
         await fetchWishlist(_currentWishlist!.id);
+        
+        // Also refresh the cached wishlist in the main list
+        final index = _wishlists.indexWhere((w) => w.id == _currentWishlist!.id);
+        if (index != -1) {
+          _wishlists[index] = _currentWishlist!;
+        }
       }
       
       return true;
@@ -290,9 +372,15 @@ class WishlistService extends ChangeNotifier {
         'reserver_name': reserverName,
       });
       
-      // Refresh the current wishlist
+      // Refresh the current wishlist and cached data
       if (_currentWishlist != null) {
         await fetchWishlist(_currentWishlist!.id);
+        
+        // Also refresh the cached wishlist in the main list
+        final index = _wishlists.indexWhere((w) => w.id == _currentWishlist!.id);
+        if (index != -1) {
+          _wishlists[index] = _currentWishlist!;
+        }
       }
       
       return true;
@@ -308,9 +396,15 @@ class WishlistService extends ChangeNotifier {
     try {
       await _apiService.delete('/wishes/$wishId/reserve');
       
-      // Refresh the current wishlist
+      // Refresh the current wishlist and cached data
       if (_currentWishlist != null) {
         await fetchWishlist(_currentWishlist!.id);
+        
+        // Also refresh the cached wishlist in the main list
+        final index = _wishlists.indexWhere((w) => w.id == _currentWishlist!.id);
+        if (index != -1) {
+          _wishlists[index] = _currentWishlist!;
+        }
       }
       
       return true;
