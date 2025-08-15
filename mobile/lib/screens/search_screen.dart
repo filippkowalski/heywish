@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../services/mock_data_service.dart';
+import '../services/friends_service.dart';
+import '../models/friend.dart';
 import '../theme/app_theme.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -9,20 +12,30 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> {
+class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _suggestions = [];
+  List<UserSearchResult> _userSearchResults = [];
   bool _isSearching = false;
+  bool _isLoadingUsers = false;
+  String _searchType = 'discover'; // 'discover' or 'people'
+  Timer? _searchDebouncer;
+  late TabController _tabController;
+
+  final FriendsService _friendsService = FriendsService();
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadSuggestions();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchDebouncer?.cancel();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -36,11 +49,88 @@ class _SearchScreenState extends State<SearchScreen> {
     if (query.isEmpty) {
       setState(() {
         _isSearching = false;
+        _userSearchResults.clear();
       });
-    } else {
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+    });
+
+    if (_searchType == 'people' && query.length >= 2) {
+      _searchDebouncer?.cancel();
+      _searchDebouncer = Timer(const Duration(milliseconds: 500), () {
+        _searchUsers(query);
+      });
+    }
+  }
+
+  Future<void> _searchUsers(String query) async {
+    if (query.length < 2) return;
+
+    setState(() {
+      _isLoadingUsers = true;
+    });
+
+    try {
+      final results = await _friendsService.searchUsers(query);
       setState(() {
-        _isSearching = true;
+        _userSearchResults = results;
       });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error searching users: $e'),
+            backgroundColor: Colors.red.shade600,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoadingUsers = false;
+      });
+    }
+  }
+
+  Future<void> _sendFriendRequest(UserSearchResult user) async {
+    try {
+      await _friendsService.sendFriendRequest(user.id);
+      
+      // Update the user in the results list
+      setState(() {
+        final index = _userSearchResults.indexWhere((u) => u.id == user.id);
+        if (index != -1) {
+          _userSearchResults[index] = UserSearchResult(
+            id: user.id,
+            username: user.username,
+            fullName: user.fullName,
+            avatarUrl: user.avatarUrl,
+            bio: user.bio,
+            friendshipStatus: 'pending',
+            requestDirection: 'sent',
+          );
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Friend request sent to ${user.displayName}'),
+            backgroundColor: Colors.green.shade600,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sending friend request: $e'),
+            backgroundColor: Colors.red.shade600,
+          ),
+        );
+      }
     }
   }
 
@@ -50,6 +140,21 @@ class _SearchScreenState extends State<SearchScreen> {
       appBar: AppBar(
         title: const Text('Discover'),
         automaticallyImplyLeading: false,
+        bottom: TabBar(
+          controller: _tabController,
+          onTap: (index) {
+            setState(() {
+              _searchType = index == 0 ? 'discover' : 'people';
+              if (_searchController.text.isNotEmpty) {
+                _onSearchChanged(_searchController.text);
+              }
+            });
+          },
+          tabs: const [
+            Tab(text: 'Discover', icon: Icon(Icons.explore)),
+            Tab(text: 'People', icon: Icon(Icons.people)),
+          ],
+        ),
       ),
       body: Column(
         children: [
@@ -58,12 +163,14 @@ class _SearchScreenState extends State<SearchScreen> {
             padding: const EdgeInsets.all(16.0),
             child: SearchBar(
               controller: _searchController,
-              hintText: 'Search for gifts, brands, or ideas...',
-              leading: const Icon(Icons.search),
+              hintText: _searchType == 'people' 
+                  ? 'Search for users by name or username...'
+                  : 'Search for gifts, brands, or ideas...',
+              leading: Icon(Icons.search),
               trailing: [
                 if (_searchController.text.isNotEmpty)
                   IconButton(
-                    icon: const Icon(Icons.clear),
+                    icon: Icon(Icons.clear),
                     onPressed: () {
                       _searchController.clear();
                       _onSearchChanged('');
@@ -75,31 +182,288 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           
           Expanded(
-            child: _isSearching ? _buildSearchResults() : _buildDiscoverContent(),
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // Discover tab
+                _isSearching && _searchType == 'discover' 
+                    ? _buildDiscoverSearchResults() 
+                    : _buildDiscoverContent(),
+                // People tab
+                _buildPeopleContent(),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSearchResults() {
-    return const Center(
+  Widget _buildDiscoverSearchResults() {
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.search,
             size: 64,
-            color: AppTheme.gray400,
+            color: Colors.grey.shade300,
           ),
           SizedBox(height: 16),
-          Text('Search results coming soon!'),
+          Text('Product search coming soon!'),
           SizedBox(height: 8),
           Text(
             'We\'re working on connecting to product databases',
-            style: TextStyle(color: AppTheme.gray400),
+            style: TextStyle(color: Colors.grey.shade300),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPeopleContent() {
+    if (!_isSearching || _searchType != 'people') {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.people_outline,
+              size: 64,
+              color: Colors.grey.shade300,
+            ),
+            SizedBox(height: 16),
+            Text('Find friends on HeyWish'),
+            SizedBox(height: 8),
+            Text(
+              'Search for users by name or username',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_isLoadingUsers) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Searching for users...'),
+          ],
+        ),
+      );
+    }
+
+    if (_userSearchResults.isEmpty && _searchController.text.isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.person_off,
+              size: 64,
+              color: Colors.grey.shade300,
+            ),
+            SizedBox(height: 16),
+            Text('No users found'),
+            SizedBox(height: 8),
+            Text(
+              'Try a different search term',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.all(16),
+      itemCount: _userSearchResults.length,
+      itemBuilder: (context, index) {
+        final user = _userSearchResults[index];
+        return _buildUserCard(user);
+      },
+    );
+  }
+
+  Widget _buildUserCard(UserSearchResult user) {
+    return Card(
+      margin: EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding: EdgeInsets.all(16),
+        leading: CircleAvatar(
+          radius: 24,
+          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          backgroundImage: user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
+          child: user.avatarUrl == null
+              ? Icon(
+                  Icons.person,
+                  color: Theme.of(context).colorScheme.primary,
+                )
+              : null,
+        ),
+        title: Text(
+          user.displayName,
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('@${user.username}'),
+            if (user.bio != null && user.bio!.isNotEmpty) ...[
+              SizedBox(height: 4),
+              Text(
+                user.bio!,
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 13,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+        ),
+        trailing: _buildUserActionButton(user),
+        onTap: () {
+          // Navigate to user profile
+          _showUserProfile(user);
+        },
+      ),
+    );
+  }
+
+  Widget _buildUserActionButton(UserSearchResult user) {
+    if (user.isFriend) {
+      return Chip(
+        label: Text('Friends'),
+        backgroundColor: Colors.green.shade100,
+        labelStyle: TextStyle(
+          color: Colors.green.shade700,
+          fontSize: 12,
+        ),
+      );
+    }
+
+    if (user.hasPendingRequest) {
+      if (user.requestSentByMe) {
+        return Chip(
+          label: Text('Pending'),
+          backgroundColor: Colors.orange.shade100,
+          labelStyle: TextStyle(
+            color: Colors.orange.shade700,
+            fontSize: 12,
+          ),
+        );
+      } else {
+        return Chip(
+          label: Text('Respond'),
+          backgroundColor: Colors.blue.shade100,
+          labelStyle: TextStyle(
+            color: Colors.blue.shade700,
+            fontSize: 12,
+          ),
+        );
+      }
+    }
+
+    return ElevatedButton(
+      onPressed: () => _sendFriendRequest(user),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        minimumSize: Size(0, 32),
+      ),
+      child: Text(
+        'Add Friend',
+        style: TextStyle(fontSize: 12),
+      ),
+    );
+  }
+
+  void _showUserProfile(UserSearchResult user) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  margin: EdgeInsets.symmetric(vertical: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    padding: EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          backgroundImage: user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
+                          child: user.avatarUrl == null
+                              ? Icon(
+                                  Icons.person,
+                                  size: 40,
+                                  color: Theme.of(context).colorScheme.primary,
+                                )
+                              : null,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          user.displayName,
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '@${user.username}',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 16,
+                          ),
+                        ),
+                        if (user.bio != null && user.bio!.isNotEmpty) ...[
+                          SizedBox(height: 16),
+                          Text(
+                            user.bio!,
+                            style: TextStyle(fontSize: 16),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                        SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: _buildUserActionButton(user),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -123,12 +487,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildCategoriesSection() {
     final categories = [
-      {'name': 'Electronics', 'icon': Icons.devices, 'color': AppTheme.primaryColor},
-      {'name': 'Fashion', 'icon': Icons.checkroom, 'color': AppTheme.coralColor},
-      {'name': 'Home & Garden', 'icon': Icons.home, 'color': AppTheme.mintColor},
-      {'name': 'Books', 'icon': Icons.book, 'color': AppTheme.skyColor},
-      {'name': 'Sports', 'icon': Icons.sports_tennis, 'color': AppTheme.amberColor},
-      {'name': 'Beauty', 'icon': Icons.face, 'color': AppTheme.primaryColor},
+      {'name': 'Electronics', 'icon': Icons.devices, 'color': Theme.of(context).colorScheme.primary},
+      {'name': 'Fashion', 'icon': Icons.checkroom, 'color': Colors.blue},
+      {'name': 'Home & Garden', 'icon': Icons.home, 'color': Colors.blue},
+      {'name': 'Books', 'icon': Icons.book, 'color': Colors.blue},
+      {'name': 'Sports', 'icon': Icons.sports_tennis, 'color': Colors.blue},
+      {'name': 'Beauty', 'icon': Icons.face, 'color': Theme.of(context).colorScheme.primary},
     ];
 
     return Padding(
@@ -256,22 +620,22 @@ class _SearchScreenState extends State<SearchScreen> {
               height: 100,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: AppTheme.gray100,
+                color: Colors.grey.shade100,
               ),
               child: item['image'] != null
                   ? Image.network(
                       item['image'],
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        return const Icon(
+                        return Icon(
                           Icons.image,
-                          color: AppTheme.gray400,
+                          color: Colors.grey.shade300,
                         );
                       },
                     )
-                  : const Icon(
+                  : Icon(
                       Icons.image,
-                      color: AppTheme.gray400,
+                      color: Colors.grey.shade300,
                     ),
             ),
             Expanded(
@@ -293,7 +657,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       Text(
                         '\$${item['price']}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.primaryColor,
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -328,13 +692,13 @@ class _SearchScreenState extends State<SearchScreen> {
   Color _getTrendColor(String trend) {
     switch (trend.toLowerCase()) {
       case 'viral':
-        return AppTheme.coralColor;
+        return Colors.blue;
       case 'popular':
-        return AppTheme.primaryColor;
+        return Theme.of(context).colorScheme.primary;
       case 'rising':
-        return AppTheme.mintColor;
+        return Colors.blue;
       default:
-        return AppTheme.gray400;
+        return Colors.grey.shade300;
     }
   }
 }

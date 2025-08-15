@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/mock_data_service.dart';
+import '../services/friends_service.dart';
+import '../models/friend.dart';
 import '../theme/app_theme.dart';
 import 'package:intl/intl.dart';
 
@@ -10,14 +12,25 @@ class ActivityScreen extends StatefulWidget {
   State<ActivityScreen> createState() => _ActivityScreenState();
 }
 
-class _ActivityScreenState extends State<ActivityScreen> {
-  List<Map<String, dynamic>> _activities = [];
+class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStateMixin {
+  List<Activity> _activities = [];
   bool _isLoading = true;
+  String _selectedFilter = 'friends';
+  late TabController _tabController;
+
+  final FriendsService _friendsService = FriendsService();
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     _loadActivities();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadActivities() async {
@@ -25,13 +38,29 @@ class _ActivityScreenState extends State<ActivityScreen> {
       _isLoading = true;
     });
 
-    // Simulate loading delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      final activities = await _friendsService.getActivityFeed(filter: _selectedFilter);
+      setState(() {
+        _activities = activities;
+      });
+    } catch (e) {
+      debugPrint('Error loading activities: $e');
+      // Fallback to mock data if API fails
+      setState(() {
+        _activities = [];
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
+  void _onFilterChanged(String filter) {
     setState(() {
-      _activities = MockDataService.getMockActivities();
-      _isLoading = false;
+      _selectedFilter = filter;
     });
+    _loadActivities();
   }
 
   @override
@@ -40,11 +69,36 @@ class _ActivityScreenState extends State<ActivityScreen> {
       appBar: AppBar(
         title: const Text('Activity'),
         automaticallyImplyLeading: false,
+        bottom: TabBar(
+          controller: _tabController,
+          onTap: (index) {
+            String filter;
+            switch (index) {
+              case 0:
+                filter = 'friends';
+                break;
+              case 1:
+                filter = 'all';
+                break;
+              case 2:
+                filter = 'own';
+                break;
+              default:
+                filter = 'friends';
+            }
+            _onFilterChanged(filter);
+          },
+          tabs: const [
+            Tab(text: 'Friends', icon: Icon(Icons.people)),
+            Tab(text: 'Discover', icon: Icon(Icons.explore)),
+            Tab(text: 'My Activity', icon: Icon(Icons.person)),
+          ],
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _loadActivities,
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? Center(child: CircularProgressIndicator())
             : _activities.isEmpty
                 ? _buildEmptyState()
                 : _buildActivityList(),
@@ -53,29 +107,64 @@ class _ActivityScreenState extends State<ActivityScreen> {
   }
 
   Widget _buildEmptyState() {
-    return const Center(
+    String title;
+    String subtitle;
+    IconData icon;
+
+    switch (_selectedFilter) {
+      case 'friends':
+        title = 'No friend activity';
+        subtitle = 'Connect with friends to see their\nwishlist activities here';
+        icon = Icons.people_outline;
+        break;
+      case 'all':
+        title = 'No activity to discover';
+        subtitle = 'Public activities will appear here\nwhen users share their wishlists';
+        icon = Icons.explore_outlined;
+        break;
+      case 'own':
+        title = 'No activity yet';
+        subtitle = 'Your wishlist activities will\nappear here as you use the app';
+        icon = Icons.person_outline;
+        break;
+      default:
+        title = 'No activity yet';
+        subtitle = 'Activities will appear here';
+        icon = Icons.notifications_none;
+    }
+
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.notifications_none,
+            icon,
             size: 64,
-            color: AppTheme.gray400,
+            color: Colors.grey.shade400,
           ),
           SizedBox(height: 16),
           Text(
-            'No activity yet',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
+            title,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
           SizedBox(height: 8),
           Text(
-            'When people interact with your wishlists,\nyou\'ll see updates here',
+            subtitle,
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppTheme.gray400),
+            style: TextStyle(
+              color: Colors.grey.shade600,
+            ),
           ),
+          if (_selectedFilter == 'friends') ...[
+            SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                // Navigate to search screen - need to pass callback from home screen
+              },
+              icon: Icon(Icons.person_add),
+              label: Text('Find Friends'),
+            ),
+          ],
         ],
       ),
     );
@@ -115,8 +204,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppTheme.skyColor.withOpacity(0.1),
-            AppTheme.mintColor.withOpacity(0.1),
+            Colors.blue.withOpacity(0.1),
+            Colors.blue.withOpacity(0.1),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -128,12 +217,12 @@ class _ActivityScreenState extends State<ActivityScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.skyColor.withOpacity(0.2),
+              color: Colors.blue.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.notifications_active,
-              color: AppTheme.skyColor,
+              color: Colors.blue,
               size: 24,
             ),
           ),
@@ -152,7 +241,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 Text(
                   'Get updates when friends interact with your wishlists',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.gray600,
+                    color: Colors.grey.shade600,
                   ),
                 ),
               ],
@@ -163,7 +252,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     );
   }
 
-  Widget _buildActivityCard(Map<String, dynamic> activity, bool isFirst) {
+  Widget _buildActivityCard(Activity activity, bool isFirst) {
     return Container(
       margin: EdgeInsets.only(
         left: 16,
@@ -175,15 +264,26 @@ class _ActivityScreenState extends State<ActivityScreen> {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: AppTheme.gray200, width: 1),
+          side: BorderSide(color: Colors.grey.shade100, width: 1),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar or icon
-              _buildActivityIcon(activity),
+              // Avatar
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                backgroundImage: activity.avatarUrl != null ? NetworkImage(activity.avatarUrl!) : null,
+                child: activity.avatarUrl == null
+                    ? Icon(
+                        Icons.person,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 20,
+                      )
+                    : null,
+              ),
               const SizedBox(width: 12),
               
               // Content
@@ -191,25 +291,38 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      activity['message'] as String,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
+                    RichText(
+                      text: TextSpan(
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        children: [
+                          TextSpan(
+                            text: activity.userDisplayName,
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          TextSpan(text: ' ${activity.description}'),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 4),
-                    if (activity['wishlist'] != null)
+                    if (activity.data['wishlist_name'] != null)
                       Text(
-                        'in ${activity['wishlist']}',
+                        'in ${activity.data['wishlist_name']}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.primaryColor,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    if (activity.data['item_name'] != null)
+                      Text(
+                        'Item: ${activity.data['item_name']}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey.shade600,
                         ),
                       ),
                     const SizedBox(height: 8),
                     Text(
-                      _formatTimestamp(activity['timestamp'] as DateTime),
+                      _formatTimestamp(activity.createdAt),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.gray400,
+                        color: Colors.grey.shade500,
                       ),
                     ),
                   ],
@@ -217,7 +330,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
               ),
               
               // Action icon
-              _buildActionIcon(activity['type'] as String),
+              _buildActionIcon(activity.activityType),
             ],
           ),
         ),
@@ -225,33 +338,6 @@ class _ActivityScreenState extends State<ActivityScreen> {
     );
   }
 
-  Widget _buildActivityIcon(Map<String, dynamic> activity) {
-    if (activity['avatar'] != null) {
-      return CircleAvatar(
-        radius: 20,
-        backgroundImage: NetworkImage(activity['avatar'] as String),
-        backgroundColor: AppTheme.gray200,
-        onBackgroundImageError: (exception, stackTrace) {},
-        child: activity['avatar'] == null
-            ? const Icon(Icons.person, color: AppTheme.gray400)
-            : null,
-      );
-    }
-    
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: _getActivityColor(activity['type'] as String).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Icon(
-        _getActivityIcon(activity['type'] as String),
-        color: _getActivityColor(activity['type'] as String),
-        size: 20,
-      ),
-    );
-  }
 
   Widget _buildActionIcon(String type) {
     return Container(
@@ -270,16 +356,18 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   IconData _getActivityIcon(String type) {
     switch (type) {
-      case 'wish_reserved':
-        return Icons.check_circle;
-      case 'wishlist_shared':
-        return Icons.share;
-      case 'wish_added':
+      case 'collection_created':
+        return Icons.playlist_add;
+      case 'item_added':
         return Icons.add_circle;
-      case 'friend_activity':
+      case 'item_reserved':
+        return Icons.check_circle;
+      case 'item_purchased':
+        return Icons.shopping_bag;
+      case 'friend_added':
         return Icons.people;
-      case 'price_drop':
-        return Icons.trending_down;
+      case 'friend_request_sent':
+        return Icons.person_add;
       default:
         return Icons.notifications;
     }
@@ -287,18 +375,20 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   Color _getActivityColor(String type) {
     switch (type) {
-      case 'wish_reserved':
-        return AppTheme.mintColor;
-      case 'wishlist_shared':
-        return AppTheme.skyColor;
-      case 'wish_added':
-        return AppTheme.primaryColor;
-      case 'friend_activity':
-        return AppTheme.coralColor;
-      case 'price_drop':
-        return AppTheme.amberColor;
+      case 'collection_created':
+        return Theme.of(context).colorScheme.primary;
+      case 'item_added':
+        return Colors.green;
+      case 'item_reserved':
+        return Colors.orange;
+      case 'item_purchased':
+        return Colors.blue;
+      case 'friend_added':
+        return Colors.purple;
+      case 'friend_request_sent':
+        return Colors.blue;
       default:
-        return AppTheme.gray400;
+        return Colors.grey.shade400;
     }
   }
 
