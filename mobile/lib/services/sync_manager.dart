@@ -186,8 +186,16 @@ class SyncManager extends ChangeNotifier {
         queryParams = {'since': lastSyncTimestamp.toString()};
       }
       
-      final response = await _apiService.get('/${entityType}s/sync', queryParameters: queryParams);
-      final entities = response['${entityType}s'] as List;
+      // Map entity types to correct endpoint plurals
+      final endpointMap = {
+        'user': 'users',
+        'wishlist': 'wishlists', 
+        'wish': 'wishes'
+      };
+      
+      final endpoint = endpointMap[entityType] ?? '${entityType}s';
+      final response = await _apiService.get('/$endpoint/sync', queryParameters: queryParams);
+      final entities = response[endpoint] as List;
       final serverTimestamp = response['server_timestamp'] as int;
       
       debugPrint('🔄 SyncManager: Received ${entities.length} $entityType entities from server');

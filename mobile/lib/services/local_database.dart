@@ -24,7 +24,7 @@ class LocalDatabase {
 
       _database = await openDatabase(
         path,
-        version: 2,
+        version: 3,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -77,7 +77,7 @@ class LocalDatabase {
         user_id TEXT NOT NULL,
         share_token TEXT,
         cover_image_url TEXT,
-        wish_count INTEGER DEFAULT 0,
+        item_count INTEGER DEFAULT 0,
         reserved_count INTEGER DEFAULT 0,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
@@ -178,6 +178,12 @@ class LocalDatabase {
         )
       ''');
       debugPrint('✅ LocalDatabase: Added sync_timestamps table');
+    }
+    
+    if (oldVersion < 3) {
+      // Rename wish_count to item_count for backend compatibility
+      await db.execute('ALTER TABLE wishlists RENAME COLUMN wish_count TO item_count');
+      debugPrint('✅ LocalDatabase: Renamed wish_count to item_count');
     }
   }
 
@@ -349,15 +355,64 @@ class LocalDatabase {
     
     // Convert the entity to match our local schema
     final localEntity = Map<String, dynamic>.from(entity);
+    
+    // Handle timestamp conversions (backend sends epoch milliseconds, we store as TEXT)
+    if (entity['created_at'] is int) {
+      localEntity['created_at'] = DateTime.fromMillisecondsSinceEpoch(entity['created_at']).toIso8601String();
+    }
+    if (entity['updated_at'] is int) {
+      localEntity['updated_at'] = DateTime.fromMillisecondsSinceEpoch(entity['updated_at']).toIso8601String();
+    }
+    
+    // Add required sync fields
     localEntity['sync_state'] = SyncState.synced.toString();
     localEntity['content_hash'] = _generateHash(entity);
     localEntity['version'] = 1; // For now, use simple versioning
+    localEntity['device_id'] = await _getOrCreateDeviceId(); // Generate device ID if needed
+    
+    // Handle entity-specific field mappings
+    if (entityType == 'wishlist') {
+      // Ensure all required fields are present
+      localEntity['name'] = entity['name'] ?? '';
+      localEntity['visibility'] = entity['visibility'] ?? 'private';
+      localEntity['user_id'] = entity['user_id']?.toString() ?? '';
+    } else if (entityType == 'wish') {
+      // Handle wish-specific fields
+      localEntity['title'] = entity['title'] ?? '';
+      localEntity['wishlist_id'] = entity['wishlist_id']?.toString() ?? '';
+      localEntity['priority'] = entity['priority'] ?? 1;
+      localEntity['quantity'] = entity['quantity'] ?? 1;
+      localEntity['currency'] = entity['currency'] ?? 'USD';
+      localEntity['status'] = entity['status'] ?? 'active';
+    } else if (entityType == 'user') {
+      // Handle user-specific fields
+      localEntity['firebase_uid'] = entity['firebase_uid'] ?? '';
+      localEntity['email'] = entity['email'] ?? '';
+      localEntity['full_name'] = entity['full_name'] ?? '';
+      localEntity['is_anonymous'] = entity['is_anonymous'] ?? true;
+    }
     
     await db.insert(
       tableName,
       localEntity,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+  
+  /// Get or create a unique device ID for this device
+  Future<String> _getOrCreateDeviceId() async {
+    // For simplicity, generate a UUID-like string for this device
+    // In a real app, you might use device_info_plus or similar
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final randomPart = _generateRandomString(8);
+    return 'device_${timestamp}_$randomPart';
+  }
+  
+  /// Generate a random string for device ID
+  String _generateRandomString(int length) {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    final random = DateTime.now().microsecondsSinceEpoch;
+    return List.generate(length, (index) => chars[(random + index) % chars.length]).join();
   }
 
   /// Simple hash generation for content
