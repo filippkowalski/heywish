@@ -137,21 +137,16 @@ class SyncManager extends ChangeNotifier {
     final changes = await _localDb.getUnsyncdChanges();
     debugPrint('📤 SyncManager: Pushing ${changes.length} local changes');
     
-    // TODO: Implement proper sync with HeyWish API endpoints
-    // For now, skip push operations as the API uses different patterns
-    debugPrint('⚠️  SyncManager: Push operations not yet implemented, skipping');
-    return;
-    
-    // for (final change in changes) {
-    //   try {
-    //     await _pushSingleChange(change);
-    //     await _localDb.markChangeAsSynced(change.id);
-    //     result.pushedChanges++;
-    //   } catch (e) {
-    //     debugPrint('❌ Failed to push change ${change.id}: $e');
-    //     result.pushErrors++;
-    //   }
-    // }
+    for (final change in changes) {
+      try {
+        await _pushSingleChange(change);
+        await _localDb.markChangeAsSynced(change.id);
+        result.pushedChanges++;
+      } catch (e) {
+        debugPrint('❌ Failed to push change ${change.id}: $e');
+        result.pushErrors++;
+      }
+    }
   }
   
   /// Push single change to server
@@ -173,27 +168,39 @@ class SyncManager extends ChangeNotifier {
   Future<void> _pullServerChanges(SyncResult result) async {
     debugPrint('📥 SyncManager: Pulling server changes');
     
-    // TODO: Implement proper sync endpoints in the backend API
-    // For now, skip sync operations as the current API doesn't support these endpoints
-    debugPrint('⚠️  SyncManager: Sync endpoints not yet implemented in backend, skipping');
-    return;
-    
-    // Pull users, wishlists, and wishes (disabled until backend sync endpoints are ready)
-    // await _pullEntitiesOfType('user', result);
-    // await _pullEntitiesOfType('wishlist', result);
-    // await _pullEntitiesOfType('wish', result);
+    // Pull users, wishlists, and wishes from server
+    await _pullEntitiesOfType('user', result);
+    await _pullEntitiesOfType('wishlist', result);
+    await _pullEntitiesOfType('wish', result);
   }
   
   /// Pull entities of specific type from server
   Future<void> _pullEntitiesOfType(String entityType, SyncResult result) async {
     try {
-      final response = await _apiService.get('/${entityType}s/sync');
+      // Get last sync timestamp for this entity type from local storage
+      final lastSyncTimestamp = await _localDb.getLastSyncTimestamp(entityType);
+      
+      // Build query parameters
+      Map<String, dynamic>? queryParams;
+      if (lastSyncTimestamp != null) {
+        queryParams = {'since': lastSyncTimestamp.toString()};
+      }
+      
+      final response = await _apiService.get('/${entityType}s/sync', queryParameters: queryParams);
       final entities = response['${entityType}s'] as List;
+      final serverTimestamp = response['server_timestamp'] as int;
+      
+      debugPrint('🔄 SyncManager: Received ${entities.length} $entityType entities from server');
       
       for (final entityData in entities) {
         final serverEntity = Map<String, dynamic>.from(entityData);
-        await _processServerEntity(entityType, serverEntity, result);
+        await _localDb.saveServerEntity(entityType, serverEntity);
+        result.pulledChanges++;
       }
+      
+      // Update last sync timestamp
+      await _localDb.setLastSyncTimestamp(entityType, serverTimestamp);
+      
     } catch (e) {
       debugPrint('❌ Failed to pull $entityType entities: $e');
       result.pullErrors++;
