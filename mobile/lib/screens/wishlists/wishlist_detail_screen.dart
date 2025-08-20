@@ -4,9 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../services/wishlist_service.dart';
 import '../../models/wish.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/cached_image.dart';
+import '../../widgets/wishlist_cover_image.dart';
 
 class WishlistDetailScreen extends StatefulWidget {
   final String wishlistId;
@@ -41,14 +44,14 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        title: Text(wishlist?.name ?? 'Loading...'),
+        title: Text(wishlist?.name ?? 'app.loading'.tr()),
         actions: [
           if (wishlist != null)
             IconButton(
-              icon: const Icon(Icons.share),
+              icon: Icon(Icons.share),
               onPressed: () => _shareWishlist(wishlist),
             ),
           if (wishlist != null)
@@ -61,26 +64,50 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
                 }
               },
               itemBuilder: (context) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'edit',
-                  child: Text('Edit'),
+                  child: Text('app.edit'.tr()),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'delete',
-                  child: Text('Delete'),
+                  child: Text('app.delete'.tr()),
                 ),
               ],
             ),
         ],
       ),
       body: wishlistService.isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : wishlist == null
-              ? const Center(child: Text('Wishlist not found'))
+              ? Center(child: Text('errors.not_found'.tr()))
               : RefreshIndicator(
                   onRefresh: _loadWishlist,
                   child: CustomScrollView(
                     slivers: [
+                      // Cover image section
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: WishlistCoverImage(
+                            coverImageUrl: wishlist.coverImageUrl,
+                            wishlistId: widget.wishlistId,
+                            canEdit: true,
+                            height: 200,
+                            onImageChanged: () {
+                              // Refresh wishlist data when image changes
+                              _loadWishlist();
+                            },
+                            onUpload: (wishlistId, imageFile) async {
+                              final wishlistService = context.read<WishlistService>();
+                              return await wishlistService.uploadWishlistCoverImage(wishlistId, imageFile);
+                            },
+                            onRemove: (wishlistId) async {
+                              final wishlistService = context.read<WishlistService>();
+                              return await wishlistService.removeWishlistCoverImage(wishlistId);
+                            },
+                          ),
+                        ),
+                      ),
                       if (wishlist.description != null)
                         SliverToBoxAdapter(
                           child: Padding(
@@ -128,7 +155,7 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
         onPressed: () {
           _showAddWishDialog();
         },
-        child: const Icon(Icons.add),
+        child: Icon(Icons.add),
       ),
     );
   }
@@ -147,20 +174,20 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No items yet',
+              'wishlist.no_items'.tr(),
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'Start adding items to your wishlist',
+              'wishlist.add_first_item'.tr(),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: _showAddWishDialog,
-              icon: const Icon(Icons.add),
-              label: const Text('Add Item'),
+              icon: Icon(Icons.add),
+              label: Text('wish.add_item'.tr()),
             ),
           ],
         ),
@@ -176,18 +203,18 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Wishlist'),
-        content: const Text(
-          'Are you sure you want to delete this wishlist? This action cannot be undone.',
+        title: Text('wishlist.delete_confirmation'.tr()),
+        content: Text(
+          'wishlist.delete_warning'.tr(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text('app.cancel'.tr()),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text('app.delete'.tr(), style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -210,14 +237,19 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
 
   Future<void> _shareWishlist(dynamic wishlist) async {
     try {
-      // For now, we'll create a simple sharing message
-      // In a full implementation, you'd generate a proper public URL
+      // Generate the web share URL
+      final shareUrl = wishlist.shareToken != null 
+          ? 'https://heywish.vercel.app/w/${wishlist.shareToken}'
+          : null;
+      
       final shareText = '''
 Check out my wishlist: ${wishlist.name}
 
 ${wishlist.description ?? 'A collection of things I\'d love to have!'}
 
 Items: ${wishlist.wishes?.length ?? 0}
+
+${shareUrl != null ? 'View here: $shareUrl' : ''}
 
 Created with HeyWish 🎁
 ''';
@@ -230,35 +262,40 @@ Created with HeyWish 🎁
             child: Wrap(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.share),
-                  title: const Text('Share via...'),
+                  leading: Icon(Icons.share),
+                  title: Text('app.share'.tr()),
                   onTap: () async {
                     Navigator.pop(context);
-                    await Share.share(shareText, subject: 'Check out my wishlist: ${wishlist.name}');
+                    if (shareUrl != null) {
+                      await Share.share(shareUrl, subject: 'Check out my wishlist: ${wishlist.name}');
+                    } else {
+                      await Share.share(shareText, subject: 'Check out my wishlist: ${wishlist.name}');
+                    }
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.copy),
-                  title: const Text('Copy to clipboard'),
+                  leading: Icon(Icons.copy),
+                  title: Text('success.copied_to_clipboard'.tr()),
                   onTap: () {
                     Navigator.pop(context);
-                    Clipboard.setData(ClipboardData(text: shareText));
+                    final textToCopy = shareUrl ?? shareText;
+                    Clipboard.setData(ClipboardData(text: textToCopy));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Wishlist details copied to clipboard')),
+                      SnackBar(
+                        content: Text('success.link_copied'.tr()),
+                      ),
                     );
                   },
                 ),
-                ListTile(
-                  leading: const Icon(Icons.link),
-                  title: const Text('Generate share link'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // TODO: Generate and copy actual share link
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Share link generation coming soon!')),
-                    );
-                  },
-                ),
+                if (shareUrl != null)
+                  ListTile(
+                    leading: Icon(Icons.web),
+                    title: Text('Open in browser'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _launchUrl(shareUrl);
+                    },
+                  ),
               ],
             ),
           );
@@ -266,8 +303,29 @@ Created with HeyWish 🎁
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to share: $e')),
+        SnackBar(content: Text('errors.unknown'.tr())),
       );
+    }
+  }
+
+  void _launchUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('errors.unknown'.tr())),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('errors.unknown'.tr())),
+        );
+      }
     }
   }
 }
@@ -295,26 +353,24 @@ class _WishCard extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: AppTheme.gray100,
+                  color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: wish.imageUrl != null
-                    ? ClipRRect(
+                    ? CachedImageWidget(
+                        imageUrl: wish.imageUrl,
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          wish.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.card_giftcard,
-                              color: AppTheme.gray400,
-                            );
-                          },
+                        errorWidget: Icon(
+                          Icons.card_giftcard,
+                          color: Colors.grey.shade600,
                         ),
                       )
-                    : const Icon(
+                    : Icon(
                         Icons.card_giftcard,
-                        color: AppTheme.gray400,
+                        color: Colors.grey.shade600,
                       ),
               ),
               const SizedBox(width: 12),
@@ -347,7 +403,7 @@ class _WishCard extends StatelessWidget {
                                 .textTheme
                                 .titleSmall
                                 ?.copyWith(
-                                  color: AppTheme.primaryColor,
+                                  color: Theme.of(context).colorScheme.primary,
                                   fontWeight: FontWeight.bold,
                                 ),
                           ),
@@ -360,16 +416,16 @@ class _WishCard extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: AppTheme.mintColor.withOpacity(0.1),
+                              color: Colors.blue.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              'Reserved',
+                              'wish.reserved'.tr(),
                               style: Theme.of(context)
                                   .textTheme
                                   .labelSmall
                                   ?.copyWith(
-                                    color: AppTheme.mintColor,
+                                    color: Colors.blue,
                                   ),
                             ),
                           ),
@@ -380,7 +436,7 @@ class _WishCard extends StatelessWidget {
               ),
               if (wish.url != null)
                 IconButton(
-                  icon: const Icon(Icons.open_in_new),
+                  icon: Icon(Icons.open_in_new),
                   onPressed: () async {
                     final uri = Uri.parse(wish.url!);
                     if (await canLaunchUrl(uri)) {
@@ -388,7 +444,7 @@ class _WishCard extends StatelessWidget {
                     } else {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Could not open URL')),
+                          SnackBar(content: Text('errors.unknown'.tr())),
                         );
                       }
                     }

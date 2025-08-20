@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'dart:io';
 
 class ApiService {
@@ -12,10 +13,8 @@ class ApiService {
   factory ApiService() => _instance;
   
   ApiService._internal() {
-    // Use localhost in debug mode, production URL in release mode
-    final baseUrl = kDebugMode 
-        ? 'http://localhost:10001/heywish/v1'
-        : 'https://openai-rewrite.onrender.com/heywish/v1';
+    // Use production URL for all environments
+    final baseUrl = 'https://openai-rewrite.onrender.com/heywish/v1';
         
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
@@ -135,13 +134,78 @@ class ApiService {
       throw _handleError(e);
     }
   }
+
+  /// Get presigned upload URL for wishlist cover image
+  Future<Map<String, dynamic>?> getWishlistCoverUploadUrl(String wishlistId) async {
+    try {
+      debugPrint('🖼️ API: Getting wishlist cover upload URL for $wishlistId');
+      
+      final response = await post('/upload/wishlist-cover', {
+        'wishlistId': wishlistId,
+      });
+      
+      debugPrint('✅ API: Got wishlist cover upload URL');
+      return response as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('❌ API: Error getting wishlist cover upload URL: $e');
+      return null;
+    }
+  }
+
+  /// Upload image directly to presigned URL
+  Future<bool> uploadImageToPresignedUrl(String uploadUrl, File imageFile) async {
+    try {
+      debugPrint('🖼️ API: Uploading to presigned URL');
+      
+      final bytes = await imageFile.readAsBytes();
+      
+      final dio = Dio();
+      final response = await dio.put(
+        uploadUrl,
+        data: bytes,
+        options: Options(
+          headers: {
+            'Content-Type': 'image/jpeg',
+          },
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        debugPrint('✅ API: Image uploaded to presigned URL successfully');
+        return true;
+      } else {
+        debugPrint('❌ API: Upload to presigned URL failed: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('❌ API: Error uploading to presigned URL: $e');
+      return false;
+    }
+  }
+
+  /// Update wishlist cover image URL
+  Future<Map<String, dynamic>?> updateWishlistCoverImage(String wishlistId, String coverImageUrl) async {
+    try {
+      debugPrint('🖼️ API: Updating wishlist cover image for $wishlistId');
+      
+      final response = await put('/wishlists/$wishlistId/cover-image', {
+        'coverImageUrl': coverImageUrl,
+      });
+      
+      debugPrint('✅ API: Wishlist cover image updated');
+      return response as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('❌ API: Error updating wishlist cover image: $e');
+      return null;
+    }
+  }
   
   String _handleError(DioException error) {
     switch (error.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        return 'Connection timeout. Please check your internet connection.';
+        return 'errors.timeout'.tr();
       
       case DioExceptionType.badResponse:
         final statusCode = error.response?.statusCode;
@@ -149,30 +213,30 @@ class ApiService {
         
         switch (statusCode) {
           case 400:
-            return 'Bad request: $message';
+            return 'errors.validation_required'.tr();
           case 401:
-            return 'Unauthorized. Please sign in again.';
+            return 'errors.unauthorized'.tr();
           case 403:
-            return 'Forbidden. You don\'t have permission to access this resource.';
+            return 'errors.forbidden'.tr();
           case 404:
-            return 'Resource not found.';
+            return 'errors.not_found'.tr();
           case 500:
-            return 'Server error. Please try again later.';
+            return 'errors.server_error'.tr();
           default:
             return message;
         }
       
       case DioExceptionType.cancel:
-        return 'Request cancelled.';
+        return 'errors.cancelled'.tr();
       
       case DioExceptionType.unknown:
         if (error.error?.toString().contains('SocketException') ?? false) {
-          return 'No internet connection.';
+          return 'errors.network_error'.tr();
         }
-        return 'An unexpected error occurred.';
+        return 'errors.unknown'.tr();
       
       default:
-        return 'An error occurred. Please try again.';
+        return 'errors.unknown'.tr();
     }
   }
 }

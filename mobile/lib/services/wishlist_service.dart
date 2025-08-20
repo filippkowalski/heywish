@@ -412,4 +412,82 @@ class WishlistService extends ChangeNotifier {
     _error = null;
     notifyListeners();
   }
+
+  /// Upload cover image for wishlist
+  Future<bool> uploadWishlistCoverImage(String wishlistId, File imageFile) async {
+    try {
+      print('🖼️ WishlistService: Starting cover image upload for $wishlistId');
+      
+      // Step 1: Get presigned upload URL
+      final uploadInfo = await _apiService.getWishlistCoverUploadUrl(wishlistId);
+      if (uploadInfo == null || uploadInfo['uploadUrl'] == null) {
+        _error = 'Failed to get upload URL';
+        notifyListeners();
+        return false;
+      }
+
+      // Step 2: Upload image to presigned URL
+      final uploadSuccess = await _apiService.uploadImageToPresignedUrl(
+        uploadInfo['uploadUrl'],
+        imageFile,
+      );
+
+      if (!uploadSuccess) {
+        _error = 'Failed to upload image';
+        notifyListeners();
+        return false;
+      }
+
+      // Step 3: Update wishlist with the image URL
+      final publicUrl = uploadInfo['publicUrl'];
+      final updateResult = await _apiService.updateWishlistCoverImage(
+        wishlistId,
+        publicUrl,
+      );
+
+      if (updateResult == null) {
+        _error = 'Failed to update wishlist with image';
+        notifyListeners();
+        return false;
+      }
+
+      // Step 4: Refresh wishlist data
+      await fetchWishlist(wishlistId);
+
+      print('✅ WishlistService: Cover image uploaded successfully');
+      return true;
+
+    } catch (e) {
+      _error = 'Upload failed: $e';
+      debugPrint('❌ WishlistService: Error uploading cover image: $e');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Remove cover image from wishlist
+  Future<bool> removeWishlistCoverImage(String wishlistId) async {
+    try {
+      final updateResult = await _apiService.updateWishlistCoverImage(
+        wishlistId,
+        '', // Empty string removes the image
+      );
+
+      if (updateResult == null) {
+        _error = 'Failed to remove cover image';
+        notifyListeners();
+        return false;
+      }
+
+      // Refresh wishlist data
+      await fetchWishlist(wishlistId);
+
+      return true;
+    } catch (e) {
+      _error = 'Remove cover image failed: $e';
+      debugPrint('❌ WishlistService: Error removing cover image: $e');
+      notifyListeners();
+      return false;
+    }
+  }
 }
