@@ -384,11 +384,25 @@ class LocalDatabase {
       localEntity['quantity'] = entity['quantity'] ?? 1;
       localEntity['currency'] = entity['currency'] ?? 'USD';
       localEntity['status'] = entity['status'] ?? 'active';
+      
+      // Handle images field - convert array to JSON string if needed
+      if (entity['images'] != null) {
+        if (entity['images'] is List) {
+          localEntity['images'] = jsonEncode(entity['images']);
+        } else if (entity['images'] is String) {
+          localEntity['images'] = entity['images'];
+        } else {
+          localEntity['images'] = '[]'; // Default empty array
+        }
+      } else {
+        localEntity['images'] = '[]';
+      }
     } else if (entityType == 'user') {
       // Handle user-specific fields
       localEntity['firebase_uid'] = entity['firebase_uid'] ?? '';
       localEntity['email'] = entity['email'] ?? '';
       localEntity['full_name'] = entity['full_name'] ?? '';
+      localEntity['bio'] = entity['bio'] ?? '';
       localEntity['is_anonymous'] = entity['is_anonymous'] ?? true;
     }
     
