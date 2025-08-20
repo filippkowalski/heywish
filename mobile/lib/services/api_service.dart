@@ -62,6 +62,8 @@ class ApiService {
   void clearAuthToken() {
     _authToken = null;
   }
+
+  bool get hasAuthToken => _authToken != null;
   
   Future<dynamic> get(String path, {Map<String, dynamic>? queryParameters}) async {
     try {
