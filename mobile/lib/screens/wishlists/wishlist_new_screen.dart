@@ -144,7 +144,7 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
                               _isPublic = value;
                             });
                           },
-                          activeColor: AppTheme.primaryColor,
+                          activeColor: Theme.of(context).colorScheme.primary,
                         ),
                       ],
                     ),

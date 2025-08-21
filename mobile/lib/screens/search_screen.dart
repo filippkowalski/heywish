@@ -4,6 +4,7 @@ import '../services/mock_data_service.dart';
 import '../services/friends_service.dart';
 import '../models/friend.dart';
 import '../theme/app_theme.dart';
+import '../widgets/cached_image.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -294,16 +295,10 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
       margin: EdgeInsets.only(bottom: 12),
       child: ListTile(
         contentPadding: EdgeInsets.all(16),
-        leading: CircleAvatar(
+        leading: CachedAvatarImage(
+          imageUrl: user.avatarUrl,
           radius: 24,
           backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-          backgroundImage: user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
-          child: user.avatarUrl == null
-              ? Icon(
-                  Icons.person,
-                  color: Theme.of(context).colorScheme.primary,
-                )
-              : null,
         ),
         title: Text(
           user.displayName,
@@ -417,17 +412,10 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                     padding: EdgeInsets.all(24),
                     child: Column(
                       children: [
-                        CircleAvatar(
+                        CachedAvatarImage(
+                          imageUrl: user.avatarUrl,
                           radius: 40,
                           backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                          backgroundImage: user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
-                          child: user.avatarUrl == null
-                              ? Icon(
-                                  Icons.person,
-                                  size: 40,
-                                  color: Theme.of(context).colorScheme.primary,
-                                )
-                              : null,
                         ),
                         SizedBox(height: 16),
                         Text(
@@ -623,15 +611,15 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                 color: Colors.grey.shade100,
               ),
               child: item['image'] != null
-                  ? Image.network(
-                      item['image'],
+                  ? CachedImageWidget(
+                      imageUrl: item['image'],
+                      width: double.infinity,
+                      height: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(
-                          Icons.image,
-                          color: Colors.grey.shade300,
-                        );
-                      },
+                      errorWidget: Icon(
+                        Icons.image,
+                        color: Colors.grey.shade300,
+                      ),
                     )
                   : Icon(
                       Icons.image,

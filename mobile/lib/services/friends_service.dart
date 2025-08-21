@@ -2,12 +2,63 @@ import 'package:flutter/foundation.dart';
 import '../models/friend.dart';
 import 'api_service.dart';
 
-class FriendsService {
+class FriendsService extends ChangeNotifier {
   static final FriendsService _instance = FriendsService._internal();
   factory FriendsService() => _instance;
   FriendsService._internal();
 
   final ApiService _apiService = ApiService();
+
+  // State management
+  List<Friend> _friends = [];
+  List<FriendRequest> _friendRequests = [];
+  List<FriendRequest> _sentRequests = [];
+  List<Activity> _activities = [];
+  bool _isLoadingFriends = false;
+  bool _isLoadingRequests = false;
+  bool _isLoadingActivities = false;
+  String? _error;
+
+  // Getters
+  List<Friend> get friends => _friends;
+  List<FriendRequest> get friendRequests => _friendRequests;
+  List<FriendRequest> get sentRequests => _sentRequests;
+  List<Activity> get activities => _activities;
+  bool get isLoadingFriends => _isLoadingFriends;
+  bool get isLoadingRequests => _isLoadingRequests;
+  bool get isLoadingActivities => _isLoadingActivities;
+  String? get error => _error;
+
+  // Helper to update state and notify listeners
+  void _updateState({
+    List<Friend>? friends,
+    List<FriendRequest>? friendRequests,
+    List<FriendRequest>? sentRequests,
+    List<Activity>? activities,
+    bool? isLoadingFriends,
+    bool? isLoadingRequests,
+    bool? isLoadingActivities,
+    String? error,
+  }) {
+    if (friends != null) _friends = friends;
+    if (friendRequests != null) _friendRequests = friendRequests;
+    if (sentRequests != null) _sentRequests = sentRequests;
+    if (activities != null) _activities = activities;
+    if (isLoadingFriends != null) _isLoadingFriends = isLoadingFriends;
+    if (isLoadingRequests != null) _isLoadingRequests = isLoadingRequests;
+    if (isLoadingActivities != null) _isLoadingActivities = isLoadingActivities;
+    if (error != null) _error = error;
+    notifyListeners();
+  }
+
+  // Load all data for friends screen
+  Future<void> loadAllData() async {
+    await Future.wait([
+      getFriends(),
+      getFriendRequests(type: 'received'),
+      getFriendRequests(type: 'sent'),
+    ]);
+  }
 
   // Search users
   Future<List<UserSearchResult>> searchUsers(
@@ -43,6 +94,8 @@ class FriendsService {
     int page = 1,
     int limit = 50,
   }) async {
+    _updateState(isLoadingFriends: true, error: null);
+    
     try {
       debugPrint('👥 FriendsService: Getting friends list');
       
@@ -57,9 +110,11 @@ class FriendsService {
       final List<dynamic> friendsData = response['friends'] ?? [];
       final friends = friendsData.map((friendData) => Friend.fromJson(friendData)).toList();
       
+      _updateState(friends: friends, isLoadingFriends: false);
       debugPrint('👥 FriendsService: Found ${friends.length} friends');
       return friends;
     } catch (e) {
+      _updateState(isLoadingFriends: false, error: e.toString());
       debugPrint('❌ FriendsService: Error getting friends: $e');
       rethrow;
     }
@@ -103,6 +158,8 @@ class FriendsService {
     int page = 1,
     int limit = 20,
   }) async {
+    _updateState(isLoadingRequests: true, error: null);
+    
     try {
       debugPrint('📬 FriendsService: Getting $type friend requests');
       
@@ -118,9 +175,16 @@ class FriendsService {
       final List<dynamic> requestsData = response['requests'] ?? [];
       final requests = requestsData.map((requestData) => FriendRequest.fromJson(requestData)).toList();
       
+      if (type == 'received') {
+        _updateState(friendRequests: requests, isLoadingRequests: false);
+      } else {
+        _updateState(sentRequests: requests, isLoadingRequests: false);
+      }
+      
       debugPrint('📬 FriendsService: Found ${requests.length} $type friend requests');
       return requests;
     } catch (e) {
+      _updateState(isLoadingRequests: false, error: e.toString());
       debugPrint('❌ FriendsService: Error getting friend requests: $e');
       rethrow;
     }

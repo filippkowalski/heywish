@@ -3,11 +3,15 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 import 'theme/app_theme.dart';
 import 'services/auth_service.dart';
 import 'services/wishlist_service.dart';
+import 'services/offline_wishlist_service.dart';
+import 'services/friends_service.dart';
 import 'services/preferences_service.dart';
+import 'services/sync_manager.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/home_screen.dart';
@@ -23,6 +27,9 @@ import 'screens/wishlists/edit_wish_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Initialize localization
+  await EasyLocalization.ensureInitialized();
+  
   // Load environment variables (optional in development)
   try {
     await dotenv.load(fileName: '.env');
@@ -36,7 +43,18 @@ void main() async {
   // Initialize preferences
   await PreferencesService().initialize();
   
-  runApp(const HeyWishApp());
+  // Initialize offline services
+  await OfflineWishlistService().initialize();
+  await SyncManager().initialize();
+  
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [Locale('en')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('en'),
+      child: const HeyWishApp(),
+    ),
+  );
 }
 
 class HeyWishApp extends StatelessWidget {
@@ -48,14 +66,20 @@ class HeyWishApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => WishlistService()),
+        ChangeNotifierProvider.value(value: OfflineWishlistService()),
+        ChangeNotifierProvider.value(value: FriendsService()),
         ChangeNotifierProvider.value(value: PreferencesService()),
+        ChangeNotifierProvider.value(value: SyncManager()),
       ],
       child: MaterialApp.router(
-        title: 'HeyWish',
+        title: 'app.title'.tr(), // Hot reload trigger
         theme: AppTheme.lightTheme(),
         darkTheme: AppTheme.darkTheme(),
         themeMode: ThemeMode.system,
         debugShowCheckedModeBanner: false,
+        localizationsDelegates: context.localizationDelegates,
+        supportedLocales: context.supportedLocales,
+        locale: context.locale,
         routerConfig: _router,
       ),
     );

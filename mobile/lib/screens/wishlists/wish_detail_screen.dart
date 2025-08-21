@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../models/wish.dart';
 import '../../services/wishlist_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/cached_image.dart';
 
 class WishDetailScreen extends StatefulWidget {
   final String wishId;
@@ -48,7 +49,7 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
     if (wish == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Item Details')),
-        body: const Center(
+        body: Center(
           child: Text('Item not found'),
         ),
       );
@@ -114,22 +115,18 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                 height: 250,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: AppTheme.gray100,
+                  color: Colors.grey.shade100,
                 ),
-                child: ClipRRect(
+                child: CachedImageWidget(
+                  imageUrl: wish!.imageUrl,
+                  fit: BoxFit.cover,
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    wish!.imageUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Center(
-                        child: Icon(
-                          Icons.card_giftcard,
-                          size: 64,
-                          color: AppTheme.gray400,
-                        ),
-                      );
-                    },
+                  errorWidget: Center(
+                    child: Icon(
+                      Icons.card_giftcard,
+                      size: 64,
+                      color: Colors.grey.shade300,
+                    ),
                   ),
                 ),
               ),
@@ -166,7 +163,7 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryColor.withOpacity(0.1),
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -175,7 +172,7 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                                   .textTheme
                                   .titleMedium
                                   ?.copyWith(
-                                    color: AppTheme.primaryColor,
+                                    color: Theme.of(context).colorScheme.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                             ),
@@ -189,16 +186,16 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: AppTheme.mintColor.withOpacity(0.1),
+                              color: Colors.blue.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.bookmark,
                                   size: 16,
-                                  color: AppTheme.mintColor,
+                                  color: Colors.blue,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -207,7 +204,7 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                                       .textTheme
                                       .labelMedium
                                       ?.copyWith(
-                                        color: AppTheme.mintColor,
+                                        color: Colors.blue,
                                       ),
                                 ),
                               ],
@@ -280,14 +277,14 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
             if (wish!.url != null) ...[
               FilledButton.icon(
                 onPressed: () => _openUrl(),
-                icon: const Icon(Icons.open_in_new),
+                icon: Icon(Icons.open_in_new),
                 label: const Text('View Product'),
               ),
               const SizedBox(height: 8),
             ],
             OutlinedButton.icon(
               onPressed: () => _shareWish(),
-              icon: const Icon(Icons.share),
+              icon: Icon(Icons.share),
               label: const Text('Share Item'),
             ),
           ],
@@ -352,7 +349,7 @@ From my HeyWish wishlist 🎁
             child: Wrap(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.share),
+                  leading: Icon(Icons.share),
                   title: const Text('Share via...'),
                   onTap: () async {
                     Navigator.pop(context);
@@ -360,7 +357,7 @@ From my HeyWish wishlist 🎁
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.copy),
+                  leading: Icon(Icons.copy),
                   title: const Text('Copy details to clipboard'),
                   onTap: () {
                     Navigator.pop(context);
@@ -372,7 +369,7 @@ From my HeyWish wishlist 🎁
                 ),
                 if (wish!.url != null)
                   ListTile(
-                    leading: const Icon(Icons.link),
+                    leading: Icon(Icons.link),
                     title: const Text('Copy product URL'),
                     onTap: () {
                       Navigator.pop(context);
@@ -485,7 +482,7 @@ class _DetailRow extends StatelessWidget {
           Icon(
             icon,
             size: 20,
-            color: AppTheme.gray400,
+            color: Colors.grey.shade300,
           ),
           const SizedBox(width: 12),
           SizedBox(
@@ -493,7 +490,7 @@ class _DetailRow extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.gray600,
+                color: Colors.grey.shade600,
                 fontWeight: FontWeight.w500,
               ),
             ),

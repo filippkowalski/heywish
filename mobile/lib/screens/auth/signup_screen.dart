@@ -85,7 +85,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 Icon(
                   Icons.card_giftcard,
                   size: 64,
-                  color: AppTheme.primaryColor,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -106,14 +106,14 @@ class _SignupScreenState extends State<SignupScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.mintColor.withOpacity(0.1),
+                      color: Colors.blue.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.info_outline,
-                          color: AppTheme.mintColor,
+                          color: Colors.blue,
                           size: 20,
                         ),
                         const SizedBox(width: 12),
@@ -121,7 +121,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: Text(
                             'Your current wishlists will be saved to your account',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppTheme.mintColor,
+                                  color: Colors.blue,
                                 ),
                           ),
                         ),
@@ -168,7 +168,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    prefixIcon: Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
@@ -198,7 +198,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   obscureText: _obscureConfirmPassword,
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    prefixIcon: Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirmPassword
@@ -261,7 +261,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.g_mobiledata),
+                  icon: Icon(Icons.g_mobiledata),
                   label: const Text('Continue with Google'),
                 ),
                 const SizedBox(height: 12),
@@ -274,7 +274,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.apple),
+                  icon: Icon(Icons.apple),
                   label: const Text('Continue with Apple'),
                 ),
                 const SizedBox(height: 32),

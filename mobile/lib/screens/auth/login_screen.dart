@@ -77,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Icon(
                   Icons.card_giftcard,
                   size: 64,
-                  color: AppTheme.primaryColor,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -115,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    prefixIcon: Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
@@ -185,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.g_mobiledata),
+                  icon: Icon(Icons.g_mobiledata),
                   label: const Text('Continue with Google'),
                 ),
                 const SizedBox(height: 12),
@@ -198,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.apple),
+                  icon: Icon(Icons.apple),
                   label: const Text('Continue with Apple'),
                 ),
                 const SizedBox(height: 32),

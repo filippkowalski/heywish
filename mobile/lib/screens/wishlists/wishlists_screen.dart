@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../services/auth_service.dart';
 import '../../services/wishlist_service.dart';
 import '../../models/wishlist.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/cached_image.dart';
 
 class WishlistsScreen extends StatefulWidget {
   const WishlistsScreen({super.key});
@@ -69,37 +71,65 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
     final wishlistService = context.watch<WishlistService>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Wishlists'),
-        actions: [
-          if (authService.isAnonymous)
-            TextButton(
-              onPressed: () {
-                context.push('/auth/signup');
-              },
-              child: const Text('Sign Up'),
-            ),
-        ],
+      backgroundColor: Colors.white,
+      body: Container(
+        color: Colors.white,
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(context, authService),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    final wishlistService = context.read<WishlistService>();
+                    final authService = context.read<AuthService>();
+                    
+                    if (authService.isAuthenticated && authService.currentUser != null) {
+                      await wishlistService.fetchWishlists();
+                    }
+                  },
+                  child: !_hasCompletedInitialLoad
+                      ? _buildInitialLoadingState(context)
+                      : wishlistService.isLoading
+                          ? _buildLoadingShimmer()
+                          : wishlistService.error != null
+                              ? _buildErrorState(wishlistService.error!)
+                              : wishlistService.wishlists.isEmpty
+                                  ? _buildEmptyState(context)
+                                  : _buildContent(wishlistService.wishlists),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          // Don't reset the _hasCompletedInitialLoad flag during refresh
-          final wishlistService = context.read<WishlistService>();
-          final authService = context.read<AuthService>();
-          
-          if (authService.isAuthenticated && authService.currentUser != null) {
-            await wishlistService.fetchWishlists();
-          }
-        },
-        child: !_hasCompletedInitialLoad
-            ? _buildInitialLoadingState(context)
-            : wishlistService.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : wishlistService.error != null
-                    ? _buildErrorState(wishlistService.error!)
-                    : wishlistService.wishlists.isEmpty
-                        ? _buildEmptyState(context)
-                        : _buildContent(wishlistService.wishlists),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, AuthService authService) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'home.title'.tr(),
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Create & share your wish lists',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -107,50 +137,140 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
   Widget _buildInitialLoadingState(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.all(40.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: 120,
+              height: 120,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(40),
+                gradient: LinearGradient(
+                  colors: [Theme.of(context).colorScheme.primary, Colors.blue],
+                ),
+                borderRadius: BorderRadius.circular(60),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
               child: Icon(
-                Icons.card_giftcard,
-                size: 40,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Loading your wishlists...',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Getting everything ready',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                Icons.auto_awesome,
+                size: 48,
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 32),
-            SizedBox(
-              width: 200,
-              child: LinearProgressIndicator(
-                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).colorScheme.primary,
+            Text(
+              'Setting up your wishlist space ✨',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: Colors.black87,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Almost ready to start making wishes!',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 40),
+            Container(
+              width: 240,
+              height: 6,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLoadingShimmer() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: 3,
+      itemBuilder: (context, index) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          height: 120,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black87.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 16,
+                        width: 120,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        height: 16,
+                        width: 80,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -180,7 +300,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: _loadWishlists,
-              icon: const Icon(Icons.refresh),
+              icon: Icon(Icons.refresh),
               label: const Text('Try Again'),
             ),
           ],
@@ -190,236 +310,65 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
   }
 
   Widget _buildContent(List<Wishlist> wishlists) {
-    return CustomScrollView(
-      slivers: [
-        // Header with stats
-        SliverToBoxAdapter(
-          child: _buildStatsHeader(wishlists),
-        ),
-        
-        // Quick actions
-        SliverToBoxAdapter(
-          child: _buildQuickActions(),
-        ),
-        
-        // Wishlists grid
-        SliverPadding(
-          padding: const EdgeInsets.all(16.0),
-          sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.8,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final wishlist = wishlists[index];
-                return _WishlistCard(wishlist: wishlist);
-              },
-              childCount: wishlists.length,
-            ),
-          ),
-        ),
-        
-        // Bottom spacing
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 100),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatsHeader(List<Wishlist> wishlists) {
-    final totalWishes = wishlists.fold<int>(0, (sum, w) => sum + w.wishCount);
-    final totalReserved = wishlists.fold<int>(0, (sum, w) => sum + w.reservedCount);
-
-    return Container(
-      margin: const EdgeInsets.all(16.0),
+    return ListView.separated(
       padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.primaryColor.withOpacity(0.1),
-            AppTheme.coralColor.withOpacity(0.1),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Your Wishlist Overview',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildStatCard('Lists', '${wishlists.length}', Icons.list_alt),
-              const SizedBox(width: 16),
-              _buildStatCard('Items', '$totalWishes', Icons.card_giftcard),
-              const SizedBox(width: 16),
-              _buildStatCard('Reserved', '$totalReserved', Icons.check_circle),
-            ],
-          ),
-        ],
-      ),
+      itemCount: wishlists.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final wishlist = wishlists[index];
+        return _WishlistCard(wishlist: wishlist);
+      },
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12.0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: AppTheme.primaryColor, size: 24),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppTheme.primaryColor,
-              ),
-            ),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActions() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Quick Actions',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _buildActionButton(
-                'Create List',
-                Icons.add_circle,
-                AppTheme.primaryColor,
-                () => context.push('/wishlists/new'),
-              ),
-              const SizedBox(width: 12),
-              _buildActionButton(
-                'Browse Ideas',
-                Icons.lightbulb_outline,
-                AppTheme.coralColor,
-                () {
-                  // TODO: Navigate to browse/discover
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Browse feature coming soon!')),
-                  );
-                },
-              ),
-              const SizedBox(width: 12),
-              _buildActionButton(
-                'Share',
-                Icons.share,
-                AppTheme.skyColor,
-                () {
-                  // TODO: Share functionality
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Share feature coming soon!')),
-                  );
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(String label, IconData icon, Color color, VoidCallback onTap) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.2)),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, color: color, size: 24),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.all(40.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.card_giftcard_outlined,
-              size: 80,
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Icon(
+                Icons.list_alt_outlined,
+                size: 48,
+                color: Colors.grey.shade600,
+              ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'No wishlists yet',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Create your first wishlist and start adding items you love',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
+            
             const SizedBox(height: 24),
-            FilledButton.icon(
+            
+            Text(
+              'home.empty_title'.tr(),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            
+            const SizedBox(height: 8),
+            
+            Text(
+              'home.empty_subtitle'.tr(),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            
+            const SizedBox(height: 32),
+            
+            ElevatedButton.icon(
               onPressed: () {
                 context.push('/wishlists/new');
               },
-              icon: const Icon(Icons.add),
-              label: const Text('Create Wishlist'),
+              icon: Icon(Icons.add),
+              label: Text('home.create_first_wishlist'.tr()),
             ),
           ],
         ),
@@ -429,93 +378,155 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
 
 }
 
-class _WishlistCard extends StatelessWidget {
+class _WishlistCard extends StatefulWidget {
   final Wishlist wishlist;
 
   const _WishlistCard({required this.wishlist});
 
   @override
+  State<_WishlistCard> createState() => _WishlistCardState();
+}
+
+class _WishlistCardState extends State<_WishlistCard> {
+  bool _isPressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          context.push('/wishlists/${wishlist.id}');
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 120,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
-              ),
-              child: wishlist.coverImageUrl != null
-                  ? Image.network(
-                      wishlist.coverImageUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(
-                          Icons.card_giftcard,
-                          size: 48,
-                          color: AppTheme.primaryColor,
-                        );
-                      },
-                    )
-                  : const Icon(
-                      Icons.card_giftcard,
-                      size: 48,
-                      color: AppTheme.primaryColor,
-                    ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      wishlist.name,
-                      style: Theme.of(context).textTheme.titleMedium,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${wishlist.wishCount} items',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    if (wishlist.reservedCount > 0)
-                      Text(
-                        '${wishlist.reservedCount} reserved',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.mintColor,
-                            ),
-                      ),
-                    const Spacer(),
-                    if (wishlist.isPublic)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      decoration: BoxDecoration(
+        color: _isPressed ? Colors.grey.shade50 : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _isPressed ? AppTheme.cardBorderActive : AppTheme.cardBorder,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.cardShadow,
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTapDown: (_) => setState(() => _isPressed = true),
+          onTapUp: (_) => setState(() => _isPressed = false),
+          onTapCancel: () => setState(() => _isPressed = false),
+          onTap: () {
+            context.push('/wishlists/${widget.wishlist.id}');
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                // Icon/Image container
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: widget.wishlist.coverImageUrl != null
+                      ? CachedImageWidget(
+                          imageUrl: widget.wishlist.coverImageUrl!,
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                          borderRadius: BorderRadius.circular(12),
+                          errorWidget: Icon(
+                            Icons.card_giftcard_outlined,
+                            size: 28,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        )
+                      : Icon(
+                          Icons.card_giftcard_outlined,
+                          size: 28,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.skyColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'Public',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: AppTheme.skyColor,
-                              ),
-                        ),
-                      ),
-                  ],
                 ),
-              ),
+                
+                const SizedBox(width: 16),
+                
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              widget.wishlist.name,
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (widget.wishlist.isPublic)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Public',
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 6),
+                      
+                      Row(
+                        children: [
+                          Text(
+                            '${widget.wishlist.wishCount} items',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          if (widget.wishlist.reservedCount > 0) ...[
+                            Text(
+                              ' • ',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            Text(
+                              '${widget.wishlist.reservedCount} reserved',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppTheme.success,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Arrow indicator
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 14,
+                  color: AppTheme.arrowIndicator,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

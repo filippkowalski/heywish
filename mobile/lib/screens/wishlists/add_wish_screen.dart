@@ -100,7 +100,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
           child: Wrap(
             children: [
               ListTile(
-                leading: const Icon(Icons.photo_library),
+                leading: Icon(Icons.photo_library),
                 title: const Text('Choose from Gallery'),
                 onTap: () {
                   Navigator.pop(context);
@@ -108,7 +108,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_camera),
+                leading: Icon(Icons.photo_camera),
                 title: const Text('Take Photo'),
                 onTap: () {
                   Navigator.pop(context);
@@ -117,7 +117,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
               ),
               if (_selectedImage != null)
                 ListTile(
-                  leading: const Icon(Icons.delete, color: Colors.red),
+                  leading: Icon(Icons.delete, color: Colors.red),
                   title: const Text('Remove Image'),
                   onTap: () {
                     Navigator.pop(context);
@@ -236,10 +236,10 @@ class _AddWishScreenState extends State<AddWishScreen> {
                           width: double.infinity,
                           height: 150,
                           decoration: BoxDecoration(
-                            color: AppTheme.gray100,
+                            color: Colors.grey.shade100,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: AppTheme.gray200,
+                              color: Colors.grey.shade100,
                               style: BorderStyle.solid,
                             ),
                           ),
@@ -264,7 +264,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
                                           borderRadius: BorderRadius.circular(20),
                                         ),
                                         child: IconButton(
-                                          icon: const Icon(
+                                          icon: Icon(
                                             Icons.edit,
                                             color: Colors.white,
                                             size: 20,
@@ -281,13 +281,13 @@ class _AddWishScreenState extends State<AddWishScreen> {
                                     Icon(
                                       Icons.add_photo_alternate_outlined,
                                       size: 40,
-                                      color: AppTheme.gray400,
+                                      color: Colors.grey.shade300,
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
                                       'Add Photo',
                                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        color: AppTheme.gray600,
+                                        color: Colors.grey.shade600,
                                       ),
                                     ),
                                   ],
@@ -414,7 +414,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
                                       (index) => Icon(
                                         Icons.star,
                                         size: 16,
-                                        color: AppTheme.primaryColor,
+                                        color: Theme.of(context).colorScheme.primary,
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -460,7 +460,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
                                         });
                                       }
                                     : null,
-                                icon: const Icon(Icons.remove),
+                                icon: Icon(Icons.remove),
                                 iconSize: 20,
                               ),
                               Text(
@@ -473,7 +473,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
                                     _quantity++;
                                   });
                                 },
-                                icon: const Icon(Icons.add),
+                                icon: Icon(Icons.add),
                                 iconSize: 20,
                               ),
                             ],

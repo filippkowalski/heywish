@@ -3,9 +3,14 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
+import '../friends/friends_screen.dart';
+import '../activity_screen.dart';
+import '../../widgets/cached_image.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  final VoidCallback? onNavigateToSearch;
+  
+  const ProfileScreen({super.key, this.onNavigateToSearch});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +24,7 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           if (!authService.isAnonymous)
             IconButton(
-              icon: const Icon(Icons.settings),
+              icon: Icon(Icons.settings),
               onPressed: () {
                 // TODO: Navigate to settings
               },
@@ -30,19 +35,10 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 32),
-            CircleAvatar(
+            CachedAvatarImage(
+              imageUrl: user?.avatarUrl,
               radius: 50,
-              backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-              backgroundImage: user?.avatarUrl != null
-                  ? NetworkImage(user!.avatarUrl!)
-                  : null,
-              child: user?.avatarUrl == null
-                  ? Icon(
-                      Icons.person,
-                      size: 50,
-                      color: AppTheme.primaryColor,
-                    )
-                  : null,
+              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
             ),
             const SizedBox(height: 16),
             if (authService.isAnonymous) ...[
@@ -67,15 +63,15 @@ class ProfileScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppTheme.primaryColor.withOpacity(0.1),
-                      AppTheme.coralColor.withOpacity(0.1),
+                      Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      Colors.blue.withOpacity(0.1),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.2),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                   ),
                 ),
                 child: Column(
@@ -83,7 +79,7 @@ class ProfileScreen extends StatelessWidget {
                     Icon(
                       Icons.account_circle_outlined,
                       size: 48,
-                      color: AppTheme.primaryColor,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -153,48 +149,79 @@ class ProfileScreen extends StatelessWidget {
     return Column(
       children: [
         ListTile(
-          leading: const Icon(Icons.person_outline),
+          leading: Icon(Icons.people_outline),
+          title: const Text('Friends'),
+          trailing: Icon(Icons.chevron_right),
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => FriendsScreen(
+                  onNavigateToSearch: () {
+                    Navigator.of(context).pop();
+                    onNavigateToSearch?.call();
+                  },
+                ),
+              ),
+            );
+          },
+        ),
+        const Divider(height: 1),
+        ListTile(
+          leading: Icon(Icons.notifications_outlined),
+          title: const Text('Activity'),
+          trailing: Icon(Icons.chevron_right),
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => ActivityScreen(),
+              ),
+            );
+          },
+        ),
+        const Divider(height: 1),
+        ListTile(
+          leading: Icon(Icons.person_outline),
           title: const Text('Edit Profile'),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: Icon(Icons.chevron_right),
           onTap: () {
             // TODO: Navigate to edit profile
           },
         ),
         ListTile(
-          leading: const Icon(Icons.notifications_outlined),
+          leading: Icon(Icons.notifications_outlined),
           title: const Text('Notifications'),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: Icon(Icons.chevron_right),
           onTap: () {
             // TODO: Navigate to notifications settings
           },
         ),
         ListTile(
-          leading: const Icon(Icons.lock_outline),
+          leading: Icon(Icons.lock_outline),
           title: const Text('Privacy'),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: Icon(Icons.chevron_right),
           onTap: () {
             // TODO: Navigate to privacy settings
           },
         ),
         ListTile(
-          leading: const Icon(Icons.help_outline),
+          leading: Icon(Icons.help_outline),
           title: const Text('Help & Support'),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: Icon(Icons.chevron_right),
           onTap: () {
             // TODO: Navigate to help
           },
         ),
         ListTile(
-          leading: const Icon(Icons.info_outline),
+          leading: Icon(Icons.info_outline),
           title: const Text('About'),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: Icon(Icons.chevron_right),
           onTap: () {
             // TODO: Navigate to about
           },
         ),
         const Divider(),
         ListTile(
-          leading: const Icon(Icons.logout, color: Colors.red),
+          leading: Icon(Icons.logout, color: Colors.red),
           title: const Text(
             'Sign Out',
             style: TextStyle(color: Colors.red),
@@ -244,16 +271,19 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _buildFeatureTile(
+            context,
             icon: Icons.list_alt,
             title: 'Create Wishlists',
             subtitle: 'Add unlimited wishlists and items',
           ),
           _buildFeatureTile(
+            context,
             icon: Icons.share,
             title: 'Share with Others',
             subtitle: 'Generate shareable links instantly',
           ),
           _buildFeatureTile(
+            context,
             icon: Icons.star_outline,
             title: 'Set Priorities',
             subtitle: 'Organize items by importance',
@@ -293,7 +323,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeatureTile({
+  Widget _buildFeatureTile(BuildContext context, {
     required IconData icon,
     required String title,
     required String subtitle,
@@ -305,12 +335,12 @@ class ProfileScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               icon,
-              color: AppTheme.primaryColor,
+              color: Theme.of(context).colorScheme.primary,
               size: 20,
             ),
           ),

@@ -81,7 +81,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Text(
                       'Skip',
                       style: TextStyle(
-                        color: AppTheme.gray600,
+                        color: Colors.grey.shade600,
                         fontSize: 16,
                       ),
                     ),
@@ -122,8 +122,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         height: 8,
                         decoration: BoxDecoration(
                           color: _currentPage == index
-                              ? AppTheme.primaryColor
-                              : AppTheme.gray200,
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       );
@@ -170,7 +170,7 @@ class _OnboardingPage1 extends StatelessWidget {
             width: 200,
             height: 200,
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(100),
             ),
             child: Stack(
@@ -180,10 +180,10 @@ class _OnboardingPage1 extends StatelessWidget {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor,
+                    color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(60),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.card_giftcard,
                     size: 60,
                     color: Colors.white,
@@ -196,10 +196,10 @@ class _OnboardingPage1 extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppTheme.coralColor,
+                      color: Colors.blue,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.favorite,
                       color: Colors.white,
                       size: 20,
@@ -213,10 +213,10 @@ class _OnboardingPage1 extends StatelessWidget {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: AppTheme.mintColor,
+                      color: Colors.blue,
                       borderRadius: BorderRadius.circular(25),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.check_circle,
                       color: Colors.white,
                       size: 25,
@@ -232,7 +232,7 @@ class _OnboardingPage1 extends StatelessWidget {
           Text(
             'Welcome to HeyWish',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
-              color: AppTheme.gray900,
+              color: Colors.black87,
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center,
@@ -243,7 +243,7 @@ class _OnboardingPage1 extends StatelessWidget {
           Text(
             'Create beautiful wishlists and make gifting delightful for everyone',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: AppTheme.gray600,
+              color: Colors.grey.shade600,
               height: 1.5,
             ),
             textAlign: TextAlign.center,
@@ -297,12 +297,12 @@ class _OnboardingPage2 extends StatelessWidget {
                             width: double.infinity,
                             height: 60,
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryColor.withOpacity(0.1),
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
                               Icons.cake,
-                              color: AppTheme.primaryColor,
+                              color: Theme.of(context).colorScheme.primary,
                               size: 30,
                             ),
                           ),
@@ -311,7 +311,7 @@ class _OnboardingPage2 extends StatelessWidget {
                             width: 120,
                             height: 8,
                             decoration: BoxDecoration(
-                              color: AppTheme.gray900,
+                              color: Colors.black87,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -320,7 +320,7 @@ class _OnboardingPage2 extends StatelessWidget {
                             width: 80,
                             height: 6,
                             decoration: BoxDecoration(
-                              color: AppTheme.gray400,
+                              color: Colors.grey.shade300,
                               borderRadius: BorderRadius.circular(3),
                             ),
                           ),
@@ -338,17 +338,17 @@ class _OnboardingPage2 extends StatelessWidget {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor,
+                      color: Theme.of(context).colorScheme.primary,
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.3),
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                           blurRadius: 15,
                           offset: const Offset(0, 8),
                         ),
                       ],
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.add,
                       color: Colors.white,
                       size: 28,
@@ -364,7 +364,7 @@ class _OnboardingPage2 extends StatelessWidget {
           Text(
             'Organize Your Wishes',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
-              color: AppTheme.gray900,
+              color: Colors.black87,
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center,
@@ -375,7 +375,7 @@ class _OnboardingPage2 extends StatelessWidget {
           Text(
             'Create multiple wishlists for different occasions and add items with photos, prices, and links',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: AppTheme.gray600,
+              color: Colors.grey.shade600,
               height: 1.5,
             ),
             textAlign: TextAlign.center,
@@ -423,13 +423,13 @@ class _OnboardingPage3 extends StatelessWidget {
                       Container(
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
+                          color: Theme.of(context).colorScheme.primary,
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(16),
                             topRight: Radius.circular(16),
                           ),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Icon(
                             Icons.share,
                             color: Colors.white,
@@ -446,7 +446,7 @@ class _OnboardingPage3 extends StatelessWidget {
                                 width: double.infinity,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: AppTheme.gray100,
+                                  color: Colors.grey.shade100,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
@@ -457,7 +457,7 @@ class _OnboardingPage3 extends StatelessWidget {
                                     width: 20,
                                     height: 4,
                                     decoration: BoxDecoration(
-                                      color: AppTheme.gray200,
+                                      color: Colors.grey.shade100,
                                       borderRadius: BorderRadius.circular(2),
                                     ),
                                   ),
@@ -466,7 +466,7 @@ class _OnboardingPage3 extends StatelessWidget {
                                     width: 30,
                                     height: 4,
                                     decoration: BoxDecoration(
-                                      color: AppTheme.gray200,
+                                      color: Colors.grey.shade100,
                                       borderRadius: BorderRadius.circular(2),
                                     ),
                                   ),
@@ -486,7 +486,7 @@ class _OnboardingPage3 extends StatelessWidget {
                   left: 0,
                   child: CircleAvatar(
                     radius: 20,
-                    backgroundColor: AppTheme.coralColor,
+                    backgroundColor: Colors.blue,
                     child: Text(
                       'J',
                       style: TextStyle(
@@ -501,7 +501,7 @@ class _OnboardingPage3 extends StatelessWidget {
                   right: 0,
                   child: CircleAvatar(
                     radius: 18,
-                    backgroundColor: AppTheme.mintColor,
+                    backgroundColor: Colors.blue,
                     child: Text(
                       'S',
                       style: TextStyle(
@@ -516,7 +516,7 @@ class _OnboardingPage3 extends StatelessWidget {
                   left: 10,
                   child: CircleAvatar(
                     radius: 16,
-                    backgroundColor: AppTheme.skyColor,
+                    backgroundColor: Colors.blue,
                     child: Text(
                       'M',
                       style: TextStyle(
@@ -536,7 +536,7 @@ class _OnboardingPage3 extends StatelessWidget {
           Text(
             'Share & Connect',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
-              color: AppTheme.gray900,
+              color: Colors.black87,
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center,
@@ -547,7 +547,7 @@ class _OnboardingPage3 extends StatelessWidget {
           Text(
             'Share your wishlists with friends and family. They can reserve items so there are no duplicate gifts',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: AppTheme.gray600,
+              color: Colors.grey.shade600,
               height: 1.5,
             ),
             textAlign: TextAlign.center,
@@ -586,7 +586,7 @@ class _SignupOptionsSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppTheme.gray200,
+              color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -597,13 +597,13 @@ class _SignupOptionsSheet extends StatelessWidget {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(40),
             ),
             child: Icon(
               Icons.person_add,
               size: 40,
-              color: AppTheme.primaryColor,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           const SizedBox(height: 24),
@@ -621,7 +621,7 @@ class _SignupOptionsSheet extends StatelessWidget {
           Text(
             'Create an account to save your wishlists and sync across devices, or continue browsing as a guest.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: AppTheme.gray600,
+              color: Colors.grey.shade600,
               height: 1.5,
             ),
             textAlign: TextAlign.center,
@@ -658,7 +658,7 @@ class _SignupOptionsSheet extends StatelessWidget {
           Text(
             'Guest data is stored locally and will be lost if you uninstall the app.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppTheme.gray400,
+              color: Colors.grey.shade300,
             ),
             textAlign: TextAlign.center,
           ),

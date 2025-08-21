@@ -110,7 +110,7 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
@@ -200,7 +200,7 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
                                       _selectedVisibility = value!;
                                     });
                                   },
-                                  activeColor: AppTheme.primaryColor,
+                                  activeColor: Theme.of(context).colorScheme.primary,
                                 );
                               }).toList(),
                             ),
@@ -220,7 +220,7 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
                               height: 16,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.save),
+                          : Icon(Icons.save),
                       label: Text(_isLoading ? 'Saving...' : 'Save Changes'),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.all(16),

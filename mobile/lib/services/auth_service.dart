@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:flutter/foundation.dart';
 import 'api_service.dart';
@@ -9,6 +10,7 @@ class AuthService extends ChangeNotifier {
   
   User? _currentUser;
   firebase.User? _firebaseUser;
+  StreamSubscription<firebase.User?>? _authStateSubscription;
   
   User? get currentUser => _currentUser;
   firebase.User? get firebaseUser => _firebaseUser;
@@ -16,7 +18,7 @@ class AuthService extends ChangeNotifier {
   bool get isAnonymous => _firebaseUser?.isAnonymous ?? true;
   
   AuthService() {
-    _firebaseAuth.authStateChanges().listen(_onAuthStateChanged);
+    _authStateSubscription = _firebaseAuth.authStateChanges().listen(_onAuthStateChanged);
   }
   
   Future<void> _onAuthStateChanged(firebase.User? firebaseUser) async {
@@ -42,13 +44,20 @@ class AuthService extends ChangeNotifier {
         
         debugPrint('🔄 AuthService: Syncing user with backend (attempt $attempt/$retries)');
         debugPrint('🔄 AuthService: Firebase UID: ${_firebaseUser!.uid}');
-        debugPrint('🔄 AuthService: Is anonymous: ${_firebaseUser!.isAnonymous}');
+        debugPrint('🔄 AuthService: Is anonymous (before reload): ${_firebaseUser!.isAnonymous}');
+        
+        // Reload user to get fresh data after potential linking
+        await _firebaseUser!.reload();
+        final refreshedUser = _firebaseAuth.currentUser;
+        debugPrint('🔄 AuthService: Is anonymous (after reload): ${refreshedUser!.isAnonymous}');
+        debugPrint('🔄 AuthService: Email: ${refreshedUser.email}');
+        debugPrint('🔄 AuthService: Display name: ${refreshedUser.displayName}');
         
         final response = await _apiService.post('/auth/sync', {
-          'firebase_uid': _firebaseUser!.uid,
-          'email': _firebaseUser!.email,
-          'full_name': _firebaseUser!.displayName,
-          'is_anonymous': _firebaseUser!.isAnonymous,
+          'firebase_uid': refreshedUser!.uid,
+          'email': refreshedUser.email,
+          'full_name': refreshedUser.displayName,
+          'is_anonymous': refreshedUser.isAnonymous,
         });
         
         _currentUser = User.fromJson(response['user']);
@@ -171,5 +180,11 @@ class AuthService extends ChangeNotifier {
   
   Future<String?> getIdToken() async {
     return await _firebaseUser?.getIdToken();
+  }
+  
+  @override
+  void dispose() {
+    _authStateSubscription?.cancel();
+    super.dispose();
   }
 }

@@ -70,4 +70,35 @@ class Wishlist {
       if (wishes != null) 'items': wishes!.map((w) => w.toJson()).toList(),
     };
   }
+
+  /// Create a copy with updated fields
+  Wishlist copyWith({
+    String? id,
+    String? userId,
+    String? name,
+    String? description,
+    String? visibility,
+    String? shareToken,
+    String? coverImageUrl,
+    int? wishCount,
+    int? reservedCount,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    List<Wish>? wishes,
+  }) {
+    return Wishlist(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      visibility: visibility ?? this.visibility,
+      shareToken: shareToken ?? this.shareToken,
+      coverImageUrl: coverImageUrl ?? this.coverImageUrl,
+      wishCount: wishCount ?? this.wishCount,
+      reservedCount: reservedCount ?? this.reservedCount,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      wishes: wishes ?? this.wishes,
+    );
+  }
 }

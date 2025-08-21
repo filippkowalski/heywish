@@ -4,6 +4,7 @@ import '../services/friends_service.dart';
 import '../models/friend.dart';
 import '../theme/app_theme.dart';
 import 'package:intl/intl.dart';
+import '../widgets/cached_image.dart';
 
 class ActivityScreen extends StatefulWidget {
   const ActivityScreen({super.key});
@@ -272,17 +273,10 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Avatar
-              CircleAvatar(
+              CachedAvatarImage(
+                imageUrl: activity.avatarUrl,
                 radius: 20,
                 backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                backgroundImage: activity.avatarUrl != null ? NetworkImage(activity.avatarUrl!) : null,
-                child: activity.avatarUrl == null
-                    ? Icon(
-                        Icons.person,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 20,
-                      )
-                    : null,
               ),
               const SizedBox(width: 12),
               

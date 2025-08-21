@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../theme/app_theme.dart';
 import '../../services/friends_service.dart';
 import '../../models/friend.dart';
+import '../../widgets/cached_image.dart';
 
 class FriendsScreen extends StatefulWidget {
   final VoidCallback? onNavigateToSearch;
@@ -15,20 +17,16 @@ class FriendsScreen extends StatefulWidget {
 
 class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateMixin {
   late TabController _tabController;
-  final FriendsService _friendsService = FriendsService();
   final TextEditingController _searchController = TextEditingController();
-
-  List<Friend> _friends = [];
-  List<FriendRequest> _friendRequests = [];
-  List<FriendRequest> _sentRequests = [];
-  bool _isLoadingFriends = false;
-  bool _isLoadingRequests = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadData();
+    // Load data through the service when screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<FriendsService>().loadAllData();
+    });
   }
 
   @override
@@ -38,89 +36,13 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    await Future.wait([
-      _loadFriends(),
-      _loadFriendRequests(),
-      _loadSentRequests(),
-    ]);
-  }
-
-  Future<void> _loadFriends() async {
-    setState(() {
-      _isLoadingFriends = true;
-    });
-
-    try {
-      final friends = await _friendsService.getFriends();
-      setState(() {
-        _friends = friends;
-      });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading friends: $e'),
-            backgroundColor: Colors.red.shade600,
-          ),
-        );
-      }
-    } finally {
-      setState(() {
-        _isLoadingFriends = false;
-      });
-    }
-  }
-
-  Future<void> _loadFriendRequests() async {
-    setState(() {
-      _isLoadingRequests = true;
-    });
-
-    try {
-      final requests = await _friendsService.getFriendRequests(type: 'received');
-      setState(() {
-        _friendRequests = requests;
-      });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading friend requests: $e'),
-            backgroundColor: Colors.red.shade600,
-          ),
-        );
-      }
-    } finally {
-      setState(() {
-        _isLoadingRequests = false;
-      });
-    }
-  }
-
-  Future<void> _loadSentRequests() async {
-    try {
-      final requests = await _friendsService.getFriendRequests(type: 'sent');
-      setState(() {
-        _sentRequests = requests;
-      });
-    } catch (e) {
-      debugPrint('Error loading sent requests: $e');
-    }
-  }
-
   Future<void> _respondToRequest(FriendRequest request, String action) async {
     try {
-      await _friendsService.respondToFriendRequest(request.id, action);
+      await context.read<FriendsService>().respondToFriendRequest(request.id, action);
       
-      // Remove from requests list
-      setState(() {
-        _friendRequests.removeWhere((r) => r.id == request.id);
-      });
-
-      // If accepted, refresh friends list
+      // Reload data to get fresh state
       if (action == 'accept') {
-        await _loadFriends();
+        await context.read<FriendsService>().loadAllData();
       }
 
       if (mounted) {
@@ -145,125 +67,129 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text('Friends'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              widget.onNavigateToSearch?.call();
-            },
-            icon: Icon(Icons.person_add_outlined),
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.people),
-                  SizedBox(width: 8),
-                  Text('Friends'),
-                  if (_friends.isNotEmpty) ...[
-                    SizedBox(width: 4),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${_friends.length}',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
+    return Consumer<FriendsService>(
+      builder: (context, friendsService, child) {
+        return Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            title: Text('Friends'),
+            actions: [
+              IconButton(
+                onPressed: () {
+                  widget.onNavigateToSearch?.call();
+                },
+                icon: Icon(Icons.person_add_outlined),
               ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.inbox),
-                  SizedBox(width: 8),
-                  Text('Requests'),
-                  if (_friendRequests.isNotEmpty) ...[
-                    SizedBox(width: 4),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade600,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${_friendRequests.length}',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+            ],
+            bottom: TabBar(
+              controller: _tabController,
+              tabs: [
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.people),
+                      SizedBox(width: 8),
+                      Text('Friends'),
+                      if (friendsService.friends.isNotEmpty) ...[
+                        SizedBox(width: 4),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${friendsService.friends.length}',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.send),
-                  SizedBox(width: 8),
-                  Text('Sent'),
-                  if (_sentRequests.isNotEmpty) ...[
-                    SizedBox(width: 4),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade600,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${_sentRequests.length}',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                      ],
+                    ],
+                  ),
+                ),
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.inbox),
+                      SizedBox(width: 8),
+                      Text('Requests'),
+                      if (friendsService.friendRequests.isNotEmpty) ...[
+                        SizedBox(width: 4),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade600,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${friendsService.friendRequests.length}',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+                      ],
+                    ],
+                  ),
+                ),
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.send),
+                      SizedBox(width: 8),
+                      Text('Sent'),
+                      if (friendsService.sentRequests.isNotEmpty) ...[
+                        SizedBox(width: 4),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade600,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${friendsService.sentRequests.length}',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildFriendsTab(),
-          _buildRequestsTab(),
-          _buildSentTab(),
-        ],
-      ),
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildFriendsTab(friendsService),
+              _buildRequestsTab(friendsService),
+              _buildSentTab(friendsService),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildFriendsTab() {
-    if (_isLoadingFriends) {
+  Widget _buildFriendsTab(FriendsService friendsService) {
+    if (friendsService.isLoadingFriends) {
       return Center(child: CircularProgressIndicator());
     }
 
-    if (_friends.isEmpty) {
+    if (friendsService.friends.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -301,24 +227,24 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     }
 
     return RefreshIndicator(
-      onRefresh: _loadFriends,
+      onRefresh: () => friendsService.getFriends(),
       child: ListView.builder(
         padding: EdgeInsets.all(16),
-        itemCount: _friends.length,
+        itemCount: friendsService.friends.length,
         itemBuilder: (context, index) {
-          final friend = _friends[index];
+          final friend = friendsService.friends[index];
           return _buildFriendCard(friend);
         },
       ),
     );
   }
 
-  Widget _buildRequestsTab() {
-    if (_isLoadingRequests) {
+  Widget _buildRequestsTab(FriendsService friendsService) {
+    if (friendsService.isLoadingRequests) {
       return Center(child: CircularProgressIndicator());
     }
 
-    if (_friendRequests.isEmpty) {
+    if (friendsService.friendRequests.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -348,20 +274,20 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     }
 
     return RefreshIndicator(
-      onRefresh: _loadFriendRequests,
+      onRefresh: () => friendsService.getFriendRequests(type: 'received'),
       child: ListView.builder(
         padding: EdgeInsets.all(16),
-        itemCount: _friendRequests.length,
+        itemCount: friendsService.friendRequests.length,
         itemBuilder: (context, index) {
-          final request = _friendRequests[index];
+          final request = friendsService.friendRequests[index];
           return _buildRequestCard(request);
         },
       ),
     );
   }
 
-  Widget _buildSentTab() {
-    if (_sentRequests.isEmpty) {
+  Widget _buildSentTab(FriendsService friendsService) {
+    if (friendsService.sentRequests.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -391,12 +317,12 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     }
 
     return RefreshIndicator(
-      onRefresh: _loadSentRequests,
+      onRefresh: () => friendsService.getFriendRequests(type: 'sent'),
       child: ListView.builder(
         padding: EdgeInsets.all(16),
-        itemCount: _sentRequests.length,
+        itemCount: friendsService.sentRequests.length,
         itemBuilder: (context, index) {
-          final request = _sentRequests[index];
+          final request = friendsService.sentRequests[index];
           return _buildSentRequestCard(request);
         },
       ),
@@ -408,16 +334,9 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       margin: EdgeInsets.only(bottom: 12),
       child: ListTile(
         contentPadding: EdgeInsets.all(16),
-        leading: CircleAvatar(
+        leading: CachedAvatarImage(
+          imageUrl: friend.avatarUrl,
           radius: 24,
-          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-          backgroundImage: friend.avatarUrl != null ? NetworkImage(friend.avatarUrl!) : null,
-          child: friend.avatarUrl == null
-              ? Icon(
-                  Icons.person,
-                  color: Theme.of(context).colorScheme.primary,
-                )
-              : null,
         ),
         title: Text(
           friend.displayName,
@@ -451,18 +370,9 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       margin: EdgeInsets.only(bottom: 12),
       child: ListTile(
         contentPadding: EdgeInsets.all(16),
-        leading: CircleAvatar(
+        leading: CachedAvatarImage(
+          imageUrl: request.requesterAvatarUrl,
           radius: 24,
-          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-          backgroundImage: request.requesterAvatarUrl != null 
-              ? NetworkImage(request.requesterAvatarUrl!) 
-              : null,
-          child: request.requesterAvatarUrl == null
-              ? Icon(
-                  Icons.person,
-                  color: Theme.of(context).colorScheme.primary,
-                )
-              : null,
         ),
         title: Text(
           request.requesterDisplayName,
@@ -501,18 +411,9 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       margin: EdgeInsets.only(bottom: 12),
       child: ListTile(
         contentPadding: EdgeInsets.all(16),
-        leading: CircleAvatar(
+        leading: CachedAvatarImage(
+          imageUrl: request.addresseeAvatarUrl,
           radius: 24,
-          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-          backgroundImage: request.addresseeAvatarUrl != null 
-              ? NetworkImage(request.addresseeAvatarUrl!) 
-              : null,
-          child: request.addresseeAvatarUrl == null
-              ? Icon(
-                  Icons.person,
-                  color: Theme.of(context).colorScheme.primary,
-                )
-              : null,
         ),
         title: Text(
           request.addresseeDisplayName,
@@ -566,17 +467,9 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                     padding: EdgeInsets.all(24),
                     child: Column(
                       children: [
-                        CircleAvatar(
+                        CachedAvatarImage(
+                          imageUrl: friend.avatarUrl,
                           radius: 40,
-                          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                          backgroundImage: friend.avatarUrl != null ? NetworkImage(friend.avatarUrl!) : null,
-                          child: friend.avatarUrl == null
-                              ? Icon(
-                                  Icons.person,
-                                  size: 40,
-                                  color: Theme.of(context).colorScheme.primary,
-                                )
-                              : null,
                         ),
                         SizedBox(height: 16),
                         Text(

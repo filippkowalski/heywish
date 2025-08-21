@@ -6,6 +6,7 @@ import 'dart:io';
 import '../../models/wish.dart';
 import '../../services/wishlist_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/cached_image.dart';
 
 class EditWishScreen extends StatefulWidget {
   final String wishId;
@@ -134,7 +135,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
           child: Wrap(
             children: [
               ListTile(
-                leading: const Icon(Icons.photo_library),
+                leading: Icon(Icons.photo_library),
                 title: const Text('Choose from Gallery'),
                 onTap: () {
                   Navigator.pop(context);
@@ -142,7 +143,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_camera),
+                leading: Icon(Icons.photo_camera),
                 title: const Text('Take Photo'),
                 onTap: () {
                   Navigator.pop(context);
@@ -151,7 +152,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
               ),
               if (_selectedImage != null || _currentImageUrl != null)
                 ListTile(
-                  leading: const Icon(Icons.delete, color: Colors.red),
+                  leading: Icon(Icons.delete, color: Colors.red),
                   title: const Text('Remove Image'),
                   onTap: () {
                     Navigator.pop(context);
@@ -242,7 +243,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
     if (_wish == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Edit Item')),
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -289,10 +290,10 @@ class _EditWishScreenState extends State<EditWishScreen> {
                           width: double.infinity,
                           height: 150,
                           decoration: BoxDecoration(
-                            color: AppTheme.gray100,
+                            color: Colors.grey.shade100,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: AppTheme.gray200,
+                              color: Colors.grey.shade100,
                               style: BorderStyle.solid,
                             ),
                           ),
@@ -317,7 +318,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
                                           borderRadius: BorderRadius.circular(20),
                                         ),
                                         child: IconButton(
-                                          icon: const Icon(
+                                          icon: Icon(
                                             Icons.edit,
                                             color: Colors.white,
                                             size: 20,
@@ -331,22 +332,18 @@ class _EditWishScreenState extends State<EditWishScreen> {
                               : _currentImageUrl != null
                                   ? Stack(
                                       children: [
-                                        ClipRRect(
+                                        CachedImageWidget(
+                                          imageUrl: _currentImageUrl!,
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          fit: BoxFit.cover,
                                           borderRadius: BorderRadius.circular(11),
-                                          child: Image.network(
-                                            _currentImageUrl!,
-                                            width: double.infinity,
-                                            height: double.infinity,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return const Center(
-                                                child: Icon(
-                                                  Icons.card_giftcard,
-                                                  size: 40,
-                                                  color: AppTheme.gray400,
-                                                ),
-                                              );
-                                            },
+                                          errorWidget: Center(
+                                            child: Icon(
+                                              Icons.card_giftcard,
+                                              size: 40,
+                                              color: Colors.grey.shade300,
+                                            ),
                                           ),
                                         ),
                                         Positioned(
@@ -358,7 +355,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
                                               borderRadius: BorderRadius.circular(20),
                                             ),
                                             child: IconButton(
-                                              icon: const Icon(
+                                              icon: Icon(
                                                 Icons.edit,
                                                 color: Colors.white,
                                                 size: 20,
@@ -375,13 +372,13 @@ class _EditWishScreenState extends State<EditWishScreen> {
                                         Icon(
                                           Icons.add_photo_alternate_outlined,
                                           size: 40,
-                                          color: AppTheme.gray400,
+                                          color: Colors.grey.shade300,
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
                                           'Add Photo',
                                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                            color: AppTheme.gray600,
+                                            color: Colors.grey.shade600,
                                           ),
                                         ),
                                       ],
@@ -508,7 +505,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
                                       (index) => Icon(
                                         Icons.star,
                                         size: 16,
-                                        color: AppTheme.primaryColor,
+                                        color: Theme.of(context).colorScheme.primary,
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -554,7 +551,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
                                         });
                                       }
                                     : null,
-                                icon: const Icon(Icons.remove),
+                                icon: Icon(Icons.remove),
                                 iconSize: 20,
                               ),
                               Text(
@@ -567,7 +564,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
                                     _quantity++;
                                   });
                                 },
-                                icon: const Icon(Icons.add),
+                                icon: Icon(Icons.add),
                                 iconSize: 20,
                               ),
                             ],
