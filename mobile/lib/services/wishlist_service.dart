@@ -454,7 +454,7 @@ class WishlistService extends ChangeNotifier {
       // Step 4: Refresh wishlist data
       await fetchWishlist(wishlistId);
 
-      print('✅ WishlistService: Cover image uploaded successfully');
+      debugPrint('✅ WishlistService: Cover image uploaded successfully');
       return true;
 
     } catch (e) {

@@ -13,7 +13,7 @@ import 'services/friends_service.dart';
 import 'services/preferences_service.dart';
 import 'services/sync_manager.dart';
 import 'screens/splash_screen.dart';
-import 'screens/onboarding_screen.dart';
+import 'screens/onboarding/onboarding_flow_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
@@ -95,7 +95,7 @@ final _router = GoRouter(
     ),
     GoRoute(
       path: '/onboarding',
-      builder: (context, state) => const OnboardingScreen(),
+      builder: (context, state) => const OnboardingFlowScreen(),
     ),
     GoRoute(
       path: '/home',

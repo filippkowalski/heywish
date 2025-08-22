@@ -1,3 +1,4 @@
+
 {
   "app": {
     "title": "HeyWish",
@@ -37,15 +38,20 @@
     "signed_out_successfully": "Signed out successfully"
   },
   "onboarding": {
+    "skip": "Skip",
+    "next": "Next",
+    "get_started": "Get Started",
     "welcome_title": "Welcome to HeyWish",
-    "welcome_subtitle": "Create and share wishlists with friends and family",
-    "feature1_title": "Create Wishlists",
-    "feature1_subtitle": "Organize your wishes by occasion or category",
-    "feature2_title": "Share with Others",
-    "feature2_subtitle": "Let friends and family know what you really want",
-    "feature3_title": "Reserve Items",
-    "feature3_subtitle": "Reserve gifts to avoid duplicate purchases",
-    "get_started": "Get Started"
+    "welcome_subtitle": "Create beautiful wishlists and make gifting delightful for everyone",
+    "feature1_title": "Organize Your Wishes",
+    "feature1_subtitle": "Create multiple wishlists for different occasions and add items with photos, prices, and links",
+    "feature2_title": "Share & Connect",
+    "feature2_subtitle": "Share your wishlists with friends and family. They can reserve items so there are no duplicate gifts",
+    "signup_title": "Ready to get started?",
+    "signup_subtitle": "Create an account to save your wishlists and sync across devices, or continue browsing as a guest.",
+    "create_account": "Create Account",
+    "continue_as_guest": "Continue as Guest",
+    "guest_data_warning": "Guest data is stored locally and will be lost if you uninstall the app."
   },
   "home": {
     "title": "My Wishlists",

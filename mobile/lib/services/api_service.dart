@@ -201,6 +201,74 @@ class ApiService {
       return null;
     }
   }
+
+  /// Enhanced Onboarding API Methods
+
+  /// Check if username is available
+  Future<Map<String, dynamic>?> checkUsernameAvailability(String username) async {
+    try {
+      debugPrint('🔍 API: Checking username availability for: $username');
+      
+      final response = await get('/auth/check-username/$username');
+      debugPrint('✅ API: Username check response: $response');
+      
+      return response as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('❌ API: Error checking username: $e');
+      return null;
+    }
+  }
+
+  /// Update user profile with onboarding data
+  Future<Map<String, dynamic>?> updateUserProfile({
+    String? username,
+    String? fullName,
+    String? bio,
+    String? birthdate,
+    String? gender,
+    String? phoneNumber,
+    Map<String, dynamic>? notificationPreferences,
+    Map<String, dynamic>? privacySettings,
+  }) async {
+    try {
+      debugPrint('👤 API: Updating user profile');
+      
+      final data = <String, dynamic>{};
+      if (username != null) data['username'] = username;
+      if (fullName != null) data['full_name'] = fullName;
+      if (bio != null) data['bio'] = bio;
+      if (birthdate != null) data['birthdate'] = birthdate;
+      if (gender != null) data['gender'] = gender;
+      if (phoneNumber != null) data['phone_number'] = phoneNumber;
+      if (notificationPreferences != null) data['notification_preferences'] = notificationPreferences;
+      if (privacySettings != null) data['privacy_settings'] = privacySettings;
+      
+      final response = await patch('/users/profile', data);
+      debugPrint('✅ API: Profile updated successfully');
+      
+      return response as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('❌ API: Error updating profile: $e');
+      return null;
+    }
+  }
+
+  /// Privacy-first friend discovery: Send only phone numbers, no contact names
+  Future<Map<String, dynamic>?> findFriendsByPhoneNumbers(List<String> phoneNumbers) async {
+    try {
+      debugPrint('🔍 API: Finding friends by ${phoneNumbers.length} phone numbers (privacy-first)');
+      
+      final response = await post('/friends/find-by-phone-numbers', {
+        'phone_numbers': phoneNumbers,
+      });
+      
+      debugPrint('✅ API: Friend suggestions retrieved');
+      return response as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('❌ API: Error finding friends: $e');
+      return null;
+    }
+  }
   
   String _handleError(DioException error) {
     switch (error.type) {

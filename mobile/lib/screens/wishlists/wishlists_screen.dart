@@ -55,7 +55,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
       await wishlistService.fetchWishlists();
       print('✅ WishlistsScreen: Wishlists loaded successfully');
     } catch (e) {
-      print('❌ WishlistsScreen: Failed to load wishlists: $e');
+      debugPrint('❌ WishlistsScreen: Failed to load wishlists: $e');
     } finally {
       if (mounted) {
         setState(() {

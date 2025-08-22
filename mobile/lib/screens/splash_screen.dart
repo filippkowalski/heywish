@@ -20,27 +20,25 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
-    final prefsService = context.read<PreferencesService>();
+    final authService = context.read<AuthService>();
     
-    // Wait a moment for Firebase to initialize
+    // Wait a moment for Firebase to initialize and for AuthService to load onboarding status
     await Future.delayed(const Duration(seconds: 2));
     
     if (!mounted) return;
     
-    // Check if user has seen onboarding
-    if (!prefsService.hasSeenOnboarding) {
-      context.go('/onboarding');
+    // Check if user is already authenticated and completed onboarding
+    if (authService.isAuthenticated && !authService.needsOnboarding) {
+      context.go('/home');
     } else {
-      // Check if user is already authenticated
-      final authService = context.read<AuthService>();
-      if (authService.isAuthenticated) {
-        context.go('/home');
-      } else {
-        // Sign in anonymously
+      // If not authenticated, create anonymous account for onboarding
+      if (!authService.isAuthenticated) {
         await authService.signInAnonymously();
         if (!mounted) return;
-        context.go('/home');
       }
+      
+      // Show onboarding (user will choose whether to create real account at the end)
+      context.go('/onboarding');
     }
   }
 
@@ -77,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Text(
               'Making gifting delightful',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withAlpha(230),
               ),
             ),
             const SizedBox(height: 48),

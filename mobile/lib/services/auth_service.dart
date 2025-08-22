@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 import '../models/user.dart';
 
@@ -11,14 +12,17 @@ class AuthService extends ChangeNotifier {
   User? _currentUser;
   firebase.User? _firebaseUser;
   StreamSubscription<firebase.User?>? _authStateSubscription;
+  bool _isOnboardingCompleted = false;
   
   User? get currentUser => _currentUser;
   firebase.User? get firebaseUser => _firebaseUser;
   bool get isAuthenticated => _firebaseUser != null;
   bool get isAnonymous => _firebaseUser?.isAnonymous ?? true;
+  bool get isOnboardingCompleted => _isOnboardingCompleted;
   
   AuthService() {
     _authStateSubscription = _firebaseAuth.authStateChanges().listen(_onAuthStateChanged);
+    _loadOnboardingStatus();
   }
   
   Future<void> _onAuthStateChanged(firebase.User? firebaseUser) async {
@@ -180,6 +184,49 @@ class AuthService extends ChangeNotifier {
   
   Future<String?> getIdToken() async {
     return await _firebaseUser?.getIdToken();
+  }
+
+  /// Load onboarding status from SharedPreferences
+  Future<void> _loadOnboardingStatus() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _isOnboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
+      debugPrint('📱 AuthService: Onboarding completed: $_isOnboardingCompleted');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ AuthService: Error loading onboarding status: $e');
+    }
+  }
+
+  /// Mark onboarding as completed
+  Future<void> markOnboardingCompleted() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('onboarding_completed', true);
+      _isOnboardingCompleted = true;
+      debugPrint('✅ AuthService: Onboarding marked as completed');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ AuthService: Error marking onboarding completed: $e');
+    }
+  }
+
+  /// Reset onboarding status (for testing purposes)
+  Future<void> resetOnboardingStatus() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('onboarding_completed');
+      _isOnboardingCompleted = false;
+      debugPrint('🔄 AuthService: Onboarding status reset');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ AuthService: Error resetting onboarding status: $e');
+    }
+  }
+
+  /// Check if user needs to complete onboarding
+  bool get needsOnboarding {
+    return isAuthenticated && !_isOnboardingCompleted;
   }
   
   @override

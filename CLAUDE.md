@@ -85,3 +85,12 @@ The REST API is implemented using Next.js API routes. Key characteristics includ
   - Add SHA-1 to Firebase Project Settings > Your apps > Android app
   - Download and replace `google-services.json` file
   - Required for Google Sign-in to work in production builds
+
+### Enhanced Onboarding System
+- **Contact Book Integration**: Implement contact book access and phone number validation for friend discovery
+- **Friend Finding Service**: Create backend API endpoint to match phone numbers with existing users
+- **Phone Number Storage**: Add phone_number field to users table with proper indexing for fast lookups
+- **Privacy Controls**: Implement user privacy settings for phone number visibility and friend discovery
+- **Username Availability**: Implement real-time username availability checking during onboarding
+- **Birthday & Gender Fields**: Add birthday and gender fields to user profile with proper validation
+- **Notification Preferences**: Implement granular notification settings for birthdays, coupons, and discounts

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -79,7 +80,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   TextButton(
                     onPressed: _skipOnboarding,
                     child: Text(
-                      'Skip',
+                      'onboarding.skip'.tr(),
                       style: TextStyle(
                         color: Colors.grey.shade600,
                         fontSize: 16,
@@ -140,7 +141,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       child: Text(
-                        _currentPage == 2 ? 'Get Started' : 'Next',
+                        _currentPage == 2 ? 'onboarding.get_started'.tr() : 'onboarding.next'.tr(),
                         style: const TextStyle(fontSize: 16),
                       ),
                     ),
@@ -230,7 +231,7 @@ class _OnboardingPage1 extends StatelessWidget {
           
           // Title
           Text(
-            'Welcome to HeyWish',
+            'onboarding.welcome_title'.tr(),
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
               color: Colors.black87,
               fontWeight: FontWeight.bold,
@@ -241,7 +242,7 @@ class _OnboardingPage1 extends StatelessWidget {
           
           // Subtitle
           Text(
-            'Create beautiful wishlists and make gifting delightful for everyone',
+            'onboarding.welcome_subtitle'.tr(),
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: Colors.grey.shade600,
               height: 1.5,
@@ -362,7 +363,7 @@ class _OnboardingPage2 extends StatelessWidget {
           
           // Title
           Text(
-            'Organize Your Wishes',
+            'onboarding.feature1_title'.tr(),
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
               color: Colors.black87,
               fontWeight: FontWeight.bold,
@@ -373,7 +374,7 @@ class _OnboardingPage2 extends StatelessWidget {
           
           // Subtitle
           Text(
-            'Create multiple wishlists for different occasions and add items with photos, prices, and links',
+            'onboarding.feature1_subtitle'.tr(),
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: Colors.grey.shade600,
               height: 1.5,
@@ -534,7 +535,7 @@ class _OnboardingPage3 extends StatelessWidget {
           
           // Title
           Text(
-            'Share & Connect',
+            'onboarding.feature2_title'.tr(),
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
               color: Colors.black87,
               fontWeight: FontWeight.bold,
@@ -545,7 +546,7 @@ class _OnboardingPage3 extends StatelessWidget {
           
           // Subtitle
           Text(
-            'Share your wishlists with friends and family. They can reserve items so there are no duplicate gifts',
+            'onboarding.feature2_subtitle'.tr(),
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: Colors.grey.shade600,
               height: 1.5,
@@ -610,7 +611,7 @@ class _SignupOptionsSheet extends StatelessWidget {
           
           // Title
           Text(
-            'Ready to get started?',
+            'onboarding.signup_title'.tr(),
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -619,7 +620,7 @@ class _SignupOptionsSheet extends StatelessWidget {
           
           // Description
           Text(
-            'Create an account to save your wishlists and sync across devices, or continue browsing as a guest.',
+            'onboarding.signup_subtitle'.tr(),
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: Colors.grey.shade600,
               height: 1.5,
@@ -636,7 +637,7 @@ class _SignupOptionsSheet extends StatelessWidget {
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text('Create Account', style: TextStyle(fontSize: 16)),
+              child: Text('onboarding.create_account'.tr(), style: const TextStyle(fontSize: 16)),
             ),
           ),
           const SizedBox(height: 12),
@@ -649,14 +650,14 @@ class _SignupOptionsSheet extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text('Continue as Guest', style: TextStyle(fontSize: 16)),
+              child: Text('onboarding.continue_as_guest'.tr(), style: const TextStyle(fontSize: 16)),
             ),
           ),
           
           // Privacy note
           const SizedBox(height: 16),
           Text(
-            'Guest data is stored locally and will be lost if you uninstall the app.',
+            'onboarding.guest_data_warning'.tr(),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Colors.grey.shade300,
             ),

@@ -57,6 +57,10 @@ dependencies:
   # Image & Media
   image_picker: ^1.1.2
   
+  # Contact & Permissions (Privacy-First)
+  contacts_service: ^0.6.3
+  permission_handler: ^11.3.1
+  
   # Storage
   shared_preferences: ^2.3.4
   flutter_secure_storage: ^9.2.2
