@@ -1,13 +1,19 @@
 import 'dart:async';
+import 'dart:math';
+import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:crypto/crypto.dart';
 import 'api_service.dart';
 import '../models/user.dart';
 
 class AuthService extends ChangeNotifier {
   final firebase.FirebaseAuth _firebaseAuth = firebase.FirebaseAuth.instance;
   final ApiService _apiService = ApiService();
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
   
   User? _currentUser;
   firebase.User? _firebaseUser;
@@ -17,7 +23,6 @@ class AuthService extends ChangeNotifier {
   User? get currentUser => _currentUser;
   firebase.User? get firebaseUser => _firebaseUser;
   bool get isAuthenticated => _firebaseUser != null;
-  bool get isAnonymous => _firebaseUser?.isAnonymous ?? true;
   bool get isOnboardingCompleted => _isOnboardingCompleted;
   
   AuthService() {
@@ -29,7 +34,7 @@ class AuthService extends ChangeNotifier {
     _firebaseUser = firebaseUser;
     
     if (firebaseUser != null) {
-      // Sync with backend with retries
+      // Sync with backend with retries (no signup method for existing sessions)
       await syncUserWithBackend(retries: 3);
     } else {
       _currentUser = null;
@@ -38,7 +43,7 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
   
-  Future<void> syncUserWithBackend({int retries = 1}) async {
+  Future<void> syncUserWithBackend({int retries = 1, String? signUpMethod}) async {
     if (_firebaseUser == null) return;
     
     for (int attempt = 1; attempt <= retries; attempt++) {
@@ -48,21 +53,23 @@ class AuthService extends ChangeNotifier {
         
         debugPrint('🔄 AuthService: Syncing user with backend (attempt $attempt/$retries)');
         debugPrint('🔄 AuthService: Firebase UID: ${_firebaseUser!.uid}');
-        debugPrint('🔄 AuthService: Is anonymous (before reload): ${_firebaseUser!.isAnonymous}');
-        
         // Reload user to get fresh data after potential linking
         await _firebaseUser!.reload();
         final refreshedUser = _firebaseAuth.currentUser;
-        debugPrint('🔄 AuthService: Is anonymous (after reload): ${refreshedUser!.isAnonymous}');
-        debugPrint('🔄 AuthService: Email: ${refreshedUser.email}');
-        debugPrint('🔄 AuthService: Display name: ${refreshedUser.displayName}');
+        debugPrint('🔄 AuthService: Email: ${refreshedUser?.email}');
+        debugPrint('🔄 AuthService: Display name: ${refreshedUser?.displayName}');
         
-        final response = await _apiService.post('/auth/sync', {
-          'firebase_uid': refreshedUser!.uid,
-          'email': refreshedUser.email,
-          'full_name': refreshedUser.displayName,
-          'is_anonymous': refreshedUser.isAnonymous,
-        });
+        // Prepare sync data to match backend expectations
+        // Note: firebase_uid and email come from Firebase token verification, not request body
+        final syncData = <String, dynamic>{
+          'fullName': refreshedUser?.displayName, // null for email signup, set for Google/Apple
+          if (signUpMethod != null) 'signUpMethod': signUpMethod, // Only send if provided
+          // username is set during onboarding, not during initial sync
+        };
+        
+        debugPrint('🔄 AuthService: Sync data: ${syncData.toString()}');
+        
+        final response = await _apiService.post('/auth/sync', syncData);
         
         _currentUser = User.fromJson(response['user']);
         debugPrint('✅ AuthService: User synced successfully - ID: ${_currentUser?.id}');
@@ -73,66 +80,39 @@ class AuthService extends ChangeNotifier {
         if (attempt < retries) {
           await Future.delayed(Duration(seconds: attempt * 2)); // Exponential backoff
         } else {
-          debugPrint('❌ AuthService: All sync attempts failed');
+          debugPrint('❌ AuthService: All sync attempts failed - will continue without backend sync');
+          // Don't throw error - let user continue with local auth
+          // Backend sync can be retried later during onboarding completion
         }
       }
     }
   }
   
-  Future<void> signInAnonymously() async {
-    try {
-      await _firebaseAuth.signInAnonymously();
-    } catch (e) {
-      debugPrint('Error signing in anonymously: $e');
-      rethrow;
-    }
-  }
   
   Future<void> signInWithEmail(String email, String password) async {
     try {
-      // If currently anonymous, link the account
-      if (_firebaseUser?.isAnonymous ?? false) {
-        final credential = firebase.EmailAuthProvider.credential(
-          email: email,
-          password: password,
-        );
-        await _firebaseUser!.linkWithCredential(credential);
-      } else {
-        await _firebaseAuth.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-      }
+      await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
     } catch (e) {
       debugPrint('Error signing in with email: $e');
       rethrow;
     }
   }
   
-  Future<void> signUpWithEmail(String email, String password, String name) async {
+  Future<void> signUpWithEmail(String email, String password) async {
     try {
-      // If currently anonymous, link the account
-      if (_firebaseUser?.isAnonymous ?? false) {
-        final credential = firebase.EmailAuthProvider.credential(
-          email: email,
-          password: password,
-        );
-        final userCredential = await _firebaseUser!.linkWithCredential(credential);
-        
-        // Update display name
-        await userCredential.user!.updateDisplayName(name);
-      } else {
-        final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-        
-        // Update display name
-        await userCredential.user!.updateDisplayName(name);
-      }
+      final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       
-      // Sync with backend
-      await syncUserWithBackend();
+      // Note: Display name will be set from username during onboarding
+      // No need to set display name here since we use username system
+      
+      // Sync with backend and pass signup method
+      await syncUserWithBackend(signUpMethod: 'email_password');
     } catch (e) {
       debugPrint('Error signing up: $e');
       rethrow;
@@ -141,34 +121,174 @@ class AuthService extends ChangeNotifier {
   
   Future<void> signInWithGoogle() async {
     try {
-      // TODO: Implement Google Sign In
-      // Requires google_sign_in package and configuration
-      throw UnimplementedError('Google Sign In not yet implemented');
+      debugPrint('🔍 AuthService: Starting Google Sign-In...');
+      
+      // Trigger the authentication flow
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        debugPrint('❌ AuthService: Google Sign-In was cancelled by user');
+        throw Exception('Google Sign-In was cancelled');
+      }
+      
+      debugPrint('✅ AuthService: Google user selected: ${googleUser.email}');
+      
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      
+      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+        debugPrint('❌ AuthService: Failed to get Google auth tokens');
+        throw Exception('Failed to get Google authentication tokens');
+      }
+      
+      debugPrint('✅ AuthService: Google auth tokens obtained');
+      
+      // Create a new credential
+      final credential = firebase.GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      
+      // Check if this is a new user
+      final methods = await _firebaseAuth.fetchSignInMethodsForEmail(googleUser.email);
+      final isNewUser = methods.isEmpty;
+      
+      // Sign in to Firebase with the Google credential
+      final userCredential = await _firebaseAuth.signInWithCredential(credential);
+      
+      debugPrint('✅ AuthService: Firebase auth successful for: ${userCredential.user?.email}');
+      debugPrint('✅ AuthService: Display name: ${userCredential.user?.displayName}');
+      
+      // If this is a new user, sync with signup method
+      if (isNewUser) {
+        await syncUserWithBackend(signUpMethod: 'google');
+      }
+      
     } catch (e) {
-      debugPrint('Error signing in with Google: $e');
+      debugPrint('❌ AuthService: Error signing in with Google: $e');
       rethrow;
     }
   }
   
   Future<void> signInWithApple() async {
     try {
-      // TODO: Implement Apple Sign In
-      // Requires sign_in_with_apple package and configuration
-      throw UnimplementedError('Apple Sign In not yet implemented');
+      debugPrint('🍎 AuthService: Starting Apple Sign-In...');
+      
+      // Check if Apple Sign-In is available
+      final isAvailable = await SignInWithApple.isAvailable();
+      if (!isAvailable) {
+        debugPrint('❌ AuthService: Apple Sign-In not available on this device');
+        throw Exception('Apple Sign-In is not available on this device');
+      }
+      
+      // Generate a random nonce
+      final rawNonce = _generateNonce();
+      final nonce = _sha256ofString(rawNonce);
+      
+      debugPrint('🍎 AuthService: Requesting Apple ID credential...');
+      
+      // Request Apple ID credential
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: nonce,
+      );
+      
+      debugPrint('✅ AuthService: Apple ID credential received');
+      debugPrint('🍎 User ID: ${appleCredential.userIdentifier}');
+      debugPrint('🍎 Email: ${appleCredential.email}');
+      debugPrint('🍎 Given Name: ${appleCredential.givenName}');
+      debugPrint('🍎 Family Name: ${appleCredential.familyName}');
+      
+      // Create OAuth credential for Firebase
+      final oauthCredential = firebase.OAuthProvider("apple.com").credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+      );
+      
+      // Sign in to Firebase with Apple credential
+      final userCredential = await _firebaseAuth.signInWithCredential(oauthCredential);
+      
+      // Check if this is a new user 
+      final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+      
+      debugPrint('✅ AuthService: Firebase auth successful for Apple user');
+      debugPrint('✅ AuthService: Firebase user: ${userCredential.user?.email}');
+      debugPrint('✅ AuthService: Display name: ${userCredential.user?.displayName}');
+      
+      // If this is the first time signing in and we have name info, update the display name
+      if (userCredential.user?.displayName == null && 
+          (appleCredential.givenName != null || appleCredential.familyName != null)) {
+        final displayName = '${appleCredential.givenName ?? ''} ${appleCredential.familyName ?? ''}'.trim();
+        if (displayName.isNotEmpty) {
+          await userCredential.user?.updateDisplayName(displayName);
+          debugPrint('✅ AuthService: Updated display name to: $displayName');
+        }
+      }
+      
+      // If this is a new user, sync with signup method
+      if (isNewUser) {
+        await syncUserWithBackend(signUpMethod: 'apple');
+      }
+      
     } catch (e) {
-      debugPrint('Error signing in with Apple: $e');
+      debugPrint('❌ AuthService: Error signing in with Apple: $e');
+      
+      // Provide more specific error messages
+      if (e.toString().contains('AuthorizationErrorCode.unknown')) {
+        throw Exception('Apple Sign-In capability not enabled.\n\nTo fix this:\n1. Open Apple Developer Portal\n2. Go to Identifiers → com.wishlists.gifts\n3. Enable "Sign In with Apple" capability\n4. Or open Xcode → Signing & Capabilities → Add "Sign In with Apple"');
+      } else if (e.toString().contains('AuthorizationErrorCode.canceled')) {
+        throw Exception('Apple Sign-In was cancelled by the user');
+      } else if (e.toString().contains('AuthorizationErrorCode.invalidResponse')) {
+        throw Exception('Invalid response from Apple Sign-In');
+      } else if (e.toString().contains('AuthorizationErrorCode.notHandled')) {
+        throw Exception('Apple Sign-In request was not handled');
+      } else if (e.toString().contains('AuthorizationErrorCode.failed')) {
+        throw Exception('Apple Sign-In failed. Please try again.');
+      }
+      
       rethrow;
     }
   }
   
+  /// Generate a cryptographically secure random nonce for Apple Sign-In
+  String _generateNonce([int length = 32]) {
+    const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(length, (_) => charset[random.nextInt(charset.length)]).join();
+  }
+  
+  /// Returns the sha256 hash of [input] in hex notation.
+  String _sha256ofString(String input) {
+    final bytes = utf8.encode(input);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+  
   Future<void> signOut() async {
     try {
+      debugPrint('🔍 AuthService: Signing out...');
+      
+      // Sign out from Google if user was signed in with Google
+      if (await _googleSignIn.isSignedIn()) {
+        await _googleSignIn.signOut();
+        debugPrint('✅ AuthService: Google sign-out completed');
+      }
+      
+      // Note: Apple Sign-In doesn't require explicit sign-out
+      // The credential is automatically revoked when Firebase signs out
+      
+      // Sign out from Firebase
       await _firebaseAuth.signOut();
+      debugPrint('✅ AuthService: Firebase sign-out completed');
+      
       _currentUser = null;
       _apiService.clearAuthToken();
       notifyListeners();
     } catch (e) {
-      debugPrint('Error signing out: $e');
+      debugPrint('❌ AuthService: Error signing out: $e');
       rethrow;
     }
   }
