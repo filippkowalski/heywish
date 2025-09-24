@@ -68,13 +68,11 @@ class WishlistCoverImage extends StatelessWidget {
       width: double.infinity,
       height: height,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.blue.shade100,
-            Colors.purple.shade100,
-          ],
+        color: Colors.grey.shade50,
+        border: Border.all(
+          color: Colors.grey.shade300,
+          width: 1.5,
+          strokeAlign: BorderSide.strokeAlignInside,
         ),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -82,16 +80,16 @@ class WishlistCoverImage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.card_giftcard_outlined,
-            size: 48,
-            color: Colors.grey.shade400,
+            Icons.add_photo_alternate_outlined,
+            size: height > 120 ? 32 : 24,
+            color: Colors.grey.shade500,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
-            'Add Cover Image',
+            'Add Cover Photo',
             style: TextStyle(
               color: Colors.grey.shade600,
-              fontSize: 16,
+              fontSize: height > 120 ? 14 : 12,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -102,8 +100,8 @@ class WishlistCoverImage extends StatelessWidget {
 
   Widget _buildEditOverlay(BuildContext context) {
     return Positioned(
-      top: 12,
-      right: 12,
+      top: 8,
+      right: 8,
       child: Row(
         children: [
           if (coverImageUrl != null && coverImageUrl!.isNotEmpty) ...[
@@ -114,7 +112,7 @@ class WishlistCoverImage extends StatelessWidget {
               color: Colors.red.shade600,
               backgroundColor: Colors.white,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
           ],
           _buildActionButton(
             context,
@@ -138,21 +136,21 @@ class WishlistCoverImage extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              blurRadius: 3,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
         child: Icon(
           icon,
-          size: 20,
+          size: 18,
           color: color,
         ),
       ),

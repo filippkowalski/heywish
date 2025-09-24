@@ -92,7 +92,7 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
                             coverImageUrl: wishlist.coverImageUrl,
                             wishlistId: widget.wishlistId,
                             canEdit: true,
-                            height: 200,
+                            height: 120,
                             onImageChanged: () {
                               // Refresh wishlist data when image changes
                               _loadWishlist();
