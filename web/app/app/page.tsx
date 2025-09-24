@@ -60,7 +60,7 @@ export default function WebAppPage() {
     );
   }
 
-  // Anonymous user flow - show welcome screen
+  // User flow - show welcome screen
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -100,8 +100,8 @@ export default function WebAppPage() {
             </span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Get started instantly with our anonymous wishlist creation. You can create and share 
-            wishlists without signing up, then save your account later when you're ready.
+            Get started by creating your account and building beautiful wishlists that you can 
+            share with friends and family.
           </p>
         </div>
       </section>
@@ -210,12 +210,9 @@ export default function WebAppPage() {
                   <Button size="lg">
                     Create Account
                   </Button>
-                  <Button variant="outline" size="lg">
-                    Continue Without Account
-                  </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-4">
-                  No credit card required • Free to start • Keep your anonymous wishlists
+                  No credit card required • Free to start • Sync across all devices
                 </p>
               </div>
             </CardContent>

@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'theme/app_theme.dart';
 import 'services/auth_service.dart';
@@ -12,6 +13,8 @@ import 'services/offline_wishlist_service.dart';
 import 'services/friends_service.dart';
 import 'services/preferences_service.dart';
 import 'services/sync_manager.dart';
+import 'services/onboarding_service.dart';
+import 'services/api_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding/onboarding_flow_screen.dart';
 import 'screens/home_screen.dart';
@@ -64,8 +67,23 @@ class HeyWishApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // Shared ApiService for dependency injection
+        Provider<ApiService>(create: (_) => ApiService()),
+        
+        // Services with dependency injection
         ChangeNotifierProvider(create: (_) => AuthService()),
-        ChangeNotifierProvider(create: (_) => WishlistService()),
+        ChangeNotifierProvider<WishlistService>(
+          create: (context) => WishlistService(
+            apiService: context.read<ApiService>(),
+          ),
+        ),
+        ChangeNotifierProvider<OnboardingService>(
+          create: (context) => OnboardingService(
+            apiService: context.read<ApiService>(),
+          ),
+        ),
+        
+        // Singleton services (already initialized)
         ChangeNotifierProvider.value(value: OfflineWishlistService()),
         ChangeNotifierProvider.value(value: FriendsService()),
         ChangeNotifierProvider.value(value: PreferencesService()),

@@ -28,7 +28,6 @@
     "reset_password": "Reset Password",
     "sign_in_with_google": "Sign in with Google",
     "sign_in_with_apple": "Sign in with Apple",
-    "sign_in_anonymously": "Continue as Guest",
     "create_account": "Create Account",
     "already_have_account": "Already have an account?",
     "dont_have_account": "Don't have an account?",
@@ -48,10 +47,8 @@
     "feature2_title": "Share & Connect",
     "feature2_subtitle": "Share your wishlists with friends and family. They can reserve items so there are no duplicate gifts",
     "signup_title": "Ready to get started?",
-    "signup_subtitle": "Create an account to save your wishlists and sync across devices, or continue browsing as a guest.",
-    "create_account": "Create Account",
-    "continue_as_guest": "Continue as Guest",
-    "guest_data_warning": "Guest data is stored locally and will be lost if you uninstall the app."
+    "signup_subtitle": "Create an account to save your wishlists and sync across devices.",
+    "create_account": "Create Account"
   },
   "home": {
     "title": "Home",

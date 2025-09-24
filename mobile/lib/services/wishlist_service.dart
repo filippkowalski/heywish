@@ -4,8 +4,23 @@ import 'api_service.dart';
 import '../models/wishlist.dart';
 import '../models/wish.dart';
 
+/// Isolate function for parsing large wishlist responses off the main thread
+List<Wishlist> _parseWishlistsInIsolate(List<dynamic> wishlistsJson) {
+  debugPrint('🔄 Parsing ${wishlistsJson.length} wishlists in isolate');
+  
+  final wishlists = wishlistsJson
+      .map((json) => Wishlist.fromJson(json))
+      .toList();
+  
+  debugPrint('✅ Parsed ${wishlists.length} wishlists in isolate');
+  return wishlists;
+}
+
 class WishlistService extends ChangeNotifier {
-  final ApiService _apiService = ApiService();
+  final ApiService _apiService;
+  
+  WishlistService({ApiService? apiService}) 
+      : _apiService = apiService ?? ApiService();
   
   List<Wishlist> _wishlists = [];
   Wishlist? _currentWishlist;
@@ -40,9 +55,17 @@ class WishlistService extends ChangeNotifier {
       print('📋 WishlistService: API response received: $response');
       
       if (response != null && response['wishlists'] != null) {
-        _wishlists = (response['wishlists'] as List)
-            .map((json) => Wishlist.fromJson(json))
-            .toList();
+        final wishlistsJson = response['wishlists'] as List;
+        
+        // Parse wishlists off main thread if we have many items
+        if (wishlistsJson.length > 10) {
+          _wishlists = await compute(_parseWishlistsInIsolate, wishlistsJson);
+        } else {
+          _wishlists = wishlistsJson
+              .map((json) => Wishlist.fromJson(json))
+              .toList();
+        }
+        
         print('📋 WishlistService: Parsed ${_wishlists.length} wishlists');
         
         // Preload all wishlist details with items if requested
@@ -74,7 +97,15 @@ class WishlistService extends ChangeNotifier {
           if (response != null && response['wishlist'] != null) {
             final detailedWishlist = Wishlist.fromJson(response['wishlist']);
             print('📋 WishlistService: Loaded ${detailedWishlist.wishes?.length ?? 0} items for ${wishlist.name}');
-            return detailedWishlist;
+            
+            // Update the wishCount to match the actual number of items loaded
+            final actualItemCount = detailedWishlist.wishes?.length ?? 0;
+            final correctedWishlist = detailedWishlist.copyWith(
+              wishCount: actualItemCount,
+            );
+            
+            print('📋 WishlistService: Updated wish count to $actualItemCount for ${wishlist.name}');
+            return correctedWishlist;
           }
         } catch (e) {
           print('⚠️  WishlistService: Failed to preload items for wishlist ${wishlist.id}: $e');
@@ -141,6 +172,26 @@ class WishlistService extends ChangeNotifier {
     String? description,
     String visibility = 'private',
   }) async {
+    // Generate optimistic ID
+    final optimisticId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    
+    // Create optimistic wishlist for immediate UI update
+    final optimisticWishlist = Wishlist(
+      id: optimisticId,
+      name: name,
+      description: description ?? '',
+      visibility: visibility,
+      userId: 'current_user', // Will be corrected by server
+      wishCount: 0,
+      reservedCount: 0,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    
+    // Add optimistic wishlist to local list immediately
+    _wishlists.insert(0, optimisticWishlist);
+    notifyListeners();
+    
     try {
       final response = await _apiService.post('/wishlists', {
         'name': name,
@@ -148,14 +199,21 @@ class WishlistService extends ChangeNotifier {
         'visibility': visibility,
       });
       
-      // The response structure needs to match our API
-      final wishlistData = response is Map<String, dynamic> ? response : {'id': response['id'], 'name': response['name']};
+      // Remove optimistic wishlist
+      _wishlists.removeWhere((w) => w.id == optimisticId);
       
-      // Refresh wishlists to get updated data (with preloading)
-      await fetchWishlists(preloadItems: true);
+      // Add real wishlist from server
+      final realWishlist = Wishlist.fromJson(response['wishlist'] ?? response);
+      _wishlists.insert(0, realWishlist);
+      notifyListeners();
       
-      return _wishlists.where((w) => w.id == wishlistData['id'].toString()).firstOrNull;
+      print('✅ WishlistService: Wishlist created successfully (optimistic)');
+      return realWishlist;
+      
     } catch (e) {
+      // Remove failed optimistic wishlist
+      _wishlists.removeWhere((w) => w.id == optimisticId);
+      
       _error = e.toString();
       debugPrint('Error creating wishlist: $e');
       notifyListeners();
@@ -226,11 +284,48 @@ class WishlistService extends ChangeNotifier {
     String? notes,
     File? imageFile,
   }) async {
-    print('🎁 WishlistService: Starting addWish...');
-    print('🎁 WishlistService: wishlistId: $wishlistId');
-    print('🎁 WishlistService: title: $title');
-    print('🎁 WishlistService: description: $description');
-    print('🎁 WishlistService: price: $price');
+    print('🎁 WishlistService: Starting addWish (optimistic)...');
+    
+    // Generate optimistic ID
+    final optimisticId = 'temp_wish_${DateTime.now().millisecondsSinceEpoch}';
+    
+    // Create optimistic wish for immediate UI update
+    final optimisticWish = Wish(
+      id: optimisticId,
+      wishlistId: wishlistId,
+      title: title,
+      description: description ?? '',
+      price: price,
+      currency: currency ?? 'USD',
+      url: url,
+      images: images ?? [],
+      brand: brand,
+      category: category,
+      priority: priority != null ? int.tryParse(priority) ?? 1 : 1,
+      quantity: quantity,
+      notes: notes,
+      status: 'available',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    
+    // Add optimistic wish to current wishlist immediately
+    if (_currentWishlist?.id == wishlistId) {
+      final currentWishes = _currentWishlist!.wishes ?? [];
+      final updatedWishlist = _currentWishlist!.copyWith(
+        wishes: [optimisticWish, ...currentWishes],
+        wishCount: (_currentWishlist!.wishCount) + 1,
+      );
+      _currentWishlist = updatedWishlist;
+      
+      // Update cached wishlist in main list
+      final index = _wishlists.indexWhere((w) => w.id == wishlistId);
+      if (index != -1) {
+        _wishlists[index] = updatedWishlist;
+      }
+      
+      notifyListeners();
+    }
     
     try {
       final requestData = {
@@ -245,8 +340,6 @@ class WishlistService extends ChangeNotifier {
         'quantity': quantity,
         'notes': notes,
       };
-      
-      print('🎁 WishlistService: Request data: $requestData');
       
       // If there's an image file, upload it first
       if (imageFile != null) {
@@ -264,21 +357,58 @@ class WishlistService extends ChangeNotifier {
       }
       
       final response = await _apiService.post('/wishes', requestData);
-      print('🎁 WishlistService: API response: $response');
       
-      // Refresh the current wishlist and cached data
-      print('🎁 WishlistService: Refreshing wishlist $wishlistId');
-      await fetchWishlist(wishlistId);
-      
-      // Also refresh the cached wishlist in the main list
-      final index = _wishlists.indexWhere((w) => w.id == wishlistId);
-      if (index != -1 && _currentWishlist != null) {
-        _wishlists[index] = _currentWishlist!;
-        print('🎁 WishlistService: Updated cached wishlist in main list');
+      // Replace optimistic wish with real wish from server
+      if (_currentWishlist?.id == wishlistId) {
+        final currentWishes = _currentWishlist!.wishes ?? [];
+        final realWish = Wish.fromJson(response['wish'] ?? response);
+        
+        // Remove optimistic wish and add real wish
+        final updatedWishes = currentWishes
+            .where((w) => w.id != optimisticId)
+            .toList();
+        updatedWishes.insert(0, realWish);
+        
+        final updatedWishlist = _currentWishlist!.copyWith(
+          wishes: updatedWishes,
+        );
+        _currentWishlist = updatedWishlist;
+        
+        // Update cached wishlist in main list
+        final index = _wishlists.indexWhere((w) => w.id == wishlistId);
+        if (index != -1) {
+          _wishlists[index] = updatedWishlist;
+        }
+        
+        notifyListeners();
       }
       
+      print('✅ WishlistService: Wish added successfully (optimistic)');
       return true;
+      
     } catch (e) {
+      // Remove failed optimistic wish
+      if (_currentWishlist?.id == wishlistId) {
+        final currentWishes = _currentWishlist!.wishes ?? [];
+        final updatedWishes = currentWishes
+            .where((w) => w.id != optimisticId)
+            .toList();
+        
+        final updatedWishlist = _currentWishlist!.copyWith(
+          wishes: updatedWishes,
+          wishCount: (_currentWishlist!.wishCount) - 1,
+        );
+        _currentWishlist = updatedWishlist;
+        
+        // Update cached wishlist in main list
+        final index = _wishlists.indexWhere((w) => w.id == wishlistId);
+        if (index != -1) {
+          _wishlists[index] = updatedWishlist;
+        }
+        
+        notifyListeners();
+      }
+      
       _error = e.toString();
       print('❌ WishlistService: Error adding wish: $e');
       notifyListeners();
@@ -335,22 +465,57 @@ class WishlistService extends ChangeNotifier {
   }
   
   Future<bool> deleteWish(String wishId) async {
-    try {
-      await _apiService.delete('/wishes/$wishId');
+    Wish? deletedWish;
+    
+    // Optimistically remove wish from current wishlist
+    if (_currentWishlist != null) {
+      final currentWishes = _currentWishlist!.wishes ?? [];
+      deletedWish = currentWishes.where((w) => w.id == wishId).firstOrNull;
       
-      // Refresh the current wishlist and cached data
-      if (_currentWishlist != null) {
-        await fetchWishlist(_currentWishlist!.id);
+      if (deletedWish != null) {
+        final updatedWishes = currentWishes.where((w) => w.id != wishId).toList();
+        final updatedWishlist = _currentWishlist!.copyWith(
+          wishes: updatedWishes,
+          wishCount: (_currentWishlist!.wishCount) - 1,
+        );
+        _currentWishlist = updatedWishlist;
         
-        // Also refresh the cached wishlist in the main list
+        // Update cached wishlist in main list
         final index = _wishlists.indexWhere((w) => w.id == _currentWishlist!.id);
         if (index != -1) {
-          _wishlists[index] = _currentWishlist!;
+          _wishlists[index] = updatedWishlist;
         }
+        
+        notifyListeners();
+      }
+    }
+    
+    try {
+      await _apiService.delete('/wishes/$wishId');
+      print('✅ WishlistService: Wish deleted successfully (optimistic)');
+      return true;
+      
+    } catch (e) {
+      // Restore deleted wish on failure
+      if (_currentWishlist != null && deletedWish != null) {
+        final currentWishes = _currentWishlist!.wishes ?? [];
+        final restoredWishes = [...currentWishes, deletedWish];
+        
+        final updatedWishlist = _currentWishlist!.copyWith(
+          wishes: restoredWishes,
+          wishCount: (_currentWishlist!.wishCount) + 1,
+        );
+        _currentWishlist = updatedWishlist;
+        
+        // Update cached wishlist in main list
+        final index = _wishlists.indexWhere((w) => w.id == _currentWishlist!.id);
+        if (index != -1) {
+          _wishlists[index] = updatedWishlist;
+        }
+        
+        notifyListeners();
       }
       
-      return true;
-    } catch (e) {
       _error = e.toString();
       debugPrint('Error deleting wish: $e');
       notifyListeners();

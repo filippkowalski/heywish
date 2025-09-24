@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/app_theme.dart';
+import '../common/widgets/heart_icon.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -31,59 +32,59 @@ class _SplashScreenState extends State<SplashScreen> {
     if (authService.isAuthenticated && !authService.needsOnboarding) {
       context.go('/home');
     } else {
-      // If not authenticated, create anonymous account for onboarding
-      if (!authService.isAuthenticated) {
-        await authService.signInAnonymously();
-        if (!mounted) return;
-      }
-      
-      // Show onboarding (user will choose whether to create real account at the end)
+      // If not authenticated, go to onboarding where they must create an account
       context.go('/onboarding');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Icon(
-                Icons.card_giftcard,
-                size: 64,
-                color: Theme.of(context).colorScheme.primary,
+      body: Stack(
+        children: [
+          // Background Image matching intro page
+          Container(
+            width: screenSize.width,
+            height: screenSize.height,
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/image/bg.jpg'),
+                fit: BoxFit.cover,
               ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'HeyWish',
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+          ),
+
+          // Content
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // App Name
+                Text(
+                  'HeyWish',
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    color: Colors.black87,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 48,
+                  ),
+                ),
+                
+                const SizedBox(height: 8),
+                
+                // Tagline
+                Text(
+                  'Your wishes, delivered.',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Colors.black.withOpacity(0.7),
+                    fontSize: 18,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Making gifting delightful',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.white.withAlpha(230),
-              ),
-            ),
-            const SizedBox(height: 48),
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

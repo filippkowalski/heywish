@@ -4,6 +4,7 @@ import '../../../services/onboarding_service.dart';
 import '../../../services/contacts_service.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/widgets/primary_button.dart';
+import '../../../common/widgets/skeleton_loading.dart';
 
 class FindFriendsStep extends StatefulWidget {
   const FindFriendsStep({super.key});
@@ -168,36 +169,74 @@ class _FindFriendsStepState extends State<FindFriendsStep> {
                 ),
               ),
             ] else if (_isSearchingFriends) ...[
-              // Loading state
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(48),
-                child: Column(
+              // Loading state with skeleton
+              if (_contactPermissionGranted) ...[
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const CircularProgressIndicator(
-                      color: AppColors.primary,
+                    Row(
+                      children: [
+                        const CircularProgressIndicator(
+                          color: AppColors.primary,
+                          strokeWidth: 2,
+                        ),
+                        const SizedBox(width: 16),
+                        Text(
+                          'Finding your friends...',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 8),
                     Text(
-                      _contactPermissionGranted
-                          ? 'Finding your friends...'
-                          : 'Permission denied',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.textPrimary,
+                      'Checking phone numbers privately',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
                       ),
                     ),
-                    if (_contactPermissionGranted) ...[
+                    const SizedBox(height: 24),
+                    
+                    // Skeleton loading for friend suggestions
+                    ...List.generate(3, (index) => 
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 8),
+                        child: SkeletonFriendItem(),
+                      )
+                    ),
+                  ],
+                ),
+              ] else ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(48),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.block,
+                        size: 48,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Permission denied',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       Text(
-                        'Checking phone numbers privately',
+                        'Cannot find friends without contact access',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.textSecondary,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ] else ...[
               // Results
               Consumer<ContactsService>(

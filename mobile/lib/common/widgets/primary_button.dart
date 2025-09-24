@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../../theme/app_theme.dart';
 
 class PrimaryButton extends StatelessWidget {
   final String text;
@@ -35,15 +36,15 @@ class PrimaryButton extends StatelessWidget {
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppColors.primary,
+                        color: AppTheme.primaryAccent,
                       ),
                     )
                   : (icon != null ? Icon(icon) : const SizedBox.shrink()),
               label: Text(text),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
+                foregroundColor: AppTheme.primaryAccent,
                 side: const BorderSide(
-                  color: AppColors.primary,
+                  color: AppTheme.primaryAccent,
                   width: 1.5,
                 ),
                 shape: RoundedRectangleBorder(
@@ -69,7 +70,7 @@ class PrimaryButton extends StatelessWidget {
                   : (icon != null ? Icon(icon) : const SizedBox.shrink()),
               label: Text(text),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: AppTheme.primaryAccent,
                 foregroundColor: Colors.white,
                 disabledBackgroundColor: AppColors.surfaceVariant,
                 disabledForegroundColor: AppColors.textSecondary,

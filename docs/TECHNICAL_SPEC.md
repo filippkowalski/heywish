@@ -16,7 +16,6 @@ The `users` table stores information about users, synced from Firebase Authentic
 | `username`     | `text`      | `UNIQUE`         | User's unique username.                      |
 | `full_name`    | `text`      |                  | User's full name.                            |
 | `avatar_url`   | `text`      |                  | URL for the user's avatar image.             |
-| `is_anonymous` | `boolean`   | `NOT NULL`       | Whether the user is anonymous.               |
 | `created_at`   | `timestamptz`| `NOT NULL`      | Timestamp when the user was created.         |
 | `updated_at`   | `timestamptz`| `NOT NULL`      | Timestamp when the user was last updated.    |
 

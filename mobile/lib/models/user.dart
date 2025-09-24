@@ -5,7 +5,6 @@ class User {
   final String? name;
   final String? username;
   final String? avatarUrl;
-  final bool isAnonymous;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -16,7 +15,6 @@ class User {
     this.name,
     this.username,
     this.avatarUrl,
-    required this.isAnonymous,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -29,7 +27,6 @@ class User {
       name: json['full_name'],
       username: json['username'],
       avatarUrl: json['avatar_url'],
-      isAnonymous: json['is_anonymous'] ?? false,
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
     );
@@ -43,7 +40,6 @@ class User {
       'full_name': name,
       'username': username,
       'avatar_url': avatarUrl,
-      'is_anonymous': isAnonymous,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };

@@ -1,0 +1,43 @@
+Launching lib/main.dart on iPhone in debug mode...
+Automatically signing iOS for device deployment using specified development team in Xcode project: 474TK9U3BP
+Running Xcode build...                                          
+Xcode build done.                                           44.3s
+Installing and launching...                                     
+You may be prompted to give access to control Xcode. Flutter uses Xcode to run your app. If access is not allowed, you can change this through your Settings > Privacy & Security > Automation.
+Installing and launching...                                        25.3s
+flutter: \^[[90m[🌎 Easy Localization] [DEBUG] Localization initialized<…>
+flutter: ✅ LocalDatabase: Database initialized at /var/mobile/Containers/Data/Application/BD5B424F-BAE1-475C-B141-F6E73FBC4EB4/Documents/heywish_offline.db
+flutter: 🌐 SyncManager: Connection restored, starting sync
+flutter: ⚠️  SyncManager: No auth token, skipping sync
+flutter: ✅ SyncManager: Initialized
+flutter: 📦 OfflineWishlistService: Loaded 0 wishlists from local
+flutter: ⚠️  SyncManager: No auth token, skipping sync
+flutter: ✅ OfflineWishlistService: Initialized (online: true)
+flutter: 📦 OfflineWishlistService: Loaded 0 wishlists from local
+flutter: ✅ SyncManager: Initialized
+flutter: \^[[90m[🌎 Easy Localization] [DEBUG] Start<…>
+flutter: \^[[90m[🌎 Easy Localization] [DEBUG] Init state<…>
+flutter: \^[[90m[🌎 Easy Localization] [DEBUG] Build<…>
+flutter: \^[[90m[🌎 Easy Localization] [DEBUG] Init Localization Delegate<…>
+flutter: \^[[90m[🌎 Easy Localization] [DEBUG] Init provider<…>
+flutter: \^[[34m[🌎 Easy Localization] [WARNING] Localization key [app.title] not found<…>
+flutter: \^[[90m[🌎 Easy Localization] [DEBUG] Load Localization Delegate<…>
+flutter: \^[[90m[🌎 Easy Localization] [DEBUG] Load asset from assets/translations<…>
+flutter: \^[[90m[🌎 Easy Localization] [DEBUG] Build<…>
+Syncing files to device iPhone...                                  315ms
+
+Flutter run key commands.
+r Hot reload. 🔥🔥🔥
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
+
+A Dart VM Service on iPhone is available at: http://127.0.0.1:49185/lFPBHkX11yI=/
+The Flutter DevTools debugger and profiler on iPhone is available at: http://127.0.0.1:9103?uri=http://127.0.0.1:49185/lFPBHkX11yI=/
+flutter: 🌐 SyncManager: Connection restored, starting sync
+flutter: ⚠️  SyncManager: No auth token, skipping sync
+flutter: ⚠️  SyncManager: No auth token, skipping sync
+flutter: ⚠️  SyncManager: No auth token, skipping sync
+Lost connection to device.

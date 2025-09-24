@@ -40,6 +40,10 @@ dependencies:
   firebase_auth: ^5.3.3
   firebase_analytics: ^11.3.6
   
+  # Social Authentication
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.1.2
+  
   # State Management
   provider: ^6.1.2
   
@@ -53,12 +57,13 @@ dependencies:
   flutter_svg: ^2.0.10
   cached_network_image: ^3.4.1
   shimmer: ^3.0.0
+  auto_size_text: ^3.0.0
   
   # Image & Media
   image_picker: ^1.1.2
   
   # Contact & Permissions (Privacy-First)
-  contacts_service: ^0.6.3
+  # contacts_service: ^0.6.3 # Temporarily disabled due to Android namespace issues
   permission_handler: ^11.3.1
   
   # Storage
@@ -105,6 +110,7 @@ flutter:
   assets:
     - .env
     - assets/translations/
+    - assets/image/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import '../../../services/onboarding_service.dart';
 import '../../../services/auth_service.dart';
 import '../../../common/theme/app_colors.dart';
@@ -45,282 +46,176 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
     }
   }
 
-  Future<void> _continueAsGuest() async {
-    final onboardingService = context.read<OnboardingService>();
-    final authService = context.read<AuthService>();
-    
-    try {
-      // Sign in anonymously if not already authenticated
-      if (!authService.isAuthenticated) {
-        await authService.signInAnonymously();
-      }
-      
-      // Move to completion
-      onboardingService.nextStep();
-    } catch (e) {
-      debugPrint('Error signing in anonymously: $e');
-      // Still proceed to next step to avoid getting stuck
-      onboardingService.nextStep();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Scrollable content
-        Expanded(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  
-                  // Icon
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(60),
-                    ),
-                    child: Icon(
-                      Icons.account_circle,
-                      size: 60,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  
-                  // Title
-                  Text(
-                    'Save your progress?',
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Description
-                  Text(
-                    'You\'ve created a great profile! Create an account to save your progress and sync across devices.',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                      height: 1.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Current profile summary
-                  Consumer<OnboardingService>(
-                    builder: (context, onboardingService, child) {
-                      final userData = onboardingService.data;
-                      return Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.outline,
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Your profile:',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            
-                            _buildProfileItem(
-                              Icons.account_circle_outlined,
-                              'Username',
-                              '@${userData.username ?? 'Not set'}',
-                            ),
-                            
-                            if (userData.birthday != null)
-                              _buildProfileItem(
-                                Icons.cake_outlined,
-                                'Birthday',
-                                _formatDate(userData.birthday!),
-                              ),
-                            
-                            if (userData.gender != null)
-                              _buildProfileItem(
-                                Icons.person_outline,
-                                'Gender',
-                                userData.gender!,
-                              ),
-                            
-                            _buildProfileItem(
-                              Icons.notifications_outlined,
-                              'Notifications',
-                              userData.notificationPreferences.values.any((v) => v) 
-                                  ? 'Enabled' 
-                                  : 'Disabled',
-                            ),
-                            
-                            _buildProfileItem(
-                              Icons.people_outline,
-                              'Friends found',
-                              '${userData.friendSuggestions.length}',
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Benefits section
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.green.shade200,
-                        width: 1,
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Main content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Spacer(flex: 2),
+                    
+                    // Profile icon/avatar
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(40),
+                      ),
+                      child: Icon(
+                        Icons.person,
+                        size: 40,
+                        color: Colors.grey.shade600,
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.security,
-                              color: Colors.green.shade600,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'With an account:',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green.shade700,
-                              ),
-                            ),
-                          ],
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Main title
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: AutoSizeText(
+                        'Create your account',
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
                         ),
-                        const SizedBox(height: 12),
-                        
-                        _buildBenefitItem('✓ Your data is securely backed up'),
-                        _buildBenefitItem('✓ Sync across all your devices'),
-                        _buildBenefitItem('✓ Friends can find you easily'),
-                        _buildBenefitItem('✓ Never lose your wishlists'),
-                      ],
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        minFontSize: 20,
+                        maxFontSize: 30,
+                      ),
                     ),
+                    
+                    const SizedBox(height: 12),
+                    
+                    // Subtitle
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: AutoSizeText(
+                        'Save your progress and keep your wishlist safe',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 3,
+                        minFontSize: 13,
+                        maxFontSize: 16,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    // Profile summary card
+                    Consumer<OnboardingService>(
+                      builder: (context, onboardingService, child) {
+                        final userData = onboardingService.data;
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.grey.shade200,
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              _buildSummaryItem(
+                                'Username',
+                                '@${userData.username ?? 'Not set'}',
+                              ),
+                              
+                              if (userData.birthday != null) ...[
+                                const SizedBox(height: 12),
+                                _buildSummaryItem(
+                                  'Birthday',
+                                  _formatDate(userData.birthday!),
+                                ),
+                              ],
+                              
+                              if (userData.gender != null) ...[
+                                const SizedBox(height: 12),
+                                _buildSummaryItem(
+                                  'Gender',
+                                  _getGenderDisplayName(userData.gender!),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    
+                    const Spacer(flex: 3),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Bottom section
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 24.0),
+              child: Column(
+                children: [
+                  // Create account button
+                  PrimaryButton(
+                    text: _isCreatingAccount ? 'Creating Account...' : 'Create Account',
+                    onPressed: _isCreatingAccount ? null : _createAccount,
+                    isLoading: _isCreatingAccount,
                   ),
                   
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 12),
+                  
+                  // Security note
+                  Text(
+                    'Your data will be securely backed up',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryItem(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w400,
           ),
         ),
-        
-        // Fixed bottom section
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 24.0),
-          child: Column(
-            children: [
-              // Create account button
-              PrimaryButton(
-                text: 'Create Account & Save',
-                onPressed: _isCreatingAccount ? null : _createAccount,
-                isLoading: _isCreatingAccount,
-              ),
-              const SizedBox(height: 12),
-              
-              // Continue as guest button
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: _continueAsGuest,
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: BorderSide(color: AppColors.outline),
-                  ),
-                  child: Text(
-                    'Continue as Guest',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-              ),
-              
-              // Note
-              const SizedBox(height: 16),
-              Text(
-                'As a guest, your data will only be saved locally on this device',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildProfileItem(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: AppColors.textSecondary,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$label: ',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBenefitItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Colors.green.shade700,
-        ),
-      ),
     );
   }
 
@@ -331,5 +226,20 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
     ];
     
     return '${months[date.month]} ${date.day}, ${date.year}';
+  }
+
+  String _getGenderDisplayName(String gender) {
+    switch (gender) {
+      case 'female':
+        return 'Woman';
+      case 'male':
+        return 'Man';
+      case 'non-binary':
+        return 'Non-binary';
+      case 'prefer-not-to-say':
+        return 'Prefer not to say';
+      default:
+        return gender;
+    }
   }
 }

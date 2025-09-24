@@ -2,6 +2,28 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## App Features Overview
+
+HeyWish combines wishlist management, social features, and gift coordination across mobile (Flutter) and web (Next.js) platforms.
+
+### Mobile App Pages/Screens (Flutter)
+- **Authentication & Onboarding**: Splash screen, login/signup, 7-step guided onboarding (username, profile, notifications, friend discovery, account creation)
+- **Main Navigation**: Home/Wishlists tab (view/create wishlists), Discover tab (categories/people search), Profile tab
+- **Wishlist & Item Management**: Wishlist detail/edit/create screens, add/edit wish screens
+- **Social Features**: Friends screen (friends/requests tabs), Activity feed with filters
+
+### Web App Pages (Next.js)
+- **Marketing & Public**: Homepage, About, Blog, Public shareable wishlist pages
+- **Web Application**: Dashboard with anonymous onboarding, Create wishlist page
+
+### General Features (Cross-Platform)
+- **Authentication**: Firebase integration (anonymous, Google, Apple, email/password), account linking
+- **Core Services**: API integration, wishlist management, social/friends, contact integration
+- **Offline & Sync**: Local SQLite database, offline-first architecture, background sync
+- **Media & Content**: Cloudflare R2 image management, URL scraping, cached images
+- **UI/UX**: Skeleton loading, Material Design 3, multi-language support, optimistic UI
+- **Backend**: Global search, reservation system, activity feeds, file uploads, sharing system
+
 ## Project Overview
 
 HeyWish is a next-generation wishlist platform that aims to compete with GoWish by offering a modern, fast, and social-first experience targeting younger demographics.
@@ -39,13 +61,11 @@ The PostgreSQL schema is defined in `docs/TECHNICAL_SPEC.md`. Key tables include
 
 ## Authentication Integration
 
-1. An anonymous Firebase user is created on the first visit.
-2. Anonymous users can create wishlists and use all features.
-3. Firebase handles all authentication methods (anonymous, email/password, Google, Apple).
-4. When an anonymous user signs up, their account is linked to preserve their data.
-5. On any Firebase authentication event, the `/api/auth/sync` endpoint is called to create or update the user in the PostgreSQL database.
-6. All API calls require a valid Firebase ID token in the `Authorization` header.
-7. The backend verifies the token with the Firebase Admin SDK before processing requests.
+1. Users must create an account to use the app - no anonymous access.
+2. Firebase handles all authentication methods (email/password, Google, Apple).
+3. On any Firebase authentication event, the `/api/auth/sync` endpoint is called to create or update the user in the PostgreSQL database.
+4. All API calls require a valid Firebase ID token in the `Authorization` header.
+5. The backend verifies the token with the Firebase Admin SDK before processing requests.
 
 ## API Structure
 
@@ -68,6 +88,14 @@ The REST API is implemented using Next.js API routes. Key characteristics includ
 - Follow the localization key structure: `category.specific_string` (e.g., `auth.sign_in`, `wishlist.create_new`, `errors.network_error`)
 - When adding new features, always add corresponding strings to the translation file first
 - Use `.tr()` extension on all localization keys
+
+### Page Transitions (CRITICAL)
+- **ALWAYS use native transitions for page navigation**
+- **iOS**: Use `CupertinoPageRoute` with native iOS slide transitions
+- **Android**: Use `MaterialPageRoute` with native Material transitions
+- **Implementation**: Create platform-specific route builders that automatically detect platform and apply appropriate transitions
+- **Default behavior**: All new pages and navigation must follow this pattern
+- **Never use**: Generic routes or non-native transitions that break platform conventions
 
 ## TODO Before Release
 

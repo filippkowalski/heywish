@@ -31,24 +31,42 @@ class ApiService {
         if (_authToken != null) {
           options.headers['Authorization'] = 'Bearer $_authToken';
         }
-        debugPrint('🚀 API REQUEST[${options.method}] => ${baseUrl}${options.path}');
-        debugPrint('🚀 Headers: ${options.headers}');
-        if (options.data != null) {
-          debugPrint('🚀 Request Data: ${options.data}');
+        
+        // Only log in debug mode to prevent data leakage in production
+        if (kDebugMode) {
+          debugPrint('🚀 API REQUEST[${options.method}] => ${baseUrl}${options.path}');
+          
+          // Log headers but mask sensitive data
+          final sanitizedHeaders = Map<String, dynamic>.from(options.headers);
+          if (sanitizedHeaders.containsKey('Authorization')) {
+            sanitizedHeaders['Authorization'] = 'Bearer [REDACTED]';
+          }
+          debugPrint('🚀 Headers: $sanitizedHeaders');
+          
+          // Only log request data in debug builds (contains sensitive info)
+          if (options.data != null) {
+            debugPrint('🚀 Request Data: ${options.data}');
+          }
         }
+        
         handler.next(options);
       },
       onResponse: (response, handler) {
-        debugPrint('✅ API RESPONSE[${response.statusCode}] => ${response.requestOptions.path}');
-        debugPrint('✅ Response Data: ${response.data}');
+        if (kDebugMode) {
+          debugPrint('✅ API RESPONSE[${response.statusCode}] => ${response.requestOptions.path}');
+          // Only log response data in debug builds (contains user data)
+          debugPrint('✅ Response Data: ${response.data}');
+        }
         handler.next(response);
       },
       onError: (error, handler) {
-        debugPrint('❌ API ERROR[${error.response?.statusCode}] => ${error.requestOptions.path}');
-        debugPrint('❌ Error Type: ${error.type}');
-        debugPrint('❌ Error Message: ${error.message}');
-        if (error.response?.data != null) {
-          debugPrint('❌ Error Response Data: ${error.response?.data}');
+        if (kDebugMode) {
+          debugPrint('❌ API ERROR[${error.response?.statusCode}] => ${error.requestOptions.path}');
+          debugPrint('❌ Error Type: ${error.type}');
+          debugPrint('❌ Error Message: ${error.message}');
+          if (error.response?.data != null) {
+            debugPrint('❌ Error Response Data: ${error.response?.data}');
+          }
         }
         handler.next(error);
       },
@@ -112,7 +130,9 @@ class ApiService {
   
   Future<String?> uploadImage(File imageFile) async {
     try {
-      debugPrint('🖼️  API: Starting image upload...');
+      if (kDebugMode) {
+        debugPrint('🖼️  API: Starting image upload...');
+      }
       
       // Create form data
       final formData = FormData.fromMap({
@@ -123,7 +143,9 @@ class ApiService {
       });
       
       final response = await _dio.post('/upload/image', data: formData);
-      debugPrint('🖼️  API: Image upload response: ${response.data}');
+      if (kDebugMode) {
+        debugPrint('🖼️  API: Image upload response: ${response.data}');
+      }
       
       // Extract the image URL from the response
       if (response.data != null && response.data['imageUrl'] != null) {
@@ -132,7 +154,9 @@ class ApiService {
       
       return null;
     } on DioException catch (e) {
-      debugPrint('❌ API: Image upload error: ${e.message}');
+      if (kDebugMode) {
+        debugPrint('❌ API: Image upload error: ${e.message}');
+      }
       throw _handleError(e);
     }
   }
@@ -210,7 +234,9 @@ class ApiService {
       debugPrint('🔍 API: Checking username availability for: $username');
       
       final response = await get('/auth/check-username/$username');
-      debugPrint('✅ API: Username check response: $response');
+      if (kDebugMode) {
+        debugPrint('✅ API: Username check response: $response');
+      }
       
       return response as Map<String, dynamic>?;
     } catch (e) {

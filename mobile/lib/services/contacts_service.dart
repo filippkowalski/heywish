@@ -1,8 +1,19 @@
 import 'package:flutter/foundation.dart';
-import 'package:contacts_service/contacts_service.dart' as contact_service;
+// import 'package:contacts_service/contacts_service.dart' as contact_service;
 import 'package:permission_handler/permission_handler.dart';
 import 'api_service.dart';
 import '../utils/phone_utils.dart';
+
+/// Isolate function for processing phone numbers off the main thread
+List<String> _processPhoneNumbersInIsolate(List<String> rawPhoneNumbers) {
+  debugPrint('🔄 Processing ${rawPhoneNumbers.length} phone numbers in isolate');
+  
+  // Use robust phone normalization that matches backend logic
+  final normalizedNumbers = preparePhoneNumbersForMatching(rawPhoneNumbers);
+  
+  debugPrint('✅ Processed ${rawPhoneNumbers.length} raw numbers to ${normalizedNumbers.length} searchable variants');
+  return normalizedNumbers;
+}
 
 class ContactsService extends ChangeNotifier {
   final ApiService _apiService = ApiService();
@@ -51,22 +62,24 @@ class ContactsService extends ChangeNotifier {
         return [];
       }
       
-      // Load contacts locally
-      final rawContacts = await contact_service.ContactsService.getContacts(withThumbnails: false);
+      // Load contacts locally - TEMPORARILY DISABLED
+      // final rawContacts = await contact_service.ContactsService.getContacts(withThumbnails: false);
       
-      // Extract raw phone numbers (NO NAMES OR OTHER DATA)
-      final rawPhoneNumbers = rawContacts
-          .where((contact) => contact.phones != null && contact.phones!.isNotEmpty)
-          .expand((contact) => contact.phones!)
-          .map((phone) => phone.value ?? '')
-          .where((phone) => phone.isNotEmpty)
-          .toList();
+      // Extract raw phone numbers (NO NAMES OR OTHER DATA) - TEMPORARILY DISABLED
+      final rawPhoneNumbers = <String>[]; // TODO: Re-enable when contacts_service is fixed
+      // final rawPhoneNumbers = rawContacts
+      //     .where((contact) => contact.phones != null && contact.phones!.isNotEmpty)
+      //     .expand((contact) => contact.phones!)
+      //     .map((phone) => phone.value ?? '')
+      //     .where((phone) => phone.isNotEmpty)
+      //     .toList();
       
-      // Use robust phone normalization that matches backend logic
-      // This will handle country codes, area codes, and all edge cases
-      final normalizedNumbers = preparePhoneNumbersForMatching(rawPhoneNumbers);
+      debugPrint('📱 ContactsService: Extracted ${rawPhoneNumbers.length} raw numbers');
       
-      debugPrint('📱 ContactsService: Extracted ${rawPhoneNumbers.length} raw numbers, normalized to ${normalizedNumbers.length} searchable variants (names NOT included)');
+      // Process phone numbers off main thread for better performance
+      final normalizedNumbers = await compute(_processPhoneNumbersInIsolate, rawPhoneNumbers);
+      
+      debugPrint('📱 ContactsService: Normalized to ${normalizedNumbers.length} searchable variants (names NOT included)');
       return normalizedNumbers;
       
     } catch (e) {

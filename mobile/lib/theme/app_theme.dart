@@ -3,9 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Minimalistic Neutral Palette - Shadcn Inspired
+  // Minimalistic Neutral Palette - Wishlist App for Girls
   static const Color primary = Color(0xFF09090B); // Almost black for primary elements
-  static const Color primaryAccent = Color(0xFF3B82F6); // Blue accent for interactive elements
+  static const Color primaryAccent = Color(0xFFE91E63); // Pink accent for interactive elements - perfect for girls wishlist app
   
   // Card and Border Colors
   static Color cardBorder = Colors.black.withOpacity(0.12);
@@ -189,7 +189,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primaryAccent, width: 2),
+          borderSide: BorderSide(color: Colors.black87, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

@@ -49,12 +49,22 @@
 	<string>HeyWish needs photo library access to select images for your wishlist items</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>HeyWish needs permission to save product images to your photo library</string>
+	<key>NSContactsUsageDescription</key>
+	<string>HeyWish uses your contacts to help you find friends who are already using the app. We only check phone numbers and never access contact names or other personal information.</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>HeyWish would like to send you notifications about your friends' birthdays, special offers, and price drops on your wishlist items.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>com.wishlists.gifts</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.100728931577-o1c8pnhmcsscv7csggfd6vgqgjj18q98</string>
 			</array>
 		</dict>
 	</array>

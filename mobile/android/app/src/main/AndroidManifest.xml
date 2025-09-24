@@ -3,10 +3,19 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    
+    <!-- Contact book permission for privacy-first friend discovery -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    
+    <!-- Notification permissions for Android 13+ (API level 33+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
         android:label="HeyWish"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:allowBackup="false"
+        android:allowClearUserData="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"
