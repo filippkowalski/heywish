@@ -49,6 +49,8 @@ class _BirthdayStepState extends State<BirthdayStep> {
         elevation: 0,
         automaticallyImplyLeading: false,
         surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: Color(0xFF09090B)),
+        actionsIconTheme: const IconThemeData(color: Color(0xFF09090B)),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),

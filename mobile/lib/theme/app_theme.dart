@@ -38,6 +38,9 @@ class AppTheme {
         onSurface: primary,
         onBackground: primary,
         onError: Colors.white,
+        // Ensure app bar icons are dark on light surface
+        onSurfaceVariant: primary,
+        outline: primary,
       ),
       
       textTheme: TextTheme(
@@ -113,18 +116,34 @@ class AppTheme {
       
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.white,
-        elevation: 0,
+        elevation: 0.5,
+        shadowColor: Colors.black.withOpacity(0.1),
         centerTitle: true,
-        iconTheme: IconThemeData(color: primary, size: 24),
+        // Force icon colors to be dark - this should override Material 3
+        iconTheme: const IconThemeData(
+          color: Color(0xFF09090B), 
+          size: 24,
+        ),
+        actionsIconTheme: const IconThemeData(
+          color: Color(0xFF09090B), 
+          size: 24,
+        ),
         titleTextStyle: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: primary,
           letterSpacing: -0.2,
         ),
+        foregroundColor: primary,
+        surfaceTintColor: Colors.transparent,
+        // Ensure Material 3 doesn't override our settings
+        scrolledUnderElevation: 0.5,
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+          systemNavigationBarColor: Colors.white,
+          systemNavigationBarIconBrightness: Brightness.dark,
         ),
       ),
       

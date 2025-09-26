@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'dart:io';
 
@@ -128,36 +127,22 @@ class ApiService {
     }
   }
   
-  Future<String?> uploadImage(File imageFile) async {
+  Future<Map<String, dynamic>?> getWishImageUploadUrl(
+    String wishlistId, {
+    String? fileExtension,
+    String contentType = 'image/jpeg',
+  }) async {
     try {
-      if (kDebugMode) {
-        debugPrint('🖼️  API: Starting image upload...');
-      }
-      
-      // Create form data
-      final formData = FormData.fromMap({
-        'image': await MultipartFile.fromFile(
-          imageFile.path,
-          filename: 'image.${imageFile.path.split('.').last}',
-        ),
+      final response = await post('/upload/wish-image', {
+        'wishlistId': wishlistId,
+        if (fileExtension != null) 'fileExtension': fileExtension,
+        'contentType': contentType,
       });
-      
-      final response = await _dio.post('/upload/image', data: formData);
-      if (kDebugMode) {
-        debugPrint('🖼️  API: Image upload response: ${response.data}');
-      }
-      
-      // Extract the image URL from the response
-      if (response.data != null && response.data['imageUrl'] != null) {
-        return response.data['imageUrl'] as String;
-      }
-      
+
+      return response as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('❌ API: Error getting wish image upload URL: $e');
       return null;
-    } on DioException catch (e) {
-      if (kDebugMode) {
-        debugPrint('❌ API: Image upload error: ${e.message}');
-      }
-      throw _handleError(e);
     }
   }
 
@@ -179,7 +164,11 @@ class ApiService {
   }
 
   /// Upload image directly to presigned URL
-  Future<bool> uploadImageToPresignedUrl(String uploadUrl, File imageFile) async {
+  Future<bool> uploadImageToPresignedUrl(
+    String uploadUrl,
+    File imageFile, {
+    String contentType = 'image/jpeg',
+  }) async {
     try {
       debugPrint('🖼️ API: Uploading to presigned URL');
       
@@ -191,7 +180,7 @@ class ApiService {
         data: bytes,
         options: Options(
           headers: {
-            'Content-Type': 'image/jpeg',
+            'Content-Type': contentType,
           },
         ),
       );
@@ -222,6 +211,58 @@ class ApiService {
       return response as Map<String, dynamic>?;
     } catch (e) {
       debugPrint('❌ API: Error updating wishlist cover image: $e');
+      return null;
+    }
+  }
+
+  /// Upload wish image and return the public URL
+  Future<String?> uploadWishImage({
+    required File imageFile,
+    required String wishlistId,
+  }) async {
+    try {
+      final pathSegments = imageFile.path.split('.');
+      final extension = pathSegments.length > 1 ? pathSegments.last : 'jpg';
+      final contentType = 'image/jpeg';
+
+      final normalizedExtension = extension.toLowerCase();
+      String resolvedContentType = contentType;
+      switch (normalizedExtension) {
+        case 'png':
+          resolvedContentType = 'image/png';
+          break;
+        case 'webp':
+          resolvedContentType = 'image/webp';
+          break;
+        case 'jpeg':
+        case 'jpg':
+        default:
+          resolvedContentType = 'image/jpeg';
+      }
+
+      final uploadConfig = await getWishImageUploadUrl(
+        wishlistId,
+        fileExtension: normalizedExtension,
+        contentType: resolvedContentType,
+      );
+
+      final uploadUrl = uploadConfig?['uploadUrl'] as String?;
+      final publicUrl = uploadConfig?['publicUrl'] as String?;
+
+      if (uploadUrl == null || publicUrl == null) {
+        debugPrint('❌ API: Upload config missing URL fields');
+        return null;
+      }
+
+      final success = await uploadImageToPresignedUrl(
+        uploadUrl,
+        imageFile,
+        contentType: resolvedContentType,
+      );
+
+      return success ? publicUrl : null;
+    } catch (e) {
+      debugPrint('❌ API: Failed to upload wish image: $e');
       return null;
     }
   }

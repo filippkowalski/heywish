@@ -1,11 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import '../../../services/onboarding_service.dart';
 import '../../../services/auth_service.dart';
 import '../../../common/theme/app_colors.dart';
-import '../../../common/widgets/primary_button.dart';
 
 class AccountChoiceStep extends StatefulWidget {
   const AccountChoiceStep({super.key});
@@ -15,37 +14,63 @@ class AccountChoiceStep extends StatefulWidget {
 }
 
 class _AccountChoiceStepState extends State<AccountChoiceStep> {
-  bool _isCreatingAccount = false;
+  bool _isSigningIn = false;
 
-  Future<void> _createAccount() async {
+  Future<void> _handleGoogleSignIn() async {
     setState(() {
-      _isCreatingAccount = true;
+      _isSigningIn = true;
     });
 
     try {
-      // Navigate to signup screen
+      await context.read<AuthService>().signInWithGoogle();
+
       if (mounted) {
-        context.push('/auth/signup').then((_) {
-          // When returning from signup, complete onboarding
-          if (mounted) {
-            setState(() {
-              _isCreatingAccount = false;
-            });
-            // Move to completion after successful account creation
-            context.read<OnboardingService>().nextStep();
-          }
-        });
+        // Move to completion after successful account creation
+        context.read<OnboardingService>().nextStep();
       }
     } catch (e) {
-      debugPrint('Error navigating to signup: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
       if (mounted) {
         setState(() {
-          _isCreatingAccount = false;
+          _isSigningIn = false;
         });
       }
     }
   }
 
+  Future<void> _handleAppleSignIn() async {
+    setState(() {
+      _isSigningIn = true;
+    });
+
+    try {
+      await context.read<AuthService>().signInWithApple();
+
+      if (mounted) {
+        // Move to completion after successful account creation
+        context.read<OnboardingService>().nextStep();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSigningIn = false;
+        });
+      }
+    }
+  }
+
+  bool get _isIOS => Platform.isIOS;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +87,7 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Spacer(flex: 2),
-                    
+
                     // Profile icon/avatar
                     Container(
                       width: 80,
@@ -77,15 +102,17 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
                         color: Colors.grey.shade600,
                       ),
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Main title
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: AutoSizeText(
                         'Create your account',
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        style: Theme.of(
+                          context,
+                        ).textTheme.headlineMedium?.copyWith(
                           color: AppColors.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
@@ -95,9 +122,9 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
                         maxFontSize: 30,
                       ),
                     ),
-                    
+
                     const SizedBox(height: 12),
-                    
+
                     // Subtitle
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -113,9 +140,9 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
                         maxFontSize: 16,
                       ),
                     ),
-                    
+
                     const SizedBox(height: 32),
-                    
+
                     // Profile summary card
                     Consumer<OnboardingService>(
                       builder: (context, onboardingService, child) {
@@ -137,7 +164,7 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
                                 'Username',
                                 '@${userData.username ?? 'Not set'}',
                               ),
-                              
+
                               if (userData.birthday != null) ...[
                                 const SizedBox(height: 12),
                                 _buildSummaryItem(
@@ -145,7 +172,7 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
                                   _formatDate(userData.birthday!),
                                 ),
                               ],
-                              
+
                               if (userData.gender != null) ...[
                                 const SizedBox(height: 12),
                                 _buildSummaryItem(
@@ -158,27 +185,57 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
                         );
                       },
                     ),
-                    
+
                     const Spacer(flex: 3),
                   ],
                 ),
               ),
             ),
-            
+
             // Bottom section
             Padding(
               padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 24.0),
               child: Column(
                 children: [
-                  // Create account button
-                  PrimaryButton(
-                    text: _isCreatingAccount ? 'Creating Account...' : 'Create Account',
-                    onPressed: _isCreatingAccount ? null : _createAccount,
-                    isLoading: _isCreatingAccount,
+                  // Google Sign In button
+                  FilledButton.icon(
+                    onPressed: _isSigningIn ? null : _handleGoogleSignIn,
+                    icon:
+                        _isSigningIn
+                            ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                            : const Icon(Icons.g_mobiledata),
+                    label: const Text('Continue with Google'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      minimumSize: const Size(double.infinity, 50),
+                    ),
                   ),
-                  
+
+                  // Apple Sign In button (iOS only)
+                  if (_isIOS) ...[
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: _isSigningIn ? null : _handleAppleSignIn,
+                      icon: const Icon(Icons.apple),
+                      label: const Text('Continue with Apple'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        minimumSize: const Size(double.infinity, 50),
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 12),
-                  
+
                   // Security note
                   Text(
                     'Your data will be securely backed up',
@@ -221,10 +278,21 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
 
   String _formatDate(DateTime date) {
     final months = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
-    
+
     return '${months[date.month]} ${date.day}, ${date.year}';
   }
 

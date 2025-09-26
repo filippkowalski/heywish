@@ -226,12 +226,14 @@ class WishlistService extends ChangeNotifier {
     String? name,
     String? description,
     String? visibility,
+    String? coverImageUrl,
   }) async {
     try {
       final data = <String, dynamic>{};
       if (name != null) data['name'] = name;
       if (description != null) data['description'] = description;
       if (visibility != null) data['visibility'] = visibility;
+      if (coverImageUrl != null) data['coverImageUrl'] = coverImageUrl;
       
       await _apiService.patch('/wishlists/$id', data);
       
@@ -328,24 +330,30 @@ class WishlistService extends ChangeNotifier {
     }
     
     try {
-      final requestData = {
+      final requestData = <String, dynamic>{
         'wishlistId': wishlistId,
         'title': title,
         'description': description,
         'price': price,
         'currency': currency ?? 'USD',
         'url': url,
-        'images': images ?? [],
         'priority': priority != null ? int.tryParse(priority) ?? 1 : 1,
         'quantity': quantity,
         'notes': notes,
       };
+
+      if (images != null && images.isNotEmpty) {
+        requestData['images'] = images;
+      }
       
       // If there's an image file, upload it first
       if (imageFile != null) {
         try {
           print('🎁 WishlistService: Uploading image...');
-          final imageUrl = await _apiService.uploadImage(imageFile);
+          final imageUrl = await _apiService.uploadWishImage(
+            imageFile: imageFile,
+            wishlistId: wishlistId,
+          );
           if (imageUrl != null) {
             requestData['images'] = [imageUrl];
             print('🎁 WishlistService: Image uploaded: $imageUrl');

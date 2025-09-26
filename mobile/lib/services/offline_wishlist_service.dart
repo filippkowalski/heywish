@@ -17,6 +17,8 @@ class OfflineWishlistService extends ChangeNotifier {
   final SyncManager _syncManager = SyncManager();
   final ApiService _apiService = ApiService();
   final Connectivity _connectivity = Connectivity();
+  bool _isInitialized = false;
+  Future<void>? _initializing;
   
   List<Wishlist> _wishlists = [];
   Wishlist? _currentWishlist;
@@ -36,27 +38,42 @@ class OfflineWishlistService extends ChangeNotifier {
   
   /// Initialize the service
   Future<void> initialize() async {
-    await _localDb.initialize();
-    await _syncManager.initialize();
-    
-    // Check initial connectivity
-    final connectivityResults = await _connectivity.checkConnectivity();
-    _isOnline = connectivityResults.any((result) => result != ConnectivityResult.none);
-    
-    // Listen to connectivity changes
-    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
-      _onConnectivityChanged,
-    );
-    
-    // Load initial data from local database
-    await _loadWishlistsFromLocal();
-    
-    // Sync if online
-    if (_isOnline) {
-      _syncInBackground();
+    if (_isInitialized) return;
+    if (_initializing != null) {
+      await _initializing;
+      return;
     }
-    
-    debugPrint('✅ OfflineWishlistService: Initialized (online: $_isOnline)');
+
+    _initializing = _initializeInternal();
+    await _initializing;
+  }
+
+  Future<void> _initializeInternal() async {
+    try {
+      await _localDb.initialize();
+      await _syncManager.initialize();
+
+      final connectivityResults = await _connectivity.checkConnectivity();
+      _isOnline = connectivityResults.any((result) => result != ConnectivityResult.none);
+
+      _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
+        _onConnectivityChanged,
+      );
+
+      await _loadWishlistsFromLocal();
+
+      if (_isOnline) {
+        _syncInBackground();
+      }
+
+      _isInitialized = true;
+      debugPrint('✅ OfflineWishlistService: Initialized (online: $_isOnline)');
+    } catch (e) {
+      debugPrint('❌ OfflineWishlistService: Initialization failed: $e');
+      rethrow;
+    } finally {
+      _initializing = null;
+    }
   }
   
   /// Handle connectivity changes

@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../services/wishlist_service.dart';
 import '../../theme/app_theme.dart';
+import '../../common/navigation/native_page_route.dart';
 
 class AddWishScreen extends StatefulWidget {
   final String wishlistId;
@@ -93,12 +94,11 @@ class _AddWishScreenState extends State<AddWishScreen> {
   }
 
   void _showImageOptions() {
-    showModalBottomSheet(
+    NativeTransitions.showNativeModalBottomSheet(
       context: context,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Wrap(
-            children: [
+      child: SafeArea(
+        child: Wrap(
+          children: [
               ListTile(
                 leading: Icon(Icons.photo_library),
                 title: const Text('Choose from Gallery'),
@@ -126,10 +126,9 @@ class _AddWishScreenState extends State<AddWishScreen> {
                     });
                   },
                 ),
-            ],
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 

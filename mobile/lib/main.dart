@@ -4,7 +4,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'theme/app_theme.dart';
 import 'services/auth_service.dart';
@@ -26,6 +25,7 @@ import 'screens/wishlists/add_wish_screen.dart';
 import 'screens/wishlists/wish_detail_screen.dart';
 import 'screens/wishlists/edit_wishlist_screen.dart';
 import 'screens/wishlists/edit_wish_screen.dart';
+import 'common/navigation/native_page_route.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,8 +46,7 @@ void main() async {
   // Initialize preferences
   await PreferencesService().initialize();
   
-  // Initialize offline services
-  await OfflineWishlistService().initialize();
+  // Initialize singleton services
   await SyncManager().initialize();
   
   runApp(
@@ -84,7 +83,13 @@ class HeyWishApp extends StatelessWidget {
         ),
         
         // Singleton services (already initialized)
-        ChangeNotifierProvider.value(value: OfflineWishlistService()),
+        ChangeNotifierProvider<OfflineWishlistService>(
+          create: (_) {
+            final service = OfflineWishlistService();
+            service.initialize();
+            return service;
+          },
+        ),
         ChangeNotifierProvider.value(value: FriendsService()),
         ChangeNotifierProvider.value(value: PreferencesService()),
         ChangeNotifierProvider.value(value: SyncManager()),
@@ -109,68 +114,134 @@ final _router = GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      builder: (context, state) => const SplashScreen(),
+      pageBuilder: (context, state) => NativeTransitions.page(
+        child: const SplashScreen(),
+        key: state.pageKey,
+        name: state.name,
+        arguments: state.extra,
+        restorationId: state.pageKey.value,
+      ),
     ),
     GoRoute(
       path: '/onboarding',
-      builder: (context, state) => const OnboardingFlowScreen(),
+      pageBuilder: (context, state) => NativeTransitions.page(
+        child: const OnboardingFlowScreen(),
+        key: state.pageKey,
+        name: state.name,
+        arguments: state.extra,
+        restorationId: state.pageKey.value,
+      ),
     ),
     GoRoute(
       path: '/home',
-      builder: (context, state) => const HomeScreen(),
+      pageBuilder: (context, state) => NativeTransitions.page(
+        child: const HomeScreen(),
+        key: state.pageKey,
+        name: state.name,
+        arguments: state.extra,
+        restorationId: state.pageKey.value,
+      ),
     ),
     GoRoute(
       path: '/auth/login',
-      builder: (context, state) => const LoginScreen(),
+      pageBuilder: (context, state) => NativeTransitions.page(
+        child: const LoginScreen(),
+        key: state.pageKey,
+        name: state.name,
+        arguments: state.extra,
+        restorationId: state.pageKey.value,
+      ),
     ),
     GoRoute(
       path: '/auth/signup',
-      builder: (context, state) => const SignupScreen(),
+      pageBuilder: (context, state) => NativeTransitions.page(
+        child: const SignupScreen(),
+        key: state.pageKey,
+        name: state.name,
+        arguments: state.extra,
+        restorationId: state.pageKey.value,
+      ),
     ),
     GoRoute(
       path: '/wishlists/new',
-      builder: (context, state) => const WishlistNewScreen(),
+      pageBuilder: (context, state) => NativeTransitions.page(
+        child: const WishlistNewScreen(),
+        key: state.pageKey,
+        name: state.name,
+        arguments: state.extra,
+        restorationId: state.pageKey.value,
+      ),
     ),
     GoRoute(
       path: '/wishlists/:id',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final id = state.pathParameters['id']!;
-        return WishlistDetailScreen(wishlistId: id);
+        return NativeTransitions.page(
+          child: WishlistDetailScreen(wishlistId: id),
+          key: state.pageKey,
+          name: state.name,
+          arguments: state.extra,
+          restorationId: state.pageKey.value,
+        );
       },
     ),
     GoRoute(
       path: '/wishlists/:id/add-item',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final id = state.pathParameters['id']!;
-        return AddWishScreen(wishlistId: id);
+        return NativeTransitions.page(
+          child: AddWishScreen(wishlistId: id),
+          key: state.pageKey,
+          name: state.name,
+          arguments: state.extra,
+          restorationId: state.pageKey.value,
+        );
       },
     ),
     GoRoute(
       path: '/wishlists/:wishlistId/items/:wishId',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final wishlistId = state.pathParameters['wishlistId']!;
         final wishId = state.pathParameters['wishId']!;
-        return WishDetailScreen(
-          wishlistId: wishlistId,
-          wishId: wishId,
+        return NativeTransitions.page(
+          child: WishDetailScreen(
+            wishlistId: wishlistId,
+            wishId: wishId,
+          ),
+          key: state.pageKey,
+          name: state.name,
+          arguments: state.extra,
+          restorationId: state.pageKey.value,
         );
       },
     ),
     GoRoute(
       path: '/wishlists/:id/edit',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final id = state.pathParameters['id']!;
-        return EditWishlistScreen(wishlistId: id);
+        return NativeTransitions.page(
+          child: EditWishlistScreen(wishlistId: id),
+          key: state.pageKey,
+          name: state.name,
+          arguments: state.extra,
+          restorationId: state.pageKey.value,
+        );
       },
     ),
     GoRoute(
       path: '/wishlists/:wishlistId/items/:wishId/edit',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final wishlistId = state.pathParameters['wishlistId']!;
         final wishId = state.pathParameters['wishId']!;
-        return EditWishScreen(
-          wishlistId: wishlistId,
-          wishId: wishId,
+        return NativeTransitions.page(
+          child: EditWishScreen(
+            wishlistId: wishlistId,
+            wishId: wishId,
+          ),
+          key: state.pageKey,
+          name: state.name,
+          arguments: state.extra,
+          restorationId: state.pageKey.value,
         );
       },
     ),

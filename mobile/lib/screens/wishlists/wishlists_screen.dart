@@ -8,6 +8,7 @@ import '../../models/wishlist.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/cached_image.dart';
 import '../../common/widgets/skeleton_loading.dart';
+import '../../common/widgets/native_refresh_indicator.dart';
 
 class WishlistsScreen extends StatefulWidget {
   const WishlistsScreen({super.key});
@@ -80,7 +81,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
             children: [
               _buildHeader(context, authService),
               Expanded(
-                child: RefreshIndicator(
+                child: NativeRefreshIndicator(
                   onRefresh: () async {
                     final wishlistService = context.read<WishlistService>();
                     final authService = context.read<AuthService>();
@@ -90,7 +91,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
                     }
                   },
                   child: !_hasCompletedInitialLoad
-                      ? _buildInitialLoadingState(context)
+                      ? _buildLoadingShimmer()
                       : wishlistService.isLoading
                           ? _buildLoadingShimmer()
                           : wishlistService.error != null
@@ -120,14 +121,35 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
                   'home.title'.tr(),
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
                     fontWeight: FontWeight.w700,
+                    color: AppTheme.primary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Create & share your wish lists',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.primary.withOpacity(0.7),
+                  ),
                 ),
               ],
+            ),
+          ),
+          // Add wishlist button
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.primaryAccent,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              onPressed: () {
+                context.push('/wishlists/new');
+              },
+              icon: const Icon(
+                Icons.add,
+                color: Colors.white,
+                size: 20,
+              ),
+              tooltip: 'Create Wishlist',
             ),
           ),
         ],
@@ -135,73 +157,6 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
     );
   }
 
-  Widget _buildInitialLoadingState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Theme.of(context).colorScheme.primary, Colors.blue],
-                ),
-                borderRadius: BorderRadius.circular(60),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.auto_awesome,
-                size: 48,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              'Setting up your wishlist space ✨',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Colors.black87,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Almost ready to start making wishes!',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey.shade600,
-              ),
-            ),
-            const SizedBox(height: 40),
-            Container(
-              width: 240,
-              height: 6,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(3),
-                child: LinearProgressIndicator(
-                  backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildLoadingShimmer() {
     return ListView.separated(

@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 /// Base class for all entities that support offline sync
 abstract class SyncEntity {
   String get id;

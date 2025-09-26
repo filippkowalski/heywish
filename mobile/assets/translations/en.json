@@ -50,11 +50,24 @@
     "signup_subtitle": "Create an account to save your wishlists and sync across devices.",
     "create_account": "Create Account"
   },
+  "navigation": {
+    "home": "Home",
+    "feed": "Feed", 
+    "profile": "Profile"
+  },
   "home": {
     "title": "Home",
     "empty_title": "No wishlists yet",
     "empty_subtitle": "Create your first wishlist to get started",
     "create_first_wishlist": "Create Your First Wishlist"
+  },
+  "feed": {
+    "title": "Friends Activity",
+    "subtitle": "See what your friends are wishing for",
+    "empty_title": "No activity yet",
+    "empty_subtitle": "Add friends to see their wishlist activity here",
+    "loading": "Loading feed...",
+    "error": "Failed to load feed"
   },
   "friends": {
     "title": "Friends",

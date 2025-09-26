@@ -10,6 +10,9 @@ import '../../models/wish.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/cached_image.dart';
 import '../../widgets/wishlist_cover_image.dart';
+import '../../common/widgets/native_refresh_indicator.dart';
+import '../../common/widgets/confirmation_bottom_sheet.dart';
+import '../../common/navigation/native_page_route.dart';
 
 class WishlistDetailScreen extends StatefulWidget {
   final String wishlistId;
@@ -80,7 +83,7 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
           ? Center(child: CircularProgressIndicator())
           : wishlist == null
               ? Center(child: Text('errors.not_found'.tr()))
-              : RefreshIndicator(
+              : NativeRefreshIndicator(
                   onRefresh: _loadWishlist,
                   child: CustomScrollView(
                     slivers: [
@@ -200,34 +203,23 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
   }
 
   void _showDeleteConfirmation() async {
-    final shouldDelete = await showDialog<bool>(
+    final success = await ConfirmationBottomSheet.show<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('wishlist.delete_confirmation'.tr()),
-        content: Text(
-          'wishlist.delete_warning'.tr(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('app.cancel'.tr()),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text('app.delete'.tr(), style: const TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      title: 'wishlist.delete_confirmation'.tr(),
+      message: 'wishlist.delete_warning'.tr(),
+      confirmText: 'app.delete'.tr(),
+      cancelText: 'app.cancel'.tr(),
+      icon: Icons.delete_outline,
+      isDestructive: true,
+      onConfirm: () async {
+        return await context
+            .read<WishlistService>()
+            .deleteWishlist(widget.wishlistId);
+      },
     );
-
-    if (shouldDelete == true && mounted) {
-      final success = await context
-          .read<WishlistService>()
-          .deleteWishlist(widget.wishlistId);
-      
-      if (success && mounted) {
-        context.pop();
-      }
+    
+    if (success == true && mounted) {
+      context.pop();
     }
   }
 
@@ -255,57 +247,25 @@ Created with HeyWish 🎁
 ''';
 
       // Show sharing options
-      await showModalBottomSheet<void>(
-        context: context,
-        builder: (BuildContext context) {
-          return SafeArea(
-            child: Wrap(
-              children: [
-                ListTile(
-                  leading: Icon(Icons.share),
-                  title: Text('app.share'.tr()),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    if (shareUrl != null) {
-                      await Share.share(shareUrl, subject: 'Check out my wishlist: ${wishlist.name}');
-                    } else {
-                      await Share.share(shareText, subject: 'Check out my wishlist: ${wishlist.name}');
-                    }
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.copy),
-                  title: Text('success.copied_to_clipboard'.tr()),
-                  onTap: () {
-                    Navigator.pop(context);
-                    final textToCopy = shareUrl ?? shareText;
-                    Clipboard.setData(ClipboardData(text: textToCopy));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('success.link_copied'.tr()),
-                      ),
-                    );
-                  },
-                ),
-                if (shareUrl != null)
-                  ListTile(
-                    leading: Icon(Icons.web),
-                    title: Text('Open in browser'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _launchUrl(shareUrl);
-                    },
-                  ),
-              ],
-            ),
-          );
-        },
-      );
+      await _showShareOptions(context, shareText, shareUrl, wishlist);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('errors.unknown'.tr())),
       );
     }
+  }
+
+  Future<void> _showShareOptions(BuildContext context, String shareText, String? shareUrl, dynamic wishlist) async {
+    return await NativeTransitions.showNativeModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      child: _ShareOptionsBottomSheet(
+        shareText: shareText,
+        shareUrl: shareUrl,
+        wishlist: wishlist,
+        onLaunchUrl: _launchUrl,
+      ),
+    );
   }
 
   void _launchUrl(String url) async {
@@ -450,6 +410,214 @@ class _WishCard extends StatelessWidget {
                     }
                   },
                 ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShareOptionsBottomSheet extends StatelessWidget {
+  final String shareText;
+  final String? shareUrl;
+  final dynamic wishlist;
+  final Function(String) onLaunchUrl;
+
+  const _ShareOptionsBottomSheet({
+    required this.shareText,
+    required this.shareUrl,
+    required this.wishlist,
+    required this.onLaunchUrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: screenHeight * 0.6,
+        minHeight: 200,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Icon
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryAccent.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(32),
+                ),
+                child: Icon(
+                  Icons.share,
+                  size: 32,
+                  color: AppTheme.primaryAccent,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Title
+              Text(
+                'app.share'.tr(),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.primary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 8),
+
+              Text(
+                wishlist.name,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: Colors.grey.shade600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 32),
+
+              // Share options
+              Column(
+                children: [
+                  _ShareOptionTile(
+                    icon: Icons.share,
+                    title: 'Share',
+                    onTap: () async {
+                      Navigator.pop(context);
+                      if (shareUrl != null) {
+                        await Share.share(shareUrl!, subject: 'Check out my wishlist: ${wishlist.name}');
+                      } else {
+                        await Share.share(shareText, subject: 'Check out my wishlist: ${wishlist.name}');
+                      }
+                    },
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  _ShareOptionTile(
+                    icon: Icons.copy,
+                    title: 'Copy Link',
+                    onTap: () {
+                      Navigator.pop(context);
+                      final textToCopy = shareUrl ?? shareText;
+                      Clipboard.setData(ClipboardData(text: textToCopy));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('success.link_copied'.tr()),
+                        ),
+                      );
+                    },
+                  ),
+
+                  if (shareUrl != null) ...[
+                    const SizedBox(height: 12),
+                    
+                    _ShareOptionTile(
+                      icon: Icons.open_in_new,
+                      title: 'Open in Browser',
+                      onTap: () {
+                        Navigator.pop(context);
+                        onLaunchUrl(shareUrl!);
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShareOptionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _ShareOptionTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryAccent.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Icon(
+                  icon,
+                  size: 24,
+                  color: AppTheme.primaryAccent,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Colors.grey.shade400,
+              ),
             ],
           ),
         ),

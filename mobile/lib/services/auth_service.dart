@@ -19,6 +19,7 @@ class AuthService extends ChangeNotifier {
   firebase.User? _firebaseUser;
   StreamSubscription<firebase.User?>? _authStateSubscription;
   bool _isOnboardingCompleted = false;
+  Timer? _tokenRefreshTimer;
   
   User? get currentUser => _currentUser;
   firebase.User? get firebaseUser => _firebaseUser;
@@ -36,20 +37,46 @@ class AuthService extends ChangeNotifier {
     if (firebaseUser != null) {
       // Sync with backend with retries (no signup method for existing sessions)
       await syncUserWithBackend(retries: 3);
+      _scheduleTokenRefresh();
     } else {
       _currentUser = null;
+      _apiService.clearAuthToken();
+      _tokenRefreshTimer?.cancel();
     }
     
     notifyListeners();
   }
   
+  void _scheduleTokenRefresh() {
+    _tokenRefreshTimer?.cancel();
+    _tokenRefreshTimer = Timer.periodic(const Duration(minutes: 45), (_) {
+      _refreshAuthToken(force: true);
+    });
+  }
+
+  Future<String?> _refreshAuthToken({bool force = false}) async {
+    if (_firebaseUser == null) {
+      return null;
+    }
+
+    try {
+      final token = await _firebaseUser!.getIdToken(force);
+      if (token != null) {
+        _apiService.setAuthToken(token);
+      }
+      return token;
+    } catch (e) {
+      debugPrint('❌ AuthService: Failed to refresh auth token: $e');
+      return null;
+    }
+  }
+
   Future<void> syncUserWithBackend({int retries = 1, String? signUpMethod}) async {
     if (_firebaseUser == null) return;
     
     for (int attempt = 1; attempt <= retries; attempt++) {
       try {
-        final idToken = await _firebaseUser!.getIdToken(true); // Force refresh token
-        _apiService.setAuthToken(idToken);
+        await _refreshAuthToken(force: true);
         
         debugPrint('🔄 AuthService: Syncing user with backend (attempt $attempt/$retries)');
         debugPrint('🔄 AuthService: Firebase UID: ${_firebaseUser!.uid}');
@@ -113,6 +140,7 @@ class AuthService extends ChangeNotifier {
       
       // Sync with backend and pass signup method
       await syncUserWithBackend(signUpMethod: 'email_password');
+      _scheduleTokenRefresh();
     } catch (e) {
       debugPrint('Error signing up: $e');
       rethrow;
@@ -163,6 +191,7 @@ class AuthService extends ChangeNotifier {
       if (isNewUser) {
         await syncUserWithBackend(signUpMethod: 'google');
       }
+      _scheduleTokenRefresh();
       
     } catch (e) {
       debugPrint('❌ AuthService: Error signing in with Google: $e');
@@ -232,6 +261,7 @@ class AuthService extends ChangeNotifier {
       if (isNewUser) {
         await syncUserWithBackend(signUpMethod: 'apple');
       }
+      _scheduleTokenRefresh();
       
     } catch (e) {
       debugPrint('❌ AuthService: Error signing in with Apple: $e');
@@ -286,6 +316,7 @@ class AuthService extends ChangeNotifier {
       
       _currentUser = null;
       _apiService.clearAuthToken();
+      _tokenRefreshTimer?.cancel();
       notifyListeners();
     } catch (e) {
       debugPrint('❌ AuthService: Error signing out: $e');
@@ -352,6 +383,7 @@ class AuthService extends ChangeNotifier {
   @override
   void dispose() {
     _authStateSubscription?.cancel();
+    _tokenRefreshTimer?.cancel();
     super.dispose();
   }
 }

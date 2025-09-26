@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import '../../theme/app_theme.dart';
 
 /// Animated skeleton loading widget for placeholder content
 class SkeletonLoading extends StatefulWidget {
@@ -48,8 +48,8 @@ class _SkeletonLoadingState extends State<SkeletonLoading>
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = widget.baseColor ?? AppColors.surfaceVariant;
-    final highlightColor = widget.highlightColor ?? AppColors.surface;
+    final baseColor = widget.baseColor ?? Colors.grey.shade200;
+    final highlightColor = widget.highlightColor ?? Colors.grey.shade50;
     
     return AnimatedBuilder(
       animation: _animation,
@@ -166,9 +166,16 @@ class SkeletonCard extends StatelessWidget {
       height: height,
       padding: padding,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.outline.withOpacity(0.2)),
+        border: Border.all(color: AppTheme.cardBorder, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.cardShadow,
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: child,
     );
@@ -183,32 +190,51 @@ class SkeletonWishlistCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SkeletonCard(
       width: double.infinity,
-      height: 120,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      height: 88,
+      child: Row(
         children: [
-          Row(
-            children: [
-              const Expanded(
-                child: SkeletonText(height: 20, lines: 1),
-              ),
-              const SizedBox(width: 16),
-              SkeletonLoading(
-                width: 60,
-                height: 60,
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ],
+          // Icon/Image container
+          SkeletonLoading(
+            width: 56,
+            height: 56,
+            borderRadius: BorderRadius.circular(12),
           ),
-          const SizedBox(height: 12),
-          const SkeletonText(height: 14, lines: 2, width: double.infinity),
-          const Spacer(),
-          Row(
-            children: [
-              const SkeletonText(width: 80, height: 12),
-              const SizedBox(width: 16),
-              const SkeletonText(width: 100, height: 12),
-            ],
+          const SizedBox(width: 16),
+          // Content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: SkeletonText(height: 16, lines: 1),
+                    ),
+                    const SizedBox(width: 8),
+                    SkeletonLoading(
+                      width: 50,
+                      height: 18,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const SkeletonText(width: 60, height: 12),
+                    const SizedBox(width: 16),
+                    const SkeletonText(width: 80, height: 12),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Arrow indicator
+          SkeletonLoading(
+            width: 14,
+            height: 14,
+            borderRadius: BorderRadius.circular(2),
           ),
         ],
       ),

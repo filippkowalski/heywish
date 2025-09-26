@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:auto_size_text/auto_size_text.dart';
@@ -9,6 +8,7 @@ import '../../../common/theme/app_colors.dart';
 import '../../../theme/app_theme.dart';
 import '../../../common/widgets/primary_button.dart';
 import '../../../common/widgets/skip_button.dart';
+import '../../../common/navigation/native_page_route.dart';
 
 class NotificationsStep extends StatefulWidget {
   const NotificationsStep({super.key});
@@ -121,41 +121,39 @@ class _NotificationsStepState extends State<NotificationsStep> {
   }
 
   void _showPermissionDeniedDialog() {
-    showDialog(
+    NativeTransitions.showNativeDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Notification Permission'),
-          content: const Text(
-            'Notifications were previously denied. To enable them:\n\n'
-            '1. Open iPhone Settings\n'
-            '2. Find "HeyWish" in the app list\n'
-            '3. Tap "Notifications"\n'
-            '4. Turn on "Allow Notifications"\n\n'
-            'You can continue without notifications for now.',
+      child: AlertDialog(
+        title: const Text('Notification Permission'),
+        content: const Text(
+          'Notifications were previously denied. To enable them:\n\n'
+          '1. Open iPhone Settings\n'
+          '2. Find "HeyWish" in the app list\n'
+          '3. Tap "Notifications"\n'
+          '4. Turn on "Allow Notifications"\n\n'
+          'You can continue without notifications for now.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Continue with onboarding
+              context.read<OnboardingService>().nextStep();
+            },
+            child: const Text('Continue'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // Continue with onboarding
-                context.read<OnboardingService>().nextStep();
-              },
-              child: const Text('Continue'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // Open iOS settings
-                Permission.notification.request().then((_) {
-                  openAppSettings();
-                });
-              },
-              child: const Text('Open Settings'),
-            ),
-          ],
-        );
-      },
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Open iOS settings
+              Permission.notification.request().then((_) {
+                openAppSettings();
+              });
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -168,6 +166,8 @@ class _NotificationsStepState extends State<NotificationsStep> {
         elevation: 0,
         automaticallyImplyLeading: false,
         surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: AppTheme.primary),
+        actionsIconTheme: const IconThemeData(color: AppTheme.primary),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),

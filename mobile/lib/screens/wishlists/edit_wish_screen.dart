@@ -7,6 +7,7 @@ import '../../models/wish.dart';
 import '../../services/wishlist_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/cached_image.dart';
+import '../../common/navigation/native_page_route.dart';
 
 class EditWishScreen extends StatefulWidget {
   final String wishId;
@@ -128,12 +129,11 @@ class _EditWishScreenState extends State<EditWishScreen> {
   }
 
   void _showImageOptions() {
-    showModalBottomSheet(
+    NativeTransitions.showNativeModalBottomSheet(
       context: context,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Wrap(
-            children: [
+      child: SafeArea(
+        child: Wrap(
+          children: [
               ListTile(
                 leading: Icon(Icons.photo_library),
                 title: const Text('Choose from Gallery'),
@@ -162,10 +162,9 @@ class _EditWishScreenState extends State<EditWishScreen> {
                     });
                   },
                 ),
-            ],
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 

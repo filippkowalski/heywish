@@ -24,11 +24,11 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep> {
     setState(() {
       _isSigningInWithGoogle = true;
     });
-    
+
     try {
       final authService = context.read<AuthService>();
       await authService.signInWithGoogle();
-      
+
       if (mounted) {
         await _completeOnboardingAndNavigate();
       }
@@ -50,16 +50,16 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep> {
       }
     }
   }
-  
+
   Future<void> _signInWithApple() async {
     setState(() {
       _isSigningInWithApple = true;
     });
-    
+
     try {
       final authService = context.read<AuthService>();
       await authService.signInWithApple();
-      
+
       if (mounted) {
         await _completeOnboardingAndNavigate();
       }
@@ -81,12 +81,12 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep> {
       }
     }
   }
-  
+
   Future<void> _navigateToCustomSignIn() async {
     setState(() {
       _isNavigatingToCustomSignIn = true;
     });
-    
+
     try {
       if (mounted) {
         context.push('/auth/signup').then((_) {
@@ -112,31 +112,39 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep> {
       // Mark onboarding as completed
       final authService = context.read<AuthService>();
       await authService.markOnboardingCompleted();
-      
-      debugPrint('✅ OnboardingCompleteStep: Onboarding marked as completed, navigating to home');
-      
+
+      debugPrint(
+        '✅ OnboardingCompleteStep: Onboarding marked as completed, navigating to home',
+      );
+
       // Navigate to home
       if (mounted) {
         _navigateToHome();
       }
-      
+
       // Sync profile data in background
       final onboardingService = context.read<OnboardingService>();
-      onboardingService.completeOnboarding().then((success) {
-        debugPrint('✅ OnboardingCompleteStep: Background profile sync result: $success');
-      }).catchError((error) {
-        debugPrint('❌ OnboardingCompleteStep: Background profile sync error: $error');
-      });
+      onboardingService
+          .completeOnboarding()
+          .then((success) {
+            debugPrint(
+              '✅ OnboardingCompleteStep: Background profile sync result: $success',
+            );
+          })
+          .catchError((error) {
+            debugPrint(
+              '❌ OnboardingCompleteStep: Background profile sync error: $error',
+            );
+          });
     } catch (e) {
       debugPrint('❌ OnboardingCompleteStep: Error completing onboarding: $e');
-      
+
       // On error, still navigate to home to avoid getting stuck
       if (mounted) {
         _navigateToHome();
       }
     }
   }
-  
 
   void _navigateToHome() {
     debugPrint('🏠 OnboardingCompleteStep: Navigating to home screen');
@@ -152,7 +160,7 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep> {
   @override
   Widget build(BuildContext context) {
     final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
-    
+
     return Column(
       children: [
         // Decorative top section
@@ -173,7 +181,7 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep> {
           child: Column(
             children: [
               const SizedBox(height: 60),
-              
+
               // Animated heart icons background
               Stack(
                 alignment: Alignment.center,
@@ -206,7 +214,7 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep> {
                       color: AppTheme.primaryAccent.withOpacity(0.1),
                     ),
                   ),
-                  
+
                   // Main app icon
                   Container(
                     width: 100,
@@ -230,12 +238,12 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
             ],
           ),
         ),
-        
+
         // Main content
         Expanded(
           child: SingleChildScrollView(
@@ -244,7 +252,7 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep> {
               child: Column(
                 children: [
                   const SizedBox(height: 16),
-                  
+
                   // Title
                   AutoSizeText(
                     'Create your account',
@@ -257,9 +265,9 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep> {
                     minFontSize: 20,
                     maxFontSize: 30,
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Benefits explanation
                   AutoSizeText(
                     '• Sync your wishlists across devices\n• Never lose your wishes again\n• Share with friends and family\n• Get notified about gift opportunities',
@@ -272,28 +280,30 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep> {
                     minFontSize: 13,
                     maxFontSize: 16,
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
+
                   // Social sign-in buttons (platform-specific ordering)
                   if (isIOS) ...[
                     // Apple Sign In first on iOS
                     _buildSocialButton(
                       icon: Icons.apple,
                       text: 'Continue with Apple',
-                      onPressed: _isSigningInWithApple ? null : _signInWithApple,
+                      onPressed:
+                          _isSigningInWithApple ? null : _signInWithApple,
                       isLoading: _isSigningInWithApple,
                       backgroundColor: Colors.black,
                       textColor: Colors.white,
                     ),
-                    
+
                     const SizedBox(height: 12),
-                    
+
                     // Google Sign In second on iOS
                     _buildSocialButton(
                       icon: Icons.g_mobiledata,
                       text: 'Continue with Google',
-                      onPressed: _isSigningInWithGoogle ? null : _signInWithGoogle,
+                      onPressed:
+                          _isSigningInWithGoogle ? null : _signInWithGoogle,
                       isLoading: _isSigningInWithGoogle,
                       backgroundColor: Colors.white,
                       textColor: Colors.black87,
@@ -304,72 +314,30 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep> {
                     _buildSocialButton(
                       icon: Icons.g_mobiledata,
                       text: 'Continue with Google',
-                      onPressed: _isSigningInWithGoogle ? null : _signInWithGoogle,
+                      onPressed:
+                          _isSigningInWithGoogle ? null : _signInWithGoogle,
                       isLoading: _isSigningInWithGoogle,
                       backgroundColor: Colors.white,
                       textColor: Colors.black87,
                       hasBorder: true,
                     ),
-                    
+
                     const SizedBox(height: 12),
-                    
+
                     // Apple Sign In second on Android
                     _buildSocialButton(
                       icon: Icons.apple,
                       text: 'Continue with Apple',
-                      onPressed: _isSigningInWithApple ? null : _signInWithApple,
+                      onPressed:
+                          _isSigningInWithApple ? null : _signInWithApple,
                       isLoading: _isSigningInWithApple,
                       backgroundColor: Colors.black,
                       textColor: Colors.white,
                     ),
                   ],
-                  
+
                   const SizedBox(height: 24),
-                  
-                  // Divider
-                  Row(
-                    children: [
-                      const Expanded(child: Divider()),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(
-                          'or',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                      const Expanded(child: Divider()),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Custom sign in option
-                  TextButton(
-                    onPressed: _isNavigatingToCustomSignIn ? null : _navigateToCustomSignIn,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (_isNavigatingToCustomSignIn) ...[
-                          const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                        Text(
-                          'Sign up with email',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.primaryAccent,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
+
                   const SizedBox(height: 40),
                 ],
               ),
@@ -394,20 +362,17 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep> {
       height: 56,
       child: ElevatedButton.icon(
         onPressed: isLoading ? null : onPressed,
-        icon: isLoading
-            ? SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: textColor,
-                ),
-              )
-            : Icon(
-                icon,
-                color: textColor,
-                size: 20,
-              ),
+        icon:
+            isLoading
+                ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: textColor,
+                  ),
+                )
+                : Icon(icon, color: textColor, size: 20),
         label: Text(text),
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
@@ -415,19 +380,14 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep> {
           disabledBackgroundColor: AppColors.surfaceVariant,
           disabledForegroundColor: AppColors.textSecondary,
           elevation: 0,
-          side: hasBorder
-              ? const BorderSide(
-                  color: AppColors.outline,
-                  width: 1,
-                )
-              : null,
+          side:
+              hasBorder
+                  ? const BorderSide(color: AppColors.outline, width: 1)
+                  : null,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
     );

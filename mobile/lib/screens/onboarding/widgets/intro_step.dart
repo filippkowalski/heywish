@@ -130,56 +130,20 @@ class _IntroStepState extends State<IntroStep> with TickerProviderStateMixin {
                         opacity: _fadeAnimation,
                         child: SlideTransition(
                           position: _slideAnimation,
-                          child: AutoSizeText(
-                            'HeyWish helps you keep all your wishes organized, let your friends and family quickly check your lists and reserve your gifts',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: AppColors.textSecondary,
-                              height: 1.5,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: AutoSizeText(
+                              'The wishlist app that makes gift-giving magical.\n\nCreate, share, and celebrate the perfect gifts with friends and family.',
+                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: AppColors.textSecondary,
+                                height: 1.6,
+                                fontSize: 18,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 5,
+                              minFontSize: 16,
+                              maxFontSize: 20,
                             ),
-                            textAlign: TextAlign.center,
-                            maxLines: 4,
-                            minFontSize: 16,
-                            maxFontSize: 18,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  
-                  const SizedBox(height: 40),
-                  
-                  // Feature highlights
-                  AnimatedBuilder(
-                    animation: _animationController,
-                    builder: (context, child) {
-                      return FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: SlideTransition(
-                          position: _slideAnimation,
-                          child: Column(
-                            children: [
-                              _buildFeatureItem(
-                                icon: Icons.list_alt,
-                                title: 'Organize Wishes',
-                                description: 'Create beautiful wishlists for any occasion',
-                              ),
-                              
-                              const SizedBox(height: 20),
-                              
-                              _buildFeatureItem(
-                                icon: Icons.share,
-                                title: 'Share with Loved Ones',
-                                description: 'Let friends and family see what you want',
-                              ),
-                              
-                              const SizedBox(height: 20),
-                              
-                              _buildFeatureItem(
-                                icon: Icons.card_giftcard,
-                                title: 'Reserve Gifts',
-                                description: 'Avoid duplicate gifts with smart reservations',
-                              ),
-                            ],
                           ),
                         ),
                       );
@@ -210,14 +174,6 @@ class _IntroStepState extends State<IntroStep> with TickerProviderStateMixin {
                     
                     const SizedBox(height: 8),
                     
-                    Text(
-                      'It takes less than a minute to set up',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
                   ],
                 ),
               );
@@ -228,53 +184,4 @@ class _IntroStepState extends State<IntroStep> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildFeatureItem({
-    required IconData icon,
-    required String title,
-    required String description,
-  }) {
-    return Row(
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: AppTheme.primaryAccent.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            color: AppTheme.primaryAccent,
-            size: 24,
-          ),
-        ),
-        
-        const SizedBox(width: 16),
-        
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              
-              const SizedBox(height: 2),
-              
-              Text(
-                description,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 }

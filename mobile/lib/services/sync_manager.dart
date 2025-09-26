@@ -151,16 +151,30 @@ class SyncManager extends ChangeNotifier {
   
   /// Push single change to server
   Future<void> _pushSingleChange(ChangeOperation change) async {
+    final endpoint = _resolveEndpointForEntity(change.entityType);
     switch (change.operation) {
       case 'create':
-        await _apiService.post('/${change.entityType}s', change.data);
+        await _apiService.post(endpoint, change.data);
         break;
       case 'update':
-        await _apiService.patch('/${change.entityType}s/${change.entityId}', change.data);
+        await _apiService.patch('$endpoint/${change.entityId}', change.data);
         break;
       case 'delete':
-        await _apiService.delete('/${change.entityType}s/${change.entityId}');
+        await _apiService.delete('$endpoint/${change.entityId}');
         break;
+    }
+  }
+
+  String _resolveEndpointForEntity(String entityType) {
+    switch (entityType) {
+      case 'user':
+        return '/users';
+      case 'wishlist':
+        return '/wishlists';
+      case 'wish':
+        return '/wishes';
+      default:
+        return '/${entityType}s';
     }
   }
   

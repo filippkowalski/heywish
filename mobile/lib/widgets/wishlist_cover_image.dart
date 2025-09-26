@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'cached_image.dart';
+import '../common/navigation/native_page_route.dart';
 
 class WishlistCoverImage extends StatelessWidget {
   final String? coverImageUrl;
@@ -162,26 +163,24 @@ class WishlistCoverImage extends StatelessWidget {
       final ImagePicker picker = ImagePicker();
       
       // Show image source selection
-      final ImageSource? source = await showModalBottomSheet<ImageSource>(
+      final ImageSource? source = await NativeTransitions.showNativeModalBottomSheet<ImageSource>(
         context: context,
-        builder: (BuildContext context) {
-          return SafeArea(
-            child: Wrap(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.photo_camera),
-                  title: const Text('Camera'),
-                  onTap: () => Navigator.pop(context, ImageSource.camera),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.photo_library),
-                  title: const Text('Gallery'),
-                  onTap: () => Navigator.pop(context, ImageSource.gallery),
-                ),
-              ],
-            ),
-          );
-        },
+        child: SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Camera'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Gallery'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
       );
 
       if (source == null) return;
@@ -198,10 +197,10 @@ class WishlistCoverImage extends StatelessWidget {
 
       // Show loading
       if (context.mounted) {
-        showDialog(
+        NativeTransitions.showNativeDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const Center(
+          child: const Center(
             child: CircularProgressIndicator(),
           ),
         );
@@ -246,27 +245,25 @@ class WishlistCoverImage extends StatelessWidget {
 
   Future<void> _removeImage(BuildContext context) async {
     // Confirm removal
-    final bool? confirmed = await showDialog<bool>(
+    final bool? confirmed = await NativeTransitions.showNativeDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Remove Cover Image'),
-          content: const Text('Are you sure you want to remove the cover image?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+      child: AlertDialog(
+        title: const Text('Remove Cover Image'),
+        content: const Text('Are you sure you want to remove the cover image?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remove'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
             ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Remove'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-              ),
-            ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
 
     if (confirmed != true) return;
@@ -274,10 +271,10 @@ class WishlistCoverImage extends StatelessWidget {
     try {
       // Show loading
       if (context.mounted) {
-        showDialog(
+        NativeTransitions.showNativeDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const Center(
+          child: const Center(
             child: CircularProgressIndicator(),
           ),
         );

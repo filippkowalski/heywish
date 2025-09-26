@@ -89,13 +89,30 @@ The REST API is implemented using Next.js API routes. Key characteristics includ
 - When adding new features, always add corresponding strings to the translation file first
 - Use `.tr()` extension on all localization keys
 
-### Page Transitions (CRITICAL)
-- **ALWAYS use native transitions for page navigation**
-- **iOS**: Use `CupertinoPageRoute` with native iOS slide transitions
-- **Android**: Use `MaterialPageRoute` with native Material transitions
-- **Implementation**: Create platform-specific route builders that automatically detect platform and apply appropriate transitions
-- **Default behavior**: All new pages and navigation must follow this pattern
-- **Never use**: Generic routes or non-native transitions that break platform conventions
+### Page Transitions & Native Navigation (CRITICAL)
+- **ALWAYS use native transitions for all navigation**
+- **Implementation**: Use the `NativePageRoute` and `NativeTransitions` utilities from `lib/common/navigation/native_page_route.dart`
+- **GoRouter Integration**: All routes use `NativeTransitions.page()` for native transitions
+- **Modal Presentations**: Use `NativeTransitions.showNativeModalBottomSheet()` and `NativeTransitions.showNativeDialog()`
+- **Platform-Specific Behavior**:
+  - **iOS**: Uses `CupertinoPageTransition`, `showCupertinoModalPopup`, `showCupertinoDialog`
+  - **Android**: Uses Material Design transitions with proper curves and timing
+- **Fallback Strategy**: When platform-specific isn't available, default to iOS-like animations and styling
+- **Navigation Extensions**: Use `context.pushNative()`, `context.pushReplacementNative()` for manual navigation
+- **Never use**: Generic Flutter transitions, showDialog/showModalBottomSheet directly, or non-native page routes
+
+### User Interface Guidelines
+- **Bottom Sheets Over Dialogs**: Always use styled bottom sheets instead of dialogs for confirmations, options, and forms
+- **Confirmation Pattern**: Use `ConfirmationBottomSheet.show()` with loading states and clear messaging
+- **Modal Presentations**: Custom styled bottom sheets with handle bars, proper spacing, and consistent design
+- **Interactive Elements**: Clear button hierarchy, proper touch targets, and loading indicators during async operations
+
+### Native Navigation Utilities
+- **NativePageRoute<T>**: Custom page route with platform-specific transitions
+- **NativeTransitions.page()**: For GoRouter page builders with native transitions  
+- **NativeTransitions.showNativeModalBottomSheet()**: Platform-specific bottom sheets
+- **NativeTransitions.showNativeDialog()**: Platform-specific dialog presentations
+- **Context Extensions**: `.pushNative()`, `.pushReplacementNative()`, `.pushAndRemoveUntilNative()`
 
 ## TODO Before Release
 

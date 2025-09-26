@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import '../services/mock_data_service.dart';
 import '../services/friends_service.dart';
 import '../models/friend.dart';
-import '../theme/app_theme.dart';
 import 'package:intl/intl.dart';
 import '../widgets/cached_image.dart';
+import '../common/widgets/native_refresh_indicator.dart';
 
 class ActivityScreen extends StatefulWidget {
   const ActivityScreen({super.key});
@@ -96,7 +95,7 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
           ],
         ),
       ),
-      body: RefreshIndicator(
+      body: NativeRefreshIndicator(
         onRefresh: _loadActivities,
         child: _isLoading
             ? Center(child: CircularProgressIndicator())

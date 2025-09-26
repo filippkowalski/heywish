@@ -5,6 +5,8 @@ import '../../theme/app_theme.dart';
 import '../../services/friends_service.dart';
 import '../../models/friend.dart';
 import '../../widgets/cached_image.dart';
+import '../../common/widgets/native_refresh_indicator.dart';
+import '../../common/navigation/native_page_route.dart';
 
 class FriendsScreen extends StatefulWidget {
   final VoidCallback? onNavigateToSearch;
@@ -226,7 +228,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       );
     }
 
-    return RefreshIndicator(
+    return NativeRefreshIndicator(
       onRefresh: () => friendsService.getFriends(),
       child: ListView.builder(
         padding: EdgeInsets.all(16),
@@ -273,7 +275,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       );
     }
 
-    return RefreshIndicator(
+    return NativeRefreshIndicator(
       onRefresh: () => friendsService.getFriendRequests(type: 'received'),
       child: ListView.builder(
         padding: EdgeInsets.all(16),
@@ -316,7 +318,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       );
     }
 
-    return RefreshIndicator(
+    return NativeRefreshIndicator(
       onRefresh: () => friendsService.getFriendRequests(type: 'sent'),
       child: ListView.builder(
         padding: EdgeInsets.all(16),
@@ -436,11 +438,11 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   }
 
   void _showFriendProfile(Friend friend) {
-    showModalBottomSheet(
+    NativeTransitions.showNativeModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
+      child: DraggableScrollableSheet(
         initialChildSize: 0.7,
         maxChildSize: 0.9,
         minChildSize: 0.5,

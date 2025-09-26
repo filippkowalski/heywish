@@ -5,6 +5,7 @@ import '../services/friends_service.dart';
 import '../models/friend.dart';
 import '../theme/app_theme.dart';
 import '../widgets/cached_image.dart';
+import '../common/navigation/native_page_route.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -381,11 +382,11 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
   }
 
   void _showUserProfile(UserSearchResult user) {
-    showModalBottomSheet(
+    NativeTransitions.showNativeModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
+      child: DraggableScrollableSheet(
         initialChildSize: 0.7,
         maxChildSize: 0.9,
         minChildSize: 0.5,

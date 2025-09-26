@@ -19,154 +19,461 @@ class ProfileScreen extends StatelessWidget {
     final firebaseUser = authService.firebaseUser;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.settings),
-            onPressed: () {
-              // TODO: Navigate to settings
-            },
+      backgroundColor: Colors.grey.shade50,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildProfileHeader(context, user, firebaseUser),
+              const SizedBox(height: 20),
+              _buildStatsCards(context),
+              const SizedBox(height: 20),
+              _buildMenuSection(context, 'Account', [
+                _buildMenuItem(
+                  context,
+                  Icons.person_outline,
+                  'Edit Profile',
+                  'Update your personal information',
+                  () {}
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.people_outline,
+                  'Friends',
+                  'Manage your friend connections',
+                  () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => FriendsScreen(
+                          onNavigateToSearch: () {
+                            Navigator.of(context).pop();
+                            onNavigateToSearch?.call();
+                          },
+                        ),
+                      ),
+                    );
+                  }
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.notifications_outlined,
+                  'Activity',
+                  'View your recent activity',
+                  () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => ActivityScreen(),
+                      ),
+                    );
+                  }
+                ),
+              ]),
+              const SizedBox(height: 20),
+              _buildMenuSection(context, 'Settings', [
+                _buildMenuItem(
+                  context,
+                  Icons.notifications_none_outlined,
+                  'Notifications',
+                  'Manage notification preferences',
+                  () {}
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.lock_outline,
+                  'Privacy & Security',
+                  'Control your privacy settings',
+                  () {}
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.help_outline,
+                  'Help & Support',
+                  'Get help and contact support',
+                  () {}
+                ),
+                _buildMenuItem(
+                  context,
+                  Icons.info_outline,
+                  'About',
+                  'App information and terms',
+                  () {}
+                ),
+              ]),
+              const SizedBox(height: 20),
+              _buildSignOutSection(context),
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(BuildContext context, user, firebaseUser) {
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 32),
-            CachedAvatarImage(
-              imageUrl: user?.avatarUrl,
-              radius: 50,
-              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              user?.name ?? firebaseUser?.displayName ?? 'User',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 4),
-            if (user?.email != null)
-              Text(
-                user!.email!,
-                style: Theme.of(context).textTheme.bodyMedium,
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Profile',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            const SizedBox(height: 32),
-            _buildProfileMenu(context),
+              IconButton(
+                onPressed: () {},
+                icon: Icon(
+                  Icons.settings_outlined,
+                  color: Colors.grey.shade600,
+                ),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.grey.shade100,
+                  padding: const EdgeInsets.all(8),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Stack(
+            children: [
+              CachedAvatarImage(
+                imageUrl: user?.avatarUrl,
+                radius: 50,
+                backgroundColor: AppTheme.primaryAccent.withOpacity(0.1),
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryAccent,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 3,
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: const Icon(
+                    Icons.camera_alt,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            user?.name ?? firebaseUser?.displayName ?? 'User',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          if (user?.username != null)
+            Text(
+              '@${user!.username}',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppTheme.primaryAccent,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          const SizedBox(height: 8),
+          if (user?.email != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                user!.email!,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsCards(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildStatCard('Wishlists', '5', Icons.list_alt, AppTheme.primaryAccent),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard('Friends', '12', Icons.people, Colors.blue),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard('Wishes', '24', Icons.favorite, Colors.red),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 24,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuSection(BuildContext context, String title, List<Widget> items) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ...items,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.grey.shade700,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: Colors.grey.shade400,
+              size: 20,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProfileMenu(BuildContext context) {
-    return Column(
-      children: [
-        ListTile(
-          leading: Icon(Icons.people_outline),
-          title: const Text('Friends'),
-          trailing: Icon(Icons.chevron_right),
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => FriendsScreen(
-                  onNavigateToSearch: () {
-                    Navigator.of(context).pop();
-                    onNavigateToSearch?.call();
-                  },
+  Widget _buildSignOutSection(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () async {
+          final shouldSignOut = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: const Text('Sign Out'),
+              content: const Text('Are you sure you want to sign out?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.red,
+                  ),
+                  child: const Text('Sign Out'),
+                ),
+              ],
+            ),
+          );
+
+          if (shouldSignOut == true && context.mounted) {
+            await context.read<AuthService>().signOut();
+            if (context.mounted) {
+              context.go('/');
+            }
+          }
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.logout,
+                  color: Colors.red,
+                  size: 20,
                 ),
               ),
-            );
-          },
-        ),
-        const Divider(height: 1),
-        ListTile(
-          leading: Icon(Icons.notifications_outlined),
-          title: const Text('Activity'),
-          trailing: Icon(Icons.chevron_right),
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => ActivityScreen(),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Sign Out',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.red,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Sign out of your account',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            );
-          },
-        ),
-        const Divider(height: 1),
-        ListTile(
-          leading: Icon(Icons.person_outline),
-          title: const Text('Edit Profile'),
-          trailing: Icon(Icons.chevron_right),
-          onTap: () {
-            // TODO: Navigate to edit profile
-          },
-        ),
-        ListTile(
-          leading: Icon(Icons.notifications_outlined),
-          title: const Text('Notifications'),
-          trailing: Icon(Icons.chevron_right),
-          onTap: () {
-            // TODO: Navigate to notifications settings
-          },
-        ),
-        ListTile(
-          leading: Icon(Icons.lock_outline),
-          title: const Text('Privacy'),
-          trailing: Icon(Icons.chevron_right),
-          onTap: () {
-            // TODO: Navigate to privacy settings
-          },
-        ),
-        ListTile(
-          leading: Icon(Icons.help_outline),
-          title: const Text('Help & Support'),
-          trailing: Icon(Icons.chevron_right),
-          onTap: () {
-            // TODO: Navigate to help
-          },
-        ),
-        ListTile(
-          leading: Icon(Icons.info_outline),
-          title: const Text('About'),
-          trailing: Icon(Icons.chevron_right),
-          onTap: () {
-            // TODO: Navigate to about
-          },
-        ),
-        const Divider(),
-        ListTile(
-          leading: Icon(Icons.logout, color: Colors.red),
-          title: const Text(
-            'Sign Out',
-            style: TextStyle(color: Colors.red),
+            ],
           ),
-          onTap: () async {
-            final shouldSignOut = await showDialog<bool>(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Sign Out'),
-                content: const Text('Are you sure you want to sign out?'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text('Cancel'),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: const Text('Sign Out'),
-                  ),
-                ],
-              ),
-            );
-
-            if (shouldSignOut == true && context.mounted) {
-              await context.read<AuthService>().signOut();
-              if (context.mounted) {
-                context.go('/');
-              }
-            }
-          },
         ),
-      ],
+      ),
     );
   }
 
