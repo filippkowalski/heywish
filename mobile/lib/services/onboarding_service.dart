@@ -5,14 +5,15 @@ import '../models/user.dart';
 
 enum OnboardingStep {
   welcome,
-  featureHighlights,
-  accountBenefits,
-  authentication,
-  checkUserStatus,
-  username,
-  usernameConfirmation,
-  profileDetails,
-  notifications,
+  featureOrganize,       // Show organize feature - build motivation
+  accountCreation,       // Strike while motivation is high
+  checkUserStatus,       // Check if existing user after auth
+  username,              // Quick win - personal touch
+  usernameConfirmation,  // Celebrate their identity
+  profileDetails,        // Deepen engagement
+  shoppingInterests,     // Visual category selector
+  featureShare,          // NOW show social benefits (after invested)
+  notifications,         // Enable connection
   complete
 }
 
@@ -21,6 +22,7 @@ class OnboardingData {
   String? fullName;
   DateTime? birthday;
   String? gender;
+  List<String> shoppingInterests;
   Map<String, bool> notificationPreferences;
   bool contactPermissionGranted;
   List<Map<String, dynamic>> friendSuggestions;
@@ -30,10 +32,12 @@ class OnboardingData {
     this.fullName,
     this.birthday,
     this.gender,
+    List<String>? shoppingInterests,
     Map<String, bool>? notificationPreferences,
     this.contactPermissionGranted = false,
     List<Map<String, dynamic>>? friendSuggestions,
-  }) : notificationPreferences = notificationPreferences ?? {
+  }) : shoppingInterests = shoppingInterests ?? [],
+        notificationPreferences = notificationPreferences ?? {
           'birthday_notifications': true,
           'coupon_notifications': true,
           'discount_notifications': true,
@@ -51,6 +55,7 @@ class OnboardingData {
       'full_name': fullName,
       'birthdate': birthday?.toIso8601String().split('T')[0], // YYYY-MM-DD format
       'gender': gender,
+      'shopping_interests': shoppingInterests,
       'notification_preferences': notificationPreferences,
       'privacy_settings': {
         'phone_discoverable': contactPermissionGranted,
@@ -84,16 +89,14 @@ class OnboardingService extends ChangeNotifier {
   void nextStep() {
     switch (_currentStep) {
       case OnboardingStep.welcome:
-        _currentStep = OnboardingStep.featureHighlights;
+        _currentStep = OnboardingStep.featureOrganize;
         break;
-      case OnboardingStep.featureHighlights:
-        _currentStep = OnboardingStep.accountBenefits;
+      case OnboardingStep.featureOrganize:
+        _currentStep = OnboardingStep.accountCreation;
         break;
-      case OnboardingStep.accountBenefits:
-        _currentStep = OnboardingStep.authentication;
-        break;
-      case OnboardingStep.authentication:
-        _currentStep = OnboardingStep.checkUserStatus;
+      case OnboardingStep.accountCreation:
+        // User chooses: sign up, or skip
+        // This will be handled by the AccountCreationStep widget
         break;
       case OnboardingStep.checkUserStatus:
         // This will be handled by checkUserProfileStatus method
@@ -105,6 +108,12 @@ class OnboardingService extends ChangeNotifier {
         _currentStep = OnboardingStep.profileDetails;
         break;
       case OnboardingStep.profileDetails:
+        _currentStep = OnboardingStep.shoppingInterests;
+        break;
+      case OnboardingStep.shoppingInterests:
+        _currentStep = OnboardingStep.featureShare;
+        break;
+      case OnboardingStep.featureShare:
         _currentStep = OnboardingStep.notifications;
         break;
       case OnboardingStep.notifications:
@@ -122,14 +131,11 @@ class OnboardingService extends ChangeNotifier {
       case OnboardingStep.welcome:
         // Can't go back from first step
         break;
-      case OnboardingStep.featureHighlights:
+      case OnboardingStep.featureOrganize:
         _currentStep = OnboardingStep.welcome;
         break;
-      case OnboardingStep.accountBenefits:
-        _currentStep = OnboardingStep.featureHighlights;
-        break;
-      case OnboardingStep.authentication:
-        _currentStep = OnboardingStep.accountBenefits;
+      case OnboardingStep.accountCreation:
+        _currentStep = OnboardingStep.featureOrganize;
         break;
       case OnboardingStep.checkUserStatus:
         // Can't go back during automatic check
@@ -143,8 +149,14 @@ class OnboardingService extends ChangeNotifier {
       case OnboardingStep.profileDetails:
         _currentStep = OnboardingStep.usernameConfirmation;
         break;
-      case OnboardingStep.notifications:
+      case OnboardingStep.shoppingInterests:
         _currentStep = OnboardingStep.profileDetails;
+        break;
+      case OnboardingStep.featureShare:
+        // Can't go back from feature share (it's a reward step)
+        break;
+      case OnboardingStep.notifications:
+        _currentStep = OnboardingStep.featureShare;
         break;
       case OnboardingStep.complete:
         _currentStep = OnboardingStep.notifications;
@@ -162,11 +174,11 @@ class OnboardingService extends ChangeNotifier {
   Future<void> checkUserProfileStatus(User? user) async {
     _isLoading = true;
     notifyListeners();
-    
+
     try {
       if (user == null) {
-        // User not authenticated, go back to auth
-        _currentStep = OnboardingStep.authentication;
+        // User not authenticated, go back to account creation
+        _currentStep = OnboardingStep.accountCreation;
       } else if (user.username == null || user.username!.isEmpty) {
         // New user needs username
         _currentStep = OnboardingStep.username;
@@ -184,9 +196,9 @@ class OnboardingService extends ChangeNotifier {
     }
   }
   
-  /// Skip to authentication step (for testing/debugging)
-  void skipToAuthentication() {
-    _currentStep = OnboardingStep.authentication;
+  /// Skip to account creation step (for testing/debugging)
+  void skipToAccountCreation() {
+    _currentStep = OnboardingStep.accountCreation;
     notifyListeners();
   }
   
@@ -496,12 +508,10 @@ class OnboardingService extends ChangeNotifier {
     switch (_currentStep) {
       case OnboardingStep.welcome:
         return true; // Always can proceed from welcome
-      case OnboardingStep.featureHighlights:
+      case OnboardingStep.featureOrganize:
         return true; // Always can proceed from feature highlights
-      case OnboardingStep.accountBenefits:
-        return true; // Always can proceed from account benefits
-      case OnboardingStep.authentication:
-        return false; // Authentication is handled by auth service, not manual proceed
+      case OnboardingStep.accountCreation:
+        return false; // Account creation is handled by user choice (sign up or skip)
       case OnboardingStep.checkUserStatus:
         return false; // Automatic check, no manual proceed
       case OnboardingStep.username:
@@ -510,6 +520,10 @@ class OnboardingService extends ChangeNotifier {
         return true; // Auto-transitions, no user interaction needed
       case OnboardingStep.profileDetails:
         return true; // Profile details are optional
+      case OnboardingStep.shoppingInterests:
+        return true; // Shopping interests are optional
+      case OnboardingStep.featureShare:
+        return true; // Always can proceed from feature share
       case OnboardingStep.notifications:
         return true; // Notifications are optional
       case OnboardingStep.complete:

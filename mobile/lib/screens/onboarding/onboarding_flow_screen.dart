@@ -4,13 +4,14 @@ import '../../services/onboarding_service.dart';
 import '../../common/theme/app_colors.dart';
 import '../../common/utils/native_transitions.dart';
 import 'widgets/welcome_step.dart';
-import 'widgets/feature_highlights_step.dart';
-import 'widgets/account_benefits_step.dart';
-import 'widgets/authentication_step.dart';
+import 'widgets/feature_organize_step.dart';
+import 'widgets/feature_share_step.dart';
+import 'widgets/account_creation_step.dart';
 import 'widgets/user_status_check_step.dart';
 import 'widgets/username_step.dart';
 import 'widgets/username_confirmation_step.dart';
 import 'widgets/profile_details_step.dart';
+import 'widgets/shopping_interests_step.dart';
 import 'widgets/notifications_step.dart';
 import 'widgets/onboarding_complete_step.dart';
 
@@ -110,12 +111,10 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen>
     switch (currentStep) {
       case OnboardingStep.welcome:
         return const WelcomeStep();
-      case OnboardingStep.featureHighlights:
-        return const FeatureHighlightsStep();
-      case OnboardingStep.accountBenefits:
-        return const AccountBenefitsStep();
-      case OnboardingStep.authentication:
-        return const AuthenticationStep();
+      case OnboardingStep.featureOrganize:
+        return const FeatureOrganizeStep();
+      case OnboardingStep.accountCreation:
+        return const AccountCreationStep();
       case OnboardingStep.checkUserStatus:
         return const UserStatusCheckStep();
       case OnboardingStep.username:
@@ -124,6 +123,10 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen>
         return const UsernameConfirmationStep();
       case OnboardingStep.profileDetails:
         return const ProfileDetailsStep();
+      case OnboardingStep.shoppingInterests:
+        return const ShoppingInterestsStep();
+      case OnboardingStep.featureShare:
+        return const FeatureShareStep();
       case OnboardingStep.notifications:
         return const NotificationsStep();
       case OnboardingStep.complete:
@@ -150,10 +153,12 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen>
 
   bool _canGoBack(OnboardingStep step) {
     // Don't show back button on certain steps
-    return step != OnboardingStep.welcome && 
-           step != OnboardingStep.authentication &&
+    return step != OnboardingStep.welcome &&
+           step != OnboardingStep.featureOrganize &&
+           step != OnboardingStep.accountCreation &&
            step != OnboardingStep.checkUserStatus &&
-           step != OnboardingStep.usernameConfirmation && 
+           step != OnboardingStep.usernameConfirmation &&
+           step != OnboardingStep.featureShare &&
            step != OnboardingStep.complete;
   }
 }

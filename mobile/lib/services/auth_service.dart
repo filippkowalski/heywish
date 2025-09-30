@@ -71,13 +71,17 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<void> syncUserWithBackend({int retries = 1, String? signUpMethod}) async {
+  Future<void> syncUserWithBackend({
+    int retries = 1,
+    String? signUpMethod,
+    String? username,
+  }) async {
     if (_firebaseUser == null) return;
-    
+
     for (int attempt = 1; attempt <= retries; attempt++) {
       try {
         await _refreshAuthToken(force: true);
-        
+
         debugPrint('🔄 AuthService: Syncing user with backend (attempt $attempt/$retries)');
         debugPrint('🔄 AuthService: Firebase UID: ${_firebaseUser!.uid}');
         // Reload user to get fresh data after potential linking
@@ -85,13 +89,13 @@ class AuthService extends ChangeNotifier {
         final refreshedUser = _firebaseAuth.currentUser;
         debugPrint('🔄 AuthService: Email: ${refreshedUser?.email}');
         debugPrint('🔄 AuthService: Display name: ${refreshedUser?.displayName}');
-        
+
         // Prepare sync data to match backend expectations
         // Note: firebase_uid and email come from Firebase token verification, not request body
         final syncData = <String, dynamic>{
-          'fullName': refreshedUser?.displayName, // null for email signup, set for Google/Apple
-          if (signUpMethod != null) 'signUpMethod': signUpMethod, // Only send if provided
-          // username is set during onboarding, not during initial sync
+          'fullName': refreshedUser?.displayName, // null for anonymous, set for Google/Apple
+          if (signUpMethod != null) 'signUpMethod': signUpMethod,
+          if (username != null) 'username': username, // Only for anonymous users during initial signup
         };
         
         debugPrint('🔄 AuthService: Sync data: ${syncData.toString()}');
@@ -202,20 +206,20 @@ class AuthService extends ChangeNotifier {
   Future<void> signInWithApple() async {
     try {
       debugPrint('🍎 AuthService: Starting Apple Sign-In...');
-      
+
       // Check if Apple Sign-In is available
       final isAvailable = await SignInWithApple.isAvailable();
       if (!isAvailable) {
         debugPrint('❌ AuthService: Apple Sign-In not available on this device');
         throw Exception('Apple Sign-In is not available on this device');
       }
-      
+
       // Generate a random nonce
       final rawNonce = _generateNonce();
       final nonce = _sha256ofString(rawNonce);
-      
+
       debugPrint('🍎 AuthService: Requesting Apple ID credential...');
-      
+
       // Request Apple ID credential
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -224,31 +228,31 @@ class AuthService extends ChangeNotifier {
         ],
         nonce: nonce,
       );
-      
+
       debugPrint('✅ AuthService: Apple ID credential received');
       debugPrint('🍎 User ID: ${appleCredential.userIdentifier}');
       debugPrint('🍎 Email: ${appleCredential.email}');
       debugPrint('🍎 Given Name: ${appleCredential.givenName}');
       debugPrint('🍎 Family Name: ${appleCredential.familyName}');
-      
+
       // Create OAuth credential for Firebase
       final oauthCredential = firebase.OAuthProvider("apple.com").credential(
         idToken: appleCredential.identityToken,
         rawNonce: rawNonce,
       );
-      
+
       // Sign in to Firebase with Apple credential
       final userCredential = await _firebaseAuth.signInWithCredential(oauthCredential);
-      
-      // Check if this is a new user 
+
+      // Check if this is a new user
       final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
-      
+
       debugPrint('✅ AuthService: Firebase auth successful for Apple user');
       debugPrint('✅ AuthService: Firebase user: ${userCredential.user?.email}');
       debugPrint('✅ AuthService: Display name: ${userCredential.user?.displayName}');
-      
+
       // If this is the first time signing in and we have name info, update the display name
-      if (userCredential.user?.displayName == null && 
+      if (userCredential.user?.displayName == null &&
           (appleCredential.givenName != null || appleCredential.familyName != null)) {
         final displayName = '${appleCredential.givenName ?? ''} ${appleCredential.familyName ?? ''}'.trim();
         if (displayName.isNotEmpty) {
@@ -256,16 +260,16 @@ class AuthService extends ChangeNotifier {
           debugPrint('✅ AuthService: Updated display name to: $displayName');
         }
       }
-      
+
       // If this is a new user, sync with signup method
       if (isNewUser) {
         await syncUserWithBackend(signUpMethod: 'apple');
       }
       _scheduleTokenRefresh();
-      
+
     } catch (e) {
       debugPrint('❌ AuthService: Error signing in with Apple: $e');
-      
+
       // Provide more specific error messages
       if (e.toString().contains('AuthorizationErrorCode.unknown')) {
         throw Exception('Apple Sign-In capability not enabled.\n\nTo fix this:\n1. Open Apple Developer Portal\n2. Go to Identifiers → com.wishlists.gifts\n3. Enable "Sign In with Apple" capability\n4. Or open Xcode → Signing & Capabilities → Add "Sign In with Apple"');
@@ -278,7 +282,125 @@ class AuthService extends ChangeNotifier {
       } else if (e.toString().contains('AuthorizationErrorCode.failed')) {
         throw Exception('Apple Sign-In failed. Please try again.');
       }
-      
+
+      rethrow;
+    }
+  }
+
+  /// Sign in anonymously
+  Future<void> signInAnonymously() async {
+    try {
+      debugPrint('👤 AuthService: Starting anonymous sign-in...');
+
+      // Sign in anonymously with Firebase
+      final userCredential = await _firebaseAuth.signInAnonymously();
+
+      debugPrint('✅ AuthService: Anonymous auth successful');
+      debugPrint('✅ Firebase UID: ${userCredential.user?.uid}');
+      debugPrint('✅ Is Anonymous: ${userCredential.user?.isAnonymous}');
+
+      // Sync with backend (backend will generate username)
+      await syncUserWithBackend(signUpMethod: 'anonymous');
+
+      _scheduleTokenRefresh();
+
+    } catch (e) {
+      debugPrint('❌ AuthService: Error signing in anonymously: $e');
+      rethrow;
+    }
+  }
+
+  /// Link anonymous account with Google
+  Future<void> linkWithGoogle() async {
+    try {
+      debugPrint('🔗 AuthService: Linking anonymous account with Google...');
+
+      final currentUser = _firebaseAuth.currentUser;
+      if (currentUser == null) {
+        throw Exception('No user is currently signed in');
+      }
+
+      if (!currentUser.isAnonymous) {
+        throw Exception('Current user is not anonymous');
+      }
+
+      // Trigger Google sign-in
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        debugPrint('❌ AuthService: Google Sign-In was cancelled');
+        throw Exception('Google Sign-In was cancelled');
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final credential = firebase.GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Link the credential (preserves firebase_uid!)
+      await currentUser.linkWithCredential(credential);
+
+      debugPrint('✅ AuthService: Account linked successfully with Google');
+      debugPrint('✅ Firebase UID preserved: ${currentUser.uid}');
+
+      // Sync with backend to update sign_up_method
+      await syncUserWithBackend(signUpMethod: 'google');
+
+    } catch (e) {
+      debugPrint('❌ AuthService: Error linking with Google: $e');
+      rethrow;
+    }
+  }
+
+  /// Link anonymous account with Apple
+  Future<void> linkWithApple() async {
+    try {
+      debugPrint('🔗 AuthService: Linking anonymous account with Apple...');
+
+      final currentUser = _firebaseAuth.currentUser;
+      if (currentUser == null) {
+        throw Exception('No user is currently signed in');
+      }
+
+      if (!currentUser.isAnonymous) {
+        throw Exception('Current user is not anonymous');
+      }
+
+      // Check if Apple Sign-In is available
+      final isAvailable = await SignInWithApple.isAvailable();
+      if (!isAvailable) {
+        throw Exception('Apple Sign-In is not available on this device');
+      }
+
+      // Generate nonce
+      final rawNonce = _generateNonce();
+      final nonce = _sha256ofString(rawNonce);
+
+      // Request Apple ID credential
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: nonce,
+      );
+
+      final oauthCredential = firebase.OAuthProvider("apple.com").credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+      );
+
+      // Link the credential (preserves firebase_uid!)
+      await currentUser.linkWithCredential(oauthCredential);
+
+      debugPrint('✅ AuthService: Account linked successfully with Apple');
+      debugPrint('✅ Firebase UID preserved: ${currentUser.uid}');
+
+      // Sync with backend to update sign_up_method
+      await syncUserWithBackend(signUpMethod: 'apple');
+
+    } catch (e) {
+      debugPrint('❌ AuthService: Error linking with Apple: $e');
       rethrow;
     }
   }

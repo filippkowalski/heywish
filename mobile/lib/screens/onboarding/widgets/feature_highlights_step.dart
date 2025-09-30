@@ -5,146 +5,184 @@ import '../../../services/onboarding_service.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/widgets/primary_button.dart';
 
-class FeatureHighlightsStep extends StatelessWidget {
+class FeatureHighlightsStep extends StatefulWidget {
   const FeatureHighlightsStep({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<OnboardingService>(
-      builder: (context, onboardingService, child) {
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              const SizedBox(height: 40),
-              
-              // Hero Image
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Image.asset(
-                    'assets/images/onboarding/features_icon_1.png',
-                    width: 100,
-                    height: 100,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // Title
-              Text(
-                'onboarding.features_title'.tr(),
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Subtitle
-              Text(
-                'onboarding.features_subtitle'.tr(),
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              
-              const SizedBox(height: 48),
-              
-              // Feature list
-              Expanded(
-                child: ListView(
-                  children: [
-                    _buildFeatureItem(
-                      context,
-                      Icons.favorite_outline,
-                      'onboarding.feature1_title'.tr(),
-                      'onboarding.feature1_subtitle'.tr(),
-                    ),
-                    const SizedBox(height: 32),
-                    _buildFeatureItem(
-                      context,
-                      Icons.share_outlined,
-                      'onboarding.feature2_title'.tr(),
-                      'onboarding.feature2_subtitle'.tr(),
-                    ),
-                    const SizedBox(height: 32),
-                    _buildFeatureItem(
-                      context,
-                      Icons.card_giftcard_outlined,
-                      'onboarding.feature3_title'.tr(),
-                      'onboarding.feature3_subtitle'.tr(),
-                    ),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // Continue button
-              PrimaryButton(
-                onPressed: () => onboardingService.nextStep(),
-                text: 'app.next'.tr(),
-              ),
-              
-              const SizedBox(height: 16),
-            ],
-          ),
-        );
-      },
-    );
+  State<FeatureHighlightsStep> createState() => _FeatureHighlightsStepState();
+}
+
+class _FeatureHighlightsStepState extends State<FeatureHighlightsStep> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
-  Widget _buildFeatureItem(BuildContext context, IconData icon, String title, String subtitle) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  void _onPageChanged(int page) {
+    setState(() {
+      _currentPage = page;
+    });
+  }
+
+  void _nextPage() {
+    if (_currentPage < 2) {
+      _pageController.animateToPage(
+        _currentPage + 1,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      context.read<OnboardingService>().nextStep();
+    }
+  }
+
+  void _skipToEnd() {
+    context.read<OnboardingService>().nextStep();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
       children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Icon(
-            icon,
-            color: AppColors.primary,
-            size: 24,
+        // Skip button
+        Align(
+          alignment: Alignment.topRight,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 16, right: 24),
+            child: TextButton(
+              onPressed: _skipToEnd,
+              child: Text(
+                'app.skip'.tr(),
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
           ),
         ),
-        const SizedBox(width: 16),
+
+        // PageView with features
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: PageView(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
             children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+              _buildFeaturePage(
+                imagePath: 'assets/images/onboarding/feature_organize.png',
+                title: 'onboarding.feature_organize_title'.tr(),
+                subtitle: 'onboarding.feature_organize_subtitle'.tr(),
               ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+              _buildFeaturePage(
+                imagePath: 'assets/images/onboarding/feature_share.png',
+                title: 'onboarding.feature_share_title'.tr(),
+                subtitle: 'onboarding.feature_share_subtitle'.tr(),
+              ),
+              _buildFeaturePage(
+                imagePath: 'assets/images/onboarding/feature_gift.png',
+                title: 'onboarding.feature_gift_title'.tr(),
+                subtitle: 'onboarding.feature_gift_subtitle'.tr(),
               ),
             ],
+          ),
+        ),
+
+        // Page indicators
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              3,
+              (index) => AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: _currentPage == index ? 24 : 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: _currentPage == index
+                      ? AppColors.primary
+                      : AppColors.primary.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Next/Continue button
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: PrimaryButton(
+            onPressed: _nextPage,
+            text: _currentPage < 2 ? 'app.next'.tr() : 'onboarding.get_started'.tr(),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFeaturePage({
+    required String imagePath,
+    required String title,
+    required String subtitle,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Feature image with animation
+          Hero(
+            tag: imagePath,
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 48),
+
+          // Title
+          Text(
+            title,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                  fontSize: 28,
+                ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Subtitle
+          Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontSize: 16,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }

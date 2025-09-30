@@ -22,12 +22,21 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _initializeApp() async {
     final authService = context.read<AuthService>();
-    
+
     // Wait a moment for Firebase to initialize and for AuthService to load onboarding status
     await Future.delayed(const Duration(seconds: 2));
-    
+
     if (!mounted) return;
-    
+
+    // If user is authenticated but has no username, they didn't complete onboarding
+    // Reset onboarding status to force them to restart
+    if (authService.isAuthenticated &&
+        authService.isOnboardingCompleted &&
+        (authService.currentUser == null || authService.currentUser?.username == null)) {
+      debugPrint('⚠️ User marked as onboarded but has no username - resetting onboarding');
+      await authService.resetOnboardingStatus();
+    }
+
     // Check if user is already authenticated and completed onboarding
     if (authService.isAuthenticated && !authService.needsOnboarding) {
       context.go('/home');
