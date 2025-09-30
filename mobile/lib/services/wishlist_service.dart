@@ -141,6 +141,13 @@ class WishlistService extends ChangeNotifier {
       return;
     }
     
+    // If we have the wishlist but without items, set it as current while we load details
+    if (cachedWishlist != null) {
+      print('📋 WishlistService: Setting cached wishlist as current while loading details');
+      _currentWishlist = cachedWishlist;
+      notifyListeners();
+    }
+    
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -205,6 +212,9 @@ class WishlistService extends ChangeNotifier {
       // Add real wishlist from server
       final realWishlist = Wishlist.fromJson(response['wishlist'] ?? response);
       _wishlists.insert(0, realWishlist);
+      
+      // Set as current wishlist for immediate navigation
+      _currentWishlist = realWishlist;
       notifyListeners();
       
       print('✅ WishlistService: Wishlist created successfully (optimistic)');

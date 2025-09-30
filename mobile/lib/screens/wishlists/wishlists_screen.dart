@@ -47,13 +47,13 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
     final wishlistService = context.read<WishlistService>();
     final authService = context.read<AuthService>();
     
-    // Wait for authentication and user sync to complete first
-    if (!authService.isAuthenticated || authService.currentUser == null) {
-      print('⏳ WishlistsScreen: Waiting for authentication and user sync...');
-      return;
-    }
-    
     try {
+      // Wait for authentication and user sync to complete first
+      if (!authService.isAuthenticated || authService.currentUser == null) {
+        print('⏳ WishlistsScreen: Waiting for authentication and user sync...');
+        return;
+      }
+      
       await wishlistService.fetchWishlists();
       print('✅ WishlistsScreen: Wishlists loaded successfully');
     } catch (e) {

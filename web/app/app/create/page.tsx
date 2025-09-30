@@ -99,7 +99,7 @@ export default function CreateWishlistPage() {
               
               <p className="text-xl text-muted-foreground mb-8">
                 <strong>{wishlistTitle}</strong> has been created with {items.length} items. 
-                Share it with friends and family so they know exactly what you're hoping for.
+                Share it with friends and family so they know exactly what you&apos;re hoping for.
               </p>
 
               <Card className="mb-8 bg-primary/5 border-primary/20">
@@ -165,7 +165,7 @@ export default function CreateWishlistPage() {
           <div className="mb-8">
             <h1 className="text-3xl font-bold font-poppins mb-2">Create New Wishlist</h1>
             <p className="text-muted-foreground">
-              Add the items you're hoping for and share your wishlist with friends and family.
+              Add the items you&apos;re hoping for and share your wishlist with friends and family.
             </p>
           </div>
 
@@ -191,7 +191,7 @@ export default function CreateWishlistPage() {
                     <Label htmlFor="description">Description (optional)</Label>
                     <Textarea
                       id="description"
-                      placeholder="Items I'd love for my birthday this year..."
+                      placeholder="Items I&apos;d love for my birthday this year..."
                       value={wishlistDescription}
                       onChange={(e) => setWishlistDescription(e.target.value)}
                       rows={3}
@@ -207,7 +207,7 @@ export default function CreateWishlistPage() {
                     Add Items
                     <Badge variant="secondary">{items.length} items</Badge>
                   </CardTitle>
-                  <CardDescription>Add the things you're hoping for</CardDescription>
+                  <CardDescription>Add the things you&apos;re hoping for</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {!isAddingItem ? (

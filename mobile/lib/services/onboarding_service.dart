@@ -1,17 +1,18 @@
 import 'package:flutter/foundation.dart';
 import 'dart:io';
 import 'api_service.dart';
+import '../models/user.dart';
 
 enum OnboardingStep {
   welcome,
-  intro,
+  featureHighlights,
+  accountBenefits,
+  authentication,
+  checkUserStatus,
   username,
   usernameConfirmation,
-  birthday,
-  gender,
+  profileDetails,
   notifications,
-  findFriends,
-  accountChoice,
   complete
 }
 
@@ -83,30 +84,30 @@ class OnboardingService extends ChangeNotifier {
   void nextStep() {
     switch (_currentStep) {
       case OnboardingStep.welcome:
-        _currentStep = OnboardingStep.intro;
+        _currentStep = OnboardingStep.featureHighlights;
         break;
-      case OnboardingStep.intro:
-        _currentStep = OnboardingStep.username;
+      case OnboardingStep.featureHighlights:
+        _currentStep = OnboardingStep.accountBenefits;
+        break;
+      case OnboardingStep.accountBenefits:
+        _currentStep = OnboardingStep.authentication;
+        break;
+      case OnboardingStep.authentication:
+        _currentStep = OnboardingStep.checkUserStatus;
+        break;
+      case OnboardingStep.checkUserStatus:
+        // This will be handled by checkUserProfileStatus method
         break;
       case OnboardingStep.username:
         _currentStep = OnboardingStep.usernameConfirmation;
         break;
       case OnboardingStep.usernameConfirmation:
-        _currentStep = OnboardingStep.birthday;
+        _currentStep = OnboardingStep.profileDetails;
         break;
-      case OnboardingStep.birthday:
-        _currentStep = OnboardingStep.gender;
-        break;
-      case OnboardingStep.gender:
+      case OnboardingStep.profileDetails:
         _currentStep = OnboardingStep.notifications;
         break;
       case OnboardingStep.notifications:
-        _currentStep = OnboardingStep.complete; // Skip account choice, go directly to complete
-        break;
-      case OnboardingStep.findFriends:
-        _currentStep = OnboardingStep.accountChoice;
-        break;
-      case OnboardingStep.accountChoice:
         _currentStep = OnboardingStep.complete;
         break;
       case OnboardingStep.complete:
@@ -121,32 +122,32 @@ class OnboardingService extends ChangeNotifier {
       case OnboardingStep.welcome:
         // Can't go back from first step
         break;
-      case OnboardingStep.intro:
+      case OnboardingStep.featureHighlights:
         _currentStep = OnboardingStep.welcome;
         break;
+      case OnboardingStep.accountBenefits:
+        _currentStep = OnboardingStep.featureHighlights;
+        break;
+      case OnboardingStep.authentication:
+        _currentStep = OnboardingStep.accountBenefits;
+        break;
+      case OnboardingStep.checkUserStatus:
+        // Can't go back during automatic check
+        break;
       case OnboardingStep.username:
-        _currentStep = OnboardingStep.intro;
+        // Can't go back from username step as auth is already done
         break;
       case OnboardingStep.usernameConfirmation:
         _currentStep = OnboardingStep.username;
         break;
-      case OnboardingStep.birthday:
+      case OnboardingStep.profileDetails:
         _currentStep = OnboardingStep.usernameConfirmation;
         break;
-      case OnboardingStep.gender:
-        _currentStep = OnboardingStep.birthday;
-        break;
       case OnboardingStep.notifications:
-        _currentStep = OnboardingStep.gender;
-        break;
-      case OnboardingStep.findFriends:
-        _currentStep = OnboardingStep.notifications;
-        break;
-      case OnboardingStep.accountChoice:
-        _currentStep = OnboardingStep.notifications; // Skip find friends for now
+        _currentStep = OnboardingStep.profileDetails;
         break;
       case OnboardingStep.complete:
-        _currentStep = OnboardingStep.notifications; // Go back to notifications
+        _currentStep = OnboardingStep.notifications;
         break;
     }
     notifyListeners();
@@ -157,9 +158,35 @@ class OnboardingService extends ChangeNotifier {
     notifyListeners();
   }
   
-  /// Skip directly to account choice (near end)
-  void skipToAccountChoice() {
-    _currentStep = OnboardingStep.accountChoice;
+  /// Check user profile status after authentication and determine next step
+  Future<void> checkUserProfileStatus(User? user) async {
+    _isLoading = true;
+    notifyListeners();
+    
+    try {
+      if (user == null) {
+        // User not authenticated, go back to auth
+        _currentStep = OnboardingStep.authentication;
+      } else if (user.username == null || user.username!.isEmpty) {
+        // New user needs username
+        _currentStep = OnboardingStep.username;
+      } else {
+        // Existing user with username, skip to complete
+        _currentStep = OnboardingStep.complete;
+      }
+    } catch (e) {
+      debugPrint('❌ OnboardingService: Error checking user status: $e');
+      // Default to username step if unsure
+      _currentStep = OnboardingStep.username;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+  
+  /// Skip to authentication step (for testing/debugging)
+  void skipToAuthentication() {
+    _currentStep = OnboardingStep.authentication;
     notifyListeners();
   }
   
@@ -469,22 +496,22 @@ class OnboardingService extends ChangeNotifier {
     switch (_currentStep) {
       case OnboardingStep.welcome:
         return true; // Always can proceed from welcome
-      case OnboardingStep.intro:
-        return true; // Always can proceed from intro
+      case OnboardingStep.featureHighlights:
+        return true; // Always can proceed from feature highlights
+      case OnboardingStep.accountBenefits:
+        return true; // Always can proceed from account benefits
+      case OnboardingStep.authentication:
+        return false; // Authentication is handled by auth service, not manual proceed
+      case OnboardingStep.checkUserStatus:
+        return false; // Automatic check, no manual proceed
       case OnboardingStep.username:
         return _data.isUsernameValid && _usernameCheckResult == 'Available';
       case OnboardingStep.usernameConfirmation:
         return true; // Auto-transitions, no user interaction needed
-      case OnboardingStep.birthday:
-        return true; // Birthday is optional
-      case OnboardingStep.gender:
-        return true; // Gender is optional
+      case OnboardingStep.profileDetails:
+        return true; // Profile details are optional
       case OnboardingStep.notifications:
         return true; // Notifications are optional
-      case OnboardingStep.findFriends:
-        return true; // Friend discovery is optional
-      case OnboardingStep.accountChoice:
-        return true; // Choice is made by button press, not validation
       case OnboardingStep.complete:
         return false; // Already complete
     }

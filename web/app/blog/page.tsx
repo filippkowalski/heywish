@@ -68,7 +68,7 @@ export default function BlogPage() {
             </div>
             <h2 className="text-2xl font-bold font-poppins mb-4">Coming Soon!</h2>
             <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-              We're working on amazing content about gifting, wishlists, and making special moments even more special.
+              We&apos;re working on amazing content about gifting, wishlists, and making special moments even more special.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild>

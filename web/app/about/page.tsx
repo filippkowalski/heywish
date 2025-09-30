@@ -1,16 +1,15 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Heart, Users, Lightbulb, Shield, Globe, ArrowRight } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'About Us - HeyWish',
-  description: 'Learn about HeyWish\'s mission to make gifting more delightful. Discover our story, values, and commitment to helping people give and receive meaningful gifts.',
+  description: 'Learn about HeyWish&apos;s mission to make gifting more delightful. Discover our story, values, and commitment to helping people give and receive meaningful gifts.',
   openGraph: {
     title: 'About Us - HeyWish',
-    description: 'Learn about HeyWish\'s mission to make gifting more delightful through modern wishlist technology.',
+    description: 'Learn about HeyWish&apos;s mission to make gifting more delightful through modern wishlist technology.',
   },
 };
 
@@ -74,7 +73,7 @@ export default function AboutPage() {
 
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
-                <h3 className="text-2xl font-bold font-poppins mb-6">The Problem We're Solving</h3>
+                <h3 className="text-2xl font-bold font-poppins mb-6">The Problem We&apos;re Solving</h3>
                 <div className="space-y-4">
                   <p className="text-muted-foreground">
                     Gift-giving should bring joy, but too often it becomes a source of stress and disappointment. 
@@ -121,7 +120,7 @@ export default function AboutPage() {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-center">
-                  We prioritize human connections and relationships over technology for technology's sake.
+                  We prioritize human connections and relationships over technology for technology&apos;s sake.
                 </CardDescription>
               </CardContent>
             </Card>
@@ -186,7 +185,7 @@ export default function AboutPage() {
                     finding the right gift felt harder than it should be.
                   </p>
                   <p className="text-muted-foreground">
-                    We realized that the problem wasn't a lack of options—it was a lack of clear communication 
+                    We realized that the problem wasn&apos;t a lack of options—it was a lack of clear communication 
                     about what people actually wanted. Traditional wishlists were either too rigid, too hidden, 
                     or too complicated to use effectively.
                   </p>
@@ -246,7 +245,7 @@ export default function AboutPage() {
 
           <div className="max-w-2xl mx-auto text-center">
             <p className="text-lg text-muted-foreground mb-8">
-              We're a distributed team of designers, developers, and product experts who are passionate 
+              We&apos;re a distributed team of designers, developers, and product experts who are passionate 
               about solving real human problems. Every feature we build is tested with real families, 
               friends, and gift-giving communities to ensure it truly makes gifting more delightful.
             </p>

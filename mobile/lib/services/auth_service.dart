@@ -379,6 +379,56 @@ class AuthService extends ChangeNotifier {
   bool get needsOnboarding {
     return isAuthenticated && !_isOnboardingCompleted;
   }
+
+  /// Delete user account and all associated data
+  Future<bool> deleteAccount() async {
+    try {
+      debugPrint('🗑️ AuthService: Starting account deletion');
+      
+      // Call backend to delete account data
+      final success = await _apiService.deleteAccount();
+      
+      if (success) {
+        // Delete Firebase account
+        if (_firebaseUser != null) {
+          await _firebaseUser!.delete();
+          debugPrint('✅ AuthService: Firebase account deleted');
+        }
+        
+        // Clear local data
+        await _clearLocalData();
+        
+        // Reset state
+        _currentUser = null;
+        _firebaseUser = null;
+        _isOnboardingCompleted = false;
+        _apiService.clearAuthToken();
+        _tokenRefreshTimer?.cancel();
+        
+        notifyListeners();
+        
+        debugPrint('✅ AuthService: Account deletion completed successfully');
+        return true;
+      } else {
+        debugPrint('❌ AuthService: Backend account deletion failed');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('❌ AuthService: Account deletion error: $e');
+      return false;
+    }
+  }
+
+  /// Clear all local data
+  Future<void> _clearLocalData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      debugPrint('🧹 AuthService: Local data cleared');
+    } catch (e) {
+      debugPrint('❌ AuthService: Error clearing local data: $e');
+    }
+  }
   
   @override
   void dispose() {

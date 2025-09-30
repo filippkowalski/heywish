@@ -116,7 +116,7 @@ export async function getBlogPost(slug: string): Promise<BlogPost | null> {
       content: contentHtml,
       readingTime: readingTimeText,
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 }

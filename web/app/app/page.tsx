@@ -5,11 +5,10 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Plus, Gift, Users, ArrowLeft, Loader2 } from 'lucide-react';
+import { Heart, Plus, Gift, ArrowLeft, Loader2 } from 'lucide-react';
 
 export default function WebAppPage() {
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState(null);
 
   useEffect(() => {
     // Simulate checking for existing authentication
@@ -20,8 +19,7 @@ export default function WebAppPage() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // For demo purposes, no user is authenticated initially
-      // This is where we'd check for existing Firebase auth
-      setUser(null);
+      // This is where we&apos;d check for existing Firebase auth
       setIsLoading(false);
     };
 

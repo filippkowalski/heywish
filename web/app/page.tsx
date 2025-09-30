@@ -1,9 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Gift, Share2, Smartphone, Users, Shield, Zap, CheckCircle, Star, ArrowRight, Play } from "lucide-react";
+import { Heart, Gift, Share2, Smartphone, Users, Shield, Zap, Star, ArrowRight, Play } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 
 export default function Home() {
   return (
@@ -267,7 +266,7 @@ export default function Home() {
               Ready to make gifting delightful?
             </h2>
             <p className="text-xl mb-10 text-primary-foreground/80">
-              Join thousands of people who've discovered the joy of thoughtful, coordinated gift-giving.
+              Join thousands of people who&apos;ve discovered the joy of thoughtful, coordinated gift-giving.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" variant="secondary" className="text-lg px-8 py-6">

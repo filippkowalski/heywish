@@ -376,4 +376,23 @@ class ApiService {
         return 'errors.unknown'.tr();
     }
   }
+
+  /// Delete user account and all associated data
+  Future<bool> deleteAccount() async {
+    try {
+      debugPrint('🗑️ API: Deleting user account');
+      final response = await delete('/auth/delete-account');
+      
+      if (response != null) {
+        debugPrint('✅ API: Account deleted successfully');
+        return true;
+      } else {
+        debugPrint('❌ API: Account deletion failed - null response');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('❌ API: Account deletion error: $e');
+      return false;
+    }
+  }
 }

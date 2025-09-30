@@ -4,14 +4,14 @@ import '../../services/onboarding_service.dart';
 import '../../common/theme/app_colors.dart';
 import '../../common/utils/native_transitions.dart';
 import 'widgets/welcome_step.dart';
-import 'widgets/intro_step.dart';
+import 'widgets/feature_highlights_step.dart';
+import 'widgets/account_benefits_step.dart';
+import 'widgets/authentication_step.dart';
+import 'widgets/user_status_check_step.dart';
 import 'widgets/username_step.dart';
 import 'widgets/username_confirmation_step.dart';
-import 'widgets/birthday_step.dart';
-import 'widgets/gender_step.dart';
+import 'widgets/profile_details_step.dart';
 import 'widgets/notifications_step.dart';
-// import 'widgets/find_friends_step.dart'; // Temporarily hidden
-// import 'widgets/account_choice_step.dart'; // Skipped - go directly to complete
 import 'widgets/onboarding_complete_step.dart';
 
 class OnboardingFlowScreen extends StatefulWidget {
@@ -110,22 +110,22 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen>
     switch (currentStep) {
       case OnboardingStep.welcome:
         return const WelcomeStep();
-      case OnboardingStep.intro:
-        return const IntroStep();
+      case OnboardingStep.featureHighlights:
+        return const FeatureHighlightsStep();
+      case OnboardingStep.accountBenefits:
+        return const AccountBenefitsStep();
+      case OnboardingStep.authentication:
+        return const AuthenticationStep();
+      case OnboardingStep.checkUserStatus:
+        return const UserStatusCheckStep();
       case OnboardingStep.username:
         return const UsernameStep();
       case OnboardingStep.usernameConfirmation:
         return const UsernameConfirmationStep();
-      case OnboardingStep.birthday:
-        return const BirthdayStep();
-      case OnboardingStep.gender:
-        return const GenderStep();
+      case OnboardingStep.profileDetails:
+        return const ProfileDetailsStep();
       case OnboardingStep.notifications:
         return const NotificationsStep();
-      case OnboardingStep.findFriends:
-        return const NotificationsStep(); // Skip to notifications for now
-      case OnboardingStep.accountChoice:
-        return const OnboardingCompleteStep(); // Skip to complete
       case OnboardingStep.complete:
         return const OnboardingCompleteStep();
     }
@@ -149,8 +149,10 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen>
   }
 
   bool _canGoBack(OnboardingStep step) {
-    // Don't show back button on first step, confirmation step, or complete step
+    // Don't show back button on certain steps
     return step != OnboardingStep.welcome && 
+           step != OnboardingStep.authentication &&
+           step != OnboardingStep.checkUserStatus &&
            step != OnboardingStep.usernameConfirmation && 
            step != OnboardingStep.complete;
   }

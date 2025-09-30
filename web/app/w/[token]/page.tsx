@@ -22,15 +22,14 @@ export default function PublicWishlistPage() {
     const fetchWishlist = async () => {
       try {
         setLoading(true);
-        
-        
         const response = await api.getPublicWishlist(token);
         setWishlist(response.wishlist);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching wishlist:', err);
-        if (err.response?.status === 404) {
+        const error = err as { response?: { status?: number } };
+        if (error.response?.status === 404) {
           setError('Wishlist not found');
-        } else if (err.response?.status === 403) {
+        } else if (error.response?.status === 403) {
           setError('This wishlist is private');
         } else {
           setError('Failed to load wishlist');
@@ -62,7 +61,7 @@ export default function PublicWishlistPage() {
           )
         };
       });
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error reserving wish:', err);
       alert('Failed to reserve item. Please try again.');
     } finally {

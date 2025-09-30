@@ -77,16 +77,19 @@ class _IntroStepState extends State<IntroStep> with TickerProviderStateMixin {
                         child: SlideTransition(
                           position: _slideAnimation,
                           child: Container(
-                            width: 100,
-                            height: 100,
+                            width: 120,
+                            height: 120,
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryAccent.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(25),
                             ),
-                            child: Icon(
-                              Icons.favorite,
-                              size: 50,
-                              color: AppTheme.primaryAccent,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(25),
+                              child: Image.asset(
+                                'assets/images/onboarding/welcome_icon_1.png',
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
                         ),

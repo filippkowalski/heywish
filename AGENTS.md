@@ -1,19 +1,19 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-HeyWish runs as a monorepo. `web/` contains the Next.js 14 app and API; routes live in `app/`, shared UI in `components/ui`, and utilities in `lib/`. `mobile/` holds the Flutter client with code split across `lib/screens`, `lib/services`, and `lib/widgets`, while platform configs stay in `ios/` and `android/`. `extension/` hosts the Chrome extension scaffold. Reference material lives in `docs/` and the SQL-focused `documentation/database/` directory.
+HeyWish runs as a monorepo. `web/` hosts the Next.js 14 app and API routes under `app/`; shared UI lives in `components/ui`, and helpers in `lib/`. Flutter code sits in `mobile/lib` with screens, services, widgets split by folder, while platform configs stay in `mobile/ios` and `mobile/android`. The Chrome extension scaffold is in `extension/`. Reference docs live in `docs/` and SQL specs in `documentation/database/`. Keep tests beside routes or features (`web/app/foo/__tests__`) and Flutter widgets.
 
 ## Build, Test, and Development Commands
-From `web/`, run `npm run dev` for the local server, `npm run build` before deploys, and `npm run lint` to enforce the Next.js ESLint rules. In `mobile/`, execute `flutter pub get` after touching dependencies, `flutter run` for iteration, and `flutter build ipa` or `flutter build appbundle` when preparing releases. Bootstrapping the extension currently requires `npm install`; align future scripts with the web package (`npm run dev`, `npm run build`) once the tooling lands.
+From `web/`, run `npm run dev` for the local server, `npm run lint` before commits, and `npm run build` ahead of deploys. In `mobile/`, call `flutter pub get` after dependency edits, `flutter run` for iteration, and `flutter build ipa` or `flutter build appbundle` when shipping. Bootstrapping the extension currently requires `npm install`; align future scripts with the web package (`npm run dev`, `npm run build`).
 
 ## Coding Style & Naming Conventions
-Web code follows the default Next.js ESLint profile: keep two-space indentation, export React components with `PascalCase`, and retain lowercase filenames (`components/ui/button.tsx`). Tailwind classes should mirror the utility-first ordering already in the repo. Flutter inherits `flutter_lints`; prefer `const` widgets, snake_case filenames, and grouped imports. SQL files in `documentation/database/` remain lower_snake_case and should document intent inline when altering production tables.
+Web follows the default Next.js ESLint profile: two-space indent, `PascalCase` components, and lowercase file names like `components/ui/button.tsx`. Tailwind classes should stick to the utility-first ordering already in use. Flutter code adopts `flutter_lints`, favors `const` constructors, snake_case filenames, and grouped imports. Document SQL intent inline and keep files lower_snake_case.
 
 ## Testing Guidelines
-Linting is currently the primary guard on the web app; pair new features with Jest or Playwright coverage placed alongside the affected route (`web/app/.../__tests__`). Always run `npm run lint` before pushing. Flutter logic should be validated with `flutter test`, targeting widget behavior and service integrations; add golden tests for UI regressions when feasible. Capture manual QA notes in the PR if automated coverage is missing.
+Linting guards most web changes; add Jest or Playwright suites beside affected routes under `__tests__`. Run `npm run lint` and any new tests before opening a PR. For Flutter, target logic with `flutter test` and add golden tests for UI deltas when reasonable. Capture manual QA notes in the PR if coverage is light.
 
 ## Commit & Pull Request Guidelines
-Commits generally follow Conventional Commits (`feat:`, `fix:`, `docs:`). Keep summaries under 72 characters, isolate changes per platform, and include migration scripts in the same commit as related code. Pull requests should link issues, call out environment or schema changes, and attach screenshots or screencasts for UI updates. Mention corresponding SQL files or config updates so reviewers can trace the impact.
+Commits follow Conventional Commits (`feat:`, `fix:`, `docs:`) under 72 characters and should isolate changes per platform. Include schema updates alongside related code. PRs must link issues, call out environment or schema shifts, and attach screenshots or screencasts for UI updates so reviewers can trace impact.
 
 ## Security & Configuration Tips
-Store secrets in local `.env` files (`web/.env.local`, `mobile/.env`) and never commit them. Firebase keys, Render connection strings, and Chrome extension tokens belong in the shared secret manager rather than git. Stage database migrations under `documentation/database/` and coordinate deploy windows with the backend when altering live tables.
+Secrets belong in local `.env` files (`web/.env.local`, `mobile/.env`) or the shared secret manager. Never commit Firebase keys, Render strings, or extension tokens. Stage database migrations under `documentation/database/` and coordinate deployment windows with backend before altering live tables.
