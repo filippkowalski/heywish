@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../../../services/onboarding_service.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/widgets/primary_button.dart';
-import '../../../common/widgets/text_input_field.dart';
 
 class ProfileInfoStep extends StatefulWidget {
   const ProfileInfoStep({super.key});
@@ -21,7 +22,7 @@ class _ProfileInfoStepState extends State<ProfileInfoStep> {
   @override
   void initState() {
     super.initState();
-    
+
     // Pre-fill existing data
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final onboardingService = context.read<OnboardingService>();
@@ -40,33 +41,228 @@ class _ProfileInfoStepState extends State<ProfileInfoStep> {
   }
 
   Future<void> _selectBirthday() async {
-    final initialDate = _selectedBirthday ?? DateTime.now().subtract(const Duration(days: 365 * 20));
-    final firstDate = DateTime(1950);
-    final lastDate = DateTime.now().subtract(const Duration(days: 365 * 13)); // 13+ years old
+    DateTime tempDate = _selectedBirthday ?? DateTime.now().subtract(const Duration(days: 365 * 20));
 
-    final selectedDate = await showDatePicker(
+    // Generate lists for spinners
+    final months = List.generate(12, (index) => DateFormat.MMMM().format(DateTime(2000, index + 1)));
+    final currentYear = DateTime.now().year;
+    final years = List.generate(100, (index) => currentYear - index);
+
+    int selectedMonth = tempDate.month - 1;
+    int selectedDay = tempDate.day - 1;
+    int selectedYear = years.indexOf(tempDate.year);
+
+    await showModalBottomSheet(
       context: context,
-      initialDate: initialDate,
-      firstDate: firstDate,
-      lastDate: lastDate,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: AppColors.primary,
-            ),
-          ),
-          child: child!,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              height: 380,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Header with handle
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12, bottom: 8),
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+
+                  // Title
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    child: Row(
+                      children: [
+                        const Text(
+                          '🎂',
+                          style: TextStyle(fontSize: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Select Birthday',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            tempDate = DateTime(
+                              years[selectedYear],
+                              selectedMonth + 1,
+                              (selectedDay + 1).clamp(1, DateTime(years[selectedYear], selectedMonth + 2, 0).day),
+                            );
+                            setState(() {
+                              _selectedBirthday = tempDate;
+                            });
+                            context.read<OnboardingService>().updateBirthday(tempDate);
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text(
+                            'Done',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Divider(height: 1),
+
+                  // Spinners
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        // Selection highlight
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: Center(
+                            child: Container(
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              margin: const EdgeInsets.symmetric(horizontal: 16),
+                            ),
+                          ),
+                        ),
+
+                        // Spinners row
+                        Row(
+                          children: [
+                            // Month spinner
+                            Expanded(
+                              flex: 3,
+                              child: CupertinoPicker(
+                                scrollController: FixedExtentScrollController(initialItem: selectedMonth),
+                                itemExtent: 50,
+                                squeeze: 1.1,
+                                useMagnifier: true,
+                                magnification: 1.15,
+                                onSelectedItemChanged: (int index) {
+                                  setModalState(() {
+                                    selectedMonth = index;
+                                    // Adjust day if invalid for new month
+                                    final maxDays = DateTime(years[selectedYear], index + 2, 0).day;
+                                    if (selectedDay >= maxDays) {
+                                      selectedDay = maxDays - 1;
+                                    }
+                                  });
+                                },
+                                children: months.map((month) => Center(
+                                  child: Text(
+                                    month,
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                )).toList(),
+                              ),
+                            ),
+
+                            // Day spinner
+                            Expanded(
+                              flex: 2,
+                              child: CupertinoPicker(
+                                scrollController: FixedExtentScrollController(initialItem: selectedDay),
+                                itemExtent: 50,
+                                squeeze: 1.1,
+                                useMagnifier: true,
+                                magnification: 1.15,
+                                onSelectedItemChanged: (int index) {
+                                  setModalState(() {
+                                    selectedDay = index;
+                                  });
+                                },
+                                children: List.generate(
+                                  DateTime(years[selectedYear], selectedMonth + 2, 0).day,
+                                  (index) => Center(
+                                    child: Text(
+                                      '${index + 1}',
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w500,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // Year spinner
+                            Expanded(
+                              flex: 2,
+                              child: CupertinoPicker(
+                                scrollController: FixedExtentScrollController(initialItem: selectedYear),
+                                itemExtent: 50,
+                                squeeze: 1.1,
+                                useMagnifier: true,
+                                magnification: 1.15,
+                                onSelectedItemChanged: (int index) {
+                                  setModalState(() {
+                                    selectedYear = index;
+                                    // Adjust day if invalid for new year (leap year changes)
+                                    final maxDays = DateTime(years[index], selectedMonth + 2, 0).day;
+                                    if (selectedDay >= maxDays) {
+                                      selectedDay = maxDays - 1;
+                                    }
+                                  });
+                                },
+                                children: years.map((year) => Center(
+                                  child: Text(
+                                    '$year',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                )).toList(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
         );
       },
     );
-
-    if (selectedDate != null) {
-      setState(() {
-        _selectedBirthday = selectedDate;
-      });
-      context.read<OnboardingService>().updateBirthday(selectedDate);
-    }
   }
 
   @override
@@ -81,104 +277,109 @@ class _ProfileInfoStepState extends State<ProfileInfoStep> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-          const SizedBox(height: 20),
-          
-          // Title
-          Text(
-            'Tell us about yourself',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          
-          const SizedBox(height: 8),
-          
-          // Subtitle
-          Text(
-            'This helps us personalize your experience (all optional)',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-          
-          const SizedBox(height: 32),
-          
-          // Birthday Selection
-          GestureDetector(
-            onTap: _selectBirthday,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.outline,
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.cake_outlined,
-                    color: AppColors.textSecondary,
-                    size: 20,
+                  const SizedBox(height: 20),
+
+                  // Title
+                  Text(
+                    'Tell us about yourself',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _selectedBirthday != null
-                          ? _formatDate(_selectedBirthday!)
-                          : 'Select your birthday',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: _selectedBirthday != null
-                            ? AppColors.textPrimary
-                            : AppColors.textSecondary,
+
+                  const SizedBox(height: 8),
+
+                  // Subtitle
+                  Text(
+                    'This helps us personalize your experience (all optional)',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Birthday Selection
+                  GestureDetector(
+                    onTap: _selectBirthday,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.cake_outlined,
+                            color: AppColors.textSecondary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _selectedBirthday != null
+                                  ? _formatDate(_selectedBirthday!)
+                                  : 'Select your birthday',
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyLarge?.copyWith(
+                                color:
+                                    _selectedBirthday != null
+                                        ? AppColors.textPrimary
+                                        : AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_drop_down,
+                            color: AppColors.textSecondary,
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  Icon(
-                    Icons.arrow_drop_down,
-                    color: AppColors.textSecondary,
+
+                  const SizedBox(height: 8),
+
+                  // Birthday explanation
+                  Text(
+                    "We'll use this to notify your friends about your birthday",
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 8),
-          
-          // Birthday explanation
-          Text(
-            "We'll use this to notify your friends about your birthday",
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // Gender Selection
-          Text(
-            'Gender',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          
-          const SizedBox(height: 12),
-          
-          ..._genderOptions.map((gender) => _buildGenderOption(gender)),
-          
-          const SizedBox(height: 40), // Less spacing since button is now fixed
+
+                  const SizedBox(height: 20),
+
+                  // Gender Selection
+                  Text(
+                    'Gender',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  ..._genderOptions.map((gender) => _buildGenderOption(gender)),
+
+                  const SizedBox(
+                    height: 40,
+                  ), // Less spacing since button is now fixed
                 ],
               ),
             ),
           ),
         ),
-        
+
         // Fixed bottom section
         Padding(
           padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 24.0),
@@ -186,9 +387,10 @@ class _ProfileInfoStepState extends State<ProfileInfoStep> {
             builder: (context, onboardingService, child) {
               return PrimaryButton(
                 text: 'Continue',
-                onPressed: onboardingService.canProceedFromCurrentStep()
-                    ? onboardingService.nextStep
-                    : null,
+                onPressed:
+                    onboardingService.canProceedFromCurrentStep()
+                        ? onboardingService.nextStep
+                        : null,
               );
             },
           ),
@@ -199,7 +401,7 @@ class _ProfileInfoStepState extends State<ProfileInfoStep> {
 
   Widget _buildGenderOption(String gender) {
     final isSelected = _selectedGender == gender;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -212,17 +414,21 @@ class _ProfileInfoStepState extends State<ProfileInfoStep> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : AppColors.surface,
+          color: isSelected ? AppColors.primaryLight : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.outline,
-            width: isSelected ? 2 : 1,
+            color: isSelected
+                ? AppColors.primary
+                : Colors.black.withValues(alpha: 0.1),
+            width: 1,
           ),
         ),
         child: Row(
           children: [
             Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
               color: isSelected ? AppColors.primary : AppColors.textSecondary,
               size: 20,
             ),
@@ -242,10 +448,21 @@ class _ProfileInfoStepState extends State<ProfileInfoStep> {
 
   String _formatDate(DateTime date) {
     final months = [
-      '', 'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      '',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
-    
+
     return '${months[date.month]} ${date.day}, ${date.year}';
   }
 }

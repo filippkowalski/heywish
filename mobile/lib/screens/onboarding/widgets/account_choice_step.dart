@@ -198,38 +198,44 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
               child: Column(
                 children: [
                   // Google Sign In button
-                  FilledButton.icon(
-                    onPressed: _isSigningIn ? null : _handleGoogleSignIn,
-                    icon:
-                        _isSigningIn
-                            ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                  SizedBox(
+                    height: 56,
+                    child: FilledButton.icon(
+                      onPressed: _isSigningIn ? null : _handleGoogleSignIn,
+                      icon:
+                          _isSigningIn
+                              ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
                                 ),
-                              ),
-                            )
-                            : const Icon(Icons.g_mobiledata),
-                    label: const Text('Continue with Google'),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      minimumSize: const Size(double.infinity, 50),
+                              )
+                              : const Icon(Icons.g_mobiledata),
+                      label: const Text('Continue with Google'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        minimumSize: const Size(double.infinity, 56),
+                      ),
                     ),
                   ),
 
                   // Apple Sign In button (iOS only)
                   if (_isIOS) ...[
                     const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: _isSigningIn ? null : _handleAppleSignIn,
-                      icon: const Icon(Icons.apple),
-                      label: const Text('Continue with Apple'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        minimumSize: const Size(double.infinity, 50),
+                    SizedBox(
+                      height: 56,
+                      child: OutlinedButton.icon(
+                        onPressed: _isSigningIn ? null : _handleAppleSignIn,
+                        icon: const Icon(Icons.apple),
+                        label: const Text('Continue with Apple'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          minimumSize: const Size(double.infinity, 56),
+                        ),
                       ),
                     ),
                   ],

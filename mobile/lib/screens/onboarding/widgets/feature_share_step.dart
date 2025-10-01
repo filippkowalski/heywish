@@ -136,7 +136,7 @@ class _FeatureShareStepState extends State<FeatureShareStep>
             opacity: _fadeAnimation,
             child: PrimaryButton(
               onPressed: () => context.read<OnboardingService>().nextStep(),
-              text: 'onboarding.continue'.tr(),
+              text: 'app.continue'.tr(),
             ),
           ),
 

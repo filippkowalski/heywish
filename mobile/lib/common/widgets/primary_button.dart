@@ -18,7 +18,7 @@ class PrimaryButton extends StatelessWidget {
     this.isLoading = false,
     this.isOutlined = false,
     this.width,
-    this.height = 56,
+    this.height = 62,
     this.icon,
   });
 
@@ -48,10 +48,10 @@ class PrimaryButton extends StatelessWidget {
                   width: 1.5,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 textStyle: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -76,10 +76,10 @@ class PrimaryButton extends StatelessWidget {
                 disabledForegroundColor: AppColors.textSecondary,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 textStyle: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
               ),

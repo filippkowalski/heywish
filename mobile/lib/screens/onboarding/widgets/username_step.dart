@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:auto_size_text/auto_size_text.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'dart:async';
 import '../../../services/onboarding_service.dart';
 import '../../../common/theme/app_colors.dart';
@@ -39,14 +39,44 @@ class _UsernameStepState extends State<UsernameStep> {
   void initState() {
     super.initState();
     _focusNode.requestFocus();
-    
-    // Pre-fill if username already exists
+
+    // Pre-fill username
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final onboardingService = context.read<OnboardingService>();
+
+      // If username already exists in onboarding data, use it
       if (onboardingService.data.username != null) {
         _usernameController.text = onboardingService.data.username!;
+      } else {
+        // Otherwise, try to autopopulate from email
+        _autopopulateFromEmail();
       }
     });
+  }
+
+  /// Autopopulate username from email (excluding Apple anonymous emails)
+  void _autopopulateFromEmail() {
+    final onboardingService = context.read<OnboardingService>();
+    final email = onboardingService.data.email;
+
+    if (email == null || email.isEmpty) {
+      return;
+    }
+
+    // Check if it's an Apple anonymous email (privaterelay.appleid.com)
+    if (email.contains('@privaterelay.appleid.com')) {
+      debugPrint('📧 UsernameStep: Skipping autopopulate for Apple anonymous email');
+      return;
+    }
+
+    // Extract username from email (part before @)
+    final emailPrefix = email.split('@').first;
+
+    if (emailPrefix.isNotEmpty) {
+      debugPrint('📧 UsernameStep: Autopopulating username from email: $emailPrefix');
+      _usernameController.text = emailPrefix;
+      _onUsernameChanged(emailPrefix);
+    }
   }
 
   @override
@@ -62,36 +92,36 @@ class _UsernameStepState extends State<UsernameStep> {
     if (username.isEmpty) {
       return null; // Allow empty for now
     }
-    
+
     if (username.length < 3) {
-      return 'Username must be at least 3 characters';
+      return 'username_validation.min_length'.tr();
     }
-    
+
     if (username.length > 30) {
-      return 'Username must be 30 characters or less';
+      return 'username_validation.max_length'.tr();
     }
-    
+
     // Check for spaces
     if (username.contains(' ')) {
-      return 'Username cannot contain spaces';
+      return 'username_validation.no_spaces'.tr();
     }
-    
+
     // Check for invalid characters (Instagram allows letters, numbers, underscores, and periods)
     final validPattern = RegExp(r'^[a-zA-Z0-9._]+$');
     if (!validPattern.hasMatch(username)) {
-      return 'Username can only contain letters, numbers, periods, and underscores';
+      return 'username_validation.invalid_characters'.tr();
     }
-    
+
     // Cannot start or end with period
     if (username.startsWith('.') || username.endsWith('.')) {
-      return 'Username cannot start or end with a period';
+      return 'username_validation.no_period_edges'.tr();
     }
-    
+
     // Cannot have consecutive periods
     if (username.contains('..')) {
-      return 'Username cannot have consecutive periods';
+      return 'username_validation.no_consecutive_periods'.tr();
     }
-    
+
     return null; // Valid
   }
 
@@ -142,22 +172,22 @@ class _UsernameStepState extends State<UsernameStep> {
     if (_validationError != null) {
       return _validationError!;
     }
-    
+
     // Show API result if available and no validation errors
-    if (onboardingService.usernameCheckResult != null && 
+    if (onboardingService.usernameCheckResult != null &&
         onboardingService.usernameCheckResult != 'Checking...') {
       if (onboardingService.usernameCheckResult == 'Available') {
-        return '✓ Username is available';
+        return 'username_validation.available'.tr();
       } else {
         return onboardingService.usernameCheckResult!;
       }
     }
-    
+
     // Show checking status
     if (onboardingService.isLoading) {
-      return 'Checking availability...';
+      return 'username_validation.checking'.tr();
     }
-    
+
     return '';
   }
 
@@ -181,55 +211,63 @@ class _UsernameStepState extends State<UsernameStep> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Main content - centered
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Spacer(flex: 2),
-                    
-                    // Main title
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: AutoSizeText(
-                        'Choose your username',
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        minFontSize: 20,
-                        maxFontSize: 30,
-                      ),
+    final mediaQuery = MediaQuery.of(context);
+    final topPadding = mediaQuery.padding.top;
+    final bottomPadding = mediaQuery.padding.bottom;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xFFF0F4FF), // Very light blue
+            const Color(0xFFF8F5FF), // Very light purple
+            Colors.white,
+          ],
+          stops: const [0.0, 0.4, 1.0],
+        ),
+      ),
+      child: Column(
+        children: [
+          // Scrollable content
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(
+                left: 32.0,
+                right: 32.0,
+                top: topPadding + 60.0,
+                bottom: 24.0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Title
+                  Text(
+                    'onboarding.username_title'.tr(),
+                    style: const TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.5,
                     ),
-                    
-                    const SizedBox(height: 12),
-                    
-                    // Subtitle
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: AutoSizeText(
-                        'This is your unique username that your friends can find you with',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w400,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 3,
-                        minFontSize: 13,
-                        maxFontSize: 16,
-                      ),
+                    textAlign: TextAlign.left,
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Subtitle
+                  Text(
+                    'onboarding.username_subtitle'.tr(),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textSecondary,
+                      height: 1.5,
                     ),
-                
-                const SizedBox(height: 32),
+                    textAlign: TextAlign.left,
+                  ),
+
+                  const SizedBox(height: 48),
                 
                 // Username input - centered and styled
                 Consumer<OnboardingService>(
@@ -278,10 +316,10 @@ class _UsernameStepState extends State<UsernameStep> {
                             ),
                             decoration: InputDecoration(
                               border: InputBorder.none,
-                              hintText: 'username',
+                              hintText: 'onboarding.username_placeholder'.tr(),
                               counterText: '', // Hide character counter
                               hintStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: AppColors.textSecondary.withOpacity(0.5),
+                                color: AppColors.textSecondary.withValues(alpha: 0.5),
                                 fontWeight: FontWeight.w400,
                                 fontSize: 20,
                               ),
@@ -292,7 +330,7 @@ class _UsernameStepState extends State<UsernameStep> {
                                       padding: const EdgeInsets.all(12),
                                       child: PlatformLoader(
                                         size: 16,
-                                        color: AppColors.primary.withOpacity(0.6),
+                                        color: AppColors.primary.withValues(alpha: 0.6),
                                         strokeWidth: 2,
                                       ),
                                     )
@@ -310,32 +348,29 @@ class _UsernameStepState extends State<UsernameStep> {
                     );
                   },
                 ),
-                
-                const Spacer(flex: 3),
-                  ],
-                ),
-              ),
+              ],
             ),
-            
-            // Bottom button - keep as is
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 24.0),
-              child: Consumer<OnboardingService>(
-                builder: (context, onboardingService, child) {
-                  final canProceed = onboardingService.canProceedFromCurrentStep() && 
-                                   _validationError == null &&
-                                   _usernameController.text.isNotEmpty;
-                  
-                  return PrimaryButton(
-                    text: 'Continue',
-                    onPressed: canProceed ? onboardingService.nextStep : null,
-                  );
-                },
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
-    );
+
+        // Bottom button
+        Padding(
+          padding: EdgeInsets.fromLTRB(24.0, 16.0, 24.0, bottomPadding + 24.0),
+          child: Consumer<OnboardingService>(
+            builder: (context, onboardingService, child) {
+              final canProceed = onboardingService.canProceedFromCurrentStep() &&
+                               _validationError == null &&
+                               _usernameController.text.isNotEmpty;
+
+              return PrimaryButton(
+                text: 'app.continue'.tr(),
+                onPressed: canProceed ? onboardingService.nextStep : null,
+              );
+            },
+          ),
+        ),
+      ],
+    ),
+  );
   }
 }

@@ -82,7 +82,15 @@ The REST API is implemented using Next.js API routes. Key characteristics includ
 - Please use the playwright MCP server when making visual changes to the front-end website to check your work
 
 ## Mobile Guidelines
-- Flutter with Material Design 3
+Design
+- Use light mode, white and grey colors, neutral
+- Make sure not to hardcode colors, we want to use system/Flutter available options such as theme colorScheme etc.this will make it easier for us to add different theme modes in the future
+- Use Shadcn design principles, make it beautiful and minimalistic, beautiful typography, main text is black and subtitles are usually a shade darker
+- Remember about proper padding, spacing between elements and styling (again get inspiration from Shadcn design principles)
+- Only use colors for accent and whenever absolutely necessary
+- Less is better, we want the UI and UX to be minimalistic but also user friendly, we want user to create invoices effortlessly and quickly, if you have any idea on how we can improve something and make it easier to use, feel free to discuss it with me, we focus on core feature
+- Never use gray borders with shadows. Instead, use a semi-transparent outline so the bottom edge blends with the shadow and gets darker, avoiding a 'muddy' appearance. This makes the design look 'crisp'.
+
 - Use easy_localization for all user-facing strings
 - **IMPORTANT**: Never hardcode user-facing strings. Always use localization keys from `assets/translations/en.json`
 - Follow the localization key structure: `category.specific_string` (e.g., `auth.sign_in`, `wishlist.create_new`, `errors.network_error`)
@@ -92,14 +100,18 @@ The REST API is implemented using Next.js API routes. Key characteristics includ
 ### Page Transitions & Native Navigation (CRITICAL)
 - **ALWAYS use native transitions for all navigation**
 - **Implementation**: Use the `NativePageRoute` and `NativeTransitions` utilities from `lib/common/navigation/native_page_route.dart`
-- **GoRouter Integration**: All routes use `NativeTransitions.page()` for native transitions
+- **GoRouter Integration**: All routes MUST use `NativeTransitions.page()` for native transitions
 - **Modal Presentations**: Use `NativeTransitions.showNativeModalBottomSheet()` and `NativeTransitions.showNativeDialog()`
+- **In-Flow Transitions**: For AnimatedSwitcher (e.g., onboarding steps), use `NativeTransitions.buildPageTransition()`
 - **Platform-Specific Behavior**:
-  - **iOS**: Uses `CupertinoPageTransition`, `showCupertinoModalPopup`, `showCupertinoDialog`
-  - **Android**: Uses Material Design transitions with proper curves and timing
+  - **iOS**: Uses `CupertinoPageTransition` with parallax effect, `showCupertinoModalPopup`, `showCupertinoDialog`
+  - **Android**: Uses Material Design transitions with fade+slide, proper curves (fastOutSlowIn), and timing
+- **Platform-Specific Timing**:
+  - **iOS**: 350ms transition duration for authentic feel
+  - **Android**: 300ms with Material curves for snappy performance
 - **Fallback Strategy**: When platform-specific isn't available, default to iOS-like animations and styling
-- **Navigation Extensions**: Use `context.pushNative()`, `context.pushReplacementNative()` for manual navigation
-- **Never use**: Generic Flutter transitions, showDialog/showModalBottomSheet directly, or non-native page routes
+- **Navigation Extensions**: Use `context.pushNative()`, `context.pushReplacementNative()`, `context.pushAndRemoveUntilNative()` for manual navigation
+- **Never use**: Generic Flutter transitions, `showDialog`/`showModalBottomSheet` directly, non-native page routes, or `AnimatedSwitcher` without native transition builders
 
 ### User Interface Guidelines
 - **Bottom Sheets Over Dialogs**: Always use styled bottom sheets instead of dialogs for confirmations, options, and forms
@@ -107,12 +119,48 @@ The REST API is implemented using Next.js API routes. Key characteristics includ
 - **Modal Presentations**: Custom styled bottom sheets with handle bars, proper spacing, and consistent design
 - **Interactive Elements**: Clear button hierarchy, proper touch targets, and loading indicators during async operations
 
-### Native Navigation Utilities
+### Native Navigation Utilities Reference
+All utilities are located in `lib/common/navigation/native_page_route.dart`:
+
+**Route Creation:**
 - **NativePageRoute<T>**: Custom page route with platform-specific transitions
-- **NativeTransitions.page()**: For GoRouter page builders with native transitions  
-- **NativeTransitions.showNativeModalBottomSheet()**: Platform-specific bottom sheets
+- **NativeTransitions.page()**: For GoRouter page builders with native transitions
+- **NativeTransitions.buildPageTransition()**: For AnimatedSwitcher/in-flow transitions with platform-native animations
+
+**Modal Presentations:**
+- **NativeTransitions.showNativeModalBottomSheet()**: Platform-specific bottom sheets (Cupertino on iOS, Material on Android)
 - **NativeTransitions.showNativeDialog()**: Platform-specific dialog presentations
-- **Context Extensions**: `.pushNative()`, `.pushReplacementNative()`, `.pushAndRemoveUntilNative()`
+
+**Navigation Extensions:**
+- **context.pushNative()**: Push a new screen with native transitions
+- **context.pushReplacementNative()**: Replace current screen with native transitions
+- **context.pushAndRemoveUntilNative()**: Push and remove all previous routes with native transitions
+
+**Implementation Example:**
+```dart
+// GoRouter route
+GoRoute(
+  path: '/example',
+  pageBuilder: (context, state) => NativeTransitions.page(
+    child: const ExampleScreen(),
+    key: state.pageKey,
+  ),
+)
+
+// AnimatedSwitcher (onboarding, wizards)
+AnimatedSwitcher(
+  duration: Platform.isIOS ? Duration(milliseconds: 350) : Duration(milliseconds: 300),
+  transitionBuilder: (child, animation) {
+    return NativeTransitions.buildPageTransition(
+      child: child,
+      animation: animation,
+      secondaryAnimation: AlwaysStoppedAnimation(0.0),
+      isForward: true,
+    );
+  },
+  child: currentStepWidget,
+)
+```
 
 ## TODO Before Release
 

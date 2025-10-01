@@ -13,54 +13,8 @@ class UsernameConfirmationStep extends StatefulWidget {
   State<UsernameConfirmationStep> createState() => _UsernameConfirmationStepState();
 }
 
-class _UsernameConfirmationStepState extends State<UsernameConfirmationStep>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
-  late Animation<Offset> _slideAnimation;
+class _UsernameConfirmationStepState extends State<UsernameConfirmationStep> {
   bool _linkCopied = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 900),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-      ),
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
-      ),
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
-      ),
-    );
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
 
   void _copyLink(String username) {
     final link = 'heywish.com/$username';
@@ -81,169 +35,176 @@ class _UsernameConfirmationStepState extends State<UsernameConfirmationStep>
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final bottomPadding = mediaQuery.padding.bottom;
+
     return Consumer<OnboardingService>(
       builder: (context, onboardingService, child) {
         final username = onboardingService.data.username ?? '';
         final profileUrl = 'heywish.com/$username';
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        return Container(
+          color: Colors.white,
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Spacer(),
+              // Scrollable content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 80),
 
-              // Animated celebration icon
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.celebration_outlined,
-                      size: 50,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-              ),
+                      // Celebration icon
+                      Center(
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.celebration_outlined,
+                            size: 50,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
 
-              const SizedBox(height: 48),
+                      const SizedBox(height: 40),
 
-              // Animated title
-              SlideTransition(
-                position: _slideAnimation,
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Text(
-                    'onboarding.username_confirmed_title'.tr(),
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      // Title
+                      Text(
+                        'onboarding.username_confirmed_title'.tr(),
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
-                          fontSize: 28,
+                          fontSize: 32,
+                          letterSpacing: -0.5,
                         ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
+                        textAlign: TextAlign.center,
+                      ),
 
-              const SizedBox(height: 16),
+                      const SizedBox(height: 12),
 
-              // Animated subtitle
-              SlideTransition(
-                position: _slideAnimation,
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Text(
-                    'onboarding.username_confirmed_subtitle'.tr(),
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      // Subtitle
+                      Text(
+                        'onboarding.username_confirmed_subtitle'.tr(),
+                        style: const TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 16,
                           height: 1.5,
                         ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // Personal page URL card
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.primary.withOpacity(0.2),
-                        width: 1.5,
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.public,
-                          size: 32,
-                          color: AppColors.primary,
+
+                      const SizedBox(height: 40),
+
+                      // Personal page URL card
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                            width: 1.5,
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'onboarding.your_personal_page'.tr(),
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.public,
+                              size: 32,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'onboarding.your_personal_page'.tr(),
+                              style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.textPrimary,
+                                fontSize: 16,
                               ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          profileUrl,
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              profileUrl,
+                              style: const TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w500,
                                 fontSize: 18,
                               ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Copy link button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _copyLink(username),
+                          icon: Icon(
+                            _linkCopied ? Icons.check : Icons.link,
+                            color: _linkCopied ? Colors.green : AppColors.primary,
+                          ),
+                          label: Text(
+                            _linkCopied
+                                ? 'onboarding.link_copied'.tr()
+                                : 'onboarding.copy_link'.tr(),
+                            style: TextStyle(
+                              color: _linkCopied ? Colors.green : AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                            side: BorderSide(
+                              color: _linkCopied ? Colors.green : AppColors.primary,
+                              width: 1.5,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+                    ],
                   ),
                 ),
               ),
 
-              const SizedBox(height: 24),
-
-              // Copy link button
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: OutlinedButton.icon(
-                  onPressed: () => _copyLink(username),
-                  icon: Icon(
-                    _linkCopied ? Icons.check : Icons.link,
-                    color: _linkCopied ? Colors.green : AppColors.primary,
-                  ),
-                  label: Text(
-                    _linkCopied
-                        ? 'onboarding.link_copied'.tr()
-                        : 'onboarding.copy_link'.tr(),
-                    style: TextStyle(
-                      color: _linkCopied ? Colors.green : AppColors.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    side: BorderSide(
-                      color: _linkCopied ? Colors.green : AppColors.primary,
-                      width: 2,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              // Fixed footer
+              Container(
+                padding: EdgeInsets.only(
+                  left: 24.0,
+                  right: 24.0,
+                  top: 20.0,
+                  bottom: bottomPadding + 32.0,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    top: BorderSide(
+                      color: AppColors.outline.withValues(alpha: 0.1),
+                      width: 1,
                     ),
                   ),
                 ),
-              ),
-
-              const Spacer(),
-
-              // Continue button
-              FadeTransition(
-                opacity: _fadeAnimation,
                 child: PrimaryButton(
                   onPressed: () => context.read<OnboardingService>().nextStep(),
-                  text: 'onboarding.continue'.tr(),
+                  text: 'app.continue'.tr(),
                 ),
               ),
-
-              const SizedBox(height: 16),
             ],
           ),
         );

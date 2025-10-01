@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
@@ -29,26 +30,37 @@ import 'common/navigation/native_page_route.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // Set system UI overlay style for status bar
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
+
   // Initialize localization
   await EasyLocalization.ensureInitialized();
-  
+
   // Load environment variables (optional in development)
   try {
     await dotenv.load(fileName: '.env');
   } catch (e) {
     debugPrint('Warning: Could not load .env file: $e');
   }
-  
+
   // Initialize Firebase
   await Firebase.initializeApp();
-  
+
   // Initialize preferences
   await PreferencesService().initialize();
-  
+
   // Initialize singleton services
   await SyncManager().initialize();
-  
+
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('en')],
@@ -97,8 +109,7 @@ class HeyWishApp extends StatelessWidget {
       child: MaterialApp.router(
         title: 'app.title'.tr(), // Hot reload trigger
         theme: AppTheme.lightTheme(),
-        darkTheme: AppTheme.darkTheme(),
-        themeMode: ThemeMode.system,
+        themeMode: ThemeMode.light,
         debugShowCheckedModeBanner: false,
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,

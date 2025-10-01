@@ -273,15 +273,32 @@ class ApiService {
   Future<Map<String, dynamic>?> checkUsernameAvailability(String username) async {
     try {
       debugPrint('🔍 API: Checking username availability for: $username');
-      
+
       final response = await get('/auth/check-username/$username');
       if (kDebugMode) {
         debugPrint('✅ API: Username check response: $response');
       }
-      
+
       return response as Map<String, dynamic>?;
     } catch (e) {
       debugPrint('❌ API: Error checking username: $e');
+      return null;
+    }
+  }
+
+  /// Check if user exists by email
+  Future<Map<String, dynamic>?> checkEmailExists() async {
+    try {
+      debugPrint('📧 API: Checking if email exists in database');
+
+      final response = await get('/auth/check-email');
+      if (kDebugMode) {
+        debugPrint('✅ API: Email check response: $response');
+      }
+
+      return response as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('❌ API: Error checking email: $e');
       return null;
     }
   }

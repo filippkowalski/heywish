@@ -189,4 +189,37 @@ class NativeTransitions {
       );
     }
   }
+
+  /// Create platform-native page transitions for AnimatedSwitcher/PageTransitionSwitcher
+  /// Used for in-flow transitions like onboarding steps
+  static Widget buildPageTransition({
+    required Widget child,
+    required Animation<double> animation,
+    required Animation<double> secondaryAnimation,
+    required bool isForward,
+  }) {
+    if (Platform.isIOS) {
+      // iOS native Cupertino slide transition with parallax effect
+      return CupertinoPageTransition(
+        primaryRouteAnimation: animation,
+        secondaryRouteAnimation: secondaryAnimation,
+        linearTransition: false,
+        child: child,
+      );
+    } else {
+      // Android Material Design transition with fade and slide
+      final offsetTween = Tween<Offset>(
+        begin: isForward ? const Offset(1.0, 0.0) : const Offset(-1.0, 0.0),
+        end: Offset.zero,
+      ).chain(CurveTween(curve: Curves.fastOutSlowIn));
+
+      return SlideTransition(
+        position: animation.drive(offsetTween),
+        child: FadeTransition(
+          opacity: animation,
+          child: child,
+        ),
+      );
+    }
+  }
 }

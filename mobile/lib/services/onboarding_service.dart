@@ -1,25 +1,25 @@
 import 'package:flutter/foundation.dart';
 import 'dart:io';
+import 'dart:developer' as developer;
 import 'api_service.dart';
 import '../models/user.dart';
 
 enum OnboardingStep {
   welcome,
-  featureOrganize,       // Show organize feature - build motivation
-  accountCreation,       // Strike while motivation is high
-  checkUserStatus,       // Check if existing user after auth
-  username,              // Quick win - personal touch
-  usernameConfirmation,  // Celebrate their identity
   profileDetails,        // Deepen engagement
   shoppingInterests,     // Visual category selector
-  featureShare,          // NOW show social benefits (after invested)
   notifications,         // Enable connection
+  accountCreation,       // Strike while motivation is high
+  checkUserStatus,       // Check if existing user after auth
+  username,              // Quick win - personal touch (only for sign-in users)
+  usernameConfirmation,  // Celebrate their identity
   complete
 }
 
 class OnboardingData {
   String? username;
   String? fullName;
+  String? email;
   DateTime? birthday;
   String? gender;
   List<String> shoppingInterests;
@@ -30,6 +30,7 @@ class OnboardingData {
   OnboardingData({
     this.username,
     this.fullName,
+    this.email,
     this.birthday,
     this.gender,
     List<String>? shoppingInterests,
@@ -87,11 +88,18 @@ class OnboardingService extends ChangeNotifier {
   List<String> get usernameSuggestions => _usernameSuggestions;
   
   void nextStep() {
+    final previousStep = _currentStep;
     switch (_currentStep) {
       case OnboardingStep.welcome:
-        _currentStep = OnboardingStep.featureOrganize;
+        _currentStep = OnboardingStep.profileDetails;
         break;
-      case OnboardingStep.featureOrganize:
+      case OnboardingStep.profileDetails:
+        _currentStep = OnboardingStep.shoppingInterests;
+        break;
+      case OnboardingStep.shoppingInterests:
+        _currentStep = OnboardingStep.notifications;
+        break;
+      case OnboardingStep.notifications:
         _currentStep = OnboardingStep.accountCreation;
         break;
       case OnboardingStep.accountCreation:
@@ -105,23 +113,14 @@ class OnboardingService extends ChangeNotifier {
         _currentStep = OnboardingStep.usernameConfirmation;
         break;
       case OnboardingStep.usernameConfirmation:
-        _currentStep = OnboardingStep.profileDetails;
-        break;
-      case OnboardingStep.profileDetails:
-        _currentStep = OnboardingStep.shoppingInterests;
-        break;
-      case OnboardingStep.shoppingInterests:
-        _currentStep = OnboardingStep.featureShare;
-        break;
-      case OnboardingStep.featureShare:
-        _currentStep = OnboardingStep.notifications;
-        break;
-      case OnboardingStep.notifications:
         _currentStep = OnboardingStep.complete;
         break;
       case OnboardingStep.complete:
         // Already at the end
         break;
+    }
+    if (previousStep != _currentStep) {
+      developer.log('➡️  STEP TRANSITION: ${previousStep.name} → ${_currentStep.name}', name: 'OnboardingService');
     }
     notifyListeners();
   }
@@ -131,35 +130,29 @@ class OnboardingService extends ChangeNotifier {
       case OnboardingStep.welcome:
         // Can't go back from first step
         break;
-      case OnboardingStep.featureOrganize:
-        _currentStep = OnboardingStep.welcome;
+      case OnboardingStep.profileDetails:
+        // Can't go back from profile details (first step after welcome)
+        break;
+      case OnboardingStep.shoppingInterests:
+        _currentStep = OnboardingStep.profileDetails;
+        break;
+      case OnboardingStep.notifications:
+        _currentStep = OnboardingStep.shoppingInterests;
         break;
       case OnboardingStep.accountCreation:
-        _currentStep = OnboardingStep.featureOrganize;
+        _currentStep = OnboardingStep.notifications;
         break;
       case OnboardingStep.checkUserStatus:
         // Can't go back during automatic check
         break;
       case OnboardingStep.username:
-        // Can't go back from username step as auth is already done
+        // Can't go back from username step (after account creation)
         break;
       case OnboardingStep.usernameConfirmation:
         _currentStep = OnboardingStep.username;
         break;
-      case OnboardingStep.profileDetails:
-        _currentStep = OnboardingStep.usernameConfirmation;
-        break;
-      case OnboardingStep.shoppingInterests:
-        _currentStep = OnboardingStep.profileDetails;
-        break;
-      case OnboardingStep.featureShare:
-        // Can't go back from feature share (it's a reward step)
-        break;
-      case OnboardingStep.notifications:
-        _currentStep = OnboardingStep.featureShare;
-        break;
       case OnboardingStep.complete:
-        _currentStep = OnboardingStep.notifications;
+        _currentStep = OnboardingStep.usernameConfirmation;
         break;
     }
     notifyListeners();
@@ -332,7 +325,8 @@ class OnboardingService extends ChangeNotifier {
   
   void updateUsername(String username) {
     _data.username = username;
-    
+    developer.log('🔵 ONBOARDING: Username updated to: $username', name: 'OnboardingService');
+
     // Optimistic UI updates
     if (username.length < 3) {
       _usernameCheckResult = 'Username must be at least 3 characters';
@@ -342,37 +336,49 @@ class OnboardingService extends ChangeNotifier {
       _usernameCheckResult = 'Checking...';
       _usernameSuggestions = [];
     }
-    
+
     notifyListeners();
   }
-  
+
   void updateFullName(String fullName) {
     _data.fullName = fullName;
+    developer.log('🔵 ONBOARDING: Full name updated to: $fullName', name: 'OnboardingService');
     notifyListeners();
   }
-  
+
+  void updateEmail(String email) {
+    _data.email = email;
+    developer.log('🔵 ONBOARDING: Email updated to: $email', name: 'OnboardingService');
+    notifyListeners();
+  }
+
   void updateBirthday(DateTime birthday) {
     _data.birthday = birthday;
+    developer.log('🔵 ONBOARDING: Birthday updated to: ${birthday.toIso8601String()}', name: 'OnboardingService');
     notifyListeners();
   }
-  
+
   void updateGender(String gender) {
     _data.gender = gender;
+    developer.log('🔵 ONBOARDING: Gender updated to: $gender', name: 'OnboardingService');
     notifyListeners();
   }
-  
+
   void updateNotificationPreference(String key, bool value) {
     _data.notificationPreferences[key] = value;
+    developer.log('🔵 ONBOARDING: Notification preference updated - $key: $value', name: 'OnboardingService');
     notifyListeners();
   }
-  
+
   void updateContactPermission(bool granted) {
     _data.contactPermissionGranted = granted;
+    developer.log('🔵 ONBOARDING: Contact permission updated to: $granted', name: 'OnboardingService');
     notifyListeners();
   }
-  
+
   void updateFriendSuggestions(List<Map<String, dynamic>> suggestions) {
     _data.friendSuggestions = suggestions;
+    developer.log('🔵 ONBOARDING: Friend suggestions updated (${suggestions.length} friends)', name: 'OnboardingService');
     notifyListeners();
   }
   
@@ -381,14 +387,30 @@ class OnboardingService extends ChangeNotifier {
     _isLoading = true;
     _error = null;
     notifyListeners();
-    
+
     const maxRetries = 2; // Less retries for profile completion
     const baseDelay = Duration(milliseconds: 1500);
-    
+
     try {
       debugPrint('🎯 OnboardingService: Completing onboarding (attempt ${retryAttempt + 1})');
-      
+      developer.log('═══════════════════════════════════════════════════', name: 'OnboardingService');
+      developer.log('🚀 STARTING ONBOARDING COMPLETION', name: 'OnboardingService');
+      developer.log('═══════════════════════════════════════════════════', name: 'OnboardingService');
+
       final profileData = _data.toProfileUpdateData();
+
+      // Log all data being sent to server
+      developer.log('📤 DATA BEING SENT TO SERVER:', name: 'OnboardingService');
+      developer.log('  • Username: ${profileData['username']}', name: 'OnboardingService');
+      developer.log('  • Full Name: ${profileData['full_name']}', name: 'OnboardingService');
+      developer.log('  • Birthdate: ${profileData['birthdate']}', name: 'OnboardingService');
+      developer.log('  • Gender: ${profileData['gender']}', name: 'OnboardingService');
+      developer.log('  • Notification Preferences: ${profileData['notification_preferences']}', name: 'OnboardingService');
+      developer.log('  • Privacy Settings: ${profileData['privacy_settings']}', name: 'OnboardingService');
+      developer.log('  • Shopping Interests: ${_data.shoppingInterests}', name: 'OnboardingService');
+      developer.log('  • Contact Permission: ${_data.contactPermissionGranted}', name: 'OnboardingService');
+      developer.log('  • Friend Suggestions Count: ${_data.friendSuggestions.length}', name: 'OnboardingService');
+
       final response = await _apiService.updateUserProfile(
         username: profileData['username'],
         fullName: profileData['full_name'],
@@ -397,13 +419,19 @@ class OnboardingService extends ChangeNotifier {
         notificationPreferences: profileData['notification_preferences'],
         privacySettings: profileData['privacy_settings'],
       );
-      
+
       if (response != null) {
+        developer.log('═══════════════════════════════════════════════════', name: 'OnboardingService');
+        developer.log('✅ SUCCESS! ONBOARDING COMPLETED', name: 'OnboardingService');
+        developer.log('📥 SERVER RESPONSE:', name: 'OnboardingService');
+        developer.log('  $response', name: 'OnboardingService');
+        developer.log('═══════════════════════════════════════════════════', name: 'OnboardingService');
         debugPrint('✅ OnboardingService: Onboarding completed successfully');
         _currentStep = OnboardingStep.complete;
         _error = null; // Clear any previous errors
         return true;
       } else {
+        developer.log('❌ ERROR: Server returned null response', name: 'OnboardingService');
         throw Exception('Server returned null response for profile update');
       }
       
@@ -508,12 +536,6 @@ class OnboardingService extends ChangeNotifier {
     switch (_currentStep) {
       case OnboardingStep.welcome:
         return true; // Always can proceed from welcome
-      case OnboardingStep.featureOrganize:
-        return true; // Always can proceed from feature highlights
-      case OnboardingStep.accountCreation:
-        return false; // Account creation is handled by user choice (sign up or skip)
-      case OnboardingStep.checkUserStatus:
-        return false; // Automatic check, no manual proceed
       case OnboardingStep.username:
         return _data.isUsernameValid && _usernameCheckResult == 'Available';
       case OnboardingStep.usernameConfirmation:
@@ -522,10 +544,12 @@ class OnboardingService extends ChangeNotifier {
         return true; // Profile details are optional
       case OnboardingStep.shoppingInterests:
         return true; // Shopping interests are optional
-      case OnboardingStep.featureShare:
-        return true; // Always can proceed from feature share
       case OnboardingStep.notifications:
         return true; // Notifications are optional
+      case OnboardingStep.accountCreation:
+        return false; // Account creation is handled by user choice (sign up or skip)
+      case OnboardingStep.checkUserStatus:
+        return false; // Automatic check, no manual proceed
       case OnboardingStep.complete:
         return false; // Already complete
     }

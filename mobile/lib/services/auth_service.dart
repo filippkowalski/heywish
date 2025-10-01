@@ -20,7 +20,7 @@ class AuthService extends ChangeNotifier {
   StreamSubscription<firebase.User?>? _authStateSubscription;
   bool _isOnboardingCompleted = false;
   Timer? _tokenRefreshTimer;
-  
+
   User? get currentUser => _currentUser;
   firebase.User? get firebaseUser => _firebaseUser;
   bool get isAuthenticated => _firebaseUser != null;
@@ -99,9 +99,9 @@ class AuthService extends ChangeNotifier {
         };
         
         debugPrint('🔄 AuthService: Sync data: ${syncData.toString()}');
-        
+
         final response = await _apiService.post('/auth/sync', syncData);
-        
+
         _currentUser = User.fromJson(response['user']);
         debugPrint('✅ AuthService: User synced successfully - ID: ${_currentUser?.id}');
         notifyListeners();
@@ -511,24 +511,29 @@ class AuthService extends ChangeNotifier {
       final success = await _apiService.deleteAccount();
       
       if (success) {
-        // Delete Firebase account
+        // Try to delete Firebase account (backend already deleted it, so this might fail)
         if (_firebaseUser != null) {
-          await _firebaseUser!.delete();
-          debugPrint('✅ AuthService: Firebase account deleted');
+          try {
+            await _firebaseUser!.delete();
+            debugPrint('✅ AuthService: Firebase account deleted');
+          } catch (e) {
+            // Backend already deleted the Firebase user, so this error is expected
+            debugPrint('ℹ️ AuthService: Firebase user already deleted by backend: $e');
+          }
         }
-        
+
         // Clear local data
         await _clearLocalData();
-        
+
         // Reset state
         _currentUser = null;
         _firebaseUser = null;
         _isOnboardingCompleted = false;
         _apiService.clearAuthToken();
         _tokenRefreshTimer?.cancel();
-        
+
         notifyListeners();
-        
+
         debugPrint('✅ AuthService: Account deletion completed successfully');
         return true;
       } else {

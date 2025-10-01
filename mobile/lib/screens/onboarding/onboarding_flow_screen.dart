@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
 import '../../services/onboarding_service.dart';
 import '../../common/theme/app_colors.dart';
-import '../../common/utils/native_transitions.dart';
+import '../../common/navigation/native_page_route.dart';
 import 'widgets/welcome_step.dart';
-import 'widgets/feature_organize_step.dart';
-import 'widgets/feature_share_step.dart';
 import 'widgets/account_creation_step.dart';
 import 'widgets/user_status_check_step.dart';
 import 'widgets/username_step.dart';
@@ -22,81 +22,82 @@ class OnboardingFlowScreen extends StatefulWidget {
   State<OnboardingFlowScreen> createState() => _OnboardingFlowScreenState();
 }
 
-class _OnboardingFlowScreenState extends State<OnboardingFlowScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _transitionController;
+class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   OnboardingStep? _previousStep;
-  
-  @override
-  void initState() {
-    super.initState();
-    _transitionController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-  }
-  
-  @override
-  void dispose() {
-    _transitionController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        backgroundColor: AppColors.background,
-        body: SafeArea(
-          child: Consumer<OnboardingService>(
-            builder: (context, onboardingService, child) {
-              // Track step changes for transition direction
-              final currentStep = onboardingService.currentStep;
-              final isForward = _isStepForward(currentStep);
-              // Only show full-screen loader for major operations like completing onboarding
-              if (onboardingService.isLoading && onboardingService.currentStep == OnboardingStep.complete) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                  ),
-                );
-              }
+    final topPadding = MediaQuery.of(context).padding.top;
 
-              return Stack(
-                children: [
-                  // Back button
-                  if (_canGoBack(onboardingService.currentStep))
-                    Positioned(
-                      top: 16,
-                      left: 16,
-                      child: IconButton(
-                        onPressed: onboardingService.previousStep,
-                        icon: const Icon(
-                          Icons.arrow_back_ios,
-                          color: AppColors.textPrimary,
-                        ),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: Consumer<OnboardingService>(
+          builder: (context, onboardingService, child) {
+            // Track step changes for transition direction
+            final currentStep = onboardingService.currentStep;
+            final isForward = _isStepForward(currentStep);
+            // Only show full-screen loader for major operations like completing onboarding
+            if (onboardingService.isLoading && onboardingService.currentStep == OnboardingStep.complete) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.primary,
+                ),
+              );
+            }
+
+            return Stack(
+              children: [
+                // Main content with animated transitions (full screen)
+                Positioned.fill(
+                  child: _buildAnimatedStep(currentStep, isForward),
+                ),
+
+                // Back button (positioned above content with safe area)
+                if (_canGoBack(onboardingService.currentStep))
+                  Positioned(
+                    top: topPadding + 16,
+                    left: 16,
+                    child: IconButton(
+                      onPressed: onboardingService.previousStep,
+                      icon: const Icon(
+                        Icons.arrow_back_ios,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-
-                  // Main content with animated transitions
-                  Positioned.fill(
-                    child: _buildAnimatedStep(currentStep, isForward),
                   ),
-                ],
-              );
-            },
-          ),
+              ],
+            );
+          },
         ),
-      );
+      ),
+    );
   }
 
 
   Widget _buildAnimatedStep(OnboardingStep currentStep, bool isForward) {
+    // Use platform-specific transition duration
+    final duration = Platform.isIOS
+        ? const Duration(milliseconds: 350)
+        : const Duration(milliseconds: 300);
+
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
+      duration: duration,
       transitionBuilder: (Widget child, Animation<double> animation) {
-        return NativeTransitions.animatedPageTransition(
+        // Create a dummy secondary animation for the transition
+        final secondaryAnimation = const AlwaysStoppedAnimation<double>(0.0);
+
+        return NativeTransitions.buildPageTransition(
           child: child,
           animation: animation,
+          secondaryAnimation: secondaryAnimation,
           isForward: isForward,
         );
       },
@@ -111,8 +112,12 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen>
     switch (currentStep) {
       case OnboardingStep.welcome:
         return const WelcomeStep();
-      case OnboardingStep.featureOrganize:
-        return const FeatureOrganizeStep();
+      case OnboardingStep.profileDetails:
+        return const ProfileDetailsStep();
+      case OnboardingStep.shoppingInterests:
+        return const ShoppingInterestsStep();
+      case OnboardingStep.notifications:
+        return const NotificationsStep();
       case OnboardingStep.accountCreation:
         return const AccountCreationStep();
       case OnboardingStep.checkUserStatus:
@@ -121,14 +126,6 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen>
         return const UsernameStep();
       case OnboardingStep.usernameConfirmation:
         return const UsernameConfirmationStep();
-      case OnboardingStep.profileDetails:
-        return const ProfileDetailsStep();
-      case OnboardingStep.shoppingInterests:
-        return const ShoppingInterestsStep();
-      case OnboardingStep.featureShare:
-        return const FeatureShareStep();
-      case OnboardingStep.notifications:
-        return const NotificationsStep();
       case OnboardingStep.complete:
         return const OnboardingCompleteStep();
     }
@@ -154,11 +151,11 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen>
   bool _canGoBack(OnboardingStep step) {
     // Don't show back button on certain steps
     return step != OnboardingStep.welcome &&
-           step != OnboardingStep.featureOrganize &&
+           step != OnboardingStep.profileDetails &&
            step != OnboardingStep.accountCreation &&
            step != OnboardingStep.checkUserStatus &&
+           step != OnboardingStep.username &&
            step != OnboardingStep.usernameConfirmation &&
-           step != OnboardingStep.featureShare &&
            step != OnboardingStep.complete;
   }
 }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:auto_size_text/auto_size_text.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../../services/onboarding_service.dart';
+import '../../../theme/app_theme.dart';
 import '../../../common/theme/app_colors.dart';
+import 'sign_in_bottom_sheet.dart';
 
 class WelcomeStep extends StatefulWidget {
   const WelcomeStep({super.key});
@@ -12,207 +14,277 @@ class WelcomeStep extends StatefulWidget {
 }
 
 class _WelcomeStepState extends State<WelcomeStep>
-    with TickerProviderStateMixin {
-  late AnimationController _fadeController;
-  late AnimationController _slideController;
-  late AnimationController _scaleController;
-  
-  late Animation<double> _helloFadeAnimation;
-  late Animation<double> _heyWishFadeAnimation;
-  late Animation<Offset> _helloSlideAnimation;
-  late Animation<Offset> _heyWishSlideAnimation;
-  late Animation<double> _scaleAnimation;
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _titleFadeAnimation;
+  late Animation<double> _subtitleFadeAnimation;
+  late Animation<double> _descriptionFadeAnimation;
+  late Animation<double> _buttonFadeAnimation;
+  late Animation<Offset> _titleSlideAnimation;
+  late Animation<Offset> _subtitleSlideAnimation;
+  late Animation<Offset> _descriptionSlideAnimation;
+  late Animation<Offset> _buttonSlideAnimation;
 
   @override
   void initState() {
     super.initState();
 
-    // Initialize animation controllers
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+    // Initialize animation controller
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1800),
       vsync: this,
     );
 
-    // Create fade animations
-    _helloFadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-    ));
+    // Create staggered fade animations
+    _titleFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.3, curve: Curves.easeOut),
+      ),
+    );
 
-    _heyWishFadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: const Interval(0.4, 0.9, curve: Curves.easeOut),
-    ));
+    _subtitleFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.5, curve: Curves.easeOut),
+      ),
+    );
 
-    // Create slide animations
-    _helloSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5),
+    _descriptionFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.4, 0.7, curve: Curves.easeOut),
+      ),
+    );
+
+    _buttonFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
+      ),
+    );
+
+    // Create staggered slide animations
+    _titleSlideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: const Interval(0.0, 0.5, curve: Curves.elasticOut),
-    ));
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.3, curve: Curves.easeOutCubic),
+      ),
+    );
 
-    _heyWishSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5),
+    _subtitleSlideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: const Interval(0.4, 0.9, curve: Curves.elasticOut),
-    ));
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.5, curve: Curves.easeOutCubic),
+      ),
+    );
 
-    // Create scale animation for background
-    _scaleAnimation = Tween<double>(
-      begin: 1.1,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _scaleController,
-      curve: Curves.easeOut,
-    ));
+    _descriptionSlideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.4, 0.7, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _buttonSlideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.6, 1.0, curve: Curves.easeOutCubic),
+      ),
+    );
 
     // Start animations
-    _startAnimations();
-  }
-
-  void _startAnimations() async {
-    // Start background scale animation
-    _scaleController.forward();
-    
-    // Wait a bit then start text animations
-    await Future.delayed(const Duration(milliseconds: 300));
-    _fadeController.forward();
-    _slideController.forward();
-
-    // Auto-transition after animations complete
-    await Future.delayed(const Duration(milliseconds: 2000));
-    if (mounted) {
-      context.read<OnboardingService>().nextStep();
-    }
+    _animationController.forward();
   }
 
   @override
   void dispose() {
-    _fadeController.dispose();
-    _slideController.dispose();
-    _scaleController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image with scale animation
-          AnimatedBuilder(
-            animation: _scaleAnimation,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _scaleAnimation.value,
-                child: Container(
-                  width: screenSize.width,
-                  height: screenSize.height,
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage('assets/image/bg.jpg'),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              );
-            },
+          // Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/onboarding/welcome_bg.jpg',
+              fit: BoxFit.cover,
+            ),
           ),
 
-
-          // Animated Text Content
+          // Gradient overlay for better text readability
           Positioned.fill(
-            child: Column(
-              children: [
-                const Spacer(flex: 2),
-                
-                Expanded(
-                  flex: 1,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 50.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // "Hello," text
-                        AnimatedBuilder(
-                          animation: Listenable.merge([_helloFadeAnimation, _helloSlideAnimation]),
-                          builder: (context, child) {
-                            return FadeTransition(
-                              opacity: _helloFadeAnimation,
-                              child: SlideTransition(
-                                position: _helloSlideAnimation,
-                                child: AutoSizeText(
-                                  'Hello,',
-                                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                                    fontWeight: FontWeight.normal,
-                                    color: Colors.black87,
-                                    height: 1.0,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  minFontSize: 24,
-                                  maxFontSize: 48,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.3),
+                    Colors.black.withValues(alpha: 0.6),
+                  ],
+                  stops: const [0.0, 1.0],
+                ),
+              ),
+            ),
+          ),
 
-                        const SizedBox(height: 8),
+          // Content
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: 32,
+                right: 32,
+                bottom: bottomPadding + 32,
+                top: 48,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Spacer(),
 
-                        // "I'm HeyWish" text
-                        AnimatedBuilder(
-                          animation: Listenable.merge([_heyWishFadeAnimation, _heyWishSlideAnimation]),
-                          builder: (context, child) {
-                            return FadeTransition(
-                              opacity: _heyWishFadeAnimation,
-                              child: SlideTransition(
-                                position: _heyWishSlideAnimation,
-                                child: AutoSizeText(
-                                  'I\'m HeyWish',
-                                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                    height: 1.0,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  minFontSize: 24,
-                                  maxFontSize: 48,
-                                ),
-                              ),
-                            );
-                          },
+                  // Animated title
+                  FadeTransition(
+                    opacity: _titleFadeAnimation,
+                    child: SlideTransition(
+                      position: _titleSlideAnimation,
+                      child: Text(
+                        'onboarding.welcome_intro'.tr(),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          height: 1.1,
+                          shadows: [
+                            Shadow(
+                              offset: const Offset(0, 2),
+                              blurRadius: 8,
+                              color: Colors.black.withValues(alpha: 0.3),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-                
-                const Spacer(flex: 2),
-              ],
+
+                  const SizedBox(height: 16),
+
+                  // Animated description
+                  FadeTransition(
+                    opacity: _descriptionFadeAnimation,
+                    child: SlideTransition(
+                      position: _descriptionSlideAnimation,
+                      child: Text(
+                        'onboarding.welcome_description'.tr(),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          height: 1.5,
+                          shadows: [
+                            Shadow(
+                              offset: const Offset(0, 1),
+                              blurRadius: 4,
+                              color: Colors.black.withValues(alpha: 0.3),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 48),
+
+                  // Animated Get Started button
+                  FadeTransition(
+                    opacity: _buttonFadeAnimation,
+                    child: SlideTransition(
+                      position: _buttonSlideAnimation,
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            context.read<OnboardingService>().nextStep();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryAccent,
+                            foregroundColor: Colors.white,
+                            elevation: 4,
+                            shadowColor: Colors.black.withValues(alpha: 0.3),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'onboarding.get_started'.tr(),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // "Already have an account?" link
+                  FadeTransition(
+                    opacity: _buttonFadeAnimation,
+                    child: SlideTransition(
+                      position: _buttonSlideAnimation,
+                      child: Center(
+                        child: TextButton(
+                          onPressed: () async {
+                            await SignInBottomSheet.show(context);
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 16,
+                            ),
+                          ),
+                          child: Text(
+                            'auth.already_have_account'.tr(),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              shadows: [
+                                Shadow(
+                                  offset: Offset(0, 1),
+                                  blurRadius: 4,
+                                  color: Colors.black26,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

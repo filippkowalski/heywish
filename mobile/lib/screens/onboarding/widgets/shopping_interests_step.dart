@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'dart:developer' as developer;
 import '../../../services/onboarding_service.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/widgets/primary_button.dart';
@@ -12,95 +13,83 @@ class ShoppingInterestsStep extends StatefulWidget {
   State<ShoppingInterestsStep> createState() => _ShoppingInterestsStepState();
 }
 
-class _ShoppingInterestsStepState extends State<ShoppingInterestsStep>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
-
-  final List<ShoppingCategory> _categories = [
+class _ShoppingInterestsStepState extends State<ShoppingInterestsStep> {
+  List<ShoppingCategory> get _categories => [
     ShoppingCategory(
       id: 'fashion',
       emoji: '👕',
-      label: 'Fashion',
-      color: Color(0xFFFFB6C1),
+      label: 'shopping_interests.category_fashion'.tr(),
+      color: const Color(0xFFEC4899), // Pink
     ),
     ShoppingCategory(
       id: 'beauty',
       emoji: '💄',
-      label: 'Beauty',
-      color: Color(0xFFDDA0DD),
+      label: 'shopping_interests.category_beauty'.tr(),
+      color: const Color(0xFFF97316), // Orange
     ),
     ShoppingCategory(
       id: 'electronics',
       emoji: '📱',
-      label: 'Electronics',
-      color: Color(0xFF87CEEB),
+      label: 'shopping_interests.category_electronics'.tr(),
+      color: const Color(0xFF3B82F6), // Blue
     ),
     ShoppingCategory(
       id: 'home',
       emoji: '🏠',
-      label: 'Home & Decor',
-      color: Color(0xFFFFA07A),
+      label: 'shopping_interests.category_home'.tr(),
+      color: const Color(0xFF10B981), // Green
     ),
     ShoppingCategory(
       id: 'books',
       emoji: '📚',
-      label: 'Books',
-      color: Color(0xFF98D8C8),
+      label: 'shopping_interests.category_books'.tr(),
+      color: const Color(0xFF8B5CF6), // Purple
     ),
     ShoppingCategory(
       id: 'sports',
       emoji: '⚽',
-      label: 'Sports',
-      color: Color(0xFFFFD700),
+      label: 'shopping_interests.category_sports'.tr(),
+      color: const Color(0xFFF59E0B), // Amber
     ),
     ShoppingCategory(
       id: 'toys',
       emoji: '🧸',
-      label: 'Toys & Games',
-      color: Color(0xFFFF69B4),
+      label: 'shopping_interests.category_toys'.tr(),
+      color: const Color(0xFFEF4444), // Red
     ),
     ShoppingCategory(
       id: 'jewelry',
       emoji: '💎',
-      label: 'Jewelry',
-      color: Color(0xFFE6E6FA),
+      label: 'shopping_interests.category_jewelry'.tr(),
+      color: const Color(0xFF06B6D4), // Cyan
+    ),
+    ShoppingCategory(
+      id: 'food',
+      emoji: '🍔',
+      label: 'shopping_interests.category_food'.tr(),
+      color: const Color(0xFFFBBF24), // Yellow
+    ),
+    ShoppingCategory(
+      id: 'art',
+      emoji: '🎨',
+      label: 'shopping_interests.category_art'.tr(),
+      color: const Color(0xFFA855F7), // Purple
+    ),
+    ShoppingCategory(
+      id: 'music',
+      emoji: '🎵',
+      label: 'shopping_interests.category_music'.tr(),
+      color: const Color(0xFF14B8A6), // Teal
+    ),
+    ShoppingCategory(
+      id: 'outdoor',
+      emoji: '⛺',
+      label: 'shopping_interests.category_outdoor'.tr(),
+      color: const Color(0xFF22C55E), // Green
     ),
   ];
 
   Set<String> _selectedCategories = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOut,
-      ),
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOut,
-      ),
-    );
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
 
   void _toggleCategory(String categoryId) {
     setState(() {
@@ -114,128 +103,205 @@ class _ShoppingInterestsStepState extends State<ShoppingInterestsStep>
     // Update onboarding data
     final onboardingService = context.read<OnboardingService>();
     onboardingService.data.shoppingInterests = _selectedCategories.toList();
+    developer.log(
+      '🔵 ONBOARDING: Shopping interests updated: ${_selectedCategories.toList()}',
+      name: 'ShoppingInterestsStep',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
+    final mediaQuery = MediaQuery.of(context);
+    final topPadding = mediaQuery.padding.top;
+    final bottomPadding = mediaQuery.padding.bottom;
+    final canContinue = _selectedCategories.isNotEmpty;
+
+    return Container(
+      color: Colors.white,
       child: Column(
         children: [
-          const SizedBox(height: 40),
-
-          // Title
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: Text(
-              'shopping_interests.title'.tr(),
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-              textAlign: TextAlign.center,
+          // App bar with Skip button
+          Container(
+            padding: EdgeInsets.only(
+              left: 24.0,
+              right: 24.0,
+              top: topPadding + 16.0,
+              bottom: 16.0,
             ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // Subtitle
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: Text(
-              'shopping_interests.subtitle'.tr(),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-
-          const SizedBox(height: 40),
-
-          // Category Grid
-          Expanded(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: ScaleTransition(
-                scale: _scaleAnimation,
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 1.5,
-                  ),
-                  itemCount: _categories.length,
-                  itemBuilder: (context, index) {
-                    final category = _categories[index];
-                    final isSelected = _selectedCategories.contains(category.id);
-
-                    return GestureDetector(
-                      onTap: () => _toggleCategory(category.id),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? category.color.withOpacity(0.2)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected
-                                ? category.color
-                                : AppColors.outline.withOpacity(0.3),
-                            width: isSelected ? 2 : 1,
-                          ),
-                          boxShadow: [
-                            if (isSelected)
-                              BoxShadow(
-                                color: category.color.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              category.emoji,
-                              style: const TextStyle(fontSize: 32),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              category.label,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontWeight: isSelected
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
-                                    color: AppColors.textPrimary,
-                                  ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                bottom: BorderSide(
+                  color: AppColors.outline.withValues(alpha: 0.1),
+                  width: 1,
                 ),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => context.read<OnboardingService>().nextStep(),
+                  child: Text(
+                    'app.skip'.tr(),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Scrollable content
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(
+                left: 24.0,
+                right: 24.0,
+                top: 0.0,
+                bottom: 24.0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Title
+                  Text(
+                    'shopping_interests.title'.tr(),
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.5,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Subtitle
+                  Text(
+                    'shopping_interests.subtitle'.tr(),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // Category chips wrapped
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children:
+                        _categories.map((category) {
+                          final isSelected = _selectedCategories.contains(
+                            category.id,
+                          );
+                          return _buildCategoryChip(category, isSelected);
+                        }).toList(),
+                  ),
+
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
           ),
 
-          const SizedBox(height: 24),
+          // Fixed footer
+          Container(
+            padding: EdgeInsets.only(
+              left: 24.0,
+              right: 24.0,
+              top: 20.0,
+              bottom: bottomPadding + 32.0,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                top: BorderSide(
+                  color: AppColors.outline.withValues(alpha: 0.1),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Selection count
+                if (_selectedCategories.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      'shopping_interests.selected_count'.tr(namedArgs: {'count': _selectedCategories.length.toString()}),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                        height: 1.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
 
-          // Continue Button
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: PrimaryButton(
-              onPressed: () => context.read<OnboardingService>().nextStep(),
-              text: 'app.next'.tr(),
+                // Continue button
+                PrimaryButton(
+                  onPressed:
+                      canContinue
+                          ? () => context.read<OnboardingService>().nextStep()
+                          : null,
+                  text: 'app.continue'.tr(),
+                ),
+              ],
             ),
           ),
-
-          const SizedBox(height: 16),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryChip(ShoppingCategory category, bool isSelected) {
+    return GestureDetector(
+      onTap: () => _toggleCategory(category.id),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? category.color : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color:
+                isSelected
+                    ? category.color
+                    : Colors.black.withValues(alpha: 0.1),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(category.emoji, style: const TextStyle(fontSize: 18)),
+            const SizedBox(width: 8),
+            Text(
+              category.label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: isSelected ? Colors.white : AppColors.textPrimary,
+                letterSpacing: -0.2,
+              ),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 6),
+              const Icon(Icons.check, color: Colors.white, size: 16),
+            ],
+          ],
+        ),
       ),
     );
   }

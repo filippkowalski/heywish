@@ -32,8 +32,11 @@ class _SplashScreenState extends State<SplashScreen> {
     // Reset onboarding status to force them to restart
     if (authService.isAuthenticated &&
         authService.isOnboardingCompleted &&
-        (authService.currentUser == null || authService.currentUser?.username == null)) {
-      debugPrint('⚠️ User marked as onboarded but has no username - resetting onboarding');
+        (authService.currentUser == null ||
+            authService.currentUser?.username == null)) {
+      debugPrint(
+        '⚠️ User marked as onboarded but has no username - resetting onboarding',
+      );
       await authService.resetOnboardingStatus();
     }
 
@@ -79,12 +82,12 @@ class _SplashScreenState extends State<SplashScreen> {
                     fontSize: 48,
                   ),
                 ),
-                
+
                 const SizedBox(height: 8),
-                
+
                 // Tagline
                 Text(
-                  'Your wishes, delivered.',
+                  'All your wishes, in one place.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Colors.black.withOpacity(0.7),
                     fontSize: 18,

@@ -132,8 +132,8 @@ class _GenderStepState extends State<GenderStep> {
                             decoration: BoxDecoration(
                               color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : Colors.white,
                               border: Border.all(
-                                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey.shade300,
-                                width: isSelected ? 2 : 1,
+                                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.black.withValues(alpha: 0.1),
+                                width: 1,
                               ),
                               borderRadius: BorderRadius.circular(16),
                             ),
