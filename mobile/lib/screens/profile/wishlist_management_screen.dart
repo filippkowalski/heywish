@@ -22,10 +22,15 @@ class _WishlistManagementScreenState extends State<WishlistManagementScreen> {
   @override
   void initState() {
     super.initState();
-    _loadWishlists();
+    // Schedule the load after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadWishlists();
+    });
   }
 
   Future<void> _loadWishlists() async {
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
     });

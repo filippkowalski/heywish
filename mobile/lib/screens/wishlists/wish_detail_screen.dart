@@ -34,16 +34,7 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
 
   void _loadWish() {
     final wishlistService = context.read<WishlistService>();
-
-    // Collect all wishes from all sources
-    final allWishes = <Wish>[
-      ...wishlistService.uncategorizedWishes,
-      ...wishlistService.wishlists.expand((wl) => wl.wishes ?? []),
-    ];
-
-    // Find the wish by ID
-    wish = allWishes.where((w) => w.id == widget.wishId).firstOrNull;
-
+    wish = wishlistService.findWishById(widget.wishId);
     setState(() {});
   }
 

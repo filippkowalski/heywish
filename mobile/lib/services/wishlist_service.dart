@@ -33,10 +33,29 @@ class WishlistService extends ChangeNotifier {
   Wishlist? get currentWishlist => _currentWishlist;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  
+
+  /// Get all wishes from all sources in a flat list
+  List<Wish> get allWishes => [
+    ...uncategorizedWishes,
+    ...wishlists.expand((wl) => wl.wishes ?? []),
+  ];
+
   /// Get a cached wishlist by ID, useful for instant access
   Wishlist? getCachedWishlist(String id) {
     return _wishlists.where((w) => w.id == id).firstOrNull;
+  }
+
+  /// Find a wish by ID across all wishlists and uncategorized wishes
+  Wish? findWishById(String wishId) {
+    return allWishes.where((w) => w.id == wishId).firstOrNull;
+  }
+
+  /// Helper method to update cached wishlist in the main list
+  void _updateCachedWishlist(String wishlistId, Wishlist updatedWishlist) {
+    final index = _wishlists.indexWhere((w) => w.id == wishlistId);
+    if (index != -1) {
+      _wishlists[index] = updatedWishlist;
+    }
   }
   
   Future<void> fetchWishlists({bool preloadItems = true}) async {
@@ -347,12 +366,7 @@ class WishlistService extends ChangeNotifier {
       );
       _currentWishlist = updatedWishlist;
 
-      // Update cached wishlist in main list
-      final index = _wishlists.indexWhere((w) => w.id == wishlistId);
-      if (index != -1) {
-        _wishlists[index] = updatedWishlist;
-      }
-
+      _updateCachedWishlist(wishlistId, updatedWishlist);
       notifyListeners();
     }
 
@@ -408,13 +422,8 @@ class WishlistService extends ChangeNotifier {
           wishes: updatedWishes,
         );
         _currentWishlist = updatedWishlist;
-        
-        // Update cached wishlist in main list
-        final index = _wishlists.indexWhere((w) => w.id == wishlistId);
-        if (index != -1) {
-          _wishlists[index] = updatedWishlist;
-        }
-        
+
+        _updateCachedWishlist(wishlistId, updatedWishlist);
         notifyListeners();
       }
       
@@ -482,12 +491,7 @@ class WishlistService extends ChangeNotifier {
       // Refresh the current wishlist and cached data
       if (_currentWishlist != null) {
         await fetchWishlist(_currentWishlist!.id);
-        
-        // Also refresh the cached wishlist in the main list
-        final index = _wishlists.indexWhere((w) => w.id == _currentWishlist!.id);
-        if (index != -1) {
-          _wishlists[index] = _currentWishlist!;
-        }
+        _updateCachedWishlist(_currentWishlist!.id, _currentWishlist!);
       }
       
       return true;
@@ -567,12 +571,7 @@ class WishlistService extends ChangeNotifier {
       // Refresh the current wishlist and cached data
       if (_currentWishlist != null) {
         await fetchWishlist(_currentWishlist!.id);
-        
-        // Also refresh the cached wishlist in the main list
-        final index = _wishlists.indexWhere((w) => w.id == _currentWishlist!.id);
-        if (index != -1) {
-          _wishlists[index] = _currentWishlist!;
-        }
+        _updateCachedWishlist(_currentWishlist!.id, _currentWishlist!);
       }
       
       return true;
@@ -591,12 +590,7 @@ class WishlistService extends ChangeNotifier {
       // Refresh the current wishlist and cached data
       if (_currentWishlist != null) {
         await fetchWishlist(_currentWishlist!.id);
-        
-        // Also refresh the cached wishlist in the main list
-        final index = _wishlists.indexWhere((w) => w.id == _currentWishlist!.id);
-        if (index != -1) {
-          _wishlists[index] = _currentWishlist!;
-        }
+        _updateCachedWishlist(_currentWishlist!.id, _currentWishlist!);
       }
       
       return true;
