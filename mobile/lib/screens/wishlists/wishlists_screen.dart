@@ -207,6 +207,9 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
   }
 
   Widget _buildContent(List<Wishlist> wishlists) {
+    final wishlistService = context.watch<WishlistService>();
+    final uncategorizedWishes = wishlistService.uncategorizedWishes;
+
     // Collect all wishes from all wishlists
     final allWishes = <Wish>[];
     for (final wishlist in wishlists) {
@@ -215,15 +218,21 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
       }
     }
 
+    // Add uncategorized wishes
+    allWishes.addAll(uncategorizedWishes);
+
     // Filter wishes by selected wishlist
     final filteredWishes = _selectedWishlistFilter == null
         ? allWishes
-        : allWishes.where((wish) => wish.wishlistId == _selectedWishlistFilter).toList();
+        : _selectedWishlistFilter == 'uncategorized'
+            ? uncategorizedWishes
+            : allWishes.where((wish) => wish.wishlistId == _selectedWishlistFilter).toList();
 
     return Column(
       children: [
         // Tabs for filtering by wishlist
-        if (wishlists.isNotEmpty) _buildWishlistTabs(wishlists),
+        if (wishlists.isNotEmpty || uncategorizedWishes.isNotEmpty)
+          _buildWishlistTabs(wishlists, uncategorizedWishes.length),
 
         // Wishes list
         Expanded(
@@ -235,10 +244,14 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
                   separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final wish = filteredWishes[index];
-                    final wishlist = wishlists.firstWhere(
-                      (w) => w.id == wish.wishlistId,
-                      orElse: () => wishlists.first,
-                    );
+                    Wishlist? wishlist;
+                    if (wish.wishlistId != null) {
+                      try {
+                        wishlist = wishlists.firstWhere((w) => w.id == wish.wishlistId);
+                      } catch (e) {
+                        wishlist = null;
+                      }
+                    }
                     return _WishCard(wish: wish, wishlist: wishlist);
                   },
                 ),
@@ -247,10 +260,10 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildWishlistTabs(List<Wishlist> wishlists) {
+  Widget _buildWishlistTabs(List<Wishlist> wishlists, int uncategorizedCount) {
     return Container(
       height: 50,
-      margin: const EdgeInsets.only(top: 8),
+      margin: const EdgeInsets.only(top: 8, bottom: 8),
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -266,12 +279,28 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
             },
           ),
           const SizedBox(width: 8),
+          // Uncategorized tab (only show if there are uncategorized wishes)
+          if (uncategorizedCount > 0) ...[
+            _buildTabChip(
+              label: 'Uncategorized',
+              count: uncategorizedCount,
+              isSelected: _selectedWishlistFilter == 'uncategorized',
+              onTap: () {
+                setState(() {
+                  _selectedWishlistFilter = 'uncategorized';
+                });
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
           // Wishlist tabs
           ...wishlists.map((wishlist) {
+            final wishCount = wishlist.wishes?.length ?? 0;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: _buildTabChip(
                 label: wishlist.name,
+                count: wishCount,
                 isSelected: _selectedWishlistFilter == wishlist.id,
                 onTap: () {
                   setState(() {
@@ -288,28 +317,65 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
 
   Widget _buildTabChip({
     required String label,
+    int? count,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primary : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(20),
+          color: isSelected ? AppTheme.primary : Colors.white,
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppTheme.primary : Colors.grey.shade300,
-            width: 1,
+            color: isSelected ? AppTheme.primary : Colors.grey.shade200,
+            width: isSelected ? 2 : 1,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppTheme.primary.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppTheme.primary,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            fontSize: 14,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : AppTheme.primary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                fontSize: 14,
+                letterSpacing: -0.1,
+              ),
+            ),
+            if (count != null && count > 0) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.white.withValues(alpha: 0.25)
+                      : AppTheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  count.toString(),
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : AppTheme.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
@@ -424,9 +490,9 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
 
 class _WishCard extends StatefulWidget {
   final Wish wish;
-  final Wishlist wishlist;
+  final Wishlist? wishlist;
 
-  const _WishCard({required this.wish, required this.wishlist});
+  const _WishCard({required this.wish, this.wishlist});
 
   @override
   State<_WishCard> createState() => _WishCardState();
@@ -462,8 +528,10 @@ class _WishCardState extends State<_WishCard> {
           onTapUp: (_) => setState(() => _isPressed = false),
           onTapCancel: () => setState(() => _isPressed = false),
           onTap: () {
-            // Navigate to wish detail (you might need to add this route)
-            context.push('/wishlists/${widget.wishlist.id}/items/${widget.wish.id}');
+            // Navigate to wish detail if wishlist exists
+            if (widget.wishlist != null) {
+              context.push('/wishlists/${widget.wishlist!.id}/items/${widget.wish.id}');
+            }
           },
           child: Padding(
             padding: const EdgeInsets.all(12.0),
@@ -516,7 +584,7 @@ class _WishCardState extends State<_WishCard> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        widget.wishlist.name,
+                        widget.wishlist?.name ?? 'Uncategorized',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.grey.shade600,
                             ),

@@ -18,16 +18,18 @@ List<Wishlist> _parseWishlistsInIsolate(List<dynamic> wishlistsJson) {
 
 class WishlistService extends ChangeNotifier {
   final ApiService _apiService;
-  
-  WishlistService({ApiService? apiService}) 
+
+  WishlistService({ApiService? apiService})
       : _apiService = apiService ?? ApiService();
-  
+
   List<Wishlist> _wishlists = [];
+  List<Wish> _uncategorizedWishes = [];
   Wishlist? _currentWishlist;
   bool _isLoading = false;
   String? _error;
-  
+
   List<Wishlist> get wishlists => _wishlists;
+  List<Wish> get uncategorizedWishes => _uncategorizedWishes;
   Wishlist? get currentWishlist => _currentWishlist;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -56,7 +58,7 @@ class WishlistService extends ChangeNotifier {
       
       if (response != null && response['wishlists'] != null) {
         final wishlistsJson = response['wishlists'] as List;
-        
+
         // Parse wishlists off main thread if we have many items
         if (wishlistsJson.length > 10) {
           _wishlists = await compute(_parseWishlistsInIsolate, wishlistsJson);
@@ -65,9 +67,20 @@ class WishlistService extends ChangeNotifier {
               .map((json) => Wishlist.fromJson(json))
               .toList();
         }
-        
+
         print('📋 WishlistService: Parsed ${_wishlists.length} wishlists');
-        
+
+        // Parse uncategorized wishes
+        if (response['uncategorizedWishes'] != null) {
+          final uncategorizedJson = response['uncategorizedWishes'] as List;
+          _uncategorizedWishes = uncategorizedJson
+              .map((json) => Wish.fromJson(json))
+              .toList();
+          print('📋 WishlistService: Parsed ${_uncategorizedWishes.length} uncategorized wishes');
+        } else {
+          _uncategorizedWishes = [];
+        }
+
         // Preload all wishlist details with items if requested
         if (preloadItems && _wishlists.isNotEmpty) {
           print('📋 WishlistService: Preloading items for ${_wishlists.length} wishlists...');
@@ -76,6 +89,7 @@ class WishlistService extends ChangeNotifier {
       } else {
         print('📋 WishlistService: Response is null or missing wishlists key');
         _wishlists = [];
+        _uncategorizedWishes = [];
       }
       _error = null;
     } catch (e) {
