@@ -251,9 +251,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     // Filter wishes by selected wishlist
     final filteredWishes = _selectedWishlistFilter == null
         ? allWishes
-        : _selectedWishlistFilter == 'uncategorized'
-            ? uncategorizedWishes
-            : allWishes.where((wish) => wish.wishlistId == _selectedWishlistFilter).toList();
+        : allWishes.where((wish) => wish.wishlistId == _selectedWishlistFilter).toList();
 
     return Column(
       children: [
@@ -265,7 +263,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
         Expanded(
           child: filteredWishes.isEmpty
               ? _buildEmptyWishesState()
-              : _selectedWishlistFilter != null && _selectedWishlistFilter != 'uncategorized'
+              : _selectedWishlistFilter != null
                   // Reorderable list for specific wishlists
                   ? ReorderableListView.builder(
                       padding: const EdgeInsets.all(20.0),
@@ -319,7 +317,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
-          // "All" tab
+          // "All" tab (includes uncategorized wishes)
           _buildTabChip(
             label: 'All',
             isSelected: _selectedWishlistFilter == null,
@@ -330,20 +328,6 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
             },
           ),
           const SizedBox(width: 8),
-          // Uncategorized tab (only show if there are uncategorized wishes)
-          if (uncategorizedCount > 0) ...[
-            _buildTabChip(
-              label: 'Uncategorized',
-              count: uncategorizedCount,
-              isSelected: _selectedWishlistFilter == 'uncategorized',
-              onTap: () {
-                setState(() {
-                  _selectedWishlistFilter = 'uncategorized';
-                });
-              },
-            ),
-            const SizedBox(width: 8),
-          ],
           // Wishlist tabs
           ...wishlists.map((wishlist) {
             final wishCount = wishlist.wishes?.length ?? 0;

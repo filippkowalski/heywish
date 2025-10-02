@@ -43,261 +43,243 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
     if (wish == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Item Details')),
-        body: Center(
+        body: const Center(
           child: Text('Item not found'),
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(wish!.title),
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'edit') {
-                _editWish();
-              } else if (value == 'delete') {
-                _deleteWish();
-              } else if (value == 'reserve') {
-                _toggleReservation();
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit),
-                    SizedBox(width: 8),
-                    Text('Edit'),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'reserve',
-                child: Row(
-                  children: [
-                    Icon(wish!.isReserved ? Icons.remove_circle : Icons.bookmark),
-                    SizedBox(width: 8),
-                    Text(wish!.isReserved ? 'Unreserve' : 'Reserve'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Delete', style: TextStyle(color: Colors.red)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Image Section
-            if (wish!.imageUrl != null) ...[
-              Container(
-                height: 250,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.grey.shade100,
-                ),
-                child: CachedImageWidget(
-                  imageUrl: wish!.imageUrl,
-                  fit: BoxFit.cover,
-                  borderRadius: BorderRadius.circular(12),
-                  errorWidget: Center(
-                    child: Icon(
-                      Icons.card_giftcard,
-                      size: 64,
-                      color: Colors.grey.shade300,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            // Title and Status
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      wish!.title,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (wish!.description != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        wish!.description!,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    Row(
+      body: CustomScrollView(
+        slivers: [
+          // App bar with image background
+          SliverAppBar(
+            expandedHeight: wish!.imageUrl != null ? 300.0 : 120.0,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              background: wish!.imageUrl != null
+                  ? Stack(
+                      fit: StackFit.expand,
                       children: [
-                        if (wish!.price != null) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '${wish!.currency ?? 'USD'} ${wish!.price!.toStringAsFixed(2)}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                        CachedImageWidget(
+                          imageUrl: wish!.imageUrl,
+                          fit: BoxFit.cover,
+                          errorWidget: Container(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            child: Icon(
+                              Icons.card_giftcard,
+                              size: 64,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                        ],
-                        if (wish!.isReserved)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.bookmark,
-                                  size: 16,
-                                  color: Colors.blue,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Reserved',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
-                                      ?.copyWith(
-                                        color: Colors.blue,
-                                      ),
-                                ),
+                        ),
+                        // Gradient overlay for better text readability
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.3),
                               ],
                             ),
                           ),
+                        ),
+                      ],
+                    )
+                  : null,
+            ),
+            actions: [
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    _editWish();
+                  } else if (value == 'delete') {
+                    _deleteWish();
+                  } else if (value == 'reserve') {
+                    _toggleReservation();
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_outlined),
+                        SizedBox(width: 12),
+                        Text('Edit'),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  PopupMenuItem(
+                    value: 'reserve',
+                    child: Row(
+                      children: [
+                        Icon(wish!.isReserved ? Icons.bookmark_remove_outlined : Icons.bookmark_add_outlined),
+                        const SizedBox(width: 12),
+                        Text(wish!.isReserved ? 'Unreserve' : 'Reserve'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+                        const SizedBox(width: 12),
+                        Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
+            ],
+          ),
 
-            const SizedBox(height: 16),
+          // Content
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  Text(
+                    wish!.title,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
-            // Details Card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                  // Price and Status badges
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (wish!.price != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${wish!.currency ?? 'USD'} ${wish!.price!.toStringAsFixed(2)}',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      if (wish!.isReserved)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.secondaryContainer,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.bookmark,
+                                size: 16,
+                                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Reserved',
+                                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+
+                  if (wish!.description != null) ...[
+                    const SizedBox(height: 24),
                     Text(
-                      'Details',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      wish!.description!,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+
+                  // Additional details
+                  if (wish!.brand != null || wish!.category != null || wish!.notes != null) ...[
+                    const SizedBox(height: 32),
+                    ...[
+                      if (wish!.brand != null)
+                        _DetailItem(
+                          icon: Icons.local_offer_outlined,
+                          label: 'Brand',
+                          value: wish!.brand!,
+                        ),
+                      if (wish!.category != null)
+                        _DetailItem(
+                          icon: Icons.category_outlined,
+                          label: 'Category',
+                          value: wish!.category!,
+                        ),
+                      if (wish!.notes != null)
+                        _DetailItem(
+                          icon: Icons.note_outlined,
+                          label: 'Notes',
+                          value: wish!.notes!,
+                        ),
+                      _DetailItem(
+                        icon: Icons.calendar_today_outlined,
+                        label: 'Added',
+                        value: _formatDate(wish!.createdAt),
+                      ),
+                    ],
+                  ],
+
+                  const SizedBox(height: 32),
+
+                  // Action buttons
+                  if (wish!.url != null) ...[
+                    FilledButton.icon(
+                      onPressed: _openUrl,
+                      icon: const Icon(Icons.open_in_new),
+                      label: const Text('View Product'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _DetailRow(
-                      icon: Icons.priority_high,
-                      label: 'Priority',
-                      value: _getPriorityText(wish!.priority),
-                    ),
-                    _DetailRow(
-                      icon: Icons.numbers,
-                      label: 'Quantity',
-                      value: wish!.quantity.toString(),
-                    ),
-                    if (wish!.brand != null)
-                      _DetailRow(
-                        icon: Icons.branding_watermark,
-                        label: 'Brand',
-                        value: wish!.brand!,
-                      ),
-                    if (wish!.category != null)
-                      _DetailRow(
-                        icon: Icons.category,
-                        label: 'Category',
-                        value: wish!.category!,
-                      ),
-                    if (wish!.notes != null)
-                      _DetailRow(
-                        icon: Icons.note,
-                        label: 'Notes',
-                        value: wish!.notes!,
-                      ),
-                    _DetailRow(
-                      icon: Icons.schedule,
-                      label: 'Added',
-                      value: _formatDate(wish!.createdAt),
-                    ),
                   ],
-                ),
+                  OutlinedButton.icon(
+                    onPressed: _shareWish,
+                    icon: const Icon(Icons.share_outlined),
+                    label: const Text('Share Item'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
-
-            const SizedBox(height: 16),
-
-            // Actions
-            if (wish!.url != null) ...[
-              FilledButton.icon(
-                onPressed: () => _openUrl(),
-                icon: Icon(Icons.open_in_new),
-                label: const Text('View Product'),
-              ),
-              const SizedBox(height: 8),
-            ],
-            OutlinedButton.icon(
-              onPressed: () => _shareWish(),
-              icon: Icon(Icons.share),
-              label: const Text('Share Item'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
-  }
-
-  String _getPriorityText(int priority) {
-    switch (priority) {
-      case 1:
-        return 'Low';
-      case 2:
-        return 'Medium';
-      case 3:
-        return 'High';
-      default:
-        return 'Medium';
-    }
   }
 
   String _formatDate(DateTime date) {
@@ -456,12 +438,12 @@ From my HeyWish wishlist 🎁
   }
 }
 
-class _DetailRow extends StatelessWidget {
+class _DetailItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
 
-  const _DetailRow({
+  const _DetailItem({
     required this.icon,
     required this.label,
     required this.value,
@@ -470,29 +452,32 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: 16.0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
             icon,
             size: 20,
-            color: Colors.grey.shade300,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 12),
-          SizedBox(
-            width: 80,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
           Expanded(
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodyMedium,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ],
             ),
           ),
         ],

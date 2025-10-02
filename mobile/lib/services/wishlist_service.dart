@@ -466,11 +466,25 @@ class WishlistService extends ChangeNotifier {
         'positions': positions,
       });
 
-      // Refresh the wishlist to get updated positions
-      await fetchWishlist(wishlistId);
+      // Force refetch from API (not cache) to get updated positions
+      _isLoading = true;
+      notifyListeners();
+
+      final response = await _apiService.get('/wishlists/$wishlistId');
+      final updatedWishlist = Wishlist.fromJson(response['wishlist']);
+
+      // Update current wishlist
+      _currentWishlist = updatedWishlist;
+
+      // Update cached wishlist in the main list
+      _updateCachedWishlist(wishlistId, updatedWishlist);
+
+      _isLoading = false;
+      notifyListeners();
       return true;
     } catch (e) {
       _error = e.toString();
+      _isLoading = false;
       debugPrint('Error updating wish positions: $e');
       notifyListeners();
       return false;
