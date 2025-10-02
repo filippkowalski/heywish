@@ -460,6 +460,23 @@ class WishlistService extends ChangeNotifier {
     }
   }
 
+  Future<bool> updateWishPositions(String wishlistId, List<Map<String, dynamic>> positions) async {
+    try {
+      await _apiService.patch('/wishlists/$wishlistId/wishes/positions', {
+        'positions': positions,
+      });
+
+      // Refresh the wishlist to get updated positions
+      await fetchWishlist(wishlistId);
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('Error updating wish positions: $e');
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> updateWish(
     String wishId, {
     String? title,

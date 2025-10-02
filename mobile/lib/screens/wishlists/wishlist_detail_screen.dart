@@ -39,6 +39,33 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
     await context.read<WishlistService>().fetchWishlist(widget.wishlistId);
   }
 
+  Future<void> _onReorder(wishlist, int oldIndex, int newIndex) async {
+    if (oldIndex == newIndex) return;
+
+    // Adjust newIndex if moving down the list
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+
+    // Get the wishes list
+    final wishes = List<Wish>.from(wishlist.wishes!);
+
+    // Reorder locally for immediate feedback
+    final movedWish = wishes.removeAt(oldIndex);
+    wishes.insert(newIndex, movedWish);
+
+    // Update positions based on new order
+    final positions = wishes.asMap().entries.map((entry) {
+      return {'id': entry.value.id, 'position': entry.key};
+    }).toList();
+
+    // Update on backend
+    await context.read<WishlistService>().updateWishPositions(
+      widget.wishlistId,
+      positions,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final wishlistService = context.watch<WishlistService>();
@@ -123,17 +150,17 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
                       else
                         SliverPadding(
                           padding: const EdgeInsets.all(16.0),
-                          sliver: SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                final wish = wishlist.wishes![index];
-                                return _WishCard(
-                                  wish: wish,
-                                  wishlistId: widget.wishlistId,
-                                );
-                              },
-                              childCount: wishlist.wishes!.length,
-                            ),
+                          sliver: SliverReorderableList(
+                            onReorder: (oldIndex, newIndex) => _onReorder(wishlist, oldIndex, newIndex),
+                            itemBuilder: (context, index) {
+                              final wish = wishlist.wishes![index];
+                              return _WishCard(
+                                key: ValueKey(wish.id),
+                                wish: wish,
+                                wishlistId: widget.wishlistId,
+                              );
+                            },
+                            itemCount: wishlist.wishes!.length,
                           ),
                         ),
                       // Add Item button at the bottom
@@ -288,7 +315,7 @@ class _WishCard extends StatelessWidget {
   final Wish wish;
   final String wishlistId;
 
-  const _WishCard({required this.wish, required this.wishlistId});
+  const _WishCard({super.key, required this.wish, required this.wishlistId});
 
   @override
   Widget build(BuildContext context) {
