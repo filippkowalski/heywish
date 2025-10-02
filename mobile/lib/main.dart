@@ -22,7 +22,6 @@ import 'screens/onboarding/onboarding_flow_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
-import 'screens/wishlists/wishlist_detail_screen.dart';
 import 'screens/wishlists/wishlist_new_screen.dart';
 import 'screens/wishlists/add_wish_screen.dart';
 import 'screens/wishlists/wish_detail_screen.dart';
@@ -196,19 +195,6 @@ final _router = GoRouter(
             initialUrl: initialUrl,
             prefilledData: prefilledData,
           ),
-          key: state.pageKey,
-          name: state.name,
-          arguments: state.extra,
-          restorationId: state.pageKey.value,
-        );
-      },
-    ),
-    GoRoute(
-      path: '/wishlists/:id',
-      pageBuilder: (context, state) {
-        final id = state.pathParameters['id']!;
-        return NativeTransitions.page(
-          child: WishlistDetailScreen(wishlistId: id),
           key: state.pageKey,
           name: state.name,
           arguments: state.extra,
