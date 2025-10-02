@@ -139,13 +139,13 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>?> getWishImageUploadUrl(
-    String wishlistId, {
+    String? wishlistId, { // Now optional for uncategorized wishes
     String? fileExtension,
     String contentType = 'image/jpeg',
   }) async {
     try {
       final response = await post('/upload/wish-image', {
-        'wishlistId': wishlistId,
+        if (wishlistId != null) 'wishlistId': wishlistId,
         if (fileExtension != null) 'fileExtension': fileExtension,
         'contentType': contentType,
       });
@@ -292,7 +292,7 @@ class ApiService {
   /// Upload wish image and return the public URL
   Future<String?> uploadWishImage({
     required File imageFile,
-    required String wishlistId,
+    String? wishlistId, // Now optional for uncategorized wishes
   }) async {
     try {
       final pathSegments = imageFile.path.split('.');
@@ -315,7 +315,7 @@ class ApiService {
       }
 
       final uploadConfig = await getWishImageUploadUrl(
-        wishlistId,
+        wishlistId, // Can be null now
         fileExtension: normalizedExtension,
         contentType: resolvedContentType,
       );

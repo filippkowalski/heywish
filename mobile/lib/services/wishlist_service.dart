@@ -285,7 +285,7 @@ class WishlistService extends ChangeNotifier {
   }
   
   Future<bool> addWish({
-    required String wishlistId,
+    String? wishlistId, // Now optional for uncategorized wishes
     required String title,
     String? description,
     double? price,
@@ -300,14 +300,14 @@ class WishlistService extends ChangeNotifier {
     File? imageFile,
   }) async {
     print('🎁 WishlistService: Starting addWish (optimistic)...');
-    
+
     // Generate optimistic ID
     final optimisticId = 'temp_wish_${DateTime.now().millisecondsSinceEpoch}';
-    
+
     // Create optimistic wish for immediate UI update
     final optimisticWish = Wish(
       id: optimisticId,
-      wishlistId: wishlistId,
+      wishlistId: wishlistId ?? '', // Empty string for uncategorized wishes
       title: title,
       description: description ?? '',
       price: price,
@@ -324,27 +324,27 @@ class WishlistService extends ChangeNotifier {
       updatedAt: DateTime.now(),
     );
     
-    // Add optimistic wish to current wishlist immediately
-    if (_currentWishlist?.id == wishlistId) {
+    // Add optimistic wish to current wishlist immediately (if wishlist is specified)
+    if (wishlistId != null && _currentWishlist?.id == wishlistId) {
       final currentWishes = _currentWishlist!.wishes ?? [];
       final updatedWishlist = _currentWishlist!.copyWith(
         wishes: [optimisticWish, ...currentWishes],
         wishCount: (_currentWishlist!.wishCount) + 1,
       );
       _currentWishlist = updatedWishlist;
-      
+
       // Update cached wishlist in main list
       final index = _wishlists.indexWhere((w) => w.id == wishlistId);
       if (index != -1) {
         _wishlists[index] = updatedWishlist;
       }
-      
+
       notifyListeners();
     }
-    
+
     try {
       final requestData = <String, dynamic>{
-        'wishlistId': wishlistId,
+        if (wishlistId != null) 'wishlistId': wishlistId,
         'title': title,
         'description': description,
         'price': price,
@@ -378,12 +378,12 @@ class WishlistService extends ChangeNotifier {
       }
       
       final response = await _apiService.post('/wishes', requestData);
-      
-      // Replace optimistic wish with real wish from server
-      if (_currentWishlist?.id == wishlistId) {
+
+      // Replace optimistic wish with real wish from server (if wishlist is specified)
+      if (wishlistId != null && _currentWishlist?.id == wishlistId) {
         final currentWishes = _currentWishlist!.wishes ?? [];
         final realWish = Wish.fromJson(response['wish'] ?? response);
-        
+
         // Remove optimistic wish and add real wish
         final updatedWishes = currentWishes
             .where((w) => w.id != optimisticId)
@@ -408,98 +408,30 @@ class WishlistService extends ChangeNotifier {
       return true;
       
     } catch (e) {
-      // Remove failed optimistic wish
-      if (_currentWishlist?.id == wishlistId) {
+      // Remove failed optimistic wish (if wishlist is specified)
+      if (wishlistId != null && _currentWishlist?.id == wishlistId) {
         final currentWishes = _currentWishlist!.wishes ?? [];
         final updatedWishes = currentWishes
             .where((w) => w.id != optimisticId)
             .toList();
-        
+
         final updatedWishlist = _currentWishlist!.copyWith(
           wishes: updatedWishes,
           wishCount: (_currentWishlist!.wishCount) - 1,
         );
         _currentWishlist = updatedWishlist;
-        
+
         // Update cached wishlist in main list
         final index = _wishlists.indexWhere((w) => w.id == wishlistId);
         if (index != -1) {
           _wishlists[index] = updatedWishlist;
         }
-        
+
         notifyListeners();
       }
       
       _error = e.toString();
       print('❌ WishlistService: Error adding wish: $e');
-      notifyListeners();
-      return false;
-    }
-  }
-
-  /// Add an uncategorized wish (no wishlist)
-  Future<bool> addUncategorizedWish({
-    required String title,
-    String? description,
-    double? price,
-    String? currency,
-    String? url,
-    List<String>? images,
-    String? brand,
-    String? category,
-    String? priority,
-    int quantity = 1,
-    String? notes,
-    File? imageFile,
-  }) async {
-    print('🎁 WishlistService: Starting addUncategorizedWish...');
-
-    try {
-      final requestData = <String, dynamic>{
-        'title': title,
-        'description': description,
-        'price': price,
-        'currency': currency ?? 'USD',
-        'url': url,
-        'priority': priority != null ? int.tryParse(priority) ?? 1 : 1,
-        'quantity': quantity,
-        'notes': notes,
-        // No wishlistId for uncategorized wishes
-      };
-
-      if (images != null && images.isNotEmpty) {
-        requestData['images'] = images;
-      }
-
-      // If there's an image file, upload it first
-      if (imageFile != null) {
-        try {
-          print('🎁 WishlistService: Uploading image...');
-          final imageUrl = await _apiService.uploadWishImage(
-            imageFile: imageFile,
-          );
-          if (imageUrl != null) {
-            requestData['images'] = [imageUrl];
-            print('🎁 WishlistService: Image uploaded: $imageUrl');
-          }
-        } catch (imageError) {
-          print('⚠️  WishlistService: Image upload failed: $imageError');
-          // Continue without image - don't fail the entire request
-        }
-      }
-
-      await _apiService.post('/wishes', requestData);
-
-      print('✅ WishlistService: Uncategorized wish added successfully');
-
-      // Refresh wishlists to get updated data
-      await fetchWishlists(preloadItems: true);
-
-      return true;
-
-    } catch (e) {
-      _error = e.toString();
-      print('❌ WishlistService: Error adding uncategorized wish: $e');
       notifyListeners();
       return false;
     }

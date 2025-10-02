@@ -266,12 +266,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
       return;
     }
 
-    // For now, require wishlist selection (backend needs to support null wishlistId first)
-    if (_selectedWishlistId == null) {
-      _showErrorMessage('wish.wishlist_required'.tr());
-      return;
-    }
-
+    // Wishlist selection is now optional - uncategorized wishes are supported
     setState(() {
       _isLoading = true;
     });
@@ -281,19 +276,20 @@ class _AddWishScreenState extends State<AddWishScreen> {
           ? null
           : double.tryParse(_priceController.text.trim());
 
+      // Add wish with optional wishlistId
       await context.read<WishlistService>().addWish(
-            wishlistId: _selectedWishlistId!,
-            title: _titleController.text.trim(),
-            description: _descriptionController.text.trim().isEmpty
-                ? null
-                : _descriptionController.text.trim(),
-            price: price,
-            currency: _currency,
-            url: _urlController.text.trim().isEmpty
-                ? null
-                : _urlController.text.trim(),
-            imageFile: _selectedImage,
-          );
+        wishlistId: _selectedWishlistId, // Can be null for uncategorized wishes
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        price: price,
+        currency: _currency,
+        url: _urlController.text.trim().isEmpty
+            ? null
+            : _urlController.text.trim(),
+        imageFile: _selectedImage,
+      );
 
       if (mounted) {
         context.pop();
