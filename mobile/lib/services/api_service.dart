@@ -522,6 +522,114 @@ class ApiService {
       );
     }
   }
+
+  // Feed/Activity related API methods
+
+  /// Get activity feed for the current user
+  /// [filter] can be 'friends', 'all', or 'own'
+  /// [page] and [limit] control pagination
+  Future<ActivityFeedResponse?> getActivityFeed({
+    String filter = 'friends',
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      debugPrint('📰 API: Fetching activity feed (filter: $filter, page: $page)');
+
+      final response = await get('/feed', queryParameters: {
+        'filter': filter,
+        'page': page.toString(),
+        'limit': limit.toString(),
+      });
+
+      if (response != null) {
+        debugPrint('✅ API: Activity feed retrieved successfully');
+        return ActivityFeedResponse.fromJson(response);
+      } else {
+        debugPrint('❌ API: Activity feed returned null');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('❌ API: Error fetching activity feed: $e');
+      return null;
+    }
+  }
+
+  /// Search for users by username
+  Future<UserSearchResponse?> searchUsers(
+    String query, {
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      debugPrint('🔍 API: Searching users with query: $query');
+
+      final response = await get('/search/users', queryParameters: {
+        'q': query,
+        'page': page.toString(),
+        'limit': limit.toString(),
+      });
+
+      if (response != null) {
+        debugPrint('✅ API: User search completed successfully');
+        return UserSearchResponse.fromJson(response);
+      } else {
+        debugPrint('❌ API: User search returned null');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('❌ API: Error searching users: $e');
+      return null;
+    }
+  }
+
+  /// Get friends list
+  Future<FriendsResponse?> getFriends({
+    int page = 1,
+    int limit = 50,
+  }) async {
+    try {
+      debugPrint('👥 API: Fetching friends list (page: $page)');
+
+      final response = await get('/friends', queryParameters: {
+        'page': page.toString(),
+        'limit': limit.toString(),
+      });
+
+      if (response != null) {
+        debugPrint('✅ API: Friends list retrieved successfully');
+        return FriendsResponse.fromJson(response);
+      } else {
+        debugPrint('❌ API: Friends list returned null');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('❌ API: Error fetching friends: $e');
+      return null;
+    }
+  }
+
+  /// Send a friend request to a user
+  Future<bool> sendFriendRequest(String userId) async {
+    try {
+      debugPrint('📤 API: Sending friend request to user: $userId');
+
+      final response = await post('/friends/request', {
+        'user_id': userId,
+      });
+
+      if (response != null) {
+        debugPrint('✅ API: Friend request sent successfully');
+        return true;
+      } else {
+        debugPrint('❌ API: Friend request failed - null response');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('❌ API: Error sending friend request: $e');
+      return false;
+    }
+  }
 }
 
 /// Response model for URL scraping
@@ -576,6 +684,241 @@ class UrlMetadata {
       currency: json['currency'] ?? 'USD',
       brand: json['brand'],
       source: json['source'] ?? 'unknown',
+    );
+  }
+}
+
+// Feed/Activity related models
+
+/// Activity feed response
+class ActivityFeedResponse {
+  final List<FeedActivity> activities;
+  final String filter;
+  final FeedPagination pagination;
+
+  ActivityFeedResponse({
+    required this.activities,
+    required this.filter,
+    required this.pagination,
+  });
+
+  factory ActivityFeedResponse.fromJson(Map<String, dynamic> json) {
+    return ActivityFeedResponse(
+      activities: (json['activities'] as List?)
+              ?.map((a) => FeedActivity.fromJson(a))
+              .toList() ??
+          [],
+      filter: json['filter'] ?? 'friends',
+      pagination: FeedPagination.fromJson(json['pagination'] ?? {}),
+    );
+  }
+}
+
+/// Single activity in the feed
+class FeedActivity {
+  final String id;
+  final String activityType;
+  final Map<String, dynamic> data;
+  final DateTime createdAt;
+  final String username;
+  final String? fullName;
+  final String? avatarUrl;
+
+  FeedActivity({
+    required this.id,
+    required this.activityType,
+    required this.data,
+    required this.createdAt,
+    required this.username,
+    this.fullName,
+    this.avatarUrl,
+  });
+
+  factory FeedActivity.fromJson(Map<String, dynamic> json) {
+    return FeedActivity(
+      id: json['id'],
+      activityType: json['activity_type'],
+      data: json['data'] ?? {},
+      createdAt: DateTime.parse(json['created_at']),
+      username: json['username'],
+      fullName: json['full_name'],
+      avatarUrl: json['avatar_url'],
+    );
+  }
+}
+
+/// Feed pagination info
+class FeedPagination {
+  final int page;
+  final int limit;
+  final int total;
+  final bool hasMore;
+
+  FeedPagination({
+    required this.page,
+    required this.limit,
+    required this.total,
+    required this.hasMore,
+  });
+
+  factory FeedPagination.fromJson(Map<String, dynamic> json) {
+    return FeedPagination(
+      page: json['page'] ?? 1,
+      limit: json['limit'] ?? 20,
+      total: json['total'] ?? 0,
+      hasMore: json['hasMore'] ?? false,
+    );
+  }
+}
+
+/// User search response
+class UserSearchResponse {
+  final List<UserSearchResult> users;
+  final SearchPagination pagination;
+
+  UserSearchResponse({
+    required this.users,
+    required this.pagination,
+  });
+
+  factory UserSearchResponse.fromJson(Map<String, dynamic> json) {
+    return UserSearchResponse(
+      users: (json['users'] as List?)
+              ?.map((u) => UserSearchResult.fromJson(u))
+              .toList() ??
+          [],
+      pagination: SearchPagination.fromJson(json['pagination'] ?? {}),
+    );
+  }
+}
+
+/// Single user in search results
+class UserSearchResult {
+  final String id;
+  final String username;
+  final String? fullName;
+  final String? avatarUrl;
+  final String? bio;
+  final int wishlistCount;
+  final String? friendshipStatus;
+
+  UserSearchResult({
+    required this.id,
+    required this.username,
+    this.fullName,
+    this.avatarUrl,
+    this.bio,
+    required this.wishlistCount,
+    this.friendshipStatus,
+  });
+
+  factory UserSearchResult.fromJson(Map<String, dynamic> json) {
+    return UserSearchResult(
+      id: json['id'],
+      username: json['username'],
+      fullName: json['full_name'],
+      avatarUrl: json['avatar_url'],
+      bio: json['bio'],
+      wishlistCount: json['wishlist_count'] ?? 0,
+      friendshipStatus: json['friendship_status'],
+    );
+  }
+}
+
+/// Search pagination info
+class SearchPagination {
+  final int page;
+  final int limit;
+  final int total;
+  final int pages;
+
+  SearchPagination({
+    required this.page,
+    required this.limit,
+    required this.total,
+    required this.pages,
+  });
+
+  factory SearchPagination.fromJson(Map<String, dynamic> json) {
+    return SearchPagination(
+      page: json['page'] ?? 1,
+      limit: json['limit'] ?? 20,
+      total: json['total'] ?? 0,
+      pages: json['pages'] ?? 1,
+    );
+  }
+}
+
+/// Friends list response
+class FriendsResponse {
+  final List<Friend> friends;
+  final FriendsPagination pagination;
+
+  FriendsResponse({
+    required this.friends,
+    required this.pagination,
+  });
+
+  factory FriendsResponse.fromJson(Map<String, dynamic> json) {
+    return FriendsResponse(
+      friends:
+          (json['friends'] as List?)?.map((f) => Friend.fromJson(f)).toList() ??
+              [],
+      pagination: FriendsPagination.fromJson(json['pagination'] ?? {}),
+    );
+  }
+}
+
+/// Single friend entry
+class Friend {
+  final String id;
+  final String username;
+  final String? fullName;
+  final String? avatarUrl;
+  final DateTime friendsSince;
+  final int wishlistCount;
+
+  Friend({
+    required this.id,
+    required this.username,
+    this.fullName,
+    this.avatarUrl,
+    required this.friendsSince,
+    required this.wishlistCount,
+  });
+
+  factory Friend.fromJson(Map<String, dynamic> json) {
+    return Friend(
+      id: json['id'],
+      username: json['username'],
+      fullName: json['full_name'],
+      avatarUrl: json['avatar_url'],
+      friendsSince: DateTime.parse(json['friends_since']),
+      wishlistCount: json['wishlist_count'] ?? 0,
+    );
+  }
+}
+
+/// Friends pagination info
+class FriendsPagination {
+  final int page;
+  final int limit;
+  final int total;
+  final int pages;
+
+  FriendsPagination({
+    required this.page,
+    required this.limit,
+    required this.total,
+    required this.pages,
+  });
+
+  factory FriendsPagination.fromJson(Map<String, dynamic> json) {
+    return FriendsPagination(
+      page: json['page'] ?? 1,
+      limit: json['limit'] ?? 20,
+      total: json['total'] ?? 0,
+      pages: json['pages'] ?? 1,
     );
   }
 }

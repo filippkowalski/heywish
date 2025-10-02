@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../common/widgets/skeleton_loading.dart';
 import '../common/widgets/native_refresh_indicator.dart';
+import '../services/api_service.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -11,9 +13,13 @@ class FeedScreen extends StatefulWidget {
 }
 
 class _FeedScreenState extends State<FeedScreen> {
+  final ApiService _api = ApiService();
+
   List<FeedItem> _feedItems = [];
   bool _isLoading = true;
   String? _error;
+  int _friendsCount = 0;
+  bool _hasFriendsWithWishes = false;
 
   @override
   void initState() {
@@ -28,65 +34,52 @@ class _FeedScreenState extends State<FeedScreen> {
         _error = null;
       });
 
-      // For now, we'll use mock data for friends' wishes
-      // Later this should fetch from friends' wishlists API
-      await Future.delayed(const Duration(milliseconds: 1500));
-      
-      setState(() {
-        _feedItems = _getMockFeedItems();
-        _isLoading = false;
-      });
+      // Fetch friends count
+      final friendsResponse = await _api.getFriends(limit: 1);
+      _friendsCount = friendsResponse?.pagination.total ?? 0;
+
+      // Fetch activity feed
+      final feedResponse = await _api.getActivityFeed(filter: 'friends', limit: 20);
+
+      if (feedResponse != null) {
+        final feedItems = <FeedItem>[];
+
+        for (final activity in feedResponse.activities) {
+          if (activity.activityType == 'wish_added') {
+            // Convert activity to FeedItem
+            feedItems.add(FeedItem(
+              id: activity.id,
+              friendName: activity.fullName ?? activity.username,
+              friendAvatar: activity.avatarUrl,
+              wishTitle: activity.data['wish_title'] ?? 'Unknown Item',
+              wishImage: activity.data['wish_image'],
+              wishPrice: activity.data['wish_price']?.toDouble(),
+              wishCurrency: activity.data['wish_currency'] ?? 'USD',
+              timeAgo: timeago.format(activity.createdAt),
+              action: 'added to wishlist',
+              wishId: activity.data['wish_id'],
+              wishlistId: activity.data['wishlist_id'],
+            ));
+          }
+        }
+
+        setState(() {
+          _feedItems = feedItems;
+          _hasFriendsWithWishes = feedItems.isNotEmpty;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _feedItems = [];
+          _isLoading = false;
+        });
+      }
     } catch (error) {
       setState(() {
         _error = error.toString();
         _isLoading = false;
       });
     }
-  }
-
-  List<FeedItem> _getMockFeedItems() {
-    return [
-      FeedItem(
-        id: '1',
-        friendName: 'Sarah Wilson',
-        friendAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b96c?w=150',
-        wishTitle: 'AirPods Pro (2nd Gen)',
-        wishImage: 'https://images.unsplash.com/photo-1606841837239-c5a1a4a07af7?w=300',
-        wishPrice: 249.00,
-        timeAgo: '2 hours ago',
-        action: 'added to wishlist',
-      ),
-      FeedItem(
-        id: '2',
-        friendName: 'Mike Johnson',
-        friendAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-        wishTitle: 'Nintendo Switch OLED',
-        wishImage: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=300',
-        wishPrice: 349.99,
-        timeAgo: '5 hours ago',
-        action: 'added to wishlist',
-      ),
-      FeedItem(
-        id: '3',
-        friendName: 'Emma Davis',
-        friendAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150',
-        wishTitle: 'Yoga Mat Premium',
-        wishImage: 'https://images.unsplash.com/photo-1545389336-cf090694435e?w=300',
-        wishPrice: 89.00,
-        timeAgo: '1 day ago',
-        action: 'added to wishlist',
-      ),
-      FeedItem(
-        id: '4',
-        friendName: 'Alex Chen',
-        friendAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
-        wishTitle: 'Mechanical Keyboard',
-        wishImage: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=300',
-        wishPrice: 159.99,
-        timeAgo: '2 days ago',
-        action: 'added to wishlist',
-      ),
-    ];
   }
 
   @override
@@ -323,7 +316,12 @@ class _FeedScreenState extends State<FeedScreen> {
                 CircleAvatar(
                   radius: 20,
                   backgroundColor: Colors.grey.shade200,
-                  backgroundImage: NetworkImage(item.friendAvatar),
+                  backgroundImage: item.friendAvatar != null
+                    ? NetworkImage(item.friendAvatar!)
+                    : null,
+                  child: item.friendAvatar == null
+                    ? Icon(Icons.person, size: 20, color: Colors.grey.shade600)
+                    : null,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -362,11 +360,11 @@ class _FeedScreenState extends State<FeedScreen> {
           ),
           
           // Wish item
-          if (item.wishImage.isNotEmpty)
+          if (item.wishImage != null && item.wishImage!.isNotEmpty)
             ClipRRect(
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
               child: Image.network(
-                item.wishImage,
+                item.wishImage!,
                 width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,
@@ -382,7 +380,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 ),
               ),
             ),
-          
+
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -395,14 +393,16 @@ class _FeedScreenState extends State<FeedScreen> {
                     color: AppTheme.primary,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '\$${item.wishPrice.toStringAsFixed(2)}',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: AppTheme.primaryAccent,
-                    fontWeight: FontWeight.w600,
+                if (item.wishPrice != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    '${item.wishCurrency ?? '\$'}${item.wishPrice!.toStringAsFixed(2)}',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: AppTheme.primaryAccent,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -415,21 +415,27 @@ class _FeedScreenState extends State<FeedScreen> {
 class FeedItem {
   final String id;
   final String friendName;
-  final String friendAvatar;
+  final String? friendAvatar;
   final String wishTitle;
-  final String wishImage;
-  final double wishPrice;
+  final String? wishImage;
+  final double? wishPrice;
+  final String? wishCurrency;
   final String timeAgo;
   final String action;
+  final String? wishId;
+  final String? wishlistId;
 
   FeedItem({
     required this.id,
     required this.friendName,
-    required this.friendAvatar,
+    this.friendAvatar,
     required this.wishTitle,
-    required this.wishImage,
-    required this.wishPrice,
+    this.wishImage,
+    this.wishPrice,
+    this.wishCurrency,
     required this.timeAgo,
     required this.action,
+    this.wishId,
+    this.wishlistId,
   });
 }
