@@ -5,6 +5,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+import 'dart:async';
 
 import 'theme/app_theme.dart';
 import 'services/auth_service.dart';
@@ -184,6 +186,22 @@ final _router = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/add-wish',
+      pageBuilder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final initialUrl = extra?['initialUrl'] as String?;
+        return NativeTransitions.page(
+          child: AddWishScreen(
+            initialUrl: initialUrl,
+          ),
+          key: state.pageKey,
+          name: state.name,
+          arguments: state.extra,
+          restorationId: state.pageKey.value,
+        );
+      },
+    ),
+    GoRoute(
       path: '/wishlists/:id',
       pageBuilder: (context, state) {
         final id = state.pathParameters['id']!;
@@ -200,8 +218,13 @@ final _router = GoRouter(
       path: '/wishlists/:id/add-item',
       pageBuilder: (context, state) {
         final id = state.pathParameters['id']!;
+        final extra = state.extra as Map<String, dynamic>?;
+        final initialUrl = extra?['initialUrl'] as String?;
         return NativeTransitions.page(
-          child: AddWishScreen(wishlistId: id),
+          child: AddWishScreen(
+            wishlistId: id,
+            initialUrl: initialUrl,
+          ),
           key: state.pageKey,
           name: state.name,
           arguments: state.extra,

@@ -5,7 +5,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'dart:io';
 import '../../../services/auth_service.dart';
 import '../../../services/onboarding_service.dart';
-import '../../../services/api_service.dart';
 import '../../../theme/app_theme.dart';
 import '../../../common/theme/app_colors.dart';
 
@@ -39,21 +38,19 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
 
     try {
       final authService = context.read<AuthService>();
-      final apiService = ApiService();
+      final onboardingService = context.read<OnboardingService>();
 
-      // Sign in with Google first
-      await authService.signInWithGoogle();
-
-      if (!mounted) return;
-
-      // Check if user exists in database by email
-      final emailCheckResponse = await apiService.checkEmailExists();
-      final userExists = emailCheckResponse?['exists'] ?? false;
+      // Sign in with Google and check if user exists in DB
+      final userExists = await authService.signInWithGoogleCheckExisting();
 
       if (!mounted) return;
 
-      if (!userExists) {
-        // User doesn't exist - show dialog and continue to onboarding
+      if (userExists) {
+        // Existing user - skip onboarding
+        Navigator.of(context).pop();
+        onboardingService.goToStep(OnboardingStep.complete);
+      } else {
+        // New user - show dialog and continue to onboarding
         setState(() {
           _isLoading = false;
         });
@@ -63,15 +60,11 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
         if (!mounted) return;
         Navigator.of(context).pop(); // Close bottom sheet
 
-        // Continue to profile details (start of normal onboarding flow)
-        context.read<OnboardingService>().goToStep(OnboardingStep.profileDetails);
-      } else {
-        // User exists - skip onboarding
-        if (!mounted) return;
-        Navigator.of(context).pop();
+        // Mark that user already signed in so we skip account creation step
+        onboardingService.setHasAlreadySignedIn(true);
 
-        // Skip to complete step
-        context.read<OnboardingService>().goToStep(OnboardingStep.complete);
+        // Continue to profile details (skipping account creation since they already signed in)
+        onboardingService.goToStep(OnboardingStep.profileDetails);
       }
     } catch (e) {
       if (!mounted) return;
@@ -90,21 +83,19 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
 
     try {
       final authService = context.read<AuthService>();
-      final apiService = ApiService();
+      final onboardingService = context.read<OnboardingService>();
 
-      // Sign in with Apple first
-      await authService.signInWithApple();
-
-      if (!mounted) return;
-
-      // Check if user exists in database by email
-      final emailCheckResponse = await apiService.checkEmailExists();
-      final userExists = emailCheckResponse?['exists'] ?? false;
+      // Sign in with Apple and check if user exists in DB
+      final userExists = await authService.signInWithAppleCheckExisting();
 
       if (!mounted) return;
 
-      if (!userExists) {
-        // User doesn't exist - show dialog and continue to onboarding
+      if (userExists) {
+        // Existing user - skip onboarding
+        Navigator.of(context).pop();
+        onboardingService.goToStep(OnboardingStep.complete);
+      } else {
+        // New user - show dialog and continue to onboarding
         setState(() {
           _isLoading = false;
         });
@@ -114,15 +105,11 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
         if (!mounted) return;
         Navigator.of(context).pop(); // Close bottom sheet
 
-        // Continue to profile details (start of normal onboarding flow)
-        context.read<OnboardingService>().goToStep(OnboardingStep.profileDetails);
-      } else {
-        // User exists - skip onboarding
-        if (!mounted) return;
-        Navigator.of(context).pop();
+        // Mark that user already signed in so we skip account creation step
+        onboardingService.setHasAlreadySignedIn(true);
 
-        // Skip to complete step
-        context.read<OnboardingService>().goToStep(OnboardingStep.complete);
+        // Continue to profile details (skipping account creation since they already signed in)
+        onboardingService.goToStep(OnboardingStep.profileDetails);
       }
     } catch (e) {
       if (!mounted) return;

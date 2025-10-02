@@ -46,10 +46,6 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
         title: Text(wishlist?.name ?? 'app.loading'.tr()),
         actions: [
           if (wishlist != null)
@@ -87,30 +83,19 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
                   onRefresh: _loadWishlist,
                   child: CustomScrollView(
                     slivers: [
-                      // Cover image section
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: WishlistCoverImage(
-                            coverImageUrl: wishlist.coverImageUrl,
-                            wishlistId: widget.wishlistId,
-                            canEdit: true,
-                            height: 120,
-                            onImageChanged: () {
-                              // Refresh wishlist data when image changes
-                              _loadWishlist();
-                            },
-                            onUpload: (wishlistId, imageFile) async {
-                              final wishlistService = context.read<WishlistService>();
-                              return await wishlistService.uploadWishlistCoverImage(wishlistId, imageFile);
-                            },
-                            onRemove: (wishlistId) async {
-                              final wishlistService = context.read<WishlistService>();
-                              return await wishlistService.removeWishlistCoverImage(wishlistId);
-                            },
+                      // Cover image section (display only - edit in Edit Wishlist screen)
+                      if (wishlist.coverImageUrl != null && wishlist.coverImageUrl!.isNotEmpty)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: WishlistCoverImage(
+                              coverImageUrl: wishlist.coverImageUrl,
+                              wishlistId: widget.wishlistId,
+                              canEdit: false, // Editing only available in Edit Wishlist screen
+                              height: 200,
+                            ),
                           ),
                         ),
-                      ),
                       if (wishlist.description != null)
                         SliverToBoxAdapter(
                           child: Padding(
@@ -151,15 +136,24 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
                             ),
                           ),
                         ),
+                      // Add Item button at the bottom
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: FilledButton.icon(
+                            onPressed: _showAddWishDialog,
+                            icon: const Icon(Icons.add),
+                            label: Text('wish.add_item'.tr()),
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              minimumSize: const Size(double.infinity, 56),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showAddWishDialog();
-        },
-        child: Icon(Icons.add),
-      ),
     );
   }
 

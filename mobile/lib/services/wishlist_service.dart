@@ -178,32 +178,35 @@ class WishlistService extends ChangeNotifier {
     required String name,
     String? description,
     String visibility = 'private',
+    String? coverImageUrl,
   }) async {
     // Generate optimistic ID
     final optimisticId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
-    
+
     // Create optimistic wishlist for immediate UI update
     final optimisticWishlist = Wishlist(
       id: optimisticId,
       name: name,
       description: description ?? '',
       visibility: visibility,
+      coverImageUrl: coverImageUrl,
       userId: 'current_user', // Will be corrected by server
       wishCount: 0,
       reservedCount: 0,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
-    
+
     // Add optimistic wishlist to local list immediately
     _wishlists.insert(0, optimisticWishlist);
     notifyListeners();
-    
+
     try {
       final response = await _apiService.post('/wishlists', {
         'name': name,
         'description': description,
         'visibility': visibility,
+        if (coverImageUrl != null) 'coverImageUrl': coverImageUrl,
       });
       
       // Remove optimistic wishlist
@@ -433,7 +436,75 @@ class WishlistService extends ChangeNotifier {
       return false;
     }
   }
-  
+
+  /// Add an uncategorized wish (no wishlist)
+  Future<bool> addUncategorizedWish({
+    required String title,
+    String? description,
+    double? price,
+    String? currency,
+    String? url,
+    List<String>? images,
+    String? brand,
+    String? category,
+    String? priority,
+    int quantity = 1,
+    String? notes,
+    File? imageFile,
+  }) async {
+    print('🎁 WishlistService: Starting addUncategorizedWish...');
+
+    try {
+      final requestData = <String, dynamic>{
+        'title': title,
+        'description': description,
+        'price': price,
+        'currency': currency ?? 'USD',
+        'url': url,
+        'priority': priority != null ? int.tryParse(priority) ?? 1 : 1,
+        'quantity': quantity,
+        'notes': notes,
+        // No wishlistId for uncategorized wishes
+      };
+
+      if (images != null && images.isNotEmpty) {
+        requestData['images'] = images;
+      }
+
+      // If there's an image file, upload it first
+      if (imageFile != null) {
+        try {
+          print('🎁 WishlistService: Uploading image...');
+          final imageUrl = await _apiService.uploadWishImage(
+            imageFile: imageFile,
+          );
+          if (imageUrl != null) {
+            requestData['images'] = [imageUrl];
+            print('🎁 WishlistService: Image uploaded: $imageUrl');
+          }
+        } catch (imageError) {
+          print('⚠️  WishlistService: Image upload failed: $imageError');
+          // Continue without image - don't fail the entire request
+        }
+      }
+
+      await _apiService.post('/wishes', requestData);
+
+      print('✅ WishlistService: Uncategorized wish added successfully');
+
+      // Refresh wishlists to get updated data
+      await fetchWishlists(preloadItems: true);
+
+      return true;
+
+    } catch (e) {
+      _error = e.toString();
+      print('❌ WishlistService: Error adding uncategorized wish: $e');
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> updateWish(
     String wishId, {
     String? title,

@@ -6,83 +6,94 @@ import 'dart:io';
 class ApiService {
   late final Dio _dio;
   String? _authToken;
-  
+
   static final ApiService _instance = ApiService._internal();
-  
+
   factory ApiService() => _instance;
-  
+
   ApiService._internal() {
     // Use production URL for all environments
     final baseUrl = 'https://openai-rewrite.onrender.com/heywish/v1';
-        
-    _dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
-      sendTimeout: const Duration(seconds: 10),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    ));
-    
-    _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
-        if (_authToken != null) {
-          options.headers['Authorization'] = 'Bearer $_authToken';
-        }
-        
-        // Only log in debug mode to prevent data leakage in production
-        if (kDebugMode) {
-          debugPrint('🚀 API REQUEST[${options.method}] => ${baseUrl}${options.path}');
-          
-          // Log headers but mask sensitive data
-          final sanitizedHeaders = Map<String, dynamic>.from(options.headers);
-          if (sanitizedHeaders.containsKey('Authorization')) {
-            sanitizedHeaders['Authorization'] = 'Bearer [REDACTED]';
+
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        sendTimeout: const Duration(seconds: 10),
+        headers: {'Content-Type': 'application/json'},
+      ),
+    );
+
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (_authToken != null) {
+            options.headers['Authorization'] = 'Bearer $_authToken';
           }
-          debugPrint('🚀 Headers: $sanitizedHeaders');
-          
-          // Only log request data in debug builds (contains sensitive info)
-          if (options.data != null) {
-            debugPrint('🚀 Request Data: ${options.data}');
+
+          // Only log in debug mode to prevent data leakage in production
+          if (kDebugMode) {
+            debugPrint(
+              '🚀 API REQUEST[${options.method}] => ${baseUrl}${options.path}',
+            );
+
+            // Log headers but mask sensitive data
+            final sanitizedHeaders = Map<String, dynamic>.from(options.headers);
+            if (sanitizedHeaders.containsKey('Authorization')) {
+              sanitizedHeaders['Authorization'] = 'Bearer [REDACTED]';
+            }
+            debugPrint('🚀 Headers: $sanitizedHeaders');
+
+            // Only log request data in debug builds (contains sensitive info)
+            if (options.data != null) {
+              debugPrint('🚀 Request Data: ${options.data}');
+            }
           }
-        }
-        
-        handler.next(options);
-      },
-      onResponse: (response, handler) {
-        if (kDebugMode) {
-          debugPrint('✅ API RESPONSE[${response.statusCode}] => ${response.requestOptions.path}');
-          // Only log response data in debug builds (contains user data)
-          debugPrint('✅ Response Data: ${response.data}');
-        }
-        handler.next(response);
-      },
-      onError: (error, handler) {
-        if (kDebugMode) {
-          debugPrint('❌ API ERROR[${error.response?.statusCode}] => ${error.requestOptions.path}');
-          debugPrint('❌ Error Type: ${error.type}');
-          debugPrint('❌ Error Message: ${error.message}');
-          if (error.response?.data != null) {
-            debugPrint('❌ Error Response Data: ${error.response?.data}');
+
+          handler.next(options);
+        },
+        onResponse: (response, handler) {
+          if (kDebugMode) {
+            debugPrint(
+              '✅ API RESPONSE[${response.statusCode}] => ${response.requestOptions.path}',
+            );
+            // Only log response data in debug builds (contains user data)
+            debugPrint('✅ Response Data: ${response.data}');
           }
-        }
-        handler.next(error);
-      },
-    ));
+          handler.next(response);
+        },
+        onError: (error, handler) {
+          if (kDebugMode) {
+            debugPrint(
+              '❌ API ERROR[${error.response?.statusCode}] => ${error.requestOptions.path}',
+            );
+            debugPrint('❌ Error Type: ${error.type}');
+            debugPrint('❌ Error Message: ${error.message}');
+            if (error.response?.data != null) {
+              debugPrint('❌ Error Response Data: ${error.response?.data}');
+            }
+          }
+          handler.next(error);
+        },
+      ),
+    );
   }
-  
+
   void setAuthToken(String? token) {
     _authToken = token;
   }
-  
+
   void clearAuthToken() {
     _authToken = null;
   }
 
   bool get hasAuthToken => _authToken != null;
-  
-  Future<dynamic> get(String path, {Map<String, dynamic>? queryParameters}) async {
+
+  Future<dynamic> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
     try {
       final response = await _dio.get(path, queryParameters: queryParameters);
       return response.data;
@@ -90,7 +101,7 @@ class ApiService {
       throw _handleError(e);
     }
   }
-  
+
   Future<dynamic> post(String path, dynamic data) async {
     try {
       final response = await _dio.post(path, data: data);
@@ -99,7 +110,7 @@ class ApiService {
       throw _handleError(e);
     }
   }
-  
+
   Future<dynamic> put(String path, dynamic data) async {
     try {
       final response = await _dio.put(path, data: data);
@@ -108,7 +119,7 @@ class ApiService {
       throw _handleError(e);
     }
   }
-  
+
   Future<dynamic> patch(String path, dynamic data) async {
     try {
       final response = await _dio.patch(path, data: data);
@@ -117,7 +128,7 @@ class ApiService {
       throw _handleError(e);
     }
   }
-  
+
   Future<dynamic> delete(String path) async {
     try {
       final response = await _dio.delete(path);
@@ -126,7 +137,7 @@ class ApiService {
       throw _handleError(e);
     }
   }
-  
+
   Future<Map<String, dynamic>?> getWishImageUploadUrl(
     String wishlistId, {
     String? fileExtension,
@@ -147,14 +158,16 @@ class ApiService {
   }
 
   /// Get presigned upload URL for wishlist cover image
-  Future<Map<String, dynamic>?> getWishlistCoverUploadUrl(String wishlistId) async {
+  Future<Map<String, dynamic>?> getWishlistCoverUploadUrl(
+    String wishlistId,
+  ) async {
     try {
       debugPrint('🖼️ API: Getting wishlist cover upload URL for $wishlistId');
-      
+
       final response = await post('/upload/wishlist-cover', {
         'wishlistId': wishlistId,
       });
-      
+
       debugPrint('✅ API: Got wishlist cover upload URL');
       return response as Map<String, dynamic>?;
     } catch (e) {
@@ -171,25 +184,23 @@ class ApiService {
   }) async {
     try {
       debugPrint('🖼️ API: Uploading to presigned URL');
-      
+
       final bytes = await imageFile.readAsBytes();
-      
+
       final dio = Dio();
       final response = await dio.put(
         uploadUrl,
         data: bytes,
-        options: Options(
-          headers: {
-            'Content-Type': contentType,
-          },
-        ),
+        options: Options(headers: {'Content-Type': contentType}),
       );
-      
+
       if (response.statusCode == 200) {
         debugPrint('✅ API: Image uploaded to presigned URL successfully');
         return true;
       } else {
-        debugPrint('❌ API: Upload to presigned URL failed: ${response.statusCode}');
+        debugPrint(
+          '❌ API: Upload to presigned URL failed: ${response.statusCode}',
+        );
         return false;
       }
     } catch (e) {
@@ -199,18 +210,81 @@ class ApiService {
   }
 
   /// Update wishlist cover image URL
-  Future<Map<String, dynamic>?> updateWishlistCoverImage(String wishlistId, String coverImageUrl) async {
+  Future<Map<String, dynamic>?> updateWishlistCoverImage(
+    String wishlistId,
+    String coverImageUrl,
+  ) async {
     try {
       debugPrint('🖼️ API: Updating wishlist cover image for $wishlistId');
-      
+
       final response = await put('/wishlists/$wishlistId/cover-image', {
         'coverImageUrl': coverImageUrl,
       });
-      
+
       debugPrint('✅ API: Wishlist cover image updated');
       return response as Map<String, dynamic>?;
     } catch (e) {
       debugPrint('❌ API: Error updating wishlist cover image: $e');
+      return null;
+    }
+  }
+
+  /// Upload wishlist cover image and return the public URL
+  Future<String?> uploadWishlistCoverImage({
+    required File imageFile,
+  }) async {
+    try {
+      final pathSegments = imageFile.path.split('.');
+      final extension = pathSegments.length > 1 ? pathSegments.last : 'jpg';
+
+      final normalizedExtension = extension.toLowerCase();
+      String resolvedContentType;
+      switch (normalizedExtension) {
+        case 'png':
+          resolvedContentType = 'image/png';
+          break;
+        case 'webp':
+          resolvedContentType = 'image/webp';
+          break;
+        case 'jpeg':
+        case 'jpg':
+        default:
+          resolvedContentType = 'image/jpeg';
+      }
+
+      debugPrint('🖼️ API: Getting upload URL for wishlist cover');
+
+      // Get presigned upload URL from backend
+      final uploadConfig = await post('/upload/wishlist-cover', {
+        'fileExtension': normalizedExtension,
+        'contentType': resolvedContentType,
+      });
+
+      final uploadUrl = uploadConfig?['uploadUrl'] as String?;
+      final publicUrl = uploadConfig?['publicUrl'] as String?;
+
+      if (uploadUrl == null || publicUrl == null) {
+        debugPrint('❌ API: Upload config missing URL fields');
+        return null;
+      }
+
+      debugPrint('🖼️ API: Uploading wishlist cover to presigned URL');
+
+      final success = await uploadImageToPresignedUrl(
+        uploadUrl,
+        imageFile,
+        contentType: resolvedContentType,
+      );
+
+      if (success) {
+        debugPrint('✅ API: Wishlist cover uploaded successfully');
+        return publicUrl;
+      } else {
+        debugPrint('❌ API: Failed to upload wishlist cover to R2');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('❌ API: Failed to upload wishlist cover: $e');
       return null;
     }
   }
@@ -270,7 +344,9 @@ class ApiService {
   /// Enhanced Onboarding API Methods
 
   /// Check if username is available
-  Future<Map<String, dynamic>?> checkUsernameAvailability(String username) async {
+  Future<Map<String, dynamic>?> checkUsernameAvailability(
+    String username,
+  ) async {
     try {
       debugPrint('🔍 API: Checking username availability for: $username');
 
@@ -311,12 +387,13 @@ class ApiService {
     String? birthdate,
     String? gender,
     String? phoneNumber,
+    List<String>? shoppingInterests,
     Map<String, dynamic>? notificationPreferences,
     Map<String, dynamic>? privacySettings,
   }) async {
     try {
       debugPrint('👤 API: Updating user profile');
-      
+
       final data = <String, dynamic>{};
       if (username != null) data['username'] = username;
       if (fullName != null) data['full_name'] = fullName;
@@ -324,12 +401,15 @@ class ApiService {
       if (birthdate != null) data['birthdate'] = birthdate;
       if (gender != null) data['gender'] = gender;
       if (phoneNumber != null) data['phone_number'] = phoneNumber;
-      if (notificationPreferences != null) data['notification_preferences'] = notificationPreferences;
+      if (shoppingInterests != null)
+        data['shopping_interests'] = shoppingInterests;
+      if (notificationPreferences != null)
+        data['notification_preferences'] = notificationPreferences;
       if (privacySettings != null) data['privacy_settings'] = privacySettings;
-      
+
       final response = await patch('/users/profile', data);
       debugPrint('✅ API: Profile updated successfully');
-      
+
       return response as Map<String, dynamic>?;
     } catch (e) {
       debugPrint('❌ API: Error updating profile: $e');
@@ -338,14 +418,18 @@ class ApiService {
   }
 
   /// Privacy-first friend discovery: Send only phone numbers, no contact names
-  Future<Map<String, dynamic>?> findFriendsByPhoneNumbers(List<String> phoneNumbers) async {
+  Future<Map<String, dynamic>?> findFriendsByPhoneNumbers(
+    List<String> phoneNumbers,
+  ) async {
     try {
-      debugPrint('🔍 API: Finding friends by ${phoneNumbers.length} phone numbers (privacy-first)');
-      
+      debugPrint(
+        '🔍 API: Finding friends by ${phoneNumbers.length} phone numbers (privacy-first)',
+      );
+
       final response = await post('/friends/find-by-phone-numbers', {
         'phone_numbers': phoneNumbers,
       });
-      
+
       debugPrint('✅ API: Friend suggestions retrieved');
       return response as Map<String, dynamic>?;
     } catch (e) {
@@ -353,18 +437,18 @@ class ApiService {
       return null;
     }
   }
-  
+
   String _handleError(DioException error) {
     switch (error.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
         return 'errors.timeout'.tr();
-      
+
       case DioExceptionType.badResponse:
         final statusCode = error.response?.statusCode;
         final message = error.response?.data?['message'] ?? 'An error occurred';
-        
+
         switch (statusCode) {
           case 400:
             return 'errors.validation_required'.tr();
@@ -379,16 +463,16 @@ class ApiService {
           default:
             return message;
         }
-      
+
       case DioExceptionType.cancel:
         return 'errors.cancelled'.tr();
-      
+
       case DioExceptionType.unknown:
         if (error.error?.toString().contains('SocketException') ?? false) {
           return 'errors.network_error'.tr();
         }
         return 'errors.unknown'.tr();
-      
+
       default:
         return 'errors.unknown'.tr();
     }
@@ -399,7 +483,7 @@ class ApiService {
     try {
       debugPrint('🗑️ API: Deleting user account');
       final response = await delete('/auth/delete-account');
-      
+
       if (response != null) {
         debugPrint('✅ API: Account deleted successfully');
         return true;
@@ -411,5 +495,87 @@ class ApiService {
       debugPrint('❌ API: Account deletion error: $e');
       return false;
     }
+  }
+
+  /// Scrape URL metadata for smart wish creation
+  Future<UrlMetadataResponse> scrapeUrl(String url) async {
+    try {
+      debugPrint('🔍 API: Scraping URL: $url');
+
+      final response = await post('/wishes/scrape-url', {'url': url});
+
+      if (response != null && response['success'] == true) {
+        debugPrint('✅ API: URL scraped successfully');
+        return UrlMetadataResponse.fromJson(response);
+      } else {
+        debugPrint('❌ API: URL scraping failed');
+        return UrlMetadataResponse(
+          success: false,
+          error: response?['error']?['message'] ?? 'Failed to scrape URL',
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ API: URL scraping error: $e');
+      return UrlMetadataResponse(
+        success: false,
+        error: e.toString(),
+      );
+    }
+  }
+}
+
+/// Response model for URL scraping
+class UrlMetadataResponse {
+  final bool success;
+  final UrlMetadata? metadata;
+  final String? error;
+
+  UrlMetadataResponse({
+    required this.success,
+    this.metadata,
+    this.error,
+  });
+
+  factory UrlMetadataResponse.fromJson(Map<String, dynamic> json) {
+    return UrlMetadataResponse(
+      success: json['success'] ?? false,
+      metadata: json['metadata'] != null
+          ? UrlMetadata.fromJson(json['metadata'])
+          : null,
+      error: json['error']?['message'],
+    );
+  }
+}
+
+/// URL metadata extracted from scraping
+class UrlMetadata {
+  final String? title;
+  final String? description;
+  final String? image;
+  final double? price;
+  final String? currency;
+  final String? brand;
+  final String source;
+
+  UrlMetadata({
+    this.title,
+    this.description,
+    this.image,
+    this.price,
+    this.currency,
+    this.brand,
+    required this.source,
+  });
+
+  factory UrlMetadata.fromJson(Map<String, dynamic> json) {
+    return UrlMetadata(
+      title: json['title'],
+      description: json['description'],
+      image: json['image'],
+      price: json['price']?.toDouble(),
+      currency: json['currency'] ?? 'USD',
+      brand: json['brand'],
+      source: json['source'] ?? 'unknown',
+    );
   }
 }

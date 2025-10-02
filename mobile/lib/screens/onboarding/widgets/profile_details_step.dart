@@ -20,25 +20,41 @@ class _ProfileDetailsStepState extends State<ProfileDetailsStep> {
   final List<Map<String, dynamic>> _genderOptions = [
     {
       'label': 'profile.gender_male'.tr(),
+      'value': 'male',
       'icon': Icons.male,
       'color': const Color(0xFF3B82F6), // Blue
     },
     {
       'label': 'profile.gender_female'.tr(),
+      'value': 'female',
       'icon': Icons.female,
       'color': const Color(0xFFEC4899), // Pink
     },
     {
       'label': 'profile.gender_other'.tr(),
+      'value': 'other',
       'icon': Icons.transgender,
       'color': const Color(0xFF8B5CF6), // Purple
     },
     {
       'label': 'profile.gender_prefer_not_to_say'.tr(),
+      'value': 'prefer_not_to_say',
       'icon': Icons.lock_outline,
       'color': const Color(0xFF6B7280), // Gray
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final onboardingService = context.read<OnboardingService>();
+      setState(() {
+        _selectedDate = onboardingService.data.birthday;
+        _selectedGender = onboardingService.data.gender;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -147,15 +163,8 @@ class _ProfileDetailsStepState extends State<ProfileDetailsStep> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color:
-                                  _selectedDate != null
-                                      ? AppColors.textPrimary.withValues(
-                                        alpha: 0.2,
-                                      )
-                                      : AppColors.outline.withValues(
-                                        alpha: 0.3,
-                                      ),
-                              width: 1.5,
+                              color: Colors.black.withValues(alpha: 0.1),
+                              width: 1,
                             ),
                           ),
                           child: Row(
@@ -213,10 +222,11 @@ class _ProfileDetailsStepState extends State<ProfileDetailsStep> {
                         children: [
                           for (int i = 0; i < _genderOptions.length; i++) ...[
                             _buildGenderOption(
-                              _genderOptions[i]['label'],
-                              _genderOptions[i]['icon'],
-                              _genderOptions[i]['color'],
-                              onboardingService,
+                              label: _genderOptions[i]['label'],
+                              value: _genderOptions[i]['value'],
+                              icon: _genderOptions[i]['icon'],
+                              color: _genderOptions[i]['color'],
+                              onboardingService: onboardingService,
                             ),
                             if (i < _genderOptions.length - 1)
                               const SizedBox(height: 10),
@@ -289,20 +299,21 @@ class _ProfileDetailsStepState extends State<ProfileDetailsStep> {
     );
   }
 
-  Widget _buildGenderOption(
-    String gender,
-    IconData icon,
-    Color color,
-    OnboardingService onboardingService,
-  ) {
-    final isSelected = _selectedGender == gender;
+  Widget _buildGenderOption({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+    required OnboardingService onboardingService,
+  }) {
+    final isSelected = _selectedGender == value;
 
     return GestureDetector(
       onTap: () {
         setState(() {
-          _selectedGender = gender;
+          _selectedGender = value;
         });
-        onboardingService.updateGender(gender);
+        onboardingService.updateGender(value);
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -313,21 +324,17 @@ class _ProfileDetailsStepState extends State<ProfileDetailsStep> {
           color: isSelected ? color : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? color : AppColors.outline.withValues(alpha: 0.3),
-            width: 1.5,
+            color: isSelected ? color : Colors.black.withValues(alpha: 0.1),
+            width: 1,
           ),
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              size: 22,
-              color: isSelected ? Colors.white : color,
-            ),
+            Icon(icon, size: 22, color: isSelected ? Colors.white : color),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                gender,
+                label,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -378,7 +385,6 @@ class _ProfileDetailsStepState extends State<ProfileDetailsStep> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return Container(
-              height: 380,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: const BorderRadius.only(
@@ -394,10 +400,11 @@ class _ProfileDetailsStepState extends State<ProfileDetailsStep> {
                 ],
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // Header with handle
                   Padding(
-                    padding: const EdgeInsets.only(top: 12, bottom: 8),
+                    padding: const EdgeInsets.only(top: 12, bottom: 16),
                     child: Container(
                       width: 40,
                       height: 4,
@@ -410,61 +417,29 @@ class _ProfileDetailsStepState extends State<ProfileDetailsStep> {
 
                   // Title
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Row(
                       children: [
                         const Text('🎂', style: TextStyle(fontSize: 24)),
                         const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'profile.birthday_label'.tr(),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            tempDate = DateTime(
-                              years[selectedYear],
-                              selectedMonth + 1,
-                              (selectedDay + 1).clamp(
-                                1,
-                                DateTime(
-                                  years[selectedYear],
-                                  selectedMonth + 2,
-                                  0,
-                                ).day,
-                              ),
-                            );
-                            setState(() {
-                              _selectedDate = tempDate;
-                            });
-                            onboardingService.updateBirthday(tempDate);
-                            Navigator.of(context).pop();
-                          },
-                          child: Text(
-                            'app.done'.tr(),
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                            ),
+                        Text(
+                          'profile.birthday_label'.tr(),
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                            letterSpacing: -0.3,
                           ),
                         ),
                       ],
                     ),
                   ),
 
-                  const Divider(height: 1),
+                  const SizedBox(height: 24),
 
                   // Spinners
-                  Expanded(
+                  SizedBox(
+                    height: 220,
                     child: Stack(
                       children: [
                         // Selection highlight
@@ -621,7 +596,56 @@ class _ProfileDetailsStepState extends State<ProfileDetailsStep> {
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  // Done button
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      24,
+                      24,
+                      24,
+                      MediaQuery.of(context).padding.bottom + 24,
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          tempDate = DateTime(
+                            years[selectedYear],
+                            selectedMonth + 1,
+                            (selectedDay + 1).clamp(
+                              1,
+                              DateTime(
+                                years[selectedYear],
+                                selectedMonth + 2,
+                                0,
+                              ).day,
+                            ),
+                          );
+                          setState(() {
+                            _selectedDate = tempDate;
+                          });
+                          onboardingService.updateBirthday(tempDate);
+                          Navigator.of(context).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.textPrimary,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'app.done'.tr(),
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             );

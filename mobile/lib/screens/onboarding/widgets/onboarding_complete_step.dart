@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -18,8 +19,8 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
   late Animation<Offset> _slideAnimation;
+  bool _linkCopied = false;
 
   @override
   void initState() {
@@ -33,13 +34,6 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
       CurvedAnimation(
         parent: _animationController,
         curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-      ),
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.7, curve: Curves.elasticOut),
       ),
     );
 
@@ -62,142 +56,355 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
     super.dispose();
   }
 
-  Future<void> _completeOnboardingAndNavigate() async {
-    try {
-      // Mark onboarding as completed
-      final authService = context.read<AuthService>();
-      await authService.markOnboardingCompleted();
+  void _copyLink(String username) {
+    final link = 'heywish.com/$username';
+    Clipboard.setData(ClipboardData(text: link));
+    setState(() {
+      _linkCopied = true;
+    });
 
-      debugPrint('✅ OnboardingCompleteStep: Onboarding marked as completed');
-
-      // Sync profile data in background
-      final onboardingService = context.read<OnboardingService>();
-      onboardingService.completeOnboarding().then((success) {
-        debugPrint('✅ Background profile sync result: $success');
-      }).catchError((error) {
-        debugPrint('❌ Background profile sync error: $error');
-      });
-
-      // Navigate to home
+    // Reset after 2 seconds
+    Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
-        context.go('/home');
+        setState(() {
+          _linkCopied = false;
+        });
+      }
+    });
+  }
+
+  Future<void> _completeOnboardingAndNavigate() async {
+    final onboardingService = context.read<OnboardingService>();
+    final authService = context.read<AuthService>();
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+
+    if (onboardingService.isLoading) {
+      return;
+    }
+
+    try {
+      final success = await onboardingService.completeOnboarding();
+
+      if (!mounted) {
+        return;
+      }
+
+      if (success) {
+        await authService.markOnboardingCompleted();
+        debugPrint('✅ OnboardingCompleteStep: Onboarding marked as completed');
+        router.go('/home');
+      } else {
+        final message =
+            onboardingService.error ??
+            'Failed to save your profile. Please try again.';
+        messenger.showSnackBar(SnackBar(content: Text(message)));
       }
     } catch (e) {
       debugPrint('❌ Error completing onboarding: $e');
-      if (mounted) {
-        context.go('/home');
+      if (!mounted) {
+        return;
       }
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong. Please try again.'),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Spacer(),
+    final mediaQuery = MediaQuery.of(context);
+    final topPadding = mediaQuery.padding.top;
+    final bottomPadding = mediaQuery.padding.bottom;
 
-          // Animated celebration
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: ScaleTransition(
-              scale: _scaleAnimation,
-              child: Column(
-                children: [
-                  // Multiple celebration icons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+    return Consumer<OnboardingService>(
+      builder: (context, onboardingService, child) {
+        final username = onboardingService.data.username ?? '';
+        final profileUrl = 'heywish.com/$username';
+
+        return Container(
+          color: Colors.white,
+          child: Column(
+            children: [
+              // Scrollable content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.only(
+                    left: 32.0,
+                    right: 32.0,
+                    top: topPadding + 80.0,
+                    bottom: 24.0,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Icon(
-                        Icons.celebration,
-                        size: 60,
-                        color: AppColors.primary,
+                      // Title
+                      SlideTransition(
+                        position: _slideAnimation,
+                        child: FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: Text(
+                            'onboarding.complete_title'.tr(),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                              fontSize: 34,
+                              letterSpacing: -0.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 20),
-                      Icon(
-                        Icons.favorite,
-                        size: 70,
-                        color: Colors.pink,
+
+                      const SizedBox(height: 12),
+
+                      // Subtitle
+                      SlideTransition(
+                        position: _slideAnimation,
+                        child: FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: Text(
+                            'onboarding.complete_subtitle'.tr(),
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 16,
+                              height: 1.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 20),
-                      Icon(
-                        Icons.celebration,
-                        size: 60,
-                        color: AppColors.primary,
+
+                      if (onboardingService.shouldSkipUsernameStep)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Text(
+                            'onboarding.anonymous_username_hint'.tr(),
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14,
+                              height: 1.4,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+
+                      const SizedBox(height: 40),
+
+                      // Username card
+                      FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 20,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                AppColors.primary.withValues(alpha: 0.08),
+                                AppColors.primary.withValues(alpha: 0.03),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.2),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.person_outline_rounded,
+                                size: 28,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'onboarding.your_username'.tr(),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '@$username',
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 22,
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Profile URL card
+                      FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.language_rounded,
+                                    size: 18,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'onboarding.your_personal_page'.tr(),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                      fontSize: 14,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                profileUrl,
+                                style: TextStyle(
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.9,
+                                  ),
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 16,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Copy link button
+                      FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _copyLink(username),
+                          icon: Icon(
+                            _linkCopied
+                                ? Icons.check_rounded
+                                : Icons.link_rounded,
+                            size: 20,
+                            color:
+                                _linkCopied
+                                    ? Colors.green.shade600
+                                    : AppColors.textSecondary,
+                          ),
+                          label: Text(
+                            _linkCopied
+                                ? 'onboarding.link_copied'.tr()
+                                : 'onboarding.copy_link'.tr(),
+                            style: TextStyle(
+                              color:
+                                  _linkCopied
+                                      ? Colors.green.shade600
+                                      : AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              letterSpacing: -0.1,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 16,
+                            ),
+                            side: BorderSide(
+                              color:
+                                  _linkCopied
+                                      ? Colors.green.shade600
+                                      : Colors.black.withValues(alpha: 0.12),
+                              width: 1.5,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  // Decorative sparkles
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.star, size: 20, color: Colors.amber),
-                      const SizedBox(width: 8),
-                      Icon(Icons.star, size: 24, color: Colors.amber),
-                      const SizedBox(width: 8),
-                      Icon(Icons.star, size: 20, color: Colors.amber),
-                    ],
+                ),
+              ),
+
+              // Fixed footer
+              Container(
+                padding: EdgeInsets.only(
+                  left: 24.0,
+                  right: 24.0,
+                  top: 20.0,
+                  bottom: bottomPadding + 32.0,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    top: BorderSide(
+                      color: AppColors.outline.withValues(alpha: 0.1),
+                      width: 1,
+                    ),
                   ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 48),
-
-          // Animated title
-          SlideTransition(
-            position: _slideAnimation,
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Text(
-                'onboarding.complete_title'.tr(),
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                      fontSize: 32,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (onboardingService.error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: Text(
+                          onboardingService.error!,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    PrimaryButton(
+                      onPressed:
+                          onboardingService.isLoading
+                              ? null
+                              : _completeOnboardingAndNavigate,
+                      text: 'onboarding.start_wishing'.tr(),
+                      isLoading: onboardingService.isLoading,
                     ),
-                textAlign: TextAlign.center,
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
-
-          const SizedBox(height: 16),
-
-          // Animated subtitle
-          SlideTransition(
-            position: _slideAnimation,
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Text(
-                'onboarding.complete_subtitle'.tr(),
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 16,
-                      height: 1.5,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-
-          const Spacer(),
-
-          // Start button
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: PrimaryButton(
-              onPressed: _completeOnboardingAndNavigate,
-              text: 'onboarding.start_wishing'.tr(),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-        ],
-      ),
+        );
+      },
     );
   }
 }

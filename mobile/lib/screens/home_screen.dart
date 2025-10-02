@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'wishlists/wishlists_screen.dart';
 import 'feed_screen.dart';
 import 'profile/profile_screen.dart';
+import '../services/clipboard_service.dart';
+import '../common/widgets/url_detected_bottom_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,8 +13,61 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
   int _selectedIndex = 0;
+  bool _hasCheckedClipboardOnLaunch = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    // Check clipboard on initial launch
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkClipboardForUrl();
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // Check clipboard when app comes to foreground
+    if (state == AppLifecycleState.resumed) {
+      _checkClipboardForUrl();
+    }
+  }
+
+  Future<void> _checkClipboardForUrl() async {
+    if (!_hasCheckedClipboardOnLaunch) {
+      _hasCheckedClipboardOnLaunch = true;
+      // Small delay to ensure UI is ready
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    final url = await ClipboardService.checkForUrl();
+
+    if (url != null && mounted) {
+      final shouldAdd = await UrlDetectedBottomSheet.show(
+        context: context,
+        url: url,
+      );
+
+      if (shouldAdd == true && mounted) {
+        // Navigate to add wish screen with pre-filled URL
+        context.push(
+          '/add-wish',
+          extra: {'initialUrl': url},
+        );
+      }
+    }
+  }
 
   void _navigateToTab(int index) {
     setState(() {

@@ -5,6 +5,7 @@ class User {
   final String? name;
   final String? username;
   final String? avatarUrl;
+  final String? bio;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -15,6 +16,7 @@ class User {
     this.name,
     this.username,
     this.avatarUrl,
+    this.bio,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -27,6 +29,7 @@ class User {
       name: json['full_name'],
       username: json['username'],
       avatarUrl: json['avatar_url'],
+      bio: json['bio'],
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
     );
@@ -40,6 +43,7 @@ class User {
       'full_name': name,
       'username': username,
       'avatar_url': avatarUrl,
+      'bio': bio,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };

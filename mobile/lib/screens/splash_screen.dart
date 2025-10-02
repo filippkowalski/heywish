@@ -28,18 +28,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    // If user is authenticated but has no username, they didn't complete onboarding
-    // Reset onboarding status to force them to restart
-    if (authService.isAuthenticated &&
-        authService.isOnboardingCompleted &&
-        (authService.currentUser == null ||
-            authService.currentUser?.username == null)) {
-      debugPrint(
-        '⚠️ User marked as onboarded but has no username - resetting onboarding',
-      );
-      await authService.resetOnboardingStatus();
-    }
-
     // Check if user is already authenticated and completed onboarding
     if (authService.isAuthenticated && !authService.needsOnboarding) {
       context.go('/home');

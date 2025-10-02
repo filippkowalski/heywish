@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../services/auth_service.dart';
 import '../../services/wishlist_service.dart';
 import '../../models/wishlist.dart';
+import '../../models/wish.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/cached_image.dart';
 import '../../common/widgets/skeleton_loading.dart';
@@ -17,9 +18,10 @@ class WishlistsScreen extends StatefulWidget {
   State<WishlistsScreen> createState() => _WishlistsScreenState();
 }
 
-class _WishlistsScreenState extends State<WishlistsScreen> {
+class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProviderStateMixin {
   bool _hasLoadedOnce = false;
   bool _hasCompletedInitialLoad = false;
+  String? _selectedWishlistFilter;
 
   @override
   void initState() {
@@ -128,13 +130,13 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
                 Text(
                   'Create & share your wish lists',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.primary.withOpacity(0.7),
+                    color: AppTheme.primary.withValues(alpha: 0.7),
                   ),
                 ),
               ],
             ),
           ),
-          // Add wishlist button
+          // Add item button
           Container(
             decoration: BoxDecoration(
               color: AppTheme.primaryAccent,
@@ -142,14 +144,14 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
             ),
             child: IconButton(
               onPressed: () {
-                context.push('/wishlists/new');
+                context.push('/add-wish');
               },
               icon: const Icon(
                 Icons.add,
                 color: Colors.white,
                 size: 20,
               ),
-              tooltip: 'Create Wishlist',
+              tooltip: 'Add Item',
             ),
           ),
         ],
@@ -205,14 +207,161 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
   }
 
   Widget _buildContent(List<Wishlist> wishlists) {
-    return ListView.separated(
-      padding: const EdgeInsets.all(20.0),
-      itemCount: wishlists.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final wishlist = wishlists[index];
-        return _WishlistCard(wishlist: wishlist);
-      },
+    // Collect all wishes from all wishlists
+    final allWishes = <Wish>[];
+    for (final wishlist in wishlists) {
+      if (wishlist.wishes != null) {
+        allWishes.addAll(wishlist.wishes!);
+      }
+    }
+
+    // Filter wishes by selected wishlist
+    final filteredWishes = _selectedWishlistFilter == null
+        ? allWishes
+        : allWishes.where((wish) => wish.wishlistId == _selectedWishlistFilter).toList();
+
+    return Column(
+      children: [
+        // Tabs for filtering by wishlist
+        if (wishlists.isNotEmpty) _buildWishlistTabs(wishlists),
+
+        // Wishes list
+        Expanded(
+          child: filteredWishes.isEmpty
+              ? _buildEmptyWishesState()
+              : ListView.separated(
+                  padding: const EdgeInsets.all(20.0),
+                  itemCount: filteredWishes.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final wish = filteredWishes[index];
+                    final wishlist = wishlists.firstWhere(
+                      (w) => w.id == wish.wishlistId,
+                      orElse: () => wishlists.first,
+                    );
+                    return _WishCard(wish: wish, wishlist: wishlist);
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWishlistTabs(List<Wishlist> wishlists) {
+    return Container(
+      height: 50,
+      margin: const EdgeInsets.only(top: 8),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        children: [
+          // "All" tab
+          _buildTabChip(
+            label: 'All',
+            isSelected: _selectedWishlistFilter == null,
+            onTap: () {
+              setState(() {
+                _selectedWishlistFilter = null;
+              });
+            },
+          ),
+          const SizedBox(width: 8),
+          // Wishlist tabs
+          ...wishlists.map((wishlist) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _buildTabChip(
+                label: wishlist.name,
+                isSelected: _selectedWishlistFilter == wishlist.id,
+                onTap: () {
+                  setState(() {
+                    _selectedWishlistFilter = wishlist.id;
+                  });
+                },
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primary : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppTheme.primary : Colors.grey.shade300,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : AppTheme.primary,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyWishesState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Icon(
+                Icons.card_giftcard_outlined,
+                size: 48,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No items yet',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _selectedWishlistFilter == null
+                  ? 'Add your first item to get started'
+                  : 'No items in this wishlist yet',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () {
+                context.push('/add-wish');
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Add Item'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -273,16 +422,17 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
 
 }
 
-class _WishlistCard extends StatefulWidget {
+class _WishCard extends StatefulWidget {
+  final Wish wish;
   final Wishlist wishlist;
 
-  const _WishlistCard({required this.wishlist});
+  const _WishCard({required this.wish, required this.wishlist});
 
   @override
-  State<_WishlistCard> createState() => _WishlistCardState();
+  State<_WishCard> createState() => _WishCardState();
 }
 
-class _WishlistCardState extends State<_WishlistCard> {
+class _WishCardState extends State<_WishCard> {
   bool _isPressed = false;
 
   @override
@@ -312,113 +462,108 @@ class _WishlistCardState extends State<_WishlistCard> {
           onTapUp: (_) => setState(() => _isPressed = false),
           onTapCancel: () => setState(() => _isPressed = false),
           onTap: () {
-            context.push('/wishlists/${widget.wishlist.id}');
+            // Navigate to wish detail (you might need to add this route)
+            context.push('/wishlists/${widget.wishlist.id}/items/${widget.wish.id}');
           },
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(12.0),
             child: Row(
               children: [
-                // Icon/Image container
+                // Item image
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 72,
+                  height: 72,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: widget.wishlist.coverImageUrl != null
-                      ? CachedImageWidget(
-                          imageUrl: widget.wishlist.coverImageUrl!,
-                          width: 56,
-                          height: 56,
-                          fit: BoxFit.cover,
-                          borderRadius: BorderRadius.circular(12),
-                          errorWidget: Icon(
-                            Icons.card_giftcard_outlined,
-                            size: 28,
-                            color: Theme.of(context).colorScheme.primary,
+                  child: widget.wish.imageUrl != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedImageWidget(
+                            imageUrl: widget.wish.imageUrl!,
+                            width: 72,
+                            height: 72,
+                            fit: BoxFit.cover,
+                            errorWidget: Icon(
+                              Icons.card_giftcard_outlined,
+                              size: 32,
+                              color: Colors.grey.shade400,
+                            ),
                           ),
                         )
                       : Icon(
                           Icons.card_giftcard_outlined,
-                          size: 28,
-                          color: Theme.of(context).colorScheme.primary,
+                          size: 32,
+                          color: Colors.grey.shade400,
                         ),
                 ),
-                
-                const SizedBox(width: 16),
-                
+
+                const SizedBox(width: 12),
+
                 // Content
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              widget.wishlist.name,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      Text(
+                        widget.wish.title,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.wishlist.name,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey.shade600,
+                            ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (widget.wish.price != null) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          '${widget.wish.currency ?? 'USD'} ${widget.wish.price!.toStringAsFixed(2)}',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
+                                color: AppTheme.primary,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (widget.wishlist.isPublic)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                'Public',
-                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 6),
-                      
-                      Row(
-                        children: [
-                          Text(
-                            '${widget.wishlist.wishCount} items',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          if (widget.wishlist.reservedCount > 0) ...[
-                            Text(
-                              ' • ',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            Text(
-                              '${widget.wishlist.reservedCount} reserved',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppTheme.success,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
-                
-                // Arrow indicator
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 14,
-                  color: AppTheme.arrowIndicator,
-                ),
+
+                const SizedBox(width: 8),
+
+                // Reserved indicator or arrow
+                if (widget.wish.isReserved)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.success.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Reserved',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppTheme.success,
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
+                  )
+                else
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 14,
+                    color: AppTheme.arrowIndicator,
+                  ),
               ],
             ),
           ),

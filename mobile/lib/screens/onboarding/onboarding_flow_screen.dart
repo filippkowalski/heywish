@@ -9,7 +9,6 @@ import 'widgets/welcome_step.dart';
 import 'widgets/account_creation_step.dart';
 import 'widgets/user_status_check_step.dart';
 import 'widgets/username_step.dart';
-import 'widgets/username_confirmation_step.dart';
 import 'widgets/profile_details_step.dart';
 import 'widgets/shopping_interests_step.dart';
 import 'widgets/notifications_step.dart';
@@ -124,8 +123,6 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
         return const UserStatusCheckStep();
       case OnboardingStep.username:
         return const UsernameStep();
-      case OnboardingStep.usernameConfirmation:
-        return const UsernameConfirmationStep();
       case OnboardingStep.complete:
         return const OnboardingCompleteStep();
     }
@@ -155,7 +152,6 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
            step != OnboardingStep.accountCreation &&
            step != OnboardingStep.checkUserStatus &&
            step != OnboardingStep.username &&
-           step != OnboardingStep.usernameConfirmation &&
            step != OnboardingStep.complete;
   }
 }

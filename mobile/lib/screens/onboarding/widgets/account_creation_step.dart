@@ -1,5 +1,6 @@
-import 'dart:math';
+import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/onboarding_service.dart';
 import '../../../common/theme/app_colors.dart';
+import '../../../common/widgets/native_loading_overlay.dart';
 
 class AccountCreationStep extends StatefulWidget {
   const AccountCreationStep({Key? key}) : super(key: key);
@@ -379,9 +381,17 @@ class _AccountCreationStepState extends State<AccountCreationStep>
   }
 
   Future<void> _signUpWithGoogle(BuildContext context) async {
+    // Show native loading overlay
+    final dismissLoader = NativeLoadingOverlay.show(
+      context,
+      message: 'auth.signing_in'.tr(),
+    );
+
     try {
       final authService = context.read<AuthService>();
       final onboarding = context.read<OnboardingService>();
+
+      onboarding.setSkipUsernameStep(false);
 
       // 1. Sign in with Google
       await authService.signInWithGoogle();
@@ -395,6 +405,9 @@ class _AccountCreationStepState extends State<AccountCreationStep>
       // 3. Check if user already exists (has username)
       final isExistingUser = authService.currentUser?.username != null;
 
+      // Dismiss loader before navigation
+      dismissLoader();
+
       if (isExistingUser) {
         // Existing user - skip onboarding, go to main app
         await authService.markOnboardingCompleted();
@@ -403,9 +416,13 @@ class _AccountCreationStepState extends State<AccountCreationStep>
         }
       } else {
         // New user - continue to username selection
+        onboarding.setSkipUsernameStep(false);
         onboarding.goToStep(OnboardingStep.username);
       }
     } catch (e) {
+      // Dismiss loader on error
+      dismissLoader();
+
       debugPrint('Error signing up with Google: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -419,9 +436,17 @@ class _AccountCreationStepState extends State<AccountCreationStep>
   }
 
   Future<void> _signUpWithApple(BuildContext context) async {
+    // Show native loading overlay
+    final dismissLoader = NativeLoadingOverlay.show(
+      context,
+      message: 'auth.signing_in'.tr(),
+    );
+
     try {
       final authService = context.read<AuthService>();
       final onboarding = context.read<OnboardingService>();
+
+      onboarding.setSkipUsernameStep(false);
 
       // 1. Sign in with Apple
       await authService.signInWithApple();
@@ -435,6 +460,9 @@ class _AccountCreationStepState extends State<AccountCreationStep>
       // 3. Check if user already exists (has username)
       final isExistingUser = authService.currentUser?.username != null;
 
+      // Dismiss loader before navigation
+      dismissLoader();
+
       if (isExistingUser) {
         // Existing user - skip onboarding, go to main app
         await authService.markOnboardingCompleted();
@@ -443,9 +471,13 @@ class _AccountCreationStepState extends State<AccountCreationStep>
         }
       } else {
         // New user - continue to username selection
+        onboarding.setSkipUsernameStep(false);
         onboarding.goToStep(OnboardingStep.username);
       }
     } catch (e) {
+      // Dismiss loader on error
+      dismissLoader();
+
       debugPrint('Error signing up with Apple: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -466,8 +498,9 @@ class _AccountCreationStepState extends State<AccountCreationStep>
     final username = _generateAnonymousUsername();
     debugPrint('Generated anonymous username: $username');
 
-    // Move to next step immediately - don't wait for auth
-    onboarding.goToStep(OnboardingStep.profileDetails);
+    onboarding.setGeneratedUsername(username);
+    onboarding.setSkipUsernameStep(true);
+    onboarding.goToStep(OnboardingStep.complete);
 
     // Do auth and sync in background
     try {

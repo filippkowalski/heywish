@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'dart:developer' as developer;
 import '../../../services/onboarding_service.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/widgets/primary_button.dart';
@@ -100,13 +99,9 @@ class _ShoppingInterestsStepState extends State<ShoppingInterestsStep> {
       }
     });
 
-    // Update onboarding data
+    // Update onboarding data with canonical ids
     final onboardingService = context.read<OnboardingService>();
-    onboardingService.data.shoppingInterests = _selectedCategories.toList();
-    developer.log(
-      '🔵 ONBOARDING: Shopping interests updated: ${_selectedCategories.toList()}',
-      name: 'ShoppingInterestsStep',
-    );
+    onboardingService.updateShoppingInterests(_selectedCategories.toList());
   }
 
   @override
@@ -238,7 +233,11 @@ class _ShoppingInterestsStepState extends State<ShoppingInterestsStep> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: Text(
-                      'shopping_interests.selected_count'.tr(namedArgs: {'count': _selectedCategories.length.toString()}),
+                      'shopping_interests.selected_count'.tr(
+                        namedArgs: {
+                          'count': _selectedCategories.length.toString(),
+                        },
+                      ),
                       style: const TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
