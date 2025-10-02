@@ -15,11 +15,13 @@ import '../../models/wishlist.dart';
 class AddWishScreen extends StatefulWidget {
   final String? wishlistId;
   final String? initialUrl;
+  final Map<String, dynamic>? prefilledData;
 
   const AddWishScreen({
     super.key,
     this.wishlistId,
     this.initialUrl,
+    this.prefilledData,
   });
 
   @override
@@ -56,8 +58,18 @@ class _AddWishScreenState extends State<AddWishScreen> {
     // Listen for URL changes with debouncing
     _urlController.addListener(_onUrlChanged);
 
-    // Pre-fill URL if provided from clipboard
-    if (widget.initialUrl != null) {
+    // Pre-fill data if provided (from feed copy)
+    if (widget.prefilledData != null) {
+      final data = widget.prefilledData!;
+      _titleController.text = data['title'] ?? '';
+      _descriptionController.text = data['description'] ?? '';
+      _priceController.text = data['price']?.toString() ?? '';
+      _urlController.text = data['url'] ?? '';
+      _currency = data['currency'] ?? 'USD';
+      _scrapedImageUrl = data['image'];
+    }
+    // Otherwise pre-fill URL if provided from clipboard
+    else if (widget.initialUrl != null) {
       _urlController.text = widget.initialUrl!;
       // Trigger scraping after a short delay to allow UI to settle
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -895,7 +907,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
               ),
         ),
         const SizedBox(height: 24),
-        _selectedImage != null
+        (_selectedImage != null || _scrapedImageUrl != null)
             ? _buildSelectedImage()
             : _buildAddImageButton(),
       ],
@@ -911,10 +923,50 @@ class _AddWishScreenState extends State<AddWishScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             color: Colors.grey.shade100,
-            image: DecorationImage(
-              image: FileImage(_selectedImage!),
-              fit: BoxFit.cover,
-            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: _selectedImage != null
+                ? Image.file(
+                    _selectedImage!,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: 200,
+                  )
+                : _scrapedImageUrl != null
+                    ? Image.network(
+                        _scrapedImageUrl!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 200,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.broken_image, size: 48, color: Colors.grey.shade400),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Failed to load image',
+                                  style: TextStyle(color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      )
+                    : const SizedBox(),
           ),
         ),
         const SizedBox(height: 12),
@@ -935,6 +987,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
               onPressed: () {
                 setState(() {
                   _selectedImage = null;
+                  _scrapedImageUrl = null;
                 });
               },
               icon: const Icon(Icons.delete_outline),

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 import '../common/widgets/skeleton_loading.dart';
 import '../common/widgets/native_refresh_indicator.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class FeedScreen extends StatefulWidget {
@@ -80,6 +83,18 @@ class _FeedScreenState extends State<FeedScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _copyWishToMyWishlist(FeedItem item) async {
+    // Navigate to add wish screen with prefilled data
+    context.push('/add-wish', extra: {
+      'prefilledData': {
+        'title': item.wishTitle,
+        'price': item.wishPrice,
+        'currency': item.wishCurrency,
+        'image': item.wishImage,
+      }
+    });
   }
 
   @override
@@ -241,6 +256,244 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Widget _buildEmptyState() {
+    // Scenario 1: No friends at all
+    if (_friendsCount == 0) {
+      return _buildNoFriendsState();
+    }
+
+    // Scenario 2: Has friends but they haven't added wishes
+    if (_friendsCount > 0 && !_hasFriendsWithWishes) {
+      return _buildFriendsNoWishesState();
+    }
+
+    // Fallback empty state
+    return _buildNoActivityState();
+  }
+
+  Widget _buildNoFriendsState() {
+    final authService = AuthService();
+    final username = authService.currentUser?.username ?? '';
+    final shareUrl = username.isNotEmpty ? 'heywish.com/@$username' : '';
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.person_search,
+              size: 80,
+              color: AppTheme.primaryAccent.withOpacity(0.5),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Find Your Friends',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: AppTheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Connect with friends to see their wishes and discover gift ideas',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey.shade600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+
+            // Share username card
+            if (shareUrl.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryAccent.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.primaryAccent.withOpacity(0.3),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Your Profile Link',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            shareUrl,
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: AppTheme.primaryAccent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: () {
+                            Clipboard.setData(ClipboardData(text: shareUrl));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Link copied to clipboard!'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          child: Icon(
+                            Icons.copy,
+                            size: 20,
+                            color: AppTheme.primaryAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // Search button
+            FilledButton.icon(
+              onPressed: () {
+                // Navigate to search/people tab
+                DefaultTabController.of(context)?.animateTo(1);
+              },
+              icon: const Icon(Icons.search),
+              label: const Text('Search for Friends'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.primaryAccent,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFriendsNoWishesState() {
+    final authService = AuthService();
+    final username = authService.currentUser?.username ?? '';
+    final shareUrl = username.isNotEmpty ? 'heywish.com/@$username' : '';
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.celebration_outlined,
+              size: 80,
+              color: AppTheme.primaryAccent.withOpacity(0.5),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Your Friends Are Quiet',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: AppTheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'You have friends, but they haven\'t added any wishes yet. Invite more friends to grow your network!',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey.shade600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+
+            // Share username card
+            if (shareUrl.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryAccent.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.primaryAccent.withOpacity(0.3),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Share Your Profile',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            shareUrl,
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: AppTheme.primaryAccent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: () {
+                            Clipboard.setData(ClipboardData(text: shareUrl));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Link copied to clipboard!'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          child: Icon(
+                            Icons.copy,
+                            size: 20,
+                            color: AppTheme.primaryAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // Find more friends button
+            FilledButton.icon(
+              onPressed: () {
+                DefaultTabController.of(context)?.animateTo(1);
+              },
+              icon: const Icon(Icons.person_add),
+              label: const Text('Find More Friends'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.primaryAccent,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoActivityState() {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -262,7 +515,7 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Add friends to see their wishlist activity here',
+              'Check back soon to see what your friends are wishing for',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.grey.shade500,
               ),
@@ -403,6 +656,21 @@ class _FeedScreenState extends State<FeedScreen> {
                     ),
                   ),
                 ],
+                const SizedBox(height: 12),
+                // Copy to wishlist button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _copyWishToMyWishlist(item),
+                    icon: const Icon(Icons.add_circle_outline, size: 18),
+                    label: const Text('Add to my wishlist'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.primaryAccent,
+                      side: BorderSide(color: AppTheme.primaryAccent),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

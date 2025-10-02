@@ -190,9 +190,11 @@ final _router = GoRouter(
       pageBuilder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
         final initialUrl = extra?['initialUrl'] as String?;
+        final prefilledData = extra?['prefilledData'] as Map<String, dynamic>?;
         return NativeTransitions.page(
           child: AddWishScreen(
             initialUrl: initialUrl,
+            prefilledData: prefilledData,
           ),
           key: state.pageKey,
           name: state.name,
