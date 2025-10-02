@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -108,6 +109,42 @@ class _AddWishScreenState extends State<AddWishScreen> {
              uri.host.isNotEmpty;
     } catch (e) {
       return false;
+    }
+  }
+
+  /// Paste URL from clipboard
+  Future<void> _pasteFromClipboard() async {
+    try {
+      final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+      final text = clipboardData?.text?.trim();
+
+      if (text != null && text.isNotEmpty) {
+        _urlController.text = text;
+
+        // Trigger scraping if it's a valid URL
+        if (_isValidUrl(text)) {
+          _scrapeUrl(text);
+        }
+
+        // Show feedback
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.content_paste, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  const Text('Pasted from clipboard'),
+                ],
+              ),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error pasting from clipboard: $e');
     }
   }
 
@@ -359,11 +396,11 @@ class _AddWishScreenState extends State<AddWishScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildWishlistSelectorSection(),
-            const SizedBox(height: 32),
             _buildBasicInfoSection(),
             const SizedBox(height: 32),
             _buildImageSection(),
+            const SizedBox(height: 32),
+            _buildWishlistSelectorSection(),
             const SizedBox(height: 32),
             _buildPriceSection(),
             const SizedBox(height: 32),
@@ -655,10 +692,18 @@ class _AddWishScreenState extends State<AddWishScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                   )
-                : (_urlController.text.isNotEmpty && _isValidUrl(_urlController.text)
+                : _urlController.text.isNotEmpty && _isValidUrl(_urlController.text)
                     ? const Icon(Icons.check_circle, color: Colors.green)
+                    : IconButton(
+                        icon: const Icon(Icons.content_paste),
+                        tooltip: 'Paste from clipboard',
+                        onPressed: _pasteFromClipboard,
+                      ),
+            helperText: _isScrapingUrl
+                ? '✨ Loading product details...'
+                : (_urlController.text.isEmpty
+                    ? 'Tap paste icon to paste from clipboard'
                     : null),
-            helperText: _isScrapingUrl ? '✨ Loading product details...' : null,
             helperMaxLines: 1,
           ),
           keyboardType: TextInputType.url,
