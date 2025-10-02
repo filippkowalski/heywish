@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../services/mock_data_service.dart';
 import '../services/friends_service.dart';
 import '../models/friend.dart';
 import '../theme/app_theme.dart';
@@ -8,43 +7,40 @@ import '../widgets/cached_image.dart';
 import '../common/navigation/native_page_route.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final int initialTabIndex;
+
+  const SearchScreen({
+    super.key,
+    this.initialTabIndex = 1, // Default to People tab
+  });
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMixin {
+class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<Map<String, dynamic>> _suggestions = [];
   List<UserSearchResult> _userSearchResults = [];
   bool _isSearching = false;
   bool _isLoadingUsers = false;
-  String _searchType = 'discover'; // 'discover' or 'people'
   Timer? _searchDebouncer;
-  late TabController _tabController;
 
   final FriendsService _friendsService = FriendsService();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _loadSuggestions();
+    // Auto-focus search field
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(FocusNode());
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _searchDebouncer?.cancel();
-    _tabController.dispose();
     super.dispose();
-  }
-
-  void _loadSuggestions() {
-    setState(() {
-      _suggestions = MockDataService.getMockSuggestions();
-    });
   }
 
   void _onSearchChanged(String query) {
@@ -60,7 +56,7 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
       _isSearching = true;
     });
 
-    if (_searchType == 'people' && query.length >= 2) {
+    if (query.length >= 2) {
       _searchDebouncer?.cancel();
       _searchDebouncer = Timer(const Duration(milliseconds: 500), () {
         _searchUsers(query);
@@ -85,7 +81,11 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error searching users: $e'),
-            backgroundColor: Colors.red.shade600,
+            backgroundColor: Colors.red.shade400,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
       }
@@ -99,7 +99,7 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
   Future<void> _sendFriendRequest(UserSearchResult user) async {
     try {
       await _friendsService.sendFriendRequest(user.id);
-      
+
       // Update the user in the results list
       setState(() {
         final index = _userSearchResults.indexWhere((u) => u.id == user.id);
@@ -120,7 +120,11 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Friend request sent to ${user.displayName}'),
-            backgroundColor: Colors.green.shade600,
+            backgroundColor: Colors.green.shade400,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
       }
@@ -129,7 +133,11 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error sending friend request: $e'),
-            backgroundColor: Colors.red.shade600,
+            backgroundColor: Colors.red.shade400,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
       }
@@ -139,151 +147,198 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Discover'),
-        automaticallyImplyLeading: false,
-        bottom: TabBar(
-          controller: _tabController,
-          onTap: (index) {
-            setState(() {
-              _searchType = index == 0 ? 'discover' : 'people';
-              if (_searchController.text.isNotEmpty) {
-                _onSearchChanged(_searchController.text);
-              }
-            });
-          },
-          tabs: const [
-            Tab(text: 'Discover', icon: Icon(Icons.explore)),
-            Tab(text: 'People', icon: Icon(Icons.people)),
-          ],
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppTheme.primary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          'Find Friends',
+          style: TextStyle(
+            color: AppTheme.primary,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       body: Column(
         children: [
           // Search bar
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SearchBar(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+            child: TextField(
               controller: _searchController,
-              hintText: _searchType == 'people' 
-                  ? 'Search for users by name or username...'
-                  : 'Search for gifts, brands, or ideas...',
-              leading: Icon(Icons.search),
-              trailing: [
-                if (_searchController.text.isNotEmpty)
-                  IconButton(
-                    icon: Icon(Icons.clear),
-                    onPressed: () {
-                      _searchController.clear();
-                      _onSearchChanged('');
-                    },
-                  ),
-              ],
               onChanged: _onSearchChanged,
+              autofocus: false,
+              style: TextStyle(
+                color: AppTheme.primary,
+                fontSize: 16,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Search by username or name...',
+                hintStyle: TextStyle(
+                  color: Colors.grey.shade400,
+                  fontSize: 16,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: AppTheme.primaryAccent,
+                  size: 22,
+                ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.clear,
+                          color: Colors.grey.shade400,
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          _onSearchChanged('');
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.grey.shade50,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Colors.grey.shade200,
+                    width: 1,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Colors.grey.shade200,
+                    width: 1,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppTheme.primaryAccent,
+                    width: 1.5,
+                  ),
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+              ),
             ),
           ),
-          
+
+          // Results
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // Discover tab
-                _isSearching && _searchType == 'discover' 
-                    ? _buildDiscoverSearchResults() 
-                    : _buildDiscoverContent(),
-                // People tab
-                _buildPeopleContent(),
-              ],
-            ),
+            child: _buildContent(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDiscoverSearchResults() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.search,
-            size: 64,
-            color: Colors.grey.shade300,
-          ),
-          SizedBox(height: 16),
-          Text('Product search coming soon!'),
-          SizedBox(height: 8),
-          Text(
-            'We\'re working on connecting to product databases',
-            style: TextStyle(color: Colors.grey.shade300),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPeopleContent() {
-    if (!_isSearching || _searchType != 'people') {
+  Widget _buildContent() {
+    // Empty state - no search yet
+    if (!_isSearching) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.people_outline,
-              size: 64,
-              color: Colors.grey.shade300,
-            ),
-            SizedBox(height: 16),
-            Text('Find friends on HeyWish'),
-            SizedBox(height: 8),
-            Text(
-              'Search for users by name or username',
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.person_search,
+                size: 80,
+                color: AppTheme.primaryAccent.withOpacity(0.3),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Find Your Friends',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Search for friends by their username or name to connect and see their wishlists',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey.shade600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       );
     }
 
+    // Loading state
     if (_isLoadingUsers) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Searching for users...'),
+            CircularProgressIndicator(
+              color: AppTheme.primaryAccent,
+              strokeWidth: 2.5,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Searching...',
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 15,
+              ),
+            ),
           ],
         ),
       );
     }
 
+    // No results
     if (_userSearchResults.isEmpty && _searchController.text.isNotEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.person_off,
-              size: 64,
-              color: Colors.grey.shade300,
-            ),
-            SizedBox(height: 16),
-            Text('No users found'),
-            SizedBox(height: 8),
-            Text(
-              'Try a different search term',
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.person_off_outlined,
+                size: 64,
+                color: Colors.grey.shade300,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No users found',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Try a different search term',
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    return ListView.builder(
-      padding: EdgeInsets.all(16),
+    // Results list
+    return ListView.separated(
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       itemCount: _userSearchResults.length,
+      separatorBuilder: (context, index) => SizedBox(height: 12),
       itemBuilder: (context, index) {
         final user = _userSearchResults[index];
         return _buildUserCard(user);
@@ -292,91 +347,189 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
   }
 
   Widget _buildUserCard(UserSearchResult user) {
-    return Card(
-      margin: EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        contentPadding: EdgeInsets.all(16),
-        leading: CachedAvatarImage(
-          imageUrl: user.avatarUrl,
-          radius: 24,
-          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey.shade200,
+          width: 1,
         ),
-        title: Text(
-          user.displayName,
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('@${user.username}'),
-            if (user.bio != null && user.bio!.isNotEmpty) ...[
-              SizedBox(height: 4),
-              Text(
-                user.bio!,
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 13,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _showUserProfile(user),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Avatar
+                CachedAvatarImage(
+                  imageUrl: user.avatarUrl,
+                  radius: 28,
+                  backgroundColor: AppTheme.primaryAccent.withOpacity(0.1),
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ],
+                const SizedBox(width: 16),
+
+                // User info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.displayName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '@${user.username}',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      if (user.bio != null && user.bio!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          user.bio!,
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontSize: 13,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                // Action button
+                _buildUserActionButton(user),
+              ],
+            ),
+          ),
         ),
-        trailing: _buildUserActionButton(user),
-        onTap: () {
-          // Navigate to user profile
-          _showUserProfile(user);
-        },
       ),
     );
   }
 
   Widget _buildUserActionButton(UserSearchResult user) {
     if (user.isFriend) {
-      return Chip(
-        label: Text('Friends'),
-        backgroundColor: Colors.green.shade100,
-        labelStyle: TextStyle(
-          color: Colors.green.shade700,
-          fontSize: 12,
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.green.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Colors.green.shade200,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.check_circle,
+              size: 14,
+              color: Colors.green.shade700,
+            ),
+            SizedBox(width: 4),
+            Text(
+              'Friends',
+              style: TextStyle(
+                color: Colors.green.shade700,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       );
     }
 
     if (user.hasPendingRequest) {
       if (user.requestSentByMe) {
-        return Chip(
-          label: Text('Pending'),
-          backgroundColor: Colors.orange.shade100,
-          labelStyle: TextStyle(
-            color: Colors.orange.shade700,
-            fontSize: 12,
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.orange.shade50,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: Colors.orange.shade200,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.schedule,
+                size: 14,
+                color: Colors.orange.shade700,
+              ),
+              SizedBox(width: 4),
+              Text(
+                'Pending',
+                style: TextStyle(
+                  color: Colors.orange.shade700,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         );
       } else {
-        return Chip(
-          label: Text('Respond'),
-          backgroundColor: Colors.blue.shade100,
-          labelStyle: TextStyle(
-            color: Colors.blue.shade700,
-            fontSize: 12,
+        return OutlinedButton(
+          onPressed: () => _showUserProfile(user),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppTheme.primaryAccent,
+            side: BorderSide(color: AppTheme.primaryAccent),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            minimumSize: Size(0, 32),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text(
+            'Respond',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
           ),
         );
       }
     }
 
-    return ElevatedButton(
+    return OutlinedButton.icon(
       onPressed: () => _sendFriendRequest(user),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        minimumSize: Size(0, 32),
+      icon: Icon(Icons.person_add, size: 16),
+      label: Text(
+        'Add',
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
       ),
-      child: Text(
-        'Add Friend',
-        style: TextStyle(fontSize: 12),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppTheme.primaryAccent,
+        side: BorderSide(color: AppTheme.primaryAccent),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        minimumSize: Size(0, 32),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
     );
   }
@@ -387,17 +540,18 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       child: DraggableScrollableSheet(
-        initialChildSize: 0.7,
+        initialChildSize: 0.65,
         maxChildSize: 0.9,
         minChildSize: 0.5,
         builder: (context, scrollController) {
           return Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
+              color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Column(
               children: [
+                // Handle bar
                 Container(
                   margin: EdgeInsets.symmetric(vertical: 12),
                   width: 40,
@@ -407,24 +561,32 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
+
                 Expanded(
                   child: SingleChildScrollView(
                     controller: scrollController,
-                    padding: EdgeInsets.all(24),
+                    padding: EdgeInsets.fromLTRB(24, 8, 24, 24),
                     child: Column(
                       children: [
+                        // Avatar
                         CachedAvatarImage(
                           imageUrl: user.avatarUrl,
-                          radius: 40,
-                          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          radius: 48,
+                          backgroundColor: AppTheme.primaryAccent.withOpacity(0.1),
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: 20),
+
+                        // Name
                         Text(
                           user.displayName,
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.bold,
+                            color: AppTheme.primary,
                           ),
                         ),
+                        SizedBox(height: 4),
+
+                        // Username
                         Text(
                           '@${user.username}',
                           style: TextStyle(
@@ -432,18 +594,26 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                             fontSize: 16,
                           ),
                         ),
+
+                        // Bio
                         if (user.bio != null && user.bio!.isNotEmpty) ...[
-                          SizedBox(height: 16),
+                          SizedBox(height: 20),
                           Text(
                             user.bio!,
-                            style: TextStyle(fontSize: 16),
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.grey.shade700,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ],
-                        SizedBox(height: 24),
+
+                        SizedBox(height: 32),
+
+                        // Action button
                         SizedBox(
                           width: double.infinity,
-                          child: _buildUserActionButton(user),
+                          child: _buildProfileActionButton(user),
                         ),
                       ],
                     ),
@@ -457,237 +627,54 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
     );
   }
 
-  Widget _buildDiscoverContent() {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Categories
-          _buildCategoriesSection(),
-          
-          // Trending and suggestions
-          ..._suggestions.map((section) => _buildSuggestionSection(section)),
-          
-          const SizedBox(height: 100),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoriesSection() {
-    final categories = [
-      {'name': 'Electronics', 'icon': Icons.devices, 'color': Theme.of(context).colorScheme.primary},
-      {'name': 'Fashion', 'icon': Icons.checkroom, 'color': Colors.blue},
-      {'name': 'Home & Garden', 'icon': Icons.home, 'color': Colors.blue},
-      {'name': 'Books', 'icon': Icons.book, 'color': Colors.blue},
-      {'name': 'Sports', 'icon': Icons.sports_tennis, 'color': Colors.blue},
-      {'name': 'Beauty', 'icon': Icons.face, 'color': Theme.of(context).colorScheme.primary},
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Browse Categories',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 1,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-            ),
-            itemCount: categories.length,
-            itemBuilder: (context, index) {
-              final category = categories[index];
-              return _buildCategoryCard(category);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryCard(Map<String, dynamic> category) {
-    return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${category['name']} category coming soon!')),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: (category['color'] as Color).withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: (category['color'] as Color).withOpacity(0.2),
+  Widget _buildProfileActionButton(UserSearchResult user) {
+    if (user.isFriend) {
+      return OutlinedButton.icon(
+        onPressed: () {},
+        icon: Icon(Icons.check_circle_outline),
+        label: Text('Already Friends'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.green.shade700,
+          side: BorderSide(color: Colors.green.shade300),
+          padding: EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              category['icon'] as IconData,
-              size: 32,
-              color: category['color'] as Color,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              category['name'] as String,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: category['color'] as Color,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSuggestionSection(Map<String, dynamic> section) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                section['title'] as String,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('View all coming soon!')),
-                  );
-                },
-                child: const Text('View All'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 200,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: (section['items'] as List).length,
-              itemBuilder: (context, index) {
-                final item = (section['items'] as List)[index];
-                return _buildSuggestionCard(item);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSuggestionCard(Map<String, dynamic> item) {
-    return Container(
-      width: 140,
-      margin: const EdgeInsets.only(right: 12),
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 100,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-              ),
-              child: item['image'] != null
-                  ? CachedImageWidget(
-                      imageUrl: item['image'],
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                      errorWidget: Icon(
-                        Icons.image,
-                        color: Colors.grey.shade300,
-                      ),
-                    )
-                  : Icon(
-                      Icons.image,
-                      color: Colors.grey.shade300,
-                    ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item['name'] as String,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const Spacer(),
-                    if (item['price'] != null)
-                      Text(
-                        '\$${item['price']}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    if (item['trend'] != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getTrendColor(item['trend']).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          item['trend'].toString().toUpperCase(),
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: _getTrendColor(item['trend']),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Color _getTrendColor(String trend) {
-    switch (trend.toLowerCase()) {
-      case 'viral':
-        return Colors.blue;
-      case 'popular':
-        return Theme.of(context).colorScheme.primary;
-      case 'rising':
-        return Colors.blue;
-      default:
-        return Colors.grey.shade300;
+      );
     }
+
+    if (user.hasPendingRequest && user.requestSentByMe) {
+      return OutlinedButton.icon(
+        onPressed: () {},
+        icon: Icon(Icons.schedule),
+        label: Text('Request Pending'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.orange.shade700,
+          side: BorderSide(color: Colors.orange.shade300),
+          padding: EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+
+    return FilledButton.icon(
+      onPressed: () {
+        Navigator.pop(context);
+        _sendFriendRequest(user);
+      },
+      icon: Icon(Icons.person_add),
+      label: Text('Add Friend'),
+      style: FilledButton.styleFrom(
+        backgroundColor: AppTheme.primaryAccent,
+        foregroundColor: Colors.white,
+        padding: EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
   }
 }
