@@ -8,6 +8,7 @@ import '../../widgets/cached_image.dart';
 import '../../common/navigation/native_page_route.dart';
 import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
+import 'wishlist_management_screen.dart';
 import '../onboarding/widgets/sign_in_bottom_sheet.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -33,7 +34,7 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             children: [
               _buildProfileHeader(context, user),
-              const SizedBox(height: 24),
+              const SizedBox(height: 8),
               _buildMenuSection(
                 context,
                 'profile.account'.tr().toUpperCase(),
@@ -64,9 +65,19 @@ class ProfileScreen extends StatelessWidget {
                       );
                     },
                   ),
+                  _buildMenuDivider(),
+                  _buildMenuItem(
+                    context,
+                    Icons.list_alt_outlined,
+                    'profile.wishlist_management'.tr(),
+                    'profile.wishlist_management_subtitle'.tr(),
+                    () {
+                      context.pushNative(const WishlistManagementScreen());
+                    },
+                  ),
                 ],
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -160,13 +171,43 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _buildProfileHeader(BuildContext context, user) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top row: Avatar, Stats, and Settings icon
+          // Top row: Title and Settings
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Profile',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.settings_outlined,
+                  color: Colors.black,
+                  size: 28,
+                ),
+                onPressed: () {
+                  context.pushNative(const SettingsScreen());
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 32),
+
+          // Avatar and user info section
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Avatar with edit button
               GestureDetector(
@@ -177,7 +218,7 @@ class ProfileScreen extends StatelessWidget {
                   children: [
                     CachedAvatarImage(
                       imageUrl: user?.avatarUrl,
-                      radius: 44,
+                      radius: 48,
                       backgroundColor: AppTheme.primaryAccent.withValues(alpha: 0.1),
                     ),
                     Positioned(
@@ -189,14 +230,14 @@ class ProfileScreen extends StatelessWidget {
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: Colors.white,
-                            width: 2.5,
+                            width: 3,
                           ),
                         ),
-                        padding: const EdgeInsets.all(5),
+                        padding: const EdgeInsets.all(6),
                         child: const Icon(
                           Icons.add,
                           color: Colors.white,
-                          size: 16,
+                          size: 18,
                         ),
                       ),
                     ),
@@ -204,63 +245,42 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(width: 24),
+              const SizedBox(width: 20),
 
-              // Stats - centered and aligned
+              // Name and username
               Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildInlineStatItem('0', 'profile.wishlists_count'.tr()),
-                    _buildInlineStatItem('0', 'profile.friends_count'.tr()),
-                    _buildInlineStatItem('0', 'profile.wishes_count'.tr()),
+                    const SizedBox(height: 8),
+                    Text(
+                      user?.name ?? 'User',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                        letterSpacing: -0.3,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    if (user?.username != null)
+                      Text(
+                        '@${user!.username}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF8E8E93),
+                          height: 1.3,
+                        ),
+                      ),
                   ],
                 ),
-              ),
-
-              const SizedBox(width: 8),
-
-              // Settings icon
-              IconButton(
-                icon: const Icon(
-                  Icons.settings_outlined,
-                  color: Colors.black,
-                  size: 26,
-                ),
-                onPressed: () {
-                  context.pushNative(const SettingsScreen());
-                },
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
               ),
             ],
           ),
 
-          const SizedBox(height: 16),
-
-          // Name
-          Text(
-            user?.name ?? 'User',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
-          ),
-
-          const SizedBox(height: 4),
-
-          // Username
-          if (user?.username != null)
-            Text(
-              '@${user!.username}',
-              style: const TextStyle(
-                fontSize: 15,
-                color: Color(0xFF8E8E93),
-              ),
-            ),
-
-          const SizedBox(height: 6),
+          const SizedBox(height: 20),
 
           // Email
           if (user?.email != null)
@@ -268,51 +288,89 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 const Icon(
                   Icons.email_outlined,
-                  size: 15,
+                  size: 18,
                   color: Color(0xFF8E8E93),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Flexible(
                   child: Text(
                     user!.email!,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       color: Color(0xFF8E8E93),
+                      height: 1.4,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
+
+          const SizedBox(height: 28),
+
+          // Stats section - now full width and properly spaced
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F8F8),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFFE5E5EA),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatItem('0', 'profile.wishlists_count'.tr()),
+                _buildStatDivider(),
+                _buildStatItem('0', 'profile.friends_count'.tr()),
+                _buildStatDivider(),
+                _buildStatItem('0', 'profile.wishes_count'.tr()),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInlineStatItem(String value, String label) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.black,
-            height: 1.2,
+  Widget _buildStatItem(String value, String label) {
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: Colors.black,
+              letterSpacing: -0.5,
+              height: 1.2,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            color: Color(0xFF8E8E93),
-            fontWeight: FontWeight.w400,
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF8E8E93),
+              fontWeight: FontWeight.w500,
+              height: 1.2,
+            ),
+            textAlign: TextAlign.center,
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatDivider() {
+    return Container(
+      width: 1,
+      height: 40,
+      color: const Color(0xFFE5E5EA),
     );
   }
 

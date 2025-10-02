@@ -307,6 +307,10 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
                     _selectedWishlistFilter = wishlist.id;
                   });
                 },
+                onLongPress: () {
+                  // Navigate to edit wishlist on long press
+                  context.push('/wishlists/${wishlist.id}/edit');
+                },
               ),
             );
           }),
@@ -320,9 +324,11 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     int? count,
     required bool isSelected,
     required VoidCallback onTap,
+    VoidCallback? onLongPress,
   }) {
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -528,10 +534,9 @@ class _WishCardState extends State<_WishCard> {
           onTapUp: (_) => setState(() => _isPressed = false),
           onTapCancel: () => setState(() => _isPressed = false),
           onTap: () {
-            // Navigate to wish detail if wishlist exists
-            if (widget.wishlist != null) {
-              context.push('/wishlists/${widget.wishlist!.id}/items/${widget.wish.id}');
-            }
+            // Navigate to wish detail
+            final wishlistId = widget.wishlist?.id ?? 'uncategorized';
+            context.push('/wishlists/$wishlistId/items/${widget.wish.id}');
           },
           child: Padding(
             padding: const EdgeInsets.all(12.0),

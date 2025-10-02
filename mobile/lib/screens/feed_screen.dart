@@ -6,6 +6,8 @@ import '../common/widgets/skeleton_loading.dart';
 import '../common/widgets/native_refresh_indicator.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../common/navigation/native_page_route.dart';
+import 'search_screen.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class FeedScreen extends StatefulWidget {
@@ -366,8 +368,12 @@ class _FeedScreenState extends State<FeedScreen> {
             // Search button
             FilledButton.icon(
               onPressed: () {
-                // Navigate to search/people tab
-                DefaultTabController.of(context)?.animateTo(1);
+                // Navigate to search screen with People tab selected
+                Navigator.of(context).push(
+                  NativePageRoute(
+                    child: const SearchScreen(),
+                  ),
+                );
               },
               icon: const Icon(Icons.search),
               label: const Text('Search for Friends'),
@@ -478,7 +484,12 @@ class _FeedScreenState extends State<FeedScreen> {
             // Find more friends button
             FilledButton.icon(
               onPressed: () {
-                DefaultTabController.of(context)?.animateTo(1);
+                // Navigate to search screen with People tab selected
+                Navigator.of(context).push(
+                  NativePageRoute(
+                    child: const SearchScreen(),
+                  ),
+                );
               },
               icon: const Icon(Icons.person_add),
               label: const Text('Find More Friends'),

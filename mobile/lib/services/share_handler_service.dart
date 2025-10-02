@@ -15,7 +15,7 @@ class ShareHandlerService {
 
   /// Initialize the share handler service
   void initialize() {
-    // Listen for shared content while app is in memory
+    // Listen for shared content (text, URLs, images) while app is in memory
     _intentDataStreamSubscription =
         ReceiveSharingIntent.instance.getMediaStream().listen(
       (List<SharedMediaFile> value) {
@@ -38,29 +38,42 @@ class ShareHandlerService {
 
   void _handleSharedMedia(List<SharedMediaFile> mediaFiles) {
     final file = mediaFiles.first;
-
-    // Check the path extension to determine file type
     final path = file.path;
-    final extension = path.split('.').last.toLowerCase();
 
+    // First, check if it's a direct URL (shared text containing a URL)
+    if (_isValidUrl(path)) {
+      _sharedContentController.add(SharedContent(
+        type: SharedContentType.url,
+        url: path,
+      ));
+      return;
+    }
+
+    // Check if thumbnail contains a URL (alternative way text/URLs are shared)
+    if (file.thumbnail != null && _isValidUrl(file.thumbnail!)) {
+      _sharedContentController.add(SharedContent(
+        type: SharedContentType.url,
+        url: file.thumbnail,
+      ));
+      return;
+    }
+
+    // Check the path extension to determine if it's an image file
+    final extension = path.split('.').last.toLowerCase();
     if (_isImageExtension(extension)) {
       _sharedContentController.add(SharedContent(
         type: SharedContentType.image,
         imagePath: path,
       ));
-    } else {
-      // For URLs or text content, check if it's in the thumbnail
-      if (file.thumbnail != null && _isValidUrl(file.thumbnail!)) {
-        _sharedContentController.add(SharedContent(
-          type: SharedContentType.url,
-          url: file.thumbnail,
-        ));
-      } else if (_isValidUrl(path)) {
-        _sharedContentController.add(SharedContent(
-          type: SharedContentType.url,
-          url: path,
-        ));
-      }
+      return;
+    }
+
+    // If it's plain text (not a URL), emit it as text
+    if (path.isNotEmpty) {
+      _sharedContentController.add(SharedContent(
+        type: SharedContentType.text,
+        text: path,
+      ));
     }
   }
 

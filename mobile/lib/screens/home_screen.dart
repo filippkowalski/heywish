@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:async';
+import 'dart:io';
 import 'wishlists/wishlists_screen.dart';
 import 'feed_screen.dart';
 import 'profile/profile_screen.dart';
 import '../services/clipboard_service.dart';
+import '../services/share_handler_service.dart';
 import '../common/widgets/url_detected_bottom_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,11 +19,21 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
   int _selectedIndex = 0;
   bool _hasCheckedClipboardOnLaunch = false;
+  final ShareHandlerService _shareHandler = ShareHandlerService();
+  StreamSubscription<SharedContent>? _shareSubscription;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // Initialize share handler
+    _shareHandler.initialize();
+
+    // Listen for shared content
+    _shareSubscription = _shareHandler.sharedContentStream.listen((content) {
+      _handleSharedContent(content);
+    });
 
     // Check clipboard on initial launch
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -31,6 +44,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _shareSubscription?.cancel();
+    _shareHandler.dispose();
     super.dispose();
   }
 
@@ -67,6 +82,42 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
         );
       }
     }
+  }
+
+  Future<void> _handleSharedContent(SharedContent content) async {
+    // Wait for UI to be ready
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (!mounted) return;
+
+    switch (content.type) {
+      case SharedContentType.url:
+        if (content.url != null) {
+          // Navigate to add wish screen with pre-filled URL
+          context.push(
+            '/add-wish',
+            extra: {'initialUrl': content.url},
+          );
+        }
+        break;
+
+      case SharedContentType.image:
+        if (content.imagePath != null) {
+          // Navigate to add wish screen with pre-filled image
+          context.push(
+            '/add-wish',
+            extra: {'initialImagePath': content.imagePath},
+          );
+        }
+        break;
+
+      case SharedContentType.text:
+        // Handle plain text if needed
+        break;
+    }
+
+    // Clear the shared content after handling
+    _shareHandler.clearSharedContent();
   }
 
   void _navigateToTab(int index) {

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/friend.dart';
-import 'api_service.dart';
+import 'api_service.dart' hide Friend, UserSearchResult;
 
 class FriendsService extends ChangeNotifier {
   static final FriendsService _instance = FriendsService._internal();

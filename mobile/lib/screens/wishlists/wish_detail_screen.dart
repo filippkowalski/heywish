@@ -34,14 +34,36 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
 
   void _loadWish() {
     final wishlistService = context.read<WishlistService>();
+
+    // First check if it's in the current wishlist
     final currentWishlist = wishlistService.currentWishlist;
-    
     if (currentWishlist?.wishes != null) {
       wish = currentWishlist!.wishes!
           .where((w) => w.id == widget.wishId)
           .firstOrNull;
-      setState(() {});
     }
+
+    // If not found, check uncategorized wishes
+    if (wish == null) {
+      wish = wishlistService.uncategorizedWishes
+          .where((w) => w.id == widget.wishId)
+          .firstOrNull;
+    }
+
+    // If still not found, search through all wishlists
+    if (wish == null) {
+      for (final wl in wishlistService.wishlists) {
+        if (wl.wishes != null) {
+          final found = wl.wishes!.where((w) => w.id == widget.wishId).firstOrNull;
+          if (found != null) {
+            wish = found;
+            break;
+          }
+        }
+      }
+    }
+
+    setState(() {});
   }
 
   @override

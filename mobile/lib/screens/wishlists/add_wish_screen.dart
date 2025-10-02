@@ -771,6 +771,20 @@ class _AddWishScreenState extends State<AddWishScreen> {
                                       ],
                                     ),
                                   ),
+                                  // Edit button
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.edit_outlined,
+                                      size: 20,
+                                      color: Colors.grey[600],
+                                    ),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      context.push('/wishlists/${wishlist.id}/edit');
+                                    },
+                                    tooltip: 'app.edit'.tr(),
+                                  ),
+                                  const SizedBox(width: 4),
                                   if (isSelected)
                                     Container(
                                       width: 24,
