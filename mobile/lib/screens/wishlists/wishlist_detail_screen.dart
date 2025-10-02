@@ -158,6 +158,7 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
                                 key: ValueKey(wish.id),
                                 wish: wish,
                                 wishlistId: widget.wishlistId,
+                                index: index,
                               );
                             },
                             itemCount: wishlist.wishes!.length,
@@ -314,8 +315,14 @@ Created with HeyWish 🎁
 class _WishCard extends StatelessWidget {
   final Wish wish;
   final String wishlistId;
+  final int index;
 
-  const _WishCard({super.key, required this.wish, required this.wishlistId});
+  const _WishCard({
+    super.key,
+    required this.wish,
+    required this.wishlistId,
+    required this.index,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -330,6 +337,18 @@ class _WishCard extends StatelessWidget {
           padding: const EdgeInsets.all(12.0),
           child: Row(
             children: [
+              // Drag handle
+              ReorderableDragStartListener(
+                index: index,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Icon(
+                    Icons.drag_handle,
+                    color: Colors.grey.shade400,
+                    size: 24,
+                  ),
+                ),
+              ),
               Container(
                 width: 80,
                 height: 80,
