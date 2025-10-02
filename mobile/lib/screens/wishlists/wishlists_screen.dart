@@ -44,6 +44,33 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     }
   }
 
+  Future<void> _onReorder(int oldIndex, int newIndex, List<Wish> filteredWishes) async {
+    if (oldIndex == newIndex || _selectedWishlistFilter == null) return;
+
+    // Adjust newIndex if moving down the list
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+
+    // Get the wishes list
+    final wishes = List<Wish>.from(filteredWishes);
+
+    // Reorder locally for immediate feedback
+    final movedWish = wishes.removeAt(oldIndex);
+    wishes.insert(newIndex, movedWish);
+
+    // Update positions based on new order
+    final positions = wishes.asMap().entries.map((entry) {
+      return {'id': entry.value.id, 'position': entry.key};
+    }).toList();
+
+    // Update on backend
+    await context.read<WishlistService>().updateWishPositions(
+      _selectedWishlistFilter!,
+      positions,
+    );
+  }
+
   Future<void> _loadWishlists() async {
     print('🔄 WishlistsScreen: Loading wishlists...');
     final wishlistService = context.read<WishlistService>();
@@ -238,23 +265,47 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
         Expanded(
           child: filteredWishes.isEmpty
               ? _buildEmptyWishesState()
-              : ListView.separated(
-                  padding: const EdgeInsets.all(20.0),
-                  itemCount: filteredWishes.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final wish = filteredWishes[index];
-                    Wishlist? wishlist;
-                    if (wish.wishlistId != null) {
-                      try {
-                        wishlist = wishlists.firstWhere((w) => w.id == wish.wishlistId);
-                      } catch (e) {
-                        wishlist = null;
-                      }
-                    }
-                    return _WishCard(wish: wish, wishlist: wishlist);
-                  },
-                ),
+              : _selectedWishlistFilter != null && _selectedWishlistFilter != 'uncategorized'
+                  // Reorderable list for specific wishlists
+                  ? ReorderableListView.builder(
+                      padding: const EdgeInsets.all(20.0),
+                      itemCount: filteredWishes.length,
+                      onReorder: (oldIndex, newIndex) => _onReorder(oldIndex, newIndex, filteredWishes),
+                      itemBuilder: (context, index) {
+                        final wish = filteredWishes[index];
+                        Wishlist? wishlist;
+                        if (wish.wishlistId != null) {
+                          try {
+                            wishlist = wishlists.firstWhere((w) => w.id == wish.wishlistId);
+                          } catch (e) {
+                            wishlist = null;
+                          }
+                        }
+                        return Padding(
+                          key: ValueKey(wish.id),
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _WishCard(wish: wish, wishlist: wishlist),
+                        );
+                      },
+                    )
+                  // Regular list for "All" and "Uncategorized" views
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(20.0),
+                      itemCount: filteredWishes.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final wish = filteredWishes[index];
+                        Wishlist? wishlist;
+                        if (wish.wishlistId != null) {
+                          try {
+                            wishlist = wishlists.firstWhere((w) => w.id == wish.wishlistId);
+                          } catch (e) {
+                            wishlist = null;
+                          }
+                        }
+                        return _WishCard(wish: wish, wishlist: wishlist);
+                      },
+                    ),
         ),
       ],
     );
