@@ -64,6 +64,7 @@
     "benefit_never_lose_title": "Never Lose Your Wishlists",
     "benefit_username_title": "Claim Your Unique Username",
     "skip_for_now": "Skip for now",
+    "creating_account": "Creating your account...",
     "checking_profile": "Setting up your profile...",
     "username_title": "Choose your username",
     "username_subtitle": "This is your unique username that your friends can find you with",
@@ -126,7 +127,24 @@
     "empty_title": "No activity yet",
     "empty_subtitle": "Add friends to see their wishlist activity here",
     "loading": "Loading feed...",
-    "error": "Failed to load feed"
+    "error": "Failed to load feed",
+    "search_placeholder": "Search people, gifts, or ideas...",
+    "suggested_people": "Suggested People to Follow",
+    "follow": "Follow",
+    "following": "Following",
+    "more_fun_title": "More fun with friends!",
+    "more_fun_subtitle": "Share your link so friends can easily find and follow you",
+    "share_link": "Share Your Link",
+    "explore_people": "Explore People",
+    "add_to_wishlist": "Add to my wishlist",
+    "no_friends_title": "Find Your Friends",
+    "no_friends_subtitle": "Connect with friends to see their wishes and discover gift ideas",
+    "friends_no_wishes_title": "Your Friends Are Quiet",
+    "friends_no_wishes_subtitle": "You have friends, but they haven't added any wishes yet. Invite more friends to grow your network!",
+    "your_profile_link": "Your Profile Link",
+    "share_profile": "Share Your Profile",
+    "search_friends": "Search for Friends",
+    "find_more_friends": "Find More Friends"
   },
   "friends": {
     "title": "Friends",
@@ -258,6 +276,12 @@
     "notifications_subtitle": "Manage notification preferences",
     "privacy_security": "Privacy & Security",
     "privacy_subtitle": "Control your privacy settings",
+    "profile_visibility": "Profile Visibility",
+    "profile_visibility_subtitle": "Make your profile visible to others",
+    "profile_public": "Public Profile",
+    "profile_public_subtitle": "Anyone can view your profile and public wishlists",
+    "profile_private": "Private Profile",
+    "profile_private_subtitle": "Only friends can find your profile",
     "help_support": "Help & Support",
     "help_subtitle": "Get help and contact support",
     "about_subtitle": "App information and terms",
@@ -272,6 +296,17 @@
     "wishes_count": "Wishes",
     "delete_account_title": "Delete Account",
     "delete_account_warning": "This action cannot be undone. Your account and all associated data will be permanently deleted, including:",
+    "anonymous_teaser": "You're using a guest account",
+    "sign_in_title": "Unlock All Features",
+    "sign_in_subtitle": "Sign in to get a personalized username, sync your data, and connect with friends",
+    "benefit_username": "Claim Your Username",
+    "benefit_username_subtitle": "Get a unique username that friends can find you with",
+    "benefit_sync": "Sync Across Devices",
+    "benefit_sync_subtitle": "Access your wishlists on any device, anytime",
+    "benefit_friends": "Connect With Friends",
+    "benefit_friends_subtitle": "Add friends, view their wishlists, and share your own",
+    "benefit_secure": "Secure Your Data",
+    "benefit_secure_subtitle": "Your wishlists are safely backed up and never lost",
     "delete_account_list_wishlists": "All your wishlists and wishes",
     "delete_account_list_profile": "Your profile information",
     "delete_account_list_friends": "Friend connections",
@@ -305,7 +340,11 @@
     "gender_male": "Male",
     "gender_female": "Female",
     "gender_other": "Other",
-    "gender_prefer_not_to_say": "Prefer not to say"
+    "gender_prefer_not_to_say": "Prefer not to say",
+    "affiliate_disclosure": "Affiliate Disclosure",
+    "affiliate_disclosure_subtitle": "Learn about our affiliate partnerships",
+    "affiliate_disclosure_title": "Affiliate Disclosure",
+    "affiliate_disclosure_content": "HeyWish participates in various affiliate marketing programs, which means we may earn commissions on purchases made through links on our platform.\n\nWhen you click on certain product links and make a purchase, we may receive a small commission at no additional cost to you. These commissions help us maintain and improve our services.\n\nOur affiliate relationships do not influence our recommendations or the products displayed in wishlists. We are committed to providing honest and unbiased information to help you make informed decisions.\n\nThank you for supporting HeyWish!"
   },
   "search": {
     "title": "Search",
@@ -349,5 +388,20 @@
   "success": {
     "copied_to_clipboard": "Copied to clipboard",
     "link_copied": "Link copied to clipboard"
+  },
+  "feedback": {
+    "title": "Send Feedback",
+    "header": "We'd love to hear from you!",
+    "subtitle": "Share your thoughts, suggestions, or report any issues",
+    "hint": "Tell us what's on your mind...",
+    "email_hint": "Your email (optional)",
+    "send": "Send",
+    "thanks": "Thanks for your feedback!",
+    "error": "Failed to send feedback. Please try again.",
+    "enter_feedback": "Please enter your feedback"
+  },
+  "quick_actions": {
+    "feedback": "Send Feedback",
+    "feedback_subtitle": "Share your thoughts with us"
   }
 }

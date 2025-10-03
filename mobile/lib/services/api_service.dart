@@ -428,6 +428,7 @@ class ApiService {
     List<String>? shoppingInterests,
     Map<String, dynamic>? notificationPreferences,
     Map<String, dynamic>? privacySettings,
+    bool? isProfilePublic,
   }) async {
     try {
       debugPrint('👤 API: Updating user profile');
@@ -439,11 +440,14 @@ class ApiService {
       if (birthdate != null) data['birthdate'] = birthdate;
       if (gender != null) data['gender'] = gender;
       if (phoneNumber != null) data['phone_number'] = phoneNumber;
-      if (shoppingInterests != null)
+      if (shoppingInterests != null) {
         data['shopping_interests'] = shoppingInterests;
-      if (notificationPreferences != null)
+      }
+      if (notificationPreferences != null) {
         data['notification_preferences'] = notificationPreferences;
+      }
       if (privacySettings != null) data['privacy_settings'] = privacySettings;
+      if (isProfilePublic != null) data['is_profile_public'] = isProfilePublic;
 
       final response = await patch('/users/profile', data);
       debugPrint('✅ API: Profile updated successfully');

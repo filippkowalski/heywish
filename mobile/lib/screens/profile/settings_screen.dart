@@ -7,6 +7,9 @@ import '../../services/auth_service.dart';
 import '../../services/onboarding_service.dart';
 import '../../theme/app_theme.dart';
 import '../../common/widgets/confirmation_bottom_sheet.dart';
+import '../../common/navigation/native_page_route.dart';
+import '../feedback/feedback_sheet_page.dart';
+import 'privacy_settings_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -53,7 +56,7 @@ class SettingsScreen extends StatelessWidget {
                     Icons.lock_outline,
                     'profile.privacy_security'.tr(),
                     'profile.privacy_subtitle'.tr(),
-                    () {},
+                    () => _navigateToPrivacySettings(context),
                   ),
                   _buildMenuDivider(),
                   _buildMenuItem(
@@ -70,6 +73,22 @@ class SettingsScreen extends StatelessWidget {
                     'profile.about'.tr(),
                     'profile.about_subtitle'.tr(),
                     () {},
+                  ),
+                  _buildMenuDivider(),
+                  _buildMenuItem(
+                    context,
+                    Icons.feedback_outlined,
+                    'feedback.title'.tr(),
+                    'quick_actions.feedback_subtitle'.tr(),
+                    () => _showFeedbackSheet(context),
+                  ),
+                  _buildMenuDivider(),
+                  _buildMenuItem(
+                    context,
+                    Icons.attach_money_outlined,
+                    'profile.affiliate_disclosure'.tr(),
+                    'profile.affiliate_disclosure_subtitle'.tr(),
+                    () => _showAffiliateDisclosure(context),
                   ),
                 ],
               ),
@@ -258,6 +277,119 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       barrierDismissible: false,
       builder: (context) => _DeleteAccountDialog(),
+    );
+  }
+
+  void _showFeedbackSheet(BuildContext context) {
+    Navigator.of(context).push(
+      NativePageRoute(
+        child: const FeedbackSheetPage(
+          clickSource: 'settings',
+        ),
+      ),
+    );
+  }
+
+  void _navigateToPrivacySettings(BuildContext context) {
+    Navigator.of(context).push(
+      NativePageRoute(
+        child: const PrivacySettingsScreen(),
+      ),
+    );
+  }
+
+  void _showAffiliateDisclosure(BuildContext context) {
+    NativeTransitions.showNativeModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      child: Container(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          20,
+          24,
+          40 + MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 36,
+                height: 5,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE5E5EA),
+                  borderRadius: BorderRadius.circular(2.5),
+                ),
+              ),
+            ),
+
+            // Title
+            Row(
+              children: [
+                Icon(
+                  Icons.attach_money_outlined,
+                  color: AppTheme.primaryAccent,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'profile.affiliate_disclosure_title'.tr(),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            // Content
+            Text(
+              'profile.affiliate_disclosure_content'.tr(),
+              style: const TextStyle(
+                fontSize: 15,
+                color: Color(0xFF3C3C43),
+                height: 1.6,
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Close button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'app.done'.tr(),
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
