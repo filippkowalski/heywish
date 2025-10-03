@@ -137,8 +137,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 32),
                       child: Text(
                         _isProfilePublic
-                            ? 'Your profile is visible to everyone. Anyone can view your username, bio, and public wishlists.'
-                            : 'Your profile is private. Only friends can find your profile. You can still share individual wishlists using their share links.',
+                            ? 'Your profile is public. Anyone can find you and view your full profile including username, bio, and public wishlists.'
+                            : 'Your profile can be found but will show as private. Only friends will be able to see your profile details and wishlists.',
                         style: const TextStyle(
                           fontSize: 13,
                           color: Color(0xFF8E8E93),
