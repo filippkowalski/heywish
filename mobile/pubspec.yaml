@@ -39,6 +39,7 @@ dependencies:
   firebase_core: ^3.8.0
   firebase_auth: ^5.3.3
   firebase_analytics: ^11.3.6
+  firebase_messaging: ^15.1.4
   
   # Social Authentication
   google_sign_in: ^6.2.1
@@ -63,6 +64,7 @@ dependencies:
   image_picker: ^1.1.2
   flutter_image_compress: ^2.3.0
   path_provider: ^2.1.4
+  palette_generator: ^0.3.3+4
   
   # Contact & Permissions (Privacy-First)
   # contacts_service: ^0.6.3 # Temporarily disabled due to Android namespace issues
@@ -88,6 +90,13 @@ dependencies:
   # Forms & Validation
   flutter_form_builder: ^9.5.1
   form_builder_validators: ^11.0.0
+
+  # Screenshot Detection & Quick Actions
+  flutter_screenshot_detect: ^0.1.7
+  screenshot: ^3.0.0
+  quick_actions: ^1.1.0
+  device_info_plus: ^11.3.3
+  package_info_plus: ^8.3.0
 
 dev_dependencies:
   flutter_test:

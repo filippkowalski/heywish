@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:quick_actions/quick_actions.dart';
 import 'dart:async';
+import 'dart:io';
 
 import 'theme/app_theme.dart';
 import 'services/auth_service.dart';
@@ -17,6 +21,8 @@ import 'services/preferences_service.dart';
 import 'services/sync_manager.dart';
 import 'services/onboarding_service.dart';
 import 'services/api_service.dart';
+import 'services/fcm_service.dart';
+import 'services/screenshot_detection_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding/onboarding_flow_screen.dart';
 import 'screens/home_screen.dart';
@@ -27,6 +33,7 @@ import 'screens/wishlists/add_wish_screen.dart';
 import 'screens/wishlists/wish_detail_screen.dart';
 import 'screens/wishlists/edit_wishlist_screen.dart';
 import 'screens/wishlists/edit_wish_screen.dart';
+import 'screens/feedback/feedback_sheet_page.dart';
 import 'common/navigation/native_page_route.dart';
 
 void main() async {
@@ -56,11 +63,17 @@ void main() async {
   // Initialize Firebase
   await Firebase.initializeApp();
 
+  // Initialize FCM background handler
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
   // Initialize preferences
   await PreferencesService().initialize();
 
   // Initialize singleton services
   await SyncManager().initialize();
+
+  // Initialize FCM service (will register token after auth)
+  FCMService().initialize();
 
   runApp(
     EasyLocalization(
@@ -72,8 +85,72 @@ void main() async {
   );
 }
 
-class HeyWishApp extends StatelessWidget {
+class HeyWishApp extends StatefulWidget {
   const HeyWishApp({super.key});
+
+  @override
+  State<HeyWishApp> createState() => _HeyWishAppState();
+}
+
+class _HeyWishAppState extends State<HeyWishApp> {
+  final ScreenshotController _screenshotController = ScreenshotController();
+  final QuickActions _quickActions = const QuickActions();
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize screenshot detection after a short delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      ScreenshotDetectionService.instance.initialize(
+        screenshotController: _screenshotController,
+      );
+    });
+
+    // Initialize quick actions (iOS and Android only)
+    if (Platform.isIOS || Platform.isAndroid) {
+      _initializeQuickActions();
+    }
+  }
+
+  void _initializeQuickActions() {
+    _quickActions.initialize((shortcutType) {
+      if (shortcutType == 'feedback') {
+        _handleFeedbackAction();
+      }
+    });
+
+    // Set quick action items with localized strings
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _quickActions.setShortcutItems([
+        ShortcutItem(
+          type: 'feedback',
+          localizedTitle: 'quick_actions.feedback'.tr(),
+          localizedSubtitle: 'quick_actions.feedback_subtitle'.tr(),
+          icon: 'ic_feedback',
+        ),
+      ]);
+    });
+  }
+
+  void _handleFeedbackAction() {
+    // Navigate to feedback screen
+    final context = _router.routerDelegate.navigatorKey.currentContext;
+    if (context != null) {
+      Navigator.of(context).push(
+        NativePageRoute(
+          child: const FeedbackSheetPage(
+            clickSource: 'quick_action',
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    ScreenshotDetectionService.instance.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,15 +184,18 @@ class HeyWishApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: PreferencesService()),
         ChangeNotifierProvider.value(value: SyncManager()),
       ],
-      child: MaterialApp.router(
-        title: 'app.title'.tr(), // Hot reload trigger
-        theme: AppTheme.lightTheme(),
-        themeMode: ThemeMode.light,
-        debugShowCheckedModeBanner: false,
-        localizationsDelegates: context.localizationDelegates,
-        supportedLocales: context.supportedLocales,
-        locale: context.locale,
-        routerConfig: _router,
+      child: Screenshot(
+        controller: _screenshotController,
+        child: MaterialApp.router(
+          title: 'app.title'.tr(), // Hot reload trigger
+          theme: AppTheme.lightTheme(),
+          themeMode: ThemeMode.light,
+          debugShowCheckedModeBanner: false,
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          routerConfig: _router,
+        ),
       ),
     );
   }

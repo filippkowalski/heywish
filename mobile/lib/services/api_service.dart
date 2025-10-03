@@ -139,7 +139,7 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>?> getWishImageUploadUrl(
-    String? wishlistId, { // Now optional for uncategorized wishes
+    String? wishlistId, { // Optional - null for unsorted wishes
     String? fileExtension,
     String contentType = 'image/jpeg',
   }) async {
@@ -184,15 +184,24 @@ class ApiService {
   }) async {
     try {
       debugPrint('🖼️ API: Uploading to presigned URL');
+      debugPrint('🖼️ API: URL: $uploadUrl');
+      debugPrint('🖼️ API: Content-Type: $contentType');
 
       final bytes = await imageFile.readAsBytes();
+      debugPrint('🖼️ API: File size: ${bytes.length} bytes');
 
       final dio = Dio();
       final response = await dio.put(
         uploadUrl,
         data: bytes,
-        options: Options(headers: {'Content-Type': contentType}),
+        options: Options(
+          headers: {'Content-Type': contentType},
+          validateStatus: (status) => true, // Don't throw on any status
+        ),
       );
+
+      debugPrint('🖼️ API: Response status: ${response.statusCode}');
+      debugPrint('🖼️ API: Response data: ${response.data}');
 
       if (response.statusCode == 200) {
         debugPrint('✅ API: Image uploaded to presigned URL successfully');
@@ -205,6 +214,9 @@ class ApiService {
       }
     } catch (e) {
       debugPrint('❌ API: Error uploading to presigned URL: $e');
+      if (e is DioException) {
+        debugPrint('❌ API: DioException response: ${e.response?.data}');
+      }
       return false;
     }
   }
@@ -292,9 +304,13 @@ class ApiService {
   /// Upload wish image and return the public URL
   Future<String?> uploadWishImage({
     required File imageFile,
-    String? wishlistId, // Now optional for uncategorized wishes
+    String? wishlistId, // Optional - null for unsorted wishes
   }) async {
     try {
+      debugPrint('📸 API: uploadWishImage called');
+      debugPrint('📸 API: Image file path: ${imageFile.path}');
+      debugPrint('📸 API: Wishlist ID: $wishlistId');
+
       final pathSegments = imageFile.path.split('.');
       final extension = pathSegments.length > 1 ? pathSegments.last : 'jpg';
       final contentType = 'image/jpeg';
@@ -314,29 +330,51 @@ class ApiService {
           resolvedContentType = 'image/jpeg';
       }
 
+      debugPrint('📸 API: File extension: $normalizedExtension');
+      debugPrint('📸 API: Content type: $resolvedContentType');
+
+      debugPrint('📸 API: Getting upload URL...');
       final uploadConfig = await getWishImageUploadUrl(
         wishlistId, // Can be null now
         fileExtension: normalizedExtension,
         contentType: resolvedContentType,
       );
 
+      debugPrint('📸 API: Upload config received: $uploadConfig');
+
       final uploadUrl = uploadConfig?['uploadUrl'] as String?;
       final publicUrl = uploadConfig?['publicUrl'] as String?;
 
+      debugPrint('📸 API: Upload URL: $uploadUrl');
+      debugPrint('📸 API: Public URL: $publicUrl');
+
       if (uploadUrl == null || publicUrl == null) {
         debugPrint('❌ API: Upload config missing URL fields');
+        debugPrint('❌ API: uploadUrl is null: ${uploadUrl == null}');
+        debugPrint('❌ API: publicUrl is null: ${publicUrl == null}');
         return null;
       }
 
+      debugPrint('📸 API: Uploading to presigned URL...');
       final success = await uploadImageToPresignedUrl(
         uploadUrl,
         imageFile,
         contentType: resolvedContentType,
       );
 
-      return success ? publicUrl : null;
+      debugPrint('📸 API: Upload success: $success');
+
+      if (success) {
+        debugPrint('✅ API: Image uploaded successfully, returning public URL: $publicUrl');
+        return publicUrl;
+      } else {
+        debugPrint('❌ API: Upload failed, returning null');
+        return null;
+      }
     } catch (e) {
       debugPrint('❌ API: Failed to upload wish image: $e');
+      debugPrint('❌ API: Error type: ${e.runtimeType}');
+      debugPrint('❌ API: Stack trace: ${StackTrace.current}');
       return null;
     }
   }
@@ -493,6 +531,25 @@ class ApiService {
       }
     } catch (e) {
       debugPrint('❌ API: Account deletion error: $e');
+      return false;
+    }
+  }
+
+  /// Update FCM token for push notifications
+  Future<bool> updateFCMToken(String token) async {
+    try {
+      debugPrint('🔔 API: Updating FCM token');
+      final response = await post('/auth/fcm-token', {'fcm_token': token});
+
+      if (response != null) {
+        debugPrint('✅ API: FCM token updated successfully');
+        return true;
+      } else {
+        debugPrint('❌ API: FCM token update failed - null response');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('❌ API: FCM token update error: $e');
       return false;
     }
   }

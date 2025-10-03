@@ -28,6 +28,7 @@ class FriendsService extends ChangeNotifier {
   bool get isLoadingRequests => _isLoadingRequests;
   bool get isLoadingActivities => _isLoadingActivities;
   String? get error => _error;
+  int get pendingRequestsCount => _friendRequests.length;
 
   // Helper to update state and notify listeners
   void _updateState({

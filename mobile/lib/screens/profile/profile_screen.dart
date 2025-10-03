@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../services/auth_service.dart';
+import '../../services/friends_service.dart';
 import '../../theme/app_theme.dart';
 import '../friends/friends_screen.dart';
 import '../../widgets/cached_image.dart';
@@ -19,6 +20,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = context.watch<AuthService>();
+    final friendsService = context.watch<FriendsService>();
     final user = authService.currentUser;
     final firebaseUser = authService.firebaseUser;
 
@@ -64,6 +66,7 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       );
                     },
+                    badgeCount: friendsService.pendingRequestsCount,
                   ),
                   _buildMenuDivider(),
                   _buildMenuItem(
@@ -87,84 +90,193 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _buildSignInPrompt(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
+        child: Column(
+          children: [
+            // Scrollable content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header section
+                    Text(
+                      'profile.anonymous_teaser'.tr(),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF8E8E93),
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+
+                    Text(
+                      'profile.sign_in_title'.tr(),
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    Text(
+                      'profile.sign_in_subtitle'.tr(),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Color(0xFF8E8E93),
+                        height: 1.4,
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // Benefits cards - more compact
+                    _buildProfileBenefitCard(
+                      icon: Icons.person_outline,
+                      iconColor: AppTheme.primaryAccent,
+                      title: 'profile.benefit_username'.tr(),
+                      subtitle: 'profile.benefit_username_subtitle'.tr(),
+                    ),
+                    const SizedBox(height: 12),
+
+                    _buildProfileBenefitCard(
+                      icon: Icons.layers_rounded,
+                      iconColor: const Color(0xFF3B82F6),
+                      title: 'profile.benefit_sync'.tr(),
+                      subtitle: 'profile.benefit_sync_subtitle'.tr(),
+                    ),
+                    const SizedBox(height: 12),
+
+                    _buildProfileBenefitCard(
+                      icon: Icons.people_outline,
+                      iconColor: const Color(0xFF8B5CF6),
+                      title: 'profile.benefit_friends'.tr(),
+                      subtitle: 'profile.benefit_friends_subtitle'.tr(),
+                    ),
+                    const SizedBox(height: 12),
+
+                    _buildProfileBenefitCard(
+                      icon: Icons.shield_outlined,
+                      iconColor: const Color(0xFF10B981),
+                      title: 'profile.benefit_secure'.tr(),
+                      subtitle: 'profile.benefit_secure_subtitle'.tr(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Fixed Sign In Button at bottom
+            Container(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: () {
+                    SignInBottomSheet.show(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryAccent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(
+                    'auth.sign_in'.tr(),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileBenefitCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F8),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFE5E5EA),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: iconColor,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Icon
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryAccent.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(40),
-                  ),
-                  child: Icon(
-                    Icons.person_outline,
-                    size: 40,
-                    color: AppTheme.primaryAccent,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Title
                 Text(
-                  'auth.sign_in_title'.tr(),
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-
-                // Subtitle
-                Text(
-                  'auth.sign_in_subtitle'.tr(),
+                  title,
                   style: const TextStyle(
                     fontSize: 16,
-                    color: Color(0xFF8E8E93),
-                    height: 1.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                    letterSpacing: -0.2,
                   ),
-                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 32),
-
-                // Sign In Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      SignInBottomSheet.show(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryAccent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      'auth.sign_in'.tr(),
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF8E8E93),
+                    height: 1.3,
                   ),
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -279,6 +391,19 @@ class ProfileScreen extends StatelessWidget {
               ),
             ],
           ),
+
+          // Bio section
+          if (user?.bio != null && user!.bio!.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(
+              user.bio!,
+              style: const TextStyle(
+                fontSize: 15,
+                color: Colors.black,
+                height: 1.5,
+              ),
+            ),
+          ],
 
           const SizedBox(height: 20),
 
@@ -421,8 +546,9 @@ class ProfileScreen extends StatelessWidget {
     IconData icon,
     String title,
     String subtitle,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    int? badgeCount,
+  }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -431,10 +557,43 @@ class ProfileScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: AppTheme.primaryAccent,
-                size: 24,
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    icon,
+                    color: AppTheme.primaryAccent,
+                    size: 24,
+                  ),
+                  if (badgeCount != null && badgeCount > 0)
+                    Positioned(
+                      right: -8,
+                      top: -4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        child: Text(
+                          badgeCount > 99 ? '99+' : '$badgeCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(width: 12),
               Expanded(

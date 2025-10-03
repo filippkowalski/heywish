@@ -9,6 +9,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:crypto/crypto.dart';
 import 'api_service.dart';
 import 'local_database.dart';
+import 'fcm_service.dart';
 import '../models/user.dart';
 
 class AuthService extends ChangeNotifier {
@@ -131,6 +132,9 @@ class AuthService extends ChangeNotifier {
         debugPrint(
           '✅ AuthService: User synced successfully - ID: ${_currentUser?.id}',
         );
+
+        // Retry FCM token registration now that we have auth
+        FCMService().retryTokenRegistration();
 
         if ((_currentUser?.username?.isNotEmpty ?? false) &&
             !_isOnboardingCompleted) {
