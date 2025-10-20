@@ -56,7 +56,7 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
 
   void _loadWishlist() {
     final wishlistService = context.read<WishlistService>();
-    _wishlist = wishlistService.currentWishlist;
+    _wishlist = wishlistService.getCachedWishlist(widget.wishlistId);
 
     if (_wishlist != null) {
       _titleController.text = _wishlist!.name;
@@ -124,10 +124,7 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
 
       // Refresh wishlist data
       final wishlistService = context.read<WishlistService>();
-      await wishlistService.fetchWishlists(preloadItems: true);
-      if (wishlistService.currentWishlist?.id == widget.wishlistId) {
-        await wishlistService.fetchWishlist(widget.wishlistId);
-      }
+      await wishlistService.fetchWishlists();
 
       final success = true;
 

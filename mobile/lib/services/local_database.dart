@@ -351,7 +351,8 @@ class LocalDatabase {
   /// Save entity from server (simplified version for sync)
   Future<void> saveServerEntity(String entityType, Map<String, dynamic> entity) async {
     final db = await database;
-    final tableName = '${entityType}s'; // user -> users, wishlist -> wishlists, etc.
+    // Handle irregular plurals
+    final tableName = entityType == 'wish' ? 'wishes' : '${entityType}s';
     
     // Convert the entity to match our local schema
     final localEntity = Map<String, dynamic>.from(entity);
@@ -397,13 +398,25 @@ class LocalDatabase {
       } else {
         localEntity['images'] = '[]';
       }
+
+      // Handle metadata field - convert to JSON string
+      if (entity['metadata'] != null) {
+        if (entity['metadata'] is Map || entity['metadata'] is List) {
+          localEntity['metadata'] = jsonEncode(entity['metadata']);
+        } else if (entity['metadata'] is String) {
+          localEntity['metadata'] = entity['metadata'];
+        } else {
+          localEntity['metadata'] = '{}'; // Default empty object
+        }
+      } else {
+        localEntity['metadata'] = '{}';
+      }
     } else if (entityType == 'user') {
       // Handle user-specific fields
       localEntity['firebase_uid'] = entity['firebase_uid'] ?? '';
       localEntity['email'] = entity['email'] ?? '';
       localEntity['full_name'] = entity['full_name'] ?? '';
       localEntity['bio'] = entity['bio'] ?? '';
-      localEntity['is_anonymous'] = entity['is_anonymous'] ?? true;
     }
     
     await db.insert(

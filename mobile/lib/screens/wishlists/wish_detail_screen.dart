@@ -4,10 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/wish.dart';
 import '../../services/wishlist_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/cached_image.dart';
+import '../../utils/image_color_utils.dart';
 
 class WishDetailScreen extends StatefulWidget {
   final String wishId;
@@ -25,6 +27,7 @@ class WishDetailScreen extends StatefulWidget {
 
 class _WishDetailScreenState extends State<WishDetailScreen> {
   Wish? wish;
+  bool _useWhiteIcons = false; // Default to black icons
 
   @override
   void initState() {
@@ -32,10 +35,28 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
     _loadWish();
   }
 
-  void _loadWish() {
+  void _loadWish() async {
     final wishlistService = context.read<WishlistService>();
     wish = wishlistService.findWishById(widget.wishId);
-    setState(() {});
+
+    // Detect icon color based on image
+    if (wish?.imageUrl != null) {
+      try {
+        final imageProvider = CachedNetworkImageProvider(wish!.imageUrl!);
+        final shouldUseWhite = await ImageColorUtils.shouldUseWhiteIcons(imageProvider);
+        if (mounted) {
+          setState(() {
+            _useWhiteIcons = shouldUseWhite;
+          });
+        }
+      } catch (e) {
+        debugPrint('Error detecting image color: $e');
+      }
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -56,6 +77,34 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
           SliverAppBar(
             expandedHeight: wish!.imageUrl != null ? 300.0 : 120.0,
             pinned: true,
+            backgroundColor: Colors.transparent,
+            iconTheme: IconThemeData(
+              color: _useWhiteIcons ? Colors.white : Colors.black,
+            ),
+            actionsIconTheme: IconThemeData(
+              color: _useWhiteIcons ? Colors.white : Colors.black,
+            ),
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => context.pop(),
+                  color: Colors.black,
+                ),
+              ),
+            ),
             flexibleSpace: FlexibleSpaceBar(
               background: wish!.imageUrl != null
                   ? Stack(
@@ -91,17 +140,32 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                   : null,
             ),
             actions: [
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    _editWish();
-                  } else if (value == 'delete') {
-                    _deleteWish();
-                  } else if (value == 'reserve') {
-                    _toggleReservation();
-                  }
-                },
-                itemBuilder: (context) => [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, color: Colors.black),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _editWish();
+                      } else if (value == 'delete') {
+                        _deleteWish();
+                      } else if (value == 'reserve') {
+                        _toggleReservation();
+                      }
+                    },
+                    itemBuilder: (context) => [
                   const PopupMenuItem(
                     value: 'edit',
                     child: Row(
@@ -133,6 +197,8 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                     ),
                   ),
                 ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -367,8 +433,13 @@ From my HeyWish wishlist 🎁
     }
   }
 
-  void _editWish() {
-    context.push('/wishlists/${widget.wishlistId}/items/${widget.wishId}/edit');
+  void _editWish() async {
+    final result = await context.push('/wishlists/${widget.wishlistId}/items/${widget.wishId}/edit');
+
+    // Refresh the wish details if the edit was successful
+    if (result == true && mounted) {
+      _loadWish();
+    }
   }
 
   void _toggleReservation() async {
@@ -427,11 +498,28 @@ From my HeyWish wishlist 🎁
       final success = await context
           .read<WishlistService>()
           .deleteWish(widget.wishId);
-      
+
       if (success && mounted) {
-        context.pop();
+        // Navigate back and trigger refresh
+        context.pop(true); // Pass true to signal that refresh is needed
+
+        // Show success message after navigation
+        Future.microtask(() {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Item deleted successfully'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        });
+      } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Item deleted successfully')),
+          const SnackBar(
+            content: Text('Failed to delete item'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }

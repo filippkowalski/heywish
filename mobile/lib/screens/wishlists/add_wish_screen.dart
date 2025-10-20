@@ -315,7 +315,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
       return;
     }
 
-    // Wishlist selection is now optional - uncategorized wishes are supported
+    // Wishlist selection is optional - null means unsorted wish
     setState(() {
       _isLoading = true;
     });
@@ -327,7 +327,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
 
       // Add wish with optional wishlistId
       await context.read<WishlistService>().addWish(
-        wishlistId: _selectedWishlistId, // Can be null for uncategorized wishes
+        wishlistId: _selectedWishlistId, // Can be null for unsorted wishes
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
             ? null
@@ -338,6 +338,10 @@ class _AddWishScreenState extends State<AddWishScreen> {
             ? null
             : _urlController.text.trim(),
         imageFile: _selectedImage,
+        // Include scraped image URL if no local file is selected
+        images: _selectedImage == null && _scrapedImageUrl != null
+            ? [_scrapedImageUrl!]
+            : null,
       );
 
       if (mounted) {
@@ -353,7 +357,8 @@ class _AddWishScreenState extends State<AddWishScreen> {
         // Pop after a brief delay to allow SnackBar to show
         Future.delayed(const Duration(milliseconds: 100), () {
           if (mounted) {
-            context.pop();
+            // Pop with result to trigger refresh
+            context.pop(true);
           }
         });
       }

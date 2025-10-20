@@ -60,25 +60,19 @@ class _EditWishScreenState extends State<EditWishScreen> {
 
   void _loadWish() {
     final wishlistService = context.read<WishlistService>();
-    final currentWishlist = wishlistService.currentWishlist;
-    
-    if (currentWishlist?.wishes != null) {
-      _wish = currentWishlist!.wishes!
-          .where((w) => w.id == widget.wishId)
-          .firstOrNull;
-      
-      if (_wish != null) {
-        _titleController.text = _wish!.title;
-        _descriptionController.text = _wish!.description ?? '';
-        _priceController.text = _wish!.price?.toString() ?? '';
-        _urlController.text = _wish!.url ?? '';
-        _notesController.text = _wish!.notes ?? '';
-        _currency = _wish!.currency ?? 'USD';
-        _priority = _wish!.priority;
-        _quantity = _wish!.quantity;
-        _currentImageUrl = _wish!.imageUrl;
-        setState(() {});
-      }
+    _wish = wishlistService.findWishById(widget.wishId);
+
+    if (_wish != null) {
+      _titleController.text = _wish!.title;
+      _descriptionController.text = _wish!.description ?? '';
+      _priceController.text = _wish!.price?.toString() ?? '';
+      _urlController.text = _wish!.url ?? '';
+      _notesController.text = _wish!.notes ?? '';
+      _currency = _wish!.currency ?? 'USD';
+      _priority = _wish!.priority;
+      _quantity = _wish!.quantity;
+      _currentImageUrl = _wish!.imageUrl;
+      setState(() {});
     }
   }
 
@@ -211,13 +205,20 @@ class _EditWishScreenState extends State<EditWishScreen> {
       );
 
       if (mounted) {
-        context.pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Item updated successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        // Navigate back and trigger refresh
+        context.pop(true); // Pass true to signal that refresh is needed
+
+        // Show success message after navigation
+        Future.microtask(() {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Item updated successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        });
       }
     } catch (e) {
       if (mounted) {

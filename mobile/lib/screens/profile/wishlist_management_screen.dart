@@ -37,7 +37,7 @@ class _WishlistManagementScreenState extends State<WishlistManagementScreen> {
 
     try {
       final wishlistService = context.read<WishlistService>();
-      await wishlistService.fetchWishlists(preloadItems: true);
+      await wishlistService.fetchWishlists();
     } catch (e) {
       debugPrint('Error loading wishlists: $e');
     } finally {

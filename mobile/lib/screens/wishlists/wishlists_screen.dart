@@ -170,8 +170,12 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              onPressed: () {
-                context.push('/add-wish');
+              onPressed: () async {
+                final result = await context.push('/add-wish');
+                // Refresh if wish was added successfully
+                if (result == true && mounted) {
+                  await _loadWishlists();
+                }
               },
               icon: const Icon(
                 Icons.add,
@@ -235,29 +239,19 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
 
   Widget _buildContent(List<Wishlist> wishlists) {
     final wishlistService = context.watch<WishlistService>();
-    final uncategorizedWishes = wishlistService.uncategorizedWishes;
-
-    // Collect all wishes from all wishlists
-    final allWishes = <Wish>[];
-    for (final wishlist in wishlists) {
-      if (wishlist.wishes != null) {
-        allWishes.addAll(wishlist.wishes!);
-      }
-    }
-
-    // Add uncategorized wishes
-    allWishes.addAll(uncategorizedWishes);
+    final allWishes = wishlistService.allWishes;
+    final unsortedWishes = wishlistService.unsortedWishes;
 
     // Filter wishes by selected wishlist
     final filteredWishes = _selectedWishlistFilter == null
         ? allWishes
-        : allWishes.where((wish) => wish.wishlistId == _selectedWishlistFilter).toList();
+        : wishlistService.getWishesForWishlist(_selectedWishlistFilter);
 
     return Column(
       children: [
         // Tabs for filtering by wishlist
-        if (wishlists.isNotEmpty || uncategorizedWishes.isNotEmpty)
-          _buildWishlistTabs(wishlists, uncategorizedWishes.length),
+        if (wishlists.isNotEmpty || unsortedWishes.isNotEmpty)
+          _buildWishlistTabs(wishlists, unsortedWishes.length),
 
         // Wishes list
         Expanded(
@@ -286,7 +280,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
                         );
                       },
                     )
-                  // Regular list for "All" and "Uncategorized" views
+                  // Regular list for "All" view
                   : ListView.separated(
                       padding: const EdgeInsets.all(20.0),
                       itemCount: filteredWishes.length,
@@ -309,7 +303,9 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildWishlistTabs(List<Wishlist> wishlists, int uncategorizedCount) {
+  Widget _buildWishlistTabs(List<Wishlist> wishlists, int unsortedCount) {
+    final wishlistService = context.watch<WishlistService>();
+
     return Container(
       height: 50,
       margin: const EdgeInsets.only(top: 8, bottom: 8),
@@ -317,7 +313,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
-          // "All" tab (includes uncategorized wishes)
+          // "All" tab (includes unsorted wishes)
           _buildTabChip(
             label: 'All',
             isSelected: _selectedWishlistFilter == null,
@@ -330,7 +326,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
           const SizedBox(width: 8),
           // Wishlist tabs
           ...wishlists.map((wishlist) {
-            final wishCount = wishlist.wishes?.length ?? 0;
+            final wishCount = wishlistService.getWishesForWishlist(wishlist.id).length;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: _buildTabChip(
@@ -460,8 +456,12 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
-              onPressed: () {
-                context.push('/add-wish');
+              onPressed: () async {
+                final result = await context.push('/add-wish');
+                // Refresh if wish was added successfully
+                if (result == true && mounted) {
+                  await _loadWishlists();
+                }
               },
               icon: const Icon(Icons.add),
               label: const Text('Add Item'),
@@ -546,6 +546,7 @@ class _WishCardState extends State<_WishCard> {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
+      height: 120,
       decoration: BoxDecoration(
         color: _isPressed ? Colors.grey.shade50 : Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -570,61 +571,67 @@ class _WishCardState extends State<_WishCard> {
           onTapCancel: () => setState(() => _isPressed = false),
           onTap: () {
             // Navigate to wish detail
-            final wishlistId = widget.wishlist?.id ?? 'uncategorized';
+            final wishlistId = widget.wishlist?.id ?? 'unsorted';
             context.push('/wishlists/$wishlistId/items/${widget.wish.id}');
           },
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              children: [
-                // Item image
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
+          child: Row(
+            children: [
+              // Item image - larger and touching edges
+              SizedBox(
+                width: 120,
+                height: 120,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
                   ),
                   child: widget.wish.imageUrl != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
+                      ? AspectRatio(
+                          aspectRatio: 1.0,
                           child: CachedImageWidget(
                             imageUrl: widget.wish.imageUrl!,
-                            width: 72,
-                            height: 72,
                             fit: BoxFit.cover,
-                            errorWidget: Icon(
-                              Icons.card_giftcard_outlined,
-                              size: 32,
-                              color: Colors.grey.shade400,
+                            errorWidget: Container(
+                              color: Colors.grey.shade100,
+                              child: Icon(
+                                Icons.card_giftcard_outlined,
+                                size: 40,
+                                color: Colors.grey.shade400,
+                              ),
                             ),
                           ),
                         )
-                      : Icon(
-                          Icons.card_giftcard_outlined,
-                          size: 32,
-                          color: Colors.grey.shade400,
+                      : Container(
+                          color: Colors.grey.shade100,
+                          child: Icon(
+                            Icons.card_giftcard_outlined,
+                            size: 40,
+                            color: Colors.grey.shade400,
+                          ),
                         ),
                 ),
+              ),
 
-                const SizedBox(width: 12),
-
-                // Content
-                Expanded(
+              // Content
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         widget.wish.title,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
-                        widget.wishlist?.name ?? 'Uncategorized',
+                        widget.wishlist?.name ?? 'Unsorted',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.grey.shade600,
                             ),
@@ -632,7 +639,7 @@ class _WishCardState extends State<_WishCard> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       if (widget.wish.price != null) ...[
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Text(
                           '${widget.wish.currency ?? 'USD'} ${widget.wish.price!.toStringAsFixed(2)}',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -644,36 +651,36 @@ class _WishCardState extends State<_WishCard> {
                     ],
                   ),
                 ),
+              ),
 
-                const SizedBox(width: 8),
-
-                // Reserved indicator or arrow
-                if (widget.wish.isReserved)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.success.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'Reserved',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppTheme.success,
-                            fontWeight: FontWeight.w500,
-                          ),
-                    ),
-                  )
-                else
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 14,
-                    color: AppTheme.arrowIndicator,
-                  ),
-              ],
-            ),
+              // Reserved indicator or arrow
+              Padding(
+                padding: const EdgeInsets.only(right: 12.0),
+                child: widget.wish.isReserved
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.success.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Reserved',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: AppTheme.success,
+                                fontWeight: FontWeight.w500,
+                              ),
+                        ),
+                      )
+                    : Icon(
+                        Icons.arrow_forward_ios,
+                        size: 14,
+                        color: AppTheme.arrowIndicator,
+                      ),
+              ),
+            ],
           ),
         ),
       ),

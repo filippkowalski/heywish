@@ -79,11 +79,14 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
     final messenger = ScaffoldMessenger.of(context);
     final router = GoRouter.of(context);
 
+    // Prevent duplicate calls while loading
     if (onboardingService.isLoading) {
+      debugPrint('⚠️  OnboardingCompleteStep: Already loading, skipping duplicate call');
       return;
     }
 
     try {
+      // Attempt to complete onboarding (this will update the profile)
       final success = await onboardingService.completeOnboarding();
 
       if (!mounted) {
@@ -91,17 +94,19 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
       }
 
       if (success) {
+        // Mark onboarding as completed and navigate to home
         await authService.markOnboardingCompleted();
         debugPrint('✅ OnboardingCompleteStep: Onboarding marked as completed');
         router.go('/home');
       } else {
+        // Show error message if completion failed
         final message =
             onboardingService.error ??
             'Failed to save your profile. Please try again.';
         messenger.showSnackBar(SnackBar(content: Text(message)));
       }
     } catch (e) {
-      debugPrint('❌ Error completing onboarding: $e');
+      debugPrint('❌ OnboardingCompleteStep: Error completing onboarding: $e');
       if (!mounted) {
         return;
       }

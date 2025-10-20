@@ -50,7 +50,11 @@ class Wish {
       wishlistId: json['wishlist_id']?.toString() ?? '',
       title: json['title']?.toString() ?? 'Untitled',
       description: json['description']?.toString(),
-      price: json['price']?.toDouble(),
+      price: json['price'] != null
+          ? (json['price'] is num
+              ? json['price'].toDouble()
+              : double.tryParse(json['price'].toString()))
+          : null,
       currency: json['currency']?.toString() ?? 'USD',
       url: json['url']?.toString(),
       images: json['images'] != null && json['images'] is List

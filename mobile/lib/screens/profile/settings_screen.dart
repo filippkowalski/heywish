@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
 import '../../services/auth_service.dart';
 import '../../services/onboarding_service.dart';
 import '../../theme/app_theme.dart';
@@ -10,6 +11,7 @@ import '../../common/widgets/confirmation_bottom_sheet.dart';
 import '../../common/navigation/native_page_route.dart';
 import '../feedback/feedback_sheet_page.dart';
 import 'privacy_settings_screen.dart';
+import 'notifications_settings_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -48,7 +50,7 @@ class SettingsScreen extends StatelessWidget {
                     Icons.notifications_none_outlined,
                     'profile.notifications'.tr(),
                     'profile.notifications_subtitle'.tr(),
-                    () {},
+                    () => _navigateToNotificationsSettings(context),
                   ),
                   _buildMenuDivider(),
                   _buildMenuItem(
@@ -64,7 +66,7 @@ class SettingsScreen extends StatelessWidget {
                     Icons.help_outline,
                     'profile.help_support'.tr(),
                     'profile.help_subtitle'.tr(),
-                    () {},
+                    () => _openHelpSupport(context),
                   ),
                   _buildMenuDivider(),
                   _buildMenuItem(
@@ -296,6 +298,46 @@ class SettingsScreen extends StatelessWidget {
         child: const PrivacySettingsScreen(),
       ),
     );
+  }
+
+  void _navigateToNotificationsSettings(BuildContext context) {
+    Navigator.of(context).push(
+      NativePageRoute(
+        child: const NotificationsSettingsScreen(),
+      ),
+    );
+  }
+
+  Future<void> _openHelpSupport(BuildContext context) async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: 'heywishpy@gmail.com',
+      query: 'subject=HeyWish Support Request',
+    );
+
+    try {
+      if (await canLaunchUrl(emailUri)) {
+        await launchUrl(emailUri);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open email app. Please email us at heywishpy@gmail.com'),
+              backgroundColor: AppTheme.error,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open email app. Please email us at heywishpy@gmail.com'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    }
   }
 
   void _showAffiliateDisclosure(BuildContext context) {

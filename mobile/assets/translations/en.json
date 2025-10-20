@@ -403,5 +403,28 @@
   "quick_actions": {
     "feedback": "Send Feedback",
     "feedback_subtitle": "Share your thoughts with us"
+  },
+  "settings": {
+    "notifications": "Notifications",
+    "permission_status": "Permission Status",
+    "notifications_enabled": "Notifications Enabled",
+    "notifications_disabled": "Notifications Disabled",
+    "notifications_enabled_desc": "You'll receive notifications about your wishlists and friends",
+    "notifications_disabled_desc": "Enable notifications to stay updated",
+    "enable": "Enable",
+    "notification_types": "Notification Types",
+    "birthday_notifications": "Friend's Birthdays",
+    "birthday_notifications_desc": "Get notified when your friends have birthdays",
+    "friend_request_notifications": "Friend Requests",
+    "friend_request_notifications_desc": "Get notified when someone sends you a friend request",
+    "wishlist_activity_notifications": "Wishlist Activity",
+    "wishlist_activity_notifications_desc": "Get notified when someone reserves or purchases from your wishlists",
+    "discount_notifications": "Price Discounts",
+    "discount_notifications_desc": "Get notified when prices drop on items you're watching",
+    "coupon_notifications": "Coupons & Deals",
+    "coupon_notifications_desc": "Get notified when coupons are available",
+    "notifications_permission_required": "Notification Permission Required",
+    "notifications_permission_message": "Notifications were previously denied. To enable them:\n\n1. Open Settings\n2. Find \"HeyWish\" in the app list\n3. Tap \"Notifications\"\n4. Turn on \"Allow Notifications\"\n\nYou can continue without notifications for now.",
+    "open_settings": "Open Settings"
   }
 }

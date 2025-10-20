@@ -494,16 +494,20 @@ class _AccountCreationStepState extends State<AccountCreationStep>
     final authService = context.read<AuthService>();
     final onboarding = context.read<OnboardingService>();
 
-    // Generate username immediately (instant)
-    final username = _generateAnonymousUsername();
-    debugPrint('Generated anonymous username: $username');
+    // Show native loading overlay
+    final dismissLoader = NativeLoadingOverlay.show(
+      context,
+      message: 'onboarding.creating_account'.tr(),
+    );
 
-    onboarding.setGeneratedUsername(username);
-    onboarding.setSkipUsernameStep(true);
-    onboarding.goToStep(OnboardingStep.complete);
-
-    // Do auth and sync in background
     try {
+      // Generate username
+      final username = _generateAnonymousUsername();
+      debugPrint('Generated anonymous username: $username');
+
+      onboarding.setGeneratedUsername(username);
+      onboarding.setSkipUsernameStep(true);
+
       // Create anonymous Firebase account
       await authService.signInAnonymously();
 
@@ -513,10 +517,21 @@ class _AccountCreationStepState extends State<AccountCreationStep>
         username: username,
       );
 
-      debugPrint('✅ Anonymous account created successfully in background');
+      debugPrint('✅ Anonymous account created successfully');
+
+      // Dismiss loader before navigation
+      dismissLoader();
+
+      // Only navigate to complete step after account is fully created
+      if (context.mounted) {
+        onboarding.goToStep(OnboardingStep.complete);
+      }
     } catch (e) {
+      // Dismiss loader on error
+      dismissLoader();
+
       debugPrint('❌ Error creating anonymous account: $e');
-      // Show error but don't block user - they can retry later
+      // Show error and don't navigate - user can retry
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -524,17 +539,7 @@ class _AccountCreationStepState extends State<AccountCreationStep>
             backgroundColor: Colors.red,
             action: SnackBarAction(
               label: 'Retry',
-              onPressed: () async {
-                try {
-                  await authService.signInAnonymously();
-                  await authService.syncUserWithBackend(
-                    signUpMethod: 'anonymous',
-                    username: username,
-                  );
-                } catch (e) {
-                  debugPrint('Retry failed: $e');
-                }
-              },
+              onPressed: () => _skipAccountCreation(context),
             ),
           ),
         );

@@ -11,28 +11,21 @@ class FCMService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   String? _currentToken;
 
-  /// Initialize FCM and request permissions
+  /// Initialize FCM (setup handlers, check existing permissions)
   Future<void> initialize() async {
     try {
-      // Request notification permissions (iOS)
-      final settings = await _messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-        provisional: false,
-      );
+      // Check if we already have permission (don't request here)
+      final settings = await _messaging.getNotificationSettings();
 
-      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        debugPrint('FCM: User granted permission');
-        await _registerToken();
-      } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-        debugPrint('FCM: User granted provisional permission');
+      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional) {
+        debugPrint('FCM: Notifications already authorized');
         await _registerToken();
       } else {
-        debugPrint('FCM: User declined or has not accepted permission');
+        debugPrint('FCM: Notifications not authorized yet (will request during onboarding)');
       }
 
-      // Setup message handlers
+      // Setup message handlers regardless of permission status
       _setupMessageHandlers();
     } catch (e) {
       debugPrint('FCM: Error initializing: $e');

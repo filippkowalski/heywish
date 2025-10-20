@@ -22,7 +22,7 @@ CREATE TABLE users (
     name text,
     username text UNIQUE,
     avatar_url text,
-    is_anonymous boolean NOT NULL DEFAULT false,
+    sign_up_method text CHECK (sign_up_method IN ('email_password', 'google', 'apple', 'anonymous', 'phone')),
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -62,7 +62,7 @@ CREATE POLICY "Users can update own profile" ON users
 
 ### User Authentication Table
 - firebase_uid as unique identifier
-- Support for anonymous users
+- sign_up_method tracks registration method (email_password, google, apple, anonymous, phone)
 - Email optional (for anonymous users)
 
 ### User-owned Resources

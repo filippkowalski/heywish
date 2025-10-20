@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 import '../../../services/onboarding_service.dart';
+import '../../../services/fcm_service.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/widgets/primary_button.dart';
 import '../../../common/navigation/native_page_route.dart';
@@ -59,6 +60,18 @@ class _NotificationsStepState extends State<NotificationsStep> {
       }
     } catch (e) {
       debugPrint('❌ Error requesting notification permission: $e');
+    }
+
+    // Request FCM notification permission and register token
+    try {
+      final granted = await FCMService().requestPermission();
+      if (granted) {
+        debugPrint('✅ FCM notification permission granted and token registered');
+      } else {
+        debugPrint('⚠️ FCM notification permission denied');
+      }
+    } catch (e) {
+      debugPrint('❌ Error requesting FCM permission: $e');
     }
 
     // Small delay to ensure permission dialog is handled
