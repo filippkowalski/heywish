@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../common/widgets/skeleton_loading.dart';
 import '../common/widgets/native_refresh_indicator.dart';
-import '../services/api_service.dart';
+import '../services/api_service.dart' hide Friend;
 import '../services/auth_service.dart';
+import '../services/friends_service.dart';
+import '../models/friend.dart';
+import '../widgets/cached_image.dart';
+import 'wishlists/add_wish_screen.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class FeedScreen extends StatefulWidget {
@@ -27,12 +32,17 @@ class _FeedScreenState extends State<FeedScreen> {
   bool _isSearching = false;
   String? _error;
   String _searchQuery = '';
+  int _selectedTabIndex = 0; // 0 = Activity, 1 = Friends
 
   @override
   void initState() {
     super.initState();
     _loadFeed();
     _searchController.addListener(_onSearchChanged);
+    // Load friends data when screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<FriendsService>().getFriends();
+    });
   }
 
   @override
@@ -199,15 +209,16 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Future<void> _copyWishToMyWishlist(FeedItem item) async {
-    // Navigate to add wish screen with prefilled data
-    context.push('/add-wish', extra: {
-      'prefilledData': {
+    // Show add wish bottom sheet with prefilled data
+    await AddWishScreen.show(
+      context,
+      prefilledData: {
         'title': item.wishTitle,
         'price': item.wishPrice,
         'currency': item.wishCurrency,
         'image': item.wishImage,
-      }
-    });
+      },
+    );
   }
 
   void _shareProfile() {
@@ -255,6 +266,47 @@ class _FeedScreenState extends State<FeedScreen> {
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.w700,
               color: AppTheme.primary,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Toggle buttons
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildToggleButton(
+                    label: 'feed.tab_activity'.tr(),
+                    icon: Icons.local_activity_outlined,
+                    isSelected: _selectedTabIndex == 0,
+                    onTap: () {
+                      setState(() {
+                        _selectedTabIndex = 0;
+                      });
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: _buildToggleButton(
+                    label: 'feed.tab_friends'.tr(),
+                    icon: Icons.people_outline,
+                    isSelected: _selectedTabIndex == 1,
+                    onTap: () {
+                      setState(() {
+                        _selectedTabIndex = 1;
+                      });
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
@@ -314,13 +366,73 @@ class _FeedScreenState extends State<FeedScreen> {
     );
   }
 
+  Widget _buildToggleButton({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: isSelected
+          ? Theme.of(context).colorScheme.surface
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: isSelected
+                    ? AppTheme.primary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected
+                          ? AppTheme.primary
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildContent() {
     // Show search results when searching
     if (_searchQuery.isNotEmpty) {
       return _buildSearchResults();
     }
 
-    // Show feed
+    // Show friends list or activity feed based on selected tab
+    if (_selectedTabIndex == 1) {
+      return _buildFriendsListView();
+    }
+
+    // Show activity feed
     return NativeRefreshIndicator(
       onRefresh: _loadFeed,
       child: CustomScrollView(
@@ -840,6 +952,140 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFriendsListView() {
+    return Consumer<FriendsService>(
+      builder: (context, friendsService, child) {
+        if (friendsService.isLoadingFriends) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        if (friendsService.friends.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.people_outline,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'feed.friends_empty_title'.tr(),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primary,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'feed.friends_empty_subtitle'.tr(),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return NativeRefreshIndicator(
+          onRefresh: () => friendsService.getFriends(),
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            itemCount: friendsService.friends.length,
+            itemBuilder: (context, index) {
+              final friend = friendsService.friends[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildFriendCard(friend),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFriendCard(Friend friend) {
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: () {
+          // Navigate to friend's profile
+          context.push('/profile/${friend.username}');
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Avatar
+              CachedAvatarImage(
+                imageUrl: friend.avatarUrl,
+                radius: 28,
+              ),
+              const SizedBox(width: 12),
+              // Friend info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      friend.displayName,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primary,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '@${friend.username}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              // View profile button
+              Icon(
+                Icons.chevron_right,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

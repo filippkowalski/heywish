@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/widgets/primary_button.dart';
 import '../../../services/onboarding_service.dart';
-import '../../../theme/app_theme.dart';
 
 class IntroStep extends StatefulWidget {
   const IntroStep({super.key});
@@ -58,8 +57,9 @@ class _IntroStepState extends State<IntroStep> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
+    return SafeArea(
+      child: Column(
+        children: [
         Expanded(
           child: SingleChildScrollView(
             child: Padding(
@@ -160,9 +160,9 @@ class _IntroStepState extends State<IntroStep> with TickerProviderStateMixin {
           ),
         ),
         
-        // Bottom section with button
-        Padding(
-          padding: const EdgeInsets.fromLTRB(32.0, 16.0, 32.0, 32.0),
+          // Bottom section with button
+          Padding(
+            padding: const EdgeInsets.fromLTRB(32.0, 0.0, 32.0, 16.0),
           child: AnimatedBuilder(
             animation: _animationController,
             builder: (context, child) {
@@ -182,8 +182,9 @@ class _IntroStepState extends State<IntroStep> with TickerProviderStateMixin {
               );
             },
           ),
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 

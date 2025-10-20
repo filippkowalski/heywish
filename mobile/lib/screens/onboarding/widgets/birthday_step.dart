@@ -6,7 +6,6 @@ import 'dart:io';
 import '../../../services/onboarding_service.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/widgets/primary_button.dart';
-import '../../../common/widgets/skip_button.dart';
 
 class BirthdayStep extends StatefulWidget {
   const BirthdayStep({super.key});
@@ -44,27 +43,35 @@ class _BirthdayStepState extends State<BirthdayStep> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        surfaceTintColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Color(0xFF09090B)),
-        actionsIconTheme: const IconThemeData(color: Color(0xFF09090B)),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: SkipButton(
-              onPressed: () {
-                context.read<OnboardingService>().nextStep();
-              },
-            ),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Column(
           children: [
+            // Top section with skip button
+            Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 12, right: 16),
+                child: TextButton(
+                  onPressed: () {
+                    context.read<OnboardingService>().nextStep();
+                  },
+                  style: TextButton.styleFrom(
+                    minimumSize: Size.zero,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    'Skip',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
             // Main content
             Expanded(
               child: Padding(
@@ -170,7 +177,7 @@ class _BirthdayStepState extends State<BirthdayStep> {
             
             // Bottom button
             Padding(
-              padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 24.0),
+              padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 16.0),
               child: PrimaryButton(
                 text: 'Continue',
                 onPressed: () {

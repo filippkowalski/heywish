@@ -34,6 +34,8 @@ import 'screens/wishlists/wish_detail_screen.dart';
 import 'screens/wishlists/edit_wishlist_screen.dart';
 import 'screens/wishlists/edit_wish_screen.dart';
 import 'screens/feedback/feedback_sheet_page.dart';
+import 'screens/profile/public_profile_screen.dart';
+import 'screens/profile/public_wishlist_detail_screen.dart';
 import 'common/navigation/native_page_route.dart';
 
 void main() async {
@@ -233,6 +235,36 @@ final _router = GoRouter(
         arguments: state.extra,
         restorationId: state.pageKey.value,
       ),
+    ),
+    GoRoute(
+      path: '/profile/:username',
+      pageBuilder: (context, state) {
+        final username = state.pathParameters['username']!;
+        return NativeTransitions.page(
+          child: PublicProfileScreen(username: username),
+          key: state.pageKey,
+          name: state.name,
+          arguments: state.extra,
+          restorationId: state.pageKey.value,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/profile/:username/wishlist/:wishlistId',
+      pageBuilder: (context, state) {
+        final username = state.pathParameters['username']!;
+        final wishlistId = state.pathParameters['wishlistId']!;
+        return NativeTransitions.page(
+          child: PublicWishlistDetailScreen(
+            username: username,
+            wishlistId: wishlistId,
+          ),
+          key: state.pageKey,
+          name: state.name,
+          arguments: state.extra,
+          restorationId: state.pageKey.value,
+        );
+      },
     ),
     GoRoute(
       path: '/auth/login',

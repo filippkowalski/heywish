@@ -124,52 +124,38 @@ class _NotificationsStepState extends State<NotificationsStep> {
 
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final topPadding = mediaQuery.padding.top;
-    final bottomPadding = mediaQuery.padding.bottom;
-
     return Consumer<OnboardingService>(
       builder: (context, onboardingService, child) {
         return Container(
           color: Colors.white,
-          child: Column(
-            children: [
-              // App bar with Skip button
-              Container(
-                padding: EdgeInsets.only(
-                  left: 24.0,
-                  right: 24.0,
-                  top: topPadding + 16.0,
-                  bottom: 16.0,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                    bottom: BorderSide(
-                      color: AppColors.outline.withValues(alpha: 0.1),
-                      width: 1,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
+          child: SafeArea(
+            child: Column(
+              children: [
+                // Top section with skip button
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 12, right: 16),
+                    child: TextButton(
                       onPressed: () => onboardingService.nextStep(),
+                      style: TextButton.styleFrom(
+                        minimumSize: Size.zero,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                       child: Text(
                         'app.skip'.tr(),
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: AppColors.textSecondary,
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
 
-              // Scrollable content
+                // Scrollable content
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.only(
@@ -271,11 +257,11 @@ class _NotificationsStepState extends State<NotificationsStep> {
 
               // Fixed footer
               Container(
-                padding: EdgeInsets.only(
+                padding: const EdgeInsets.only(
                   left: 24.0,
                   right: 24.0,
-                  top: 20.0,
-                  bottom: bottomPadding + 32.0,
+                  top: 0.0,
+                  bottom: 16.0,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -311,6 +297,7 @@ class _NotificationsStepState extends State<NotificationsStep> {
                 ),
               ),
             ],
+            ),
           ),
         );
       },

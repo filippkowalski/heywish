@@ -4,12 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/wish.dart';
 import '../../services/wishlist_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/cached_image.dart';
-import '../../utils/image_color_utils.dart';
+import '../../common/utils/wish_category_detector.dart';
+import '../../common/navigation/native_page_route.dart';
+import '../../common/widgets/confirmation_bottom_sheet.dart';
 
 class WishDetailScreen extends StatefulWidget {
   final String wishId;
@@ -21,13 +22,30 @@ class WishDetailScreen extends StatefulWidget {
     required this.wishlistId,
   });
 
+  /// Show as bottom sheet
+  static Future<bool?> show(
+    BuildContext context, {
+    required String wishId,
+    required String wishlistId,
+  }) {
+    return NativeTransitions.showNativeModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      child: WishDetailScreen(
+        wishId: wishId,
+        wishlistId: wishlistId,
+      ),
+    );
+  }
+
   @override
   State<WishDetailScreen> createState() => _WishDetailScreenState();
 }
 
 class _WishDetailScreenState extends State<WishDetailScreen> {
   Wish? wish;
-  bool _useWhiteIcons = false; // Default to black icons
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -39,185 +57,184 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
     final wishlistService = context.read<WishlistService>();
     wish = wishlistService.findWishById(widget.wishId);
 
-    // Detect icon color based on image
-    if (wish?.imageUrl != null) {
-      try {
-        final imageProvider = CachedNetworkImageProvider(wish!.imageUrl!);
-        final shouldUseWhite = await ImageColorUtils.shouldUseWhiteIcons(imageProvider);
-        if (mounted) {
-          setState(() {
-            _useWhiteIcons = shouldUseWhite;
-          });
-        }
-      } catch (e) {
-        debugPrint('Error detecting image color: $e');
-      }
-    }
-
     if (mounted) {
-      setState(() {});
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (wish == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Item Details')),
-        body: const Center(
-          child: Text('Item not found'),
+    final mediaQuery = MediaQuery.of(context);
+    final bottomPadding = mediaQuery.viewInsets.bottom;
+
+    if (_isLoading) {
+      return Material(
+        color: Colors.transparent,
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: mediaQuery.size.height * 0.92,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(),
+          ),
         ),
       );
     }
 
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // App bar with image background
-          SliverAppBar(
-            expandedHeight: wish!.imageUrl != null ? 300.0 : 120.0,
-            pinned: true,
-            backgroundColor: Colors.transparent,
-            iconTheme: IconThemeData(
-              color: _useWhiteIcons ? Colors.white : Colors.black,
-            ),
-            actionsIconTheme: IconThemeData(
-              color: _useWhiteIcons ? Colors.white : Colors.black,
-            ),
-            leading: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+    if (wish == null) {
+      return Material(
+        color: Colors.transparent,
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: mediaQuery.size.height * 0.92,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: const Center(
+            child: Text('Item not found'),
+          ),
+        ),
+      );
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: mediaQuery.size.height * 0.92,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header with handle bar and close button
+          Container(
+            padding: const EdgeInsets.fromLTRB(24, 12, 12, 12),
+            child: Row(
+              children: [
+                // Handle bar
+                Expanded(
+                  child: Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
+                // Menu button
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, color: Colors.grey[600]),
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      _editWish();
+                    } else if (value == 'delete') {
+                      _deleteWish();
+                    } else if (value == 'reserve') {
+                      _toggleReservation();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_outlined, size: 20),
+                          SizedBox(width: 12),
+                          Text('Edit'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'reserve',
+                      child: Row(
+                        children: [
+                          Icon(
+                            wish!.isReserved ? Icons.bookmark_remove_outlined : Icons.bookmark_add_outlined,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(wish!.isReserved ? 'Unreserve' : 'Reserve'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                          const SizedBox(width: 12),
+                          Text('Delete', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => context.pop(),
-                  color: Colors.black,
-                ),
-              ),
+              ],
             ),
-            flexibleSpace: FlexibleSpaceBar(
-              background: wish!.imageUrl != null
-                  ? Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        CachedImageWidget(
+          ),
+
+          // Scrollable content
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image if available
+                  if (wish!.imageUrl != null) ...[
+                    Container(
+                      width: double.infinity,
+                      height: 200,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.grey.shade100,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: CachedImageWidget(
                           imageUrl: wish!.imageUrl,
                           fit: BoxFit.cover,
                           errorWidget: Container(
                             color: Theme.of(context).colorScheme.surfaceContainerHighest,
                             child: Icon(
-                              Icons.card_giftcard,
+                              WishCategoryDetector.getIconFromTitle(wish!.title),
                               size: 64,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: WishCategoryDetector.getColorFromTitle(wish!.title),
                             ),
                           ),
                         ),
-                        // Gradient overlay for better text readability
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.3),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : null,
-            ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
                       ),
-                    ],
-                  ),
-                  child: PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert, color: Colors.black),
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        _editWish();
-                      } else if (value == 'delete') {
-                        _deleteWish();
-                      } else if (value == 'reserve') {
-                        _toggleReservation();
-                      }
-                    },
-                    itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit_outlined),
-                        SizedBox(width: 12),
-                        Text('Edit'),
-                      ],
                     ),
-                  ),
-                  PopupMenuItem(
-                    value: 'reserve',
-                    child: Row(
-                      children: [
-                        Icon(wish!.isReserved ? Icons.bookmark_remove_outlined : Icons.bookmark_add_outlined),
-                        const SizedBox(width: 12),
-                        Text(wish!.isReserved ? 'Unreserve' : 'Reserve'),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-                        const SizedBox(width: 12),
-                        Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                      ],
-                    ),
-                  ),
-                ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+                  ],
 
-          // Content
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
                   // Title
                   Text(
                     wish!.title,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primary,
+                      height: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 16),
+
+                  const SizedBox(height: 12),
 
                   // Price and Status badges
                   Wrap(
@@ -227,45 +244,47 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                       if (wish!.price != null)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
+                            horizontal: 12,
+                            vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(20),
+                            color: AppTheme.primaryAccent.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             '${wish!.currency ?? 'USD'} ${wish!.price!.toStringAsFixed(2)}',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            style: const TextStyle(
+                              color: AppTheme.primaryAccent,
                               fontWeight: FontWeight.w600,
+                              fontSize: 15,
                             ),
                           ),
                         ),
                       if (wish!.isReserved)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
+                            horizontal: 12,
+                            vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.secondaryContainer,
-                            borderRadius: BorderRadius.circular(20),
+                            color: Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.bookmark,
-                                size: 16,
-                                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                                size: 14,
+                                color: Colors.green[700],
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 4),
                               Text(
                                 'Reserved',
-                                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSecondaryContainer,
-                                  fontWeight: FontWeight.w500,
+                                style: TextStyle(
+                                  color: Colors.green[700],
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
                                 ),
                               ),
                             ],
@@ -274,82 +293,157 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                     ],
                   ),
 
-                  if (wish!.description != null) ...[
-                    const SizedBox(height: 24),
+                  // Description
+                  if (wish!.description != null && wish!.description!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
                     Text(
                       wish!.description!,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[700],
                         height: 1.5,
                       ),
                     ),
                   ],
 
-                  // Additional details
-                  if (wish!.brand != null || wish!.category != null || wish!.notes != null) ...[
-                    const SizedBox(height: 32),
-                    ...[
-                      if (wish!.brand != null)
-                        _DetailItem(
-                          icon: Icons.local_offer_outlined,
-                          label: 'Brand',
-                          value: wish!.brand!,
-                        ),
-                      if (wish!.category != null)
-                        _DetailItem(
-                          icon: Icons.category_outlined,
-                          label: 'Category',
-                          value: wish!.category!,
-                        ),
-                      if (wish!.notes != null)
-                        _DetailItem(
-                          icon: Icons.note_outlined,
-                          label: 'Notes',
-                          value: wish!.notes!,
-                        ),
-                      _DetailItem(
-                        icon: Icons.calendar_today_outlined,
-                        label: 'Added',
-                        value: _formatDate(wish!.createdAt),
-                      ),
-                    ],
-                  ],
-
-                  const SizedBox(height: 32),
-
-                  // Action buttons
+                  // URL as a compact link
                   if (wish!.url != null) ...[
-                    FilledButton.icon(
-                      onPressed: _openUrl,
-                      icon: const Icon(Icons.open_in_new),
-                      label: const Text('View Product'),
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
+                    const SizedBox(height: 16),
+                    InkWell(
+                      onTap: _openUrl,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.link, size: 18, color: Colors.grey[600]),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                wish!.url!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: AppTheme.primaryAccent,
+                                  decoration: TextDecoration.underline,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Icon(Icons.open_in_new, size: 16, color: Colors.grey[600]),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 12),
                   ],
-                  OutlinedButton.icon(
-                    onPressed: _shareWish,
-                    icon: const Icon(Icons.share_outlined),
-                    label: const Text('Share Item'),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                    ),
-                  ),
 
-                  const SizedBox(height: 20),
+                  // Additional details
+                  if (wish!.brand != null || wish!.category != null) ...[
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (wish!.brand != null)
+                          _buildDetailChip(Icons.local_offer_outlined, wish!.brand!),
+                        if (wish!.category != null)
+                          _buildDetailChip(Icons.category_outlined, wish!.category!),
+                      ],
+                    ),
+                  ],
                 ],
               ),
+            ),
+          ),
+
+          // Bottom action buttons
+          Container(
+            padding: EdgeInsets.fromLTRB(24, 16, 24, bottomPadding + 24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                top: BorderSide(color: Colors.grey[200]!, width: 1),
+              ),
+            ),
+            child: Row(
+              children: [
+                // Share button
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: _shareWish,
+                      icon: const Icon(Icons.share_outlined, size: 18),
+                      label: const Text('Share'),
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        side: BorderSide(color: Colors.grey[300]!),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (wish!.url != null) ...[
+                  const SizedBox(width: 12),
+                  // View Product button
+                  Expanded(
+                    flex: 2,
+                    child: SizedBox(
+                      height: 48,
+                      child: FilledButton.icon(
+                        onPressed: _openUrl,
+                        icon: const Icon(Icons.open_in_new, size: 18),
+                        label: const Text('View Product'),
+                        style: FilledButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          backgroundColor: AppTheme.primaryAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.grey[600]),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
   }
 
   void _openUrl() async {
@@ -369,7 +463,7 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
 
   void _shareWish() async {
     if (wish == null) return;
-    
+
     try {
       final shareText = '''
 ${wish!.title}
@@ -386,42 +480,84 @@ From my HeyWish wishlist 🎁
       // Show sharing options
       await showModalBottomSheet<void>(
         context: context,
+        backgroundColor: Colors.transparent,
         builder: (BuildContext context) {
-          return SafeArea(
-            child: Wrap(
-              children: [
-                ListTile(
-                  leading: Icon(Icons.share),
-                  title: const Text('Share via...'),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await Share.share(shareText, subject: 'Check out this item: ${wish!.title}');
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.copy),
-                  title: const Text('Copy details to clipboard'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Clipboard.setData(ClipboardData(text: shareText));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Item details copied to clipboard')),
-                    );
-                  },
-                ),
-                if (wish!.url != null)
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Handle bar
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(top: 12, bottom: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
                   ListTile(
-                    leading: Icon(Icons.link),
-                    title: const Text('Copy product URL'),
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryAccent.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.share, color: AppTheme.primaryAccent),
+                    ),
+                    title: const Text('Share via...', style: TextStyle(fontWeight: FontWeight.w600)),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await Share.share(shareText, subject: 'Check out this item: ${wish!.title}');
+                    },
+                  ),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryAccent.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.copy, color: AppTheme.primaryAccent),
+                    ),
+                    title: const Text('Copy details to clipboard', style: TextStyle(fontWeight: FontWeight.w600)),
                     onTap: () {
                       Navigator.pop(context);
-                      Clipboard.setData(ClipboardData(text: wish!.url!));
+                      Clipboard.setData(ClipboardData(text: shareText));
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Product URL copied to clipboard')),
+                        const SnackBar(content: Text('Item details copied to clipboard')),
                       );
                     },
                   ),
-              ],
+                  if (wish!.url != null)
+                    ListTile(
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryAccent.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.link, color: AppTheme.primaryAccent),
+                      ),
+                      title: const Text('Copy product URL', style: TextStyle(fontWeight: FontWeight.w600)),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Clipboard.setData(ClipboardData(text: wish!.url!));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Product URL copied to clipboard')),
+                        );
+                      },
+                    ),
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           );
         },
@@ -434,25 +570,28 @@ From my HeyWish wishlist 🎁
   }
 
   void _editWish() async {
+    // Close the detail bottom sheet first
+    Navigator.of(context).pop();
+
+    // Navigate to edit screen
     final result = await context.push('/wishlists/${widget.wishlistId}/items/${widget.wishId}/edit');
 
-    // Refresh the wish details if the edit was successful
-    if (result == true && mounted) {
-      _loadWish();
+    // If edit was successful, the wishlist screen will refresh automatically
+    if (result == true) {
+      // Optional: could show a success message
     }
   }
 
   void _toggleReservation() async {
     if (wish == null) return;
-    
+
     bool success = false;
     if (wish!.isReserved) {
       success = await context.read<WishlistService>().unreserveWish(widget.wishId);
     } else {
-      // For now, just use anonymous reservation - could prompt for name later
       success = await context.read<WishlistService>().reserveWish(widget.wishId, null);
     }
-    
+
     if (success && mounted) {
       _loadWish(); // Refresh the wish details
       ScaffoldMessenger.of(context).showSnackBar(
@@ -460,7 +599,7 @@ From my HeyWish wishlist 🎁
           content: Text(
             wish!.isReserved ? 'Item reserved successfully' : 'Item unreserved successfully',
           ),
-          backgroundColor: Colors.green,
+          backgroundColor: AppTheme.primaryAccent,
         ),
       );
     } else if (mounted) {
@@ -476,44 +615,20 @@ From my HeyWish wishlist 🎁
   }
 
   void _deleteWish() async {
-    final shouldDelete = await showDialog<bool>(
+    final shouldDelete = await ConfirmationBottomSheet.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Item'),
-        content: Text('Are you sure you want to delete "${wish!.title}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      title: 'Delete Item',
+      message: 'Are you sure you want to delete "${wish!.title}"?',
+      confirmText: 'Delete',
+      confirmColor: Colors.red,
     );
 
     if (shouldDelete == true && mounted) {
-      final success = await context
-          .read<WishlistService>()
-          .deleteWish(widget.wishId);
+      final success = await context.read<WishlistService>().deleteWish(widget.wishId);
 
       if (success && mounted) {
-        // Navigate back and trigger refresh
-        context.pop(true); // Pass true to signal that refresh is needed
-
-        // Show success message after navigation
-        Future.microtask(() {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Item deleted successfully'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        });
+        // Navigate back and signal that refresh is needed
+        Navigator.of(context).pop(true);
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -523,53 +638,5 @@ From my HeyWish wishlist 🎁
         );
       }
     }
-  }
-}
-
-class _DetailItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _DetailItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            size: 20,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

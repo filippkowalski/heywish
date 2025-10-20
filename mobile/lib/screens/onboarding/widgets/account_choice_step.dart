@@ -194,7 +194,7 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
 
             // Bottom section
             Padding(
-              padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 24.0),
+              padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 16.0),
               child: Column(
                 children: [
                   // Google Sign In button

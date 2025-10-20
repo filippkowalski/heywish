@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'dart:async';
-import 'dart:io';
 import 'wishlists/wishlists_screen.dart';
+import 'wishlists/add_wish_screen.dart';
 import 'feed_screen.dart';
 import 'profile/profile_screen.dart';
 import '../services/clipboard_service.dart';
@@ -75,10 +74,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
       );
 
       if (shouldAdd == true && mounted) {
-        // Navigate to add wish screen with pre-filled URL
-        context.push(
-          '/add-wish',
-          extra: {'initialUrl': url},
+        // Show add wish bottom sheet with pre-filled URL
+        await AddWishScreen.show(
+          context,
+          initialUrl: url,
         );
       }
     }
@@ -93,20 +92,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
     switch (content.type) {
       case SharedContentType.url:
         if (content.url != null) {
-          // Navigate to add wish screen with pre-filled URL
-          context.push(
-            '/add-wish',
-            extra: {'initialUrl': content.url},
+          // Show add wish bottom sheet with pre-filled URL
+          await AddWishScreen.show(
+            context,
+            initialUrl: content.url,
           );
         }
         break;
 
       case SharedContentType.image:
         if (content.imagePath != null) {
-          // Navigate to add wish screen with pre-filled image
-          context.push(
-            '/add-wish',
-            extra: {'initialImagePath': content.imagePath},
+          // Show add wish bottom sheet with pre-filled image
+          await AddWishScreen.show(
+            context,
+            // Note: initialImagePath is not currently supported in AddWishScreen
+            // This will need to be added to the AddWishScreen constructor
           );
         }
         break;
@@ -139,30 +139,47 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
         index: _selectedIndex,
         children: screens,
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        destinations: [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: Colors.grey.shade200,
+              width: 1,
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.dynamic_feed_outlined),
-            selectedIcon: Icon(Icons.dynamic_feed),
-            label: 'Feed',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+          destinations: [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.dynamic_feed_outlined),
+              selectedIcon: Icon(Icons.dynamic_feed),
+              label: 'Feed',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -62,7 +62,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                 // Back button (positioned above content with safe area)
                 if (_canGoBack(onboardingService.currentStep))
                   Positioned(
-                    top: topPadding + 16,
+                    top: topPadding + 12,
                     left: 16,
                     child: IconButton(
                       onPressed: onboardingService.previousStep,

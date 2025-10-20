@@ -532,7 +532,7 @@ class _ProfileInfoStepState extends State<ProfileInfoStep> {
 
         // Fixed bottom section
         Padding(
-          padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 24.0),
+          padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 16.0),
           child: Consumer<OnboardingService>(
             builder: (context, onboardingService, child) {
               return PrimaryButton(

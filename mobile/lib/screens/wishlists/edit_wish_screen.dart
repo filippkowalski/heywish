@@ -8,6 +8,7 @@ import '../../services/wishlist_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/cached_image.dart';
 import '../../common/navigation/native_page_route.dart';
+import '../../common/utils/wish_category_detector.dart';
 
 class EditWishScreen extends StatefulWidget {
   final String wishId;
@@ -340,9 +341,9 @@ class _EditWishScreenState extends State<EditWishScreen> {
                                           borderRadius: BorderRadius.circular(11),
                                           errorWidget: Center(
                                             child: Icon(
-                                              Icons.card_giftcard,
+                                              WishCategoryDetector.getIconFromTitle(_titleController.text),
                                               size: 40,
-                                              color: Colors.grey.shade300,
+                                              color: WishCategoryDetector.getColorFromTitle(_titleController.text),
                                             ),
                                           ),
                                         ),

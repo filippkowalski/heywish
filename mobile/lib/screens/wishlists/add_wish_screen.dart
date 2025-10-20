@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -11,6 +10,8 @@ import '../../services/image_cache_service.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../models/wishlist.dart';
+import '../../common/navigation/native_page_route.dart';
+import 'wishlist_new_screen.dart';
 
 class AddWishScreen extends StatefulWidget {
   final String? wishlistId;
@@ -24,6 +25,25 @@ class AddWishScreen extends StatefulWidget {
     this.prefilledData,
   });
 
+  /// Show as bottom sheet
+  static Future<bool?> show(
+    BuildContext context, {
+    String? wishlistId,
+    String? initialUrl,
+    Map<String, dynamic>? prefilledData,
+  }) {
+    return NativeTransitions.showNativeModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      child: AddWishScreen(
+        wishlistId: wishlistId,
+        initialUrl: initialUrl,
+        prefilledData: prefilledData,
+      ),
+    );
+  }
+
   @override
   State<AddWishScreen> createState() => _AddWishScreenState();
 }
@@ -34,6 +54,12 @@ class _AddWishScreenState extends State<AddWishScreen> {
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   final _urlController = TextEditingController();
+
+  // Focus nodes
+  final _titleFocusNode = FocusNode();
+  final _descriptionFocusNode = FocusNode();
+  final _priceFocusNode = FocusNode();
+  final _urlFocusNode = FocusNode();
 
   // Image picker
   final ImagePicker _imagePicker = ImagePicker();
@@ -49,11 +75,30 @@ class _AddWishScreenState extends State<AddWishScreen> {
   String? _selectedWishlistId;
   String? _lastScrapedUrl;
 
-  final List<String> _currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD'];
+  // Visible fields tracking
+  final Set<String> _visibleFields = {};
+
+  // Currency list will be populated in initState based on user locale
+  List<String> _currencies = [];
 
   @override
   void initState() {
     super.initState();
+
+    // Initialize currencies based on user locale
+    _initializeCurrencies();
+
+    // Auto-focus title field after a short delay
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        _titleFocusNode.requestFocus();
+      }
+    });
+
+    // Listen for title changes to enable/disable save button
+    _titleController.addListener(() {
+      setState(() {});
+    });
 
     // Listen for URL changes with debouncing
     _urlController.addListener(_onUrlChanged);
@@ -67,10 +112,25 @@ class _AddWishScreenState extends State<AddWishScreen> {
       _urlController.text = data['url'] ?? '';
       _currency = data['currency'] ?? 'USD';
       _scrapedImageUrl = data['image'];
+
+      // Auto-show fields with data
+      if (data['description'] != null && data['description'].toString().isNotEmpty) {
+        _visibleFields.add('description');
+      }
+      if (data['url'] != null && data['url'].toString().isNotEmpty) {
+        _visibleFields.add('url');
+      }
+      if (data['price'] != null) {
+        _visibleFields.add('price');
+      }
+      if (data['image'] != null) {
+        _visibleFields.add('image');
+      }
     }
     // Otherwise pre-fill URL if provided from clipboard
     else if (widget.initialUrl != null) {
       _urlController.text = widget.initialUrl!;
+      _visibleFields.add('url');
       // Trigger scraping after a short delay to allow UI to settle
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) {
@@ -90,7 +150,50 @@ class _AddWishScreenState extends State<AddWishScreen> {
     _descriptionController.dispose();
     _priceController.dispose();
     _urlController.dispose();
+    _titleFocusNode.dispose();
+    _descriptionFocusNode.dispose();
+    _priceFocusNode.dispose();
+    _urlFocusNode.dispose();
     super.dispose();
+  }
+
+  /// Initialize currencies with user's locale currency at top
+  void _initializeCurrencies() {
+    // All available currencies
+    const allCurrencies = [
+      'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'SEK', 'NZD',
+      'MXN', 'SGD', 'HKD', 'NOK', 'KRW', 'TRY', 'RUB', 'INR', 'BRL', 'ZAR',
+      'DKK', 'PLN', 'THB', 'IDR', 'HUF', 'CZK', 'ILS', 'CLP', 'PHP', 'AED',
+      'COP', 'SAR', 'MYR', 'RON'
+    ];
+
+    // Get user's locale
+    final locale = Platform.localeName; // e.g., 'en_US', 'fr_FR'
+    final countryCode = locale.split('_').length > 1 ? locale.split('_')[1] : 'US';
+
+    // Map country codes to currencies
+    final countryToCurrency = {
+      'US': 'USD', 'GB': 'GBP', 'EU': 'EUR', 'DE': 'EUR', 'FR': 'EUR', 'IT': 'EUR',
+      'ES': 'EUR', 'NL': 'EUR', 'BE': 'EUR', 'AT': 'EUR', 'PT': 'EUR', 'IE': 'EUR',
+      'JP': 'JPY', 'CA': 'CAD', 'AU': 'AUD', 'CH': 'CHF', 'CN': 'CNY', 'SE': 'SEK',
+      'NZ': 'NZD', 'MX': 'MXN', 'SG': 'SGD', 'HK': 'HKD', 'NO': 'NOK', 'KR': 'KRW',
+      'TR': 'TRY', 'RU': 'RUB', 'IN': 'INR', 'BR': 'BRL', 'ZA': 'ZAR', 'DK': 'DKK',
+      'PL': 'PLN', 'TH': 'THB', 'ID': 'IDR', 'HU': 'HUF', 'CZ': 'CZK', 'IL': 'ILS',
+      'CL': 'CLP', 'PH': 'PHP', 'AE': 'AED', 'CO': 'COP', 'SA': 'SAR', 'MY': 'MYR',
+      'RO': 'RON'
+    };
+
+    // Get user's currency
+    final userCurrency = countryToCurrency[countryCode] ?? 'USD';
+    _currency = userCurrency;
+
+    // Build currency list with user's currency first
+    _currencies = [userCurrency];
+    for (final currency in allCurrencies) {
+      if (currency != userCurrency) {
+        _currencies.add(currency);
+      }
+    }
   }
 
   /// Listener for URL field changes with debouncing
@@ -133,6 +236,19 @@ class _AddWishScreenState extends State<AddWishScreen> {
       if (text != null && text.isNotEmpty) {
         _urlController.text = text;
 
+        // Show URL field if not visible
+        if (!_visibleFields.contains('url')) {
+          setState(() {
+            _visibleFields.add('url');
+          });
+          // Request focus after adding field
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (mounted) {
+              _urlFocusNode.requestFocus();
+            }
+          });
+        }
+
         // Trigger scraping if it's a valid URL
         if (_isValidUrl(text)) {
           _scrapeUrl(text);
@@ -146,7 +262,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
                 children: [
                   const Icon(Icons.content_paste, color: Colors.white, size: 20),
                   const SizedBox(width: 8),
-                  const Text('Pasted from clipboard'),
+                  const Text('Link pasted'),
                 ],
               ),
               behavior: SnackBarBehavior.floating,
@@ -162,7 +278,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
 
   /// Scrape URL and auto-fill form fields
   Future<void> _scrapeUrl(String url) async {
-    if (_isScrapingUrl) return; // Prevent multiple concurrent scrapes
+    if (_isScrapingUrl) return;
 
     setState(() {
       _isScrapingUrl = true;
@@ -178,27 +294,30 @@ class _AddWishScreenState extends State<AddWishScreen> {
       if (response.success && response.metadata != null) {
         final metadata = response.metadata!;
 
-        // Auto-fill title if empty or user hasn't modified it
+        // Auto-fill title if empty
         if (_titleController.text.isEmpty && metadata.title != null) {
           _titleController.text = metadata.title!;
         }
 
-        // Auto-fill description if available
+        // Auto-fill description
         if (_descriptionController.text.isEmpty && metadata.description != null) {
           _descriptionController.text = metadata.description!;
+          _visibleFields.add('description');
         }
 
-        // Auto-fill price if available
+        // Auto-fill price
         if (_priceController.text.isEmpty && metadata.price != null) {
           _priceController.text = metadata.price!.toStringAsFixed(2);
           if (metadata.currency != null) {
             _currency = metadata.currency!;
           }
+          _visibleFields.add('price');
         }
 
-        // Store scraped image URL (we'll use this if user hasn't selected an image)
+        // Store scraped image URL
         if (metadata.image != null) {
           _scrapedImageUrl = metadata.image;
+          _visibleFields.add('image');
         }
 
         setState(() {});
@@ -227,12 +346,10 @@ class _AddWishScreenState extends State<AddWishScreen> {
           );
         }
       } else if (mounted) {
-        // Silent fail - don't show error for scraping failures
         debugPrint('URL scraping failed: ${response.error}');
       }
     } catch (e) {
       debugPrint('Error scraping URL: $e');
-      // Silent fail - don't interrupt user experience
     } finally {
       if (mounted) {
         setState(() {
@@ -243,9 +360,102 @@ class _AddWishScreenState extends State<AddWishScreen> {
   }
 
   Future<void> _pickImage() async {
+    // Show bottom sheet to choose between camera or gallery
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(top: 12, bottom: 24),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                // Camera option
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryAccent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.camera_alt,
+                      color: AppTheme.primaryAccent,
+                    ),
+                  ),
+                  title: const Text(
+                    'Take Photo',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Use camera',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  onTap: () => Navigator.pop(context, ImageSource.camera),
+                ),
+                const SizedBox(height: 8),
+                // Gallery option
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryAccent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.photo_library,
+                      color: AppTheme.primaryAccent,
+                    ),
+                  ),
+                  title: const Text(
+                    'Choose from Gallery',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Select from photos',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  onTap: () => Navigator.pop(context, ImageSource.gallery),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (source == null) return;
+
     try {
       final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
+        source: source,
       );
 
       if (image != null && mounted) {
@@ -253,7 +463,6 @@ class _AddWishScreenState extends State<AddWishScreen> {
           _isCompressingImage = true;
         });
 
-        // Compress and cache the image
         final compressedImage = await _imageCacheService.compressAndCacheImage(
           imageFile: File(image.path),
           quality: 85,
@@ -265,11 +474,13 @@ class _AddWishScreenState extends State<AddWishScreen> {
           setState(() {
             _selectedImage = compressedImage;
             _isCompressingImage = false;
+            _visibleFields.add('image');
           });
         } else if (mounted) {
           setState(() {
             _selectedImage = File(image.path);
             _isCompressingImage = false;
+            _visibleFields.add('image');
           });
         }
       }
@@ -287,14 +498,14 @@ class _AddWishScreenState extends State<AddWishScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Photo Library Access Required'),
+        title: const Text('Camera/Photo Access Required'),
         content: const Text(
-          'HeyWish needs access to your photo library to select images for your items.',
+          'HeyWish needs access to your camera and photo library to add images to your items.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('app.cancel'.tr()),
           ),
           TextButton(
             onPressed: () {
@@ -309,13 +520,11 @@ class _AddWishScreenState extends State<AddWishScreen> {
   }
 
   Future<void> _saveWish() async {
-    // Validate required fields
     if (_titleController.text.trim().isEmpty) {
       _showErrorMessage('wish.title_required'.tr());
       return;
     }
 
-    // Wishlist selection is optional - null means unsorted wish
     setState(() {
       _isLoading = true;
     });
@@ -325,9 +534,8 @@ class _AddWishScreenState extends State<AddWishScreen> {
           ? null
           : double.tryParse(_priceController.text.trim());
 
-      // Add wish with optional wishlistId
       await context.read<WishlistService>().addWish(
-        wishlistId: _selectedWishlistId, // Can be null for unsorted wishes
+        wishlistId: _selectedWishlistId,
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
             ? null
@@ -338,14 +546,12 @@ class _AddWishScreenState extends State<AddWishScreen> {
             ? null
             : _urlController.text.trim(),
         imageFile: _selectedImage,
-        // Include scraped image URL if no local file is selected
         images: _selectedImage == null && _scrapedImageUrl != null
             ? [_scrapedImageUrl!]
             : null,
       );
 
       if (mounted) {
-        // Show success message before popping
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('wish.created_successfully'.tr()),
@@ -354,11 +560,9 @@ class _AddWishScreenState extends State<AddWishScreen> {
           ),
         );
 
-        // Pop after a brief delay to allow SnackBar to show
         Future.delayed(const Duration(milliseconds: 100), () {
           if (mounted) {
-            // Pop with result to trigger refresh
-            context.pop(true);
+            Navigator.of(context).pop(true);
           }
         });
       }
@@ -386,155 +590,627 @@ class _AddWishScreenState extends State<AddWishScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: AppTheme.primary),
-          onPressed: () {
-            if (mounted) {
-              Navigator.of(context).pop();
-            }
-          },
-        ),
-        title: Text(
-          'wish.add_item'.tr(),
-          style: const TextStyle(
-            color: AppTheme.primary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        actions: [
-          if (!_isLoading)
-            TextButton(
-              onPressed: _saveWish,
-              child: Text(
-                'Save',
-                style: TextStyle(
-                  color: AppTheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
+    final mediaQuery = MediaQuery.of(context);
+    final bottomPadding = mediaQuery.viewInsets.bottom;
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: mediaQuery.size.height * 0.92,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle bar
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 24),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildBasicInfoSection(),
-            const SizedBox(height: 32),
-            _buildImageSection(),
-            const SizedBox(height: 32),
-            _buildWishlistSelectorSection(),
-            const SizedBox(height: 32),
-            _buildPriceSection(),
-            const SizedBox(height: 32),
-            _buildSaveButton(),
-          ],
-        ),
-      ),
-    );
-  }
+          ),
 
-  Widget _buildWishlistSelectorSection() {
-    final wishlistService = context.watch<WishlistService>();
-    final wishlists = wishlistService.wishlists;
+          // Scrollable content
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title field - Always visible, big and borderless
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _buildBorderlessTextField(
+                          controller: _titleController,
+                          focusNode: _titleFocusNode,
+                          hintText: 'wish.title_placeholder'.tr(),
+                          fontSize: 28,
+                          fontWeight: FontWeight.w600,
+                          maxLines: 2,
+                          textCapitalization: TextCapitalization.words,
+                        ),
+                      ),
+                    ],
+                  ),
 
-    Wishlist? selectedWishlist;
-    if (_selectedWishlistId != null && wishlists.isNotEmpty) {
-      try {
-        selectedWishlist = wishlists.firstWhere((w) => w.id == _selectedWishlistId);
-      } catch (e) {
-        selectedWishlist = null;
-      }
-    }
+                  // Description Field (if visible)
+                  if (_visibleFields.contains('description')) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _buildBorderlessTextField(
+                            controller: _descriptionController,
+                            focusNode: _descriptionFocusNode,
+                            hintText: 'Description',
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
+                            maxLines: 3,
+                            textCapitalization: TextCapitalization.sentences,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            setState(() {
+                              _visibleFields.remove('description');
+                              _descriptionController.clear();
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            child: Icon(
+                              Icons.close,
+                              size: 24,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'wish.select_wishlist'.tr(),
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppTheme.primary,
+                  // URL Field (if visible)
+                  if (_visibleFields.contains('url')) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _buildBorderlessTextField(
+                            controller: _urlController,
+                            focusNode: _urlFocusNode,
+                            hintText: 'Link',
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
+                            keyboardType: TextInputType.url,
+                          ),
+                        ),
+                        if (_isScrapingUrl)
+                          const Padding(
+                            padding: EdgeInsets.only(left: 8, top: 4),
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        else
+                          GestureDetector(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              setState(() {
+                                _visibleFields.remove('url');
+                                _urlController.clear();
+                                _scrapedImageUrl = null;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              child: Icon(
+                                Icons.close,
+                                size: 24,
+                                color: Colors.grey[400],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+
+                  // Image Field (if visible)
+                  if (_visibleFields.contains('image')) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: (_selectedImage != null || _scrapedImageUrl != null)
+                                ? _buildImagePreview()
+                                : _buildAddImageButton(),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              setState(() {
+                                _visibleFields.remove('image');
+                                _selectedImage = null;
+                                _scrapedImageUrl = null;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              child: Icon(
+                                Icons.close,
+                                size: 24,
+                                color: Colors.grey[400],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // Price Field (if visible)
+                  if (_visibleFields.contains('price')) ...[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: _buildBorderlessTextField(
+                                  controller: _priceController,
+                                  focusNode: _priceFocusNode,
+                                  hintText: 'Price',
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w500,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              DropdownButton<String>(
+                                value: _currency,
+                                underline: const SizedBox(),
+                                items: _currencies.map((currency) {
+                                  return DropdownMenuItem(
+                                    value: currency,
+                                    child: Text(
+                                      currency,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _currency = value!;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            setState(() {
+                              _visibleFields.remove('price');
+                              _priceController.clear();
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            child: Icon(
+                              Icons.close,
+                              size: 24,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  // Add More Details buttons
+                  const SizedBox(height: 20),
+                  _buildAddFieldButtons(),
+
+                  // Wishlist Selector - Always visible at bottom
+                  const SizedBox(height: 16),
+                  Text(
+                    'List',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildWishlistSelector(),
+                ],
               ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'wish.select_wishlist_desc'.tr(),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.primary.withValues(alpha: 0.7),
-              ),
-        ),
-        const SizedBox(height: 24),
-        GestureDetector(
-          onTap: () async {
-            // Show wishlist selector or create new
-            final result = await _showWishlistSelectionBottomSheet();
-            if (result != null) {
-              setState(() {
-                _selectedWishlistId = result;
-              });
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.all(16),
+            ),
+          ),
+
+          // Bottom buttons
+          Container(
+            padding: EdgeInsets.fromLTRB(24, 12, 24, bottomPadding + 12),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.grey.shade300,
-                width: 1.5,
+              border: Border(
+                top: BorderSide(color: Colors.grey[200]!, width: 1),
               ),
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.list_alt_outlined,
-                  color: AppTheme.primary,
-                ),
-                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    selectedWishlist != null
-                        ? selectedWishlist.name
-                        : 'wish.select_wishlist_placeholder'.tr(),
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: selectedWishlist != null
-                          ? AppTheme.primary
-                          : Colors.grey.shade500,
-                      fontWeight: selectedWishlist != null
-                          ? FontWeight.w500
-                          : FontWeight.w400,
+                  flex: 1,
+                  child: SizedBox(
+                    height: 48,
+                    child: OutlinedButton(
+                      onPressed: _pasteFromClipboard,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        side: BorderSide(color: Colors.grey[300]!),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.content_paste, size: 16, color: AppTheme.primary),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Paste\nLink',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              height: 1.2,
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 14,
-                  color: Colors.grey.shade600,
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    height: 48,
+                    child: FilledButton(
+                      onPressed: (_isLoading || _titleController.text.trim().isEmpty) ? null : _saveWish,
+                      style: FilledButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        backgroundColor: AppTheme.primaryAccent,
+                        disabledBackgroundColor: Colors.grey[300],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Text(
+                              'app.save'.tr(),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Future<String?> _showWishlistSelectionBottomSheet() async {
+  Widget _buildBorderlessTextField({
+    required TextEditingController controller,
+    FocusNode? focusNode,
+    required String hintText,
+    double fontSize = 16,
+    FontWeight fontWeight = FontWeight.w400,
+    int maxLines = 1,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+    TextInputType? keyboardType,
+  }) {
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      style: TextStyle(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: AppTheme.primary,
+        height: 1.3, // Allow proper line height for multi-line text
+      ),
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: TextStyle(
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          color: Colors.grey[400],
+          height: 1.3,
+        ),
+        border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        isDense: true,
+        contentPadding: EdgeInsets.zero,
+      ),
+      maxLines: maxLines,
+      minLines: 1,
+      textCapitalization: textCapitalization,
+      keyboardType: keyboardType,
+    );
+  }
+
+  Widget _buildAddFieldButtons() {
+    final availableFields = [
+      if (!_visibleFields.contains('description')) {'key': 'description', 'label': 'Description', 'icon': Icons.notes, 'focusNode': _descriptionFocusNode},
+      if (!_visibleFields.contains('url')) {'key': 'url', 'label': 'Link', 'icon': Icons.link, 'focusNode': _urlFocusNode},
+      if (!_visibleFields.contains('image')) {'key': 'image', 'label': 'Photo', 'icon': Icons.image},
+      if (!_visibleFields.contains('price')) {'key': 'price', 'label': 'Price', 'icon': Icons.attach_money, 'focusNode': _priceFocusNode},
+    ];
+
+    if (availableFields.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: availableFields.map((field) {
+        return InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            setState(() {
+              _visibleFields.add(field['key'] as String);
+            });
+
+            // Request focus or perform action after setState
+            Future.delayed(const Duration(milliseconds: 100), () {
+              if (field['key'] == 'image') {
+                _pickImage();
+              } else if (field['focusNode'] != null) {
+                (field['focusNode'] as FocusNode).requestFocus();
+              }
+            });
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[300]!),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  field['icon'] as IconData,
+                  size: 16,
+                  color: Colors.grey[600],
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  field['label'] as String,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildImagePreview() {
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        width: double.infinity,
+        height: 180,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey.shade100,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: _selectedImage != null
+              ? Image.file(
+                  _selectedImage!,
+                  fit: BoxFit.cover,
+                )
+              : _scrapedImageUrl != null
+                  ? Image.network(
+                      _scrapedImageUrl!,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Icon(Icons.broken_image, size: 48, color: Colors.grey[400]),
+                        );
+                      },
+                    )
+                  : const SizedBox(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddImageButton() {
+    return GestureDetector(
+      onTap: _isCompressingImage ? null : _pickImage,
+      child: Container(
+        width: double.infinity,
+        height: 180,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey[50],
+          border: Border.all(color: Colors.grey[300]!, width: 1.5),
+        ),
+        child: Center(
+          child: _isCompressingImage
+              ? const CircularProgressIndicator(strokeWidth: 2)
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.image_outlined, size: 48, color: Colors.grey[400]),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tap to add photo',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWishlistSelector() {
+    final wishlistService = context.watch<WishlistService>();
+    final wishlists = wishlistService.wishlists;
+
+    return SizedBox(
+      height: 32,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: wishlists.length + 1, // +1 for "New List" button
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          // Last item is "New List" button
+          if (index == wishlists.length) {
+            return GestureDetector(
+              onTap: _createNewWishlist,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.add,
+                        size: 16,
+                        color: AppTheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'New List',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          final wishlist = wishlists[index];
+          final isSelected = _selectedWishlistId == wishlist.id;
+
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedWishlistId = wishlist.id;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: isSelected ? AppTheme.primaryAccent : Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  wishlist.name,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected ? Colors.white : AppTheme.primary,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _createNewWishlist() async {
+    // Show create new wishlist bottom sheet
+    final newWishlistId = await WishlistNewScreen.show(context);
+
+    if (newWishlistId != null && newWishlistId is String && mounted) {
+      // Refresh wishlists
+      await context.read<WishlistService>().fetchWishlists();
+
+      // Select the newly created wishlist
+      setState(() {
+        _selectedWishlistId = newWishlistId;
+      });
+    }
+  }
+
+  Future<void> _showWishlistSelection() async {
     final wishlistService = context.read<WishlistService>();
     await wishlistService.fetchWishlists();
     final wishlists = wishlistService.wishlists;
 
-    if (!mounted) return null;
+    if (!mounted) return;
 
-    return showModalBottomSheet<String>(
+    final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -569,117 +1245,15 @@ class _AddWishScreenState extends State<AddWishScreen> {
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
                   child: Text(
                     'wish.select_wishlist'.tr(),
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.primary,
-                        ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Text(
-                    'Choose where to save this item',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.primary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Create new wishlist button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () async {
-                        Navigator.pop(context);
-                        final result = await context.push('/wishlists/new');
-                        if (result != null && result is String) {
-                          setState(() {
-                            _selectedWishlistId = result;
-                          });
-                        }
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: AppTheme.primaryAccent.withValues(alpha: 0.3),
-                            width: 1.5,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    AppTheme.primaryAccent,
-                                    AppTheme.primaryAccent.withValues(alpha: 0.8),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.add_rounded,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'wishlist.create_new'.tr(),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppTheme.primary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Start a new collection',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Icon(
-                              Icons.arrow_forward_ios,
-                              size: 16,
-                              color: Colors.grey[400],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                if (wishlists.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-                    child: Text(
-                      'YOUR WISHLISTS',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                    ),
-                  ),
-                  // Wishlist list
+                if (wishlists.isNotEmpty)
                   Flexible(
                     child: ListView.separated(
                       shrinkWrap: true,
@@ -699,7 +1273,9 @@ class _AddWishScreenState extends State<AddWishScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: isSelected ? AppTheme.primaryAccent.withValues(alpha: 0.08) : Colors.grey[50],
+                                color: isSelected
+                                    ? AppTheme.primaryAccent.withValues(alpha: 0.08)
+                                    : Colors.grey[50],
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: isSelected
@@ -710,99 +1286,23 @@ class _AddWishScreenState extends State<AddWishScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? AppTheme.primaryAccent.withValues(alpha: 0.15)
-                                          : Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: wishlist.coverImageUrl != null
-                                        ? ClipRRect(
-                                            borderRadius: BorderRadius.circular(10),
-                                            child: Image.network(
-                                              wishlist.coverImageUrl!,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (_, __, ___) => Icon(
-                                                Icons.card_giftcard_rounded,
-                                                color: isSelected ? AppTheme.primaryAccent : Colors.grey[400],
-                                                size: 22,
-                                              ),
-                                            ),
-                                          )
-                                        : Icon(
-                                            Icons.card_giftcard_rounded,
-                                            color: isSelected ? AppTheme.primaryAccent : Colors.grey[400],
-                                            size: 22,
-                                          ),
-                                  ),
-                                  const SizedBox(width: 16),
                                   Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          wishlist.name,
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                            color: isSelected ? AppTheme.primaryAccent : AppTheme.primary,
-                                          ),
-                                        ),
-                                        if (wishlist.description != null && wishlist.description!.isNotEmpty)
-                                          Padding(
-                                            padding: const EdgeInsets.only(top: 4),
-                                            child: Text(
-                                              wishlist.description!,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: Colors.grey[600],
-                                              ),
-                                            ),
-                                          ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '${wishlist.wishCount} items',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[500],
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
+                                    child: Text(
+                                      wishlist.name,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: isSelected
+                                            ? AppTheme.primaryAccent
+                                            : AppTheme.primary,
+                                      ),
                                     ),
                                   ),
-                                  // Edit button
-                                  IconButton(
-                                    icon: Icon(
-                                      Icons.edit_outlined,
-                                      size: 20,
-                                      color: Colors.grey[600],
-                                    ),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                      context.push('/wishlists/${wishlist.id}/edit');
-                                    },
-                                    tooltip: 'app.edit'.tr(),
-                                  ),
-                                  const SizedBox(width: 4),
                                   if (isSelected)
-                                    Container(
-                                      width: 24,
-                                      height: 24,
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.primaryAccent,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(
-                                        Icons.check,
-                                        color: Colors.white,
-                                        size: 16,
-                                      ),
+                                    const Icon(
+                                      Icons.check_circle,
+                                      color: AppTheme.primaryAccent,
+                                      size: 20,
                                     ),
                                 ],
                               ),
@@ -812,7 +1312,6 @@ class _AddWishScreenState extends State<AddWishScreen> {
                       },
                     ),
                   ),
-                ],
                 const SizedBox(height: 16),
               ],
             ),
@@ -820,324 +1319,11 @@ class _AddWishScreenState extends State<AddWishScreen> {
         );
       },
     );
-  }
 
-  Widget _buildBasicInfoSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'wish.basic_information'.tr(),
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppTheme.primary,
-              ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'wish.basic_information_desc'.tr(),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.primary.withValues(alpha: 0.7),
-              ),
-        ),
-        const SizedBox(height: 24),
-        TextFormField(
-          controller: _titleController,
-          textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(
-            labelText: 'wish.item_title'.tr() + ' *',
-            hintText: 'wish.title_placeholder'.tr(),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            prefixIcon: const Icon(Icons.edit_outlined),
-          ),
-          onChanged: (_) => setState(() {}),
-        ),
-        const SizedBox(height: 20),
-        TextFormField(
-          controller: _descriptionController,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: InputDecoration(
-            labelText: 'wish.item_description'.tr(),
-            hintText: 'wish.description_placeholder'.tr(),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            prefixIcon: const Icon(Icons.description_outlined),
-          ),
-          maxLines: 3,
-        ),
-        const SizedBox(height: 20),
-        TextFormField(
-          controller: _urlController,
-          decoration: InputDecoration(
-            labelText: 'wish.url'.tr(),
-            hintText: 'https://example.com/product',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            prefixIcon: const Icon(Icons.link_outlined),
-            suffixIcon: _isScrapingUrl
-                ? const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  )
-                : _urlController.text.isNotEmpty && _isValidUrl(_urlController.text)
-                    ? const Icon(Icons.check_circle, color: Colors.green)
-                    : IconButton(
-                        icon: const Icon(Icons.content_paste),
-                        tooltip: 'Paste from clipboard',
-                        onPressed: _pasteFromClipboard,
-                      ),
-            helperText: _isScrapingUrl
-                ? '✨ Loading product details...'
-                : (_urlController.text.isEmpty
-                    ? 'Tap paste icon to paste from clipboard'
-                    : null),
-            helperMaxLines: 1,
-          ),
-          keyboardType: TextInputType.url,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildImageSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'wish.image_section'.tr(),
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppTheme.primary,
-              ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'wish.image_section_desc'.tr(),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.primary.withOpacity(0.7),
-              ),
-        ),
-        const SizedBox(height: 24),
-        (_selectedImage != null || _scrapedImageUrl != null)
-            ? _buildSelectedImage()
-            : _buildAddImageButton(),
-      ],
-    );
-  }
-
-  Widget _buildSelectedImage() {
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          height: 200,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: Colors.grey.shade100,
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: _selectedImage != null
-                ? Image.file(
-                    _selectedImage!,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: 200,
-                  )
-                : _scrapedImageUrl != null
-                    ? Image.network(
-                        _scrapedImageUrl!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: 200,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.broken_image, size: 48, color: Colors.grey.shade400),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Failed to load image',
-                                  style: TextStyle(color: Colors.grey.shade600),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      )
-                    : const SizedBox(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _pickImage,
-                icon: const Icon(Icons.edit_outlined),
-                label: const Text('Change Image'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 48),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            OutlinedButton.icon(
-              onPressed: () {
-                setState(() {
-                  _selectedImage = null;
-                  _scrapedImageUrl = null;
-                });
-              },
-              icon: const Icon(Icons.delete_outline),
-              label: const Text('Remove'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(100, 48),
-                foregroundColor: Colors.red,
-                side: BorderSide(color: Colors.red.shade300),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAddImageButton() {
-    return OutlinedButton.icon(
-      onPressed: _isCompressingImage ? null : _pickImage,
-      icon: _isCompressingImage
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const Icon(Icons.image_outlined),
-      label: Text(
-        _isCompressingImage ? 'Processing...' : 'wish.add_image'.tr(),
-      ),
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(double.infinity, 120),
-        side: BorderSide(color: Colors.grey.shade300),
-      ),
-    );
-  }
-
-  Widget _buildPriceSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'wish.price_section'.tr(),
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppTheme.primary,
-              ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'wish.price_section_desc'.tr(),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.primary.withOpacity(0.7),
-              ),
-        ),
-        const SizedBox(height: 24),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 3,
-              child: TextFormField(
-                controller: _priceController,
-                decoration: InputDecoration(
-                  labelText: 'wish.price'.tr(),
-                  hintText: '0.00',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: const Icon(Icons.attach_money_outlined),
-                ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 2,
-              child: DropdownButtonFormField<String>(
-                value: _currency,
-                decoration: InputDecoration(
-                  labelText: 'wish.currency'.tr(),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                items: _currencies.map((currency) {
-                  return DropdownMenuItem(
-                    value: currency,
-                    child: Text(currency),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _currency = value!;
-                  });
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSaveButton() {
-    final bool isDisabled = _isLoading || _isCompressingImage;
-
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton(
-        onPressed: isDisabled ? null : _saveWish,
-        style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        child: isDisabled
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(_isCompressingImage ? 'Processing image...' : 'Saving...'),
-                ],
-              )
-            : const Text('Save Item'),
-      ),
-    );
+    if (result != null) {
+      setState(() {
+        _selectedWishlistId = result;
+      });
+    }
   }
 }

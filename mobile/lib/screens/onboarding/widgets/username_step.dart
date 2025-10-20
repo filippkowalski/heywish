@@ -212,7 +212,6 @@ class _UsernameStepState extends State<UsernameStep> {
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
-    final topPadding = mediaQuery.padding.top;
     final bottomPadding = mediaQuery.padding.bottom;
 
     return Container(
@@ -228,15 +227,16 @@ class _UsernameStepState extends State<UsernameStep> {
           stops: const [0.0, 0.4, 1.0],
         ),
       ),
-      child: Column(
-        children: [
+      child: SafeArea(
+        child: Column(
+          children: [
           // Scrollable content
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.only(
+              padding: const EdgeInsets.only(
                 left: 32.0,
                 right: 32.0,
-                top: topPadding + 60.0,
+                top: 40.0,
                 bottom: 24.0,
               ),
               child: Column(
@@ -291,16 +291,20 @@ class _UsernameStepState extends State<UsernameStep> {
                         
                         // Username field with inline loader
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                           decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColors.textSecondary.withValues(alpha: 0.2),
+                              width: 1,
+                            ),
                           ),
                           child: TextField(
                             controller: _usernameController,
                             focusNode: _focusNode,
                             onChanged: _onUsernameChanged,
-                            textAlign: TextAlign.center,
+                            textAlign: TextAlign.left,
                             maxLength: 30,
                             inputFormatters: [
                               // Filter out spaces and convert to lowercase
@@ -318,10 +322,23 @@ class _UsernameStepState extends State<UsernameStep> {
                               border: InputBorder.none,
                               hintText: 'onboarding.username_placeholder'.tr(),
                               counterText: '', // Hide character counter
+                              contentPadding: EdgeInsets.zero,
                               hintStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 color: AppColors.textSecondary.withValues(alpha: 0.5),
                                 fontWeight: FontWeight.w400,
                                 fontSize: 20,
+                              ),
+                              prefixIcon: Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: Icon(
+                                  Icons.alternate_email,
+                                  color: AppColors.textSecondary.withValues(alpha: 0.6),
+                                  size: 24,
+                                ),
+                              ),
+                              prefixIconConstraints: const BoxConstraints(
+                                minWidth: 0,
+                                minHeight: 0,
                               ),
                               suffixIcon: onboardingService.isLoading && _validationError == null
                                   ? Container(
@@ -344,6 +361,20 @@ class _UsernameStepState extends State<UsernameStep> {
                             },
                           ),
                         ),
+
+                        // URL preview below input
+                        if (_usernameController.text.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12.0, left: 24),
+                            child: Text(
+                              'heywish.app/${_usernameController.text}',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary.withValues(alpha: 0.7),
+                                fontSize: 14,
+                              ),
+                              textAlign: TextAlign.left,
+                            ),
+                          ),
                       ],
                     );
                   },
@@ -355,7 +386,7 @@ class _UsernameStepState extends State<UsernameStep> {
 
         // Bottom button
         Padding(
-          padding: EdgeInsets.fromLTRB(24.0, 16.0, 24.0, bottomPadding + 24.0),
+          padding: EdgeInsets.fromLTRB(24.0, 0.0, 24.0, bottomPadding + 16.0),
           child: Consumer<OnboardingService>(
             builder: (context, onboardingService, child) {
               final canProceed = onboardingService.canProceedFromCurrentStep() &&
@@ -369,8 +400,9 @@ class _UsernameStepState extends State<UsernameStep> {
             },
           ),
         ),
-      ],
-    ),
-  );
+        ],
+        ),
+      ),
+    );
   }
 }

@@ -120,10 +120,6 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
 
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final topPadding = mediaQuery.padding.top;
-    final bottomPadding = mediaQuery.padding.bottom;
-
     return Consumer<OnboardingService>(
       builder: (context, onboardingService, child) {
         final username = onboardingService.data.username ?? '';
@@ -131,15 +127,16 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
 
         return Container(
           color: Colors.white,
-          child: Column(
-            children: [
+          child: SafeArea(
+            child: Column(
+              children: [
               // Scrollable content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.only(
+                  padding: const EdgeInsets.only(
                     left: 32.0,
                     right: 32.0,
-                    top: topPadding + 80.0,
+                    top: 40.0,
                     bottom: 24.0,
                   ),
                   child: Column(
@@ -363,11 +360,11 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
 
               // Fixed footer
               Container(
-                padding: EdgeInsets.only(
+                padding: const EdgeInsets.only(
                   left: 24.0,
                   right: 24.0,
-                  top: 20.0,
-                  bottom: bottomPadding + 32.0,
+                  top: 0.0,
+                  bottom: 16.0,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -407,6 +404,7 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
                 ),
               ),
             ],
+            ),
           ),
         );
       },

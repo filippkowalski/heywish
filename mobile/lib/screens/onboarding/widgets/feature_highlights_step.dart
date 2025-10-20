@@ -46,29 +46,35 @@ class _FeatureHighlightsStepState extends State<FeatureHighlightsStep> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Skip button
-        Align(
-          alignment: Alignment.topRight,
-          child: Padding(
-            padding: const EdgeInsets.only(top: 16, right: 24),
-            child: TextButton(
-              onPressed: _skipToEnd,
-              child: Text(
-                'app.skip'.tr(),
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+    return SafeArea(
+      child: Column(
+        children: [
+          // Top section with skip button
+          Align(
+            alignment: Alignment.topRight,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 12, right: 16),
+              child: TextButton(
+                onPressed: _skipToEnd,
+                style: TextButton.styleFrom(
+                  minimumSize: Size.zero,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  'app.skip'.tr(),
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
 
-        // PageView with features
-        Expanded(
+          // PageView with features
+          Expanded(
           child: PageView(
             controller: _pageController,
             onPageChanged: _onPageChanged,
@@ -115,15 +121,16 @@ class _FeatureHighlightsStepState extends State<FeatureHighlightsStep> {
           ),
         ),
 
-        // Next/Continue button
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: PrimaryButton(
-            onPressed: _nextPage,
-            text: _currentPage < 2 ? 'app.next'.tr() : 'onboarding.get_started'.tr(),
+          // Next/Continue button
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+            child: PrimaryButton(
+              onPressed: _nextPage,
+              text: _currentPage < 2 ? 'app.next'.tr() : 'onboarding.get_started'.tr(),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
