@@ -944,33 +944,36 @@ class _AddWishScreenState extends State<AddWishScreen> {
     TextCapitalization textCapitalization = TextCapitalization.none,
     TextInputType? keyboardType,
   }) {
-    return TextField(
-      controller: controller,
-      focusNode: focusNode,
-      style: TextStyle(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: AppTheme.primary,
-        height: 1.3, // Allow proper line height for multi-line text
-      ),
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: TextStyle(
+    return Material(
+      color: Colors.transparent,
+      child: TextField(
+        controller: controller,
+        focusNode: focusNode,
+        style: TextStyle(
           fontSize: fontSize,
           fontWeight: fontWeight,
-          color: Colors.grey[400],
-          height: 1.3,
+          color: AppTheme.primary,
+          height: 1.3, // Allow proper line height for multi-line text
         ),
-        border: InputBorder.none,
-        enabledBorder: InputBorder.none,
-        focusedBorder: InputBorder.none,
-        isDense: true,
-        contentPadding: EdgeInsets.zero,
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            color: Colors.grey[400],
+            height: 1.3,
+          ),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
+        ),
+        maxLines: maxLines,
+        minLines: 1,
+        textCapitalization: textCapitalization,
+        keyboardType: keyboardType,
       ),
-      maxLines: maxLines,
-      minLines: 1,
-      textCapitalization: textCapitalization,
-      keyboardType: keyboardType,
     );
   }
 
