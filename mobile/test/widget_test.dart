@@ -7,14 +7,14 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:heywish/main.dart';
+import 'package:jinnie/main.dart';
 
 void main() {
   testWidgets('App loads without crashing', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const HeyWishApp());
+    await tester.pumpWidget(const JinnieApp());
 
     // Verify that our app loads
-    expect(find.text('HeyWish'), findsOneWidget);
+    expect(find.text('Jinnie'), findsOneWidget);
   });
 }
