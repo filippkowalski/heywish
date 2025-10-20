@@ -102,7 +102,7 @@ class _SignupScreenState extends State<SignupScreen> {
               Text(
                 authService.firebaseUser?.isAnonymous == true
                     ? 'Sign up to save your wishlists permanently'
-                    : 'Join HeyWish to start creating wishlists',
+                    : 'Join Jinnie to start creating wishlists',
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),

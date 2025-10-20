@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "HeyWish",
+    "title": "Jinnie",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
@@ -40,7 +40,7 @@
     "skip": "Skip",
     "next": "Next",
     "get_started": "Get Started",
-    "welcome_title": "Welcome to HeyWish",
+    "welcome_title": "Welcome to Jinnie",
     "welcome_subtitle": "Create beautiful wishlists and make gifting delightful for everyone",
     "feature1_title": "Organize Your Wishes",
     "feature1_subtitle": "Create multiple wishlists for different occasions and add items with photos, prices, and links",

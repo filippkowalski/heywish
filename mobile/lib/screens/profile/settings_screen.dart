@@ -311,8 +311,8 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _openHelpSupport(BuildContext context) async {
     final Uri emailUri = Uri(
       scheme: 'mailto',
-      path: 'heywishpy@gmail.com',
-      query: 'subject=HeyWish Support Request',
+      path: 'bobbyfisher77+jinnie@icloud.com',
+      query: 'subject=Jinnie Support Request',
     );
 
     try {
@@ -322,7 +322,7 @@ class SettingsScreen extends StatelessWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Could not open email app. Please email us at heywishpy@gmail.com'),
+              content: Text('Could not open email app. Please email us at bobbyfisher77+jinnie@icloud.com'),
               backgroundColor: AppTheme.error,
             ),
           );
@@ -332,7 +332,7 @@ class SettingsScreen extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not open email app. Please email us at heywishpy@gmail.com'),
+            content: Text('Could not open email app. Please email us at bobbyfisher77+jinnie@icloud.com'),
             backgroundColor: AppTheme.error,
           ),
         );

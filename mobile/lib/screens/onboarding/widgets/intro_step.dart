@@ -108,7 +108,7 @@ class _IntroStepState extends State<IntroStep> with TickerProviderStateMixin {
                         child: SlideTransition(
                           position: _slideAnimation,
                           child: AutoSizeText(
-                            'Welcome to HeyWish',
+                            'Welcome to Jinnie',
                             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                               color: AppColors.textPrimary,
                               fontWeight: FontWeight.w600,

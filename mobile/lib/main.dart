@@ -82,19 +82,19 @@ void main() async {
       supportedLocales: const [Locale('en')],
       path: 'assets/translations',
       fallbackLocale: const Locale('en'),
-      child: const HeyWishApp(),
+      child: const JinnieApp(),
     ),
   );
 }
 
-class HeyWishApp extends StatefulWidget {
-  const HeyWishApp({super.key});
+class JinnieApp extends StatefulWidget {
+  const JinnieApp({super.key});
 
   @override
-  State<HeyWishApp> createState() => _HeyWishAppState();
+  State<JinnieApp> createState() => _JinnieAppState();
 }
 
-class _HeyWishAppState extends State<HeyWishApp> {
+class _JinnieAppState extends State<JinnieApp> {
   final ScreenshotController _screenshotController = ScreenshotController();
   final QuickActions _quickActions = const QuickActions();
 

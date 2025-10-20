@@ -127,9 +127,9 @@ class _FeedScreenState extends State<FeedScreen> {
         }
       }
 
-      // If no friends' activity, load @heywish profile wishes
+      // If no friends' activity, load @jinnie profile wishes
       if (feedItems.isEmpty) {
-        await _loadHeyWishFeed(feedItems);
+        await _loadJinnieFeed(feedItems);
       }
 
       setState(() {
@@ -144,15 +144,15 @@ class _FeedScreenState extends State<FeedScreen> {
     }
   }
 
-  Future<void> _loadHeyWishFeed(List<FeedItem> feedItems) async {
+  Future<void> _loadJinnieFeed(List<FeedItem> feedItems) async {
     try {
-      // Fetch @heywish user's public profile (includes wishlists and items)
-      final response = await _api.get('/public/users/heywish');
+      // Fetch @jinnie user's public profile (includes wishlists and items)
+      final response = await _api.get('/public/users/jinnie');
       if (response == null) return;
 
-      final heywishUser = response['user'];
-      final fullName = heywishUser['full_name'] ?? 'HeyWish';
-      final avatarUrl = heywishUser['avatar_url'];
+      final jinnieUser = response['user'];
+      final fullName = jinnieUser['full_name'] ?? 'Jinnie';
+      final avatarUrl = jinnieUser['avatar_url'];
 
       // Wishlists are already included in the response
       final wishlists = response['wishlists'] as List?;
@@ -203,7 +203,7 @@ class _FeedScreenState extends State<FeedScreen> {
         }
       }
     } catch (error, stackTrace) {
-      print('Error loading HeyWish feed: $error');
+      print('Error loading Jinnie feed: $error');
       print('Stack trace: $stackTrace');
     }
   }
@@ -225,10 +225,10 @@ class _FeedScreenState extends State<FeedScreen> {
     final authService = AuthService();
     final username = authService.currentUser?.username ?? '';
     if (username.isNotEmpty) {
-      final shareUrl = 'https://heywish.com/@$username';
+      final shareUrl = 'https://jinnie.co/@$username';
       Share.share(
-        'Check out my wishlist on HeyWish! $shareUrl',
-        subject: 'My HeyWish Profile',
+        'Check out my wishlist on Jinnie! $shareUrl',
+        subject: 'My Jinnie Profile',
       );
     }
   }
@@ -529,7 +529,7 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget _buildSharingCard() {
     final authService = AuthService();
     final username = authService.currentUser?.username ?? '';
-    final shareUrl = username.isNotEmpty ? 'heywish.com/@$username' : '';
+    final shareUrl = username.isNotEmpty ? 'jinnie.co/@$username' : '';
 
     if (shareUrl.isEmpty) return const SizedBox.shrink();
 

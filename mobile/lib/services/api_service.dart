@@ -13,7 +13,7 @@ class ApiService {
 
   ApiService._internal() {
     // Use production URL for all environments
-    final baseUrl = 'https://openai-rewrite.onrender.com/heywish/v1';
+    final baseUrl = 'https://openai-rewrite.onrender.com/jinnie/v1';
 
     _dio = Dio(
       BaseOptions(

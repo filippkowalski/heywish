@@ -20,7 +20,7 @@ class LocalDatabase {
 
     try {
       final databasesPath = await getDatabasesPath();
-      final path = join(databasesPath, 'heywish_offline.db');
+      final path = join(databasesPath, 'jinnie_offline.db');
 
       _database = await openDatabase(
         path,

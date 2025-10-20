@@ -57,7 +57,7 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
   }
 
   void _copyLink(String username) {
-    final link = 'heywish.com/$username';
+    final link = 'jinnie.co/$username';
     Clipboard.setData(ClipboardData(text: link));
     setState(() {
       _linkCopied = true;
@@ -123,7 +123,7 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
     return Consumer<OnboardingService>(
       builder: (context, onboardingService, child) {
         final username = onboardingService.data.username ?? '';
-        final profileUrl = 'heywish.com/$username';
+        final profileUrl = 'jinnie.co/$username';
 
         return Container(
           color: Colors.white,

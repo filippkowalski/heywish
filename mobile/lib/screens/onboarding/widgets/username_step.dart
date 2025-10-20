@@ -367,7 +367,7 @@ class _UsernameStepState extends State<UsernameStep> {
                           Padding(
                             padding: const EdgeInsets.only(top: 12.0, left: 24),
                             child: Text(
-                              'heywish.app/${_usernameController.text}',
+                              'jinnie.co/${_usernameController.text}',
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: AppColors.textSecondary.withValues(alpha: 0.7),
                                 fontSize: 14,

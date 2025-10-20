@@ -93,7 +93,7 @@ class _NotificationsStepState extends State<NotificationsStep> {
         content: const Text(
           'Notifications were previously denied. To enable them:\n\n'
           '1. Open iPhone Settings\n'
-          '2. Find "HeyWish" in the app list\n'
+          '2. Find "Jinnie" in the app list\n'
           '3. Tap "Notifications"\n'
           '4. Turn on "Allow Notifications"\n\n'
           'You can continue without notifications for now.',

@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>HeyWish</string>
+	<string>Jinnie</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>HeyWish</string>
+	<string>Jinnie</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -44,15 +44,15 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>HeyWish needs camera access to take photos of items you want to add to your wishlist</string>
+	<string>Jinnie needs camera access to take photos of items you want to add to your wishlist</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>HeyWish needs photo library access to select images for your wishlist items</string>
+	<string>Jinnie needs photo library access to select images for your wishlist items</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>HeyWish needs permission to save product images to your photo library</string>
+	<string>Jinnie needs permission to save product images to your photo library</string>
 	<key>NSContactsUsageDescription</key>
-	<string>HeyWish uses your contacts to help you find friends who are already using the app. We only check phone numbers and never access contact names or other personal information.</string>
+	<string>Jinnie uses your contacts to help you find friends who are already using the app. We only check phone numbers and never access contact names or other personal information.</string>
 	<key>NSUserNotificationsUsageDescription</key>
-	<string>HeyWish would like to send you notifications about your friends' birthdays, special offers, and price drops on your wishlist items.</string>
+	<string>Jinnie would like to send you notifications about your friends' birthdays, special offers, and price drops on your wishlist items.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

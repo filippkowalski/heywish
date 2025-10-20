@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "HeyWish",
+    "title": "Jinnie",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
@@ -90,7 +90,7 @@
     "permission_info": "You will be asked for notification permission",
     "enable_button": "Enable Notifications",
     "permission_denied_title": "Notification Permission",
-    "permission_denied_message": "Notifications were previously denied. To enable them:\n\n1. Open iPhone Settings\n2. Find \"HeyWish\" in the app list\n3. Tap \"Notifications\"\n4. Turn on \"Allow Notifications\"\n\nYou can continue without notifications for now.",
+    "permission_denied_message": "Notifications were previously denied. To enable them:\n\n1. Open iPhone Settings\n2. Find \"Jinnie\" in the app list\n3. Tap \"Notifications\"\n4. Turn on \"Allow Notifications\"\n\nYou can continue without notifications for now.",
     "open_settings": "Open Settings"
   },
   "shopping_interests": {
@@ -384,7 +384,7 @@
     "affiliate_disclosure": "Affiliate Disclosure",
     "affiliate_disclosure_subtitle": "Learn about our affiliate partnerships",
     "affiliate_disclosure_title": "Affiliate Disclosure",
-    "affiliate_disclosure_content": "HeyWish participates in various affiliate marketing programs, which means we may earn commissions on purchases made through links on our platform.\n\nWhen you click on certain product links and make a purchase, we may receive a small commission at no additional cost to you. These commissions help us maintain and improve our services.\n\nOur affiliate relationships do not influence our recommendations or the products displayed in wishlists. We are committed to providing honest and unbiased information to help you make informed decisions.\n\nThank you for supporting HeyWish!"
+    "affiliate_disclosure_content": "Jinnie participates in various affiliate marketing programs, which means we may earn commissions on purchases made through links on our platform.\n\nWhen you click on certain product links and make a purchase, we may receive a small commission at no additional cost to you. These commissions help us maintain and improve our services.\n\nOur affiliate relationships do not influence our recommendations or the products displayed in wishlists. We are committed to providing honest and unbiased information to help you make informed decisions.\n\nThank you for supporting Jinnie!"
   },
   "search": {
     "title": "Search",
@@ -464,7 +464,7 @@
     "coupon_notifications": "Coupons & Deals",
     "coupon_notifications_desc": "Get notified when coupons are available",
     "notifications_permission_required": "Notification Permission Required",
-    "notifications_permission_message": "Notifications were previously denied. To enable them:\n\n1. Open Settings\n2. Find \"HeyWish\" in the app list\n3. Tap \"Notifications\"\n4. Turn on \"Allow Notifications\"\n\nYou can continue without notifications for now.",
+    "notifications_permission_message": "Notifications were previously denied. To enable them:\n\n1. Open Settings\n2. Find \"Jinnie\" in the app list\n3. Tap \"Notifications\"\n4. Turn on \"Allow Notifications\"\n\nYou can continue without notifications for now.",
     "open_settings": "Open Settings"
   }
 }

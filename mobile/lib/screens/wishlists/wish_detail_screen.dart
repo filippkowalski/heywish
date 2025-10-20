@@ -474,7 +474,7 @@ ${wish!.price != null ? '${wish!.currency ?? 'USD'} ${wish!.price!.toStringAsFix
 
 ${wish!.url != null ? 'Product link: ${wish!.url}' : ''}
 
-From my HeyWish wishlist 🎁
+From my Jinnie wishlist 🎁
 ''';
 
       // Show sharing options

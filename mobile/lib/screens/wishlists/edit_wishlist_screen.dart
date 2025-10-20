@@ -210,7 +210,7 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Photo Library Access Required'),
         content: const Text(
-          'HeyWish needs access to your photo library to select header images for your wishlists. Please grant permission in Settings.',
+          'Jinnie needs access to your photo library to select header images for your wishlists. Please grant permission in Settings.',
         ),
         actions: [
           TextButton(

@@ -704,7 +704,7 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Camera/Photo Access Required'),
         content: const Text(
-          'HeyWish needs access to your camera and photo library to add cover images for your lists.',
+          'Jinnie needs access to your camera and photo library to add cover images for your lists.',
         ),
         actions: [
           TextButton(

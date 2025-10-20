@@ -500,7 +500,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Camera/Photo Access Required'),
         content: const Text(
-          'HeyWish needs access to your camera and photo library to add images to your items.',
+          'Jinnie needs access to your camera and photo library to add images to your items.',
         ),
         actions: [
           TextButton(

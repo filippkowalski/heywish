@@ -4,7 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_screenshot_detect/flutter_screenshot_detect.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:heywish/services/telegram_service.dart';
+import 'package:jinnie/services/telegram_service.dart';
 
 class ScreenshotDetectionService {
   static final ScreenshotDetectionService _instance = ScreenshotDetectionService._internal();
@@ -66,7 +66,7 @@ class ScreenshotDetectionService {
           print('✅ Screenshot captured: ${imageBytes.length} bytes');
           // Save screenshot to temporary file
           final directory = await getTemporaryDirectory();
-          final file = File('${directory.path}/heywish_screenshot_${DateTime.now().millisecondsSinceEpoch}.png');
+          final file = File('${directory.path}/jinnie_screenshot_${DateTime.now().millisecondsSinceEpoch}.png');
           await file.writeAsBytes(imageBytes);
           print('💾 Screenshot saved to: ${file.path}');
 

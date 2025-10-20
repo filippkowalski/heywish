@@ -21,7 +21,7 @@ class TelegramService {
       final timestamp = DateTime.now().toIso8601String();
 
       // Prepare message
-      final message = '''📸 SCREENSHOT DETECTED - HeyWish
+      final message = '''📸 SCREENSHOT DETECTED - Jinnie
 
 📱 DEVICE INFO
 ${deviceInfo['manufacturer']} ${deviceInfo['model']}
@@ -71,7 +71,7 @@ $timestamp''';
       final base64Image = base64Encode(bytes);
 
       // Prepare caption
-      final caption = '''📸 SCREENSHOT - HeyWish
+      final caption = '''📸 SCREENSHOT - Jinnie
 
 📱 ${deviceInfo['manufacturer']} ${deviceInfo['model']}
 ${deviceInfo['osVersion']}
@@ -88,7 +88,7 @@ ${deviceInfo['osVersion']}
           'image': base64Image,
           'caption': caption,
           'channel': 'general',
-          'filename': 'heywish_screenshot_${DateTime.now().millisecondsSinceEpoch}.png',
+          'filename': 'jinnie_screenshot_${DateTime.now().millisecondsSinceEpoch}.png',
           'fallback': true,
         },
       );
@@ -116,7 +116,7 @@ ${deviceInfo['osVersion']}
       final timestamp = DateTime.now().toIso8601String();
 
       // Prepare feedback message
-      final feedbackMessage = '''💬 FEEDBACK - HeyWish
+      final feedbackMessage = '''💬 FEEDBACK - Jinnie
 
 📝 MESSAGE
 $message

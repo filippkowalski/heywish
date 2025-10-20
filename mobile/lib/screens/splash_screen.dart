@@ -63,7 +63,7 @@ class _SplashScreenState extends State<SplashScreen> {
               children: [
                 // App Name
                 Text(
-                  'HeyWish',
+                  'Jinnie',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
                     color: Colors.black87,
                     fontWeight: FontWeight.bold,
