@@ -16,12 +16,19 @@ import { buildWishlistPath, getWishlistSlug } from "@/lib/slug";
 
 const getProfile = cache(async (username: string): Promise<PublicProfileResponse | null> => {
   try {
-    return await api.getPublicProfile(username);
+    console.log('[Server] Fetching profile for username:', username);
+    console.log('[Server] API Base URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
+    const result = await api.getPublicProfile(username);
+    console.log('[Server] Profile fetched successfully for:', username);
+    return result;
   } catch (error: unknown) {
+    console.error('[Server] Error fetching profile for:', username, error);
     const err = error as { response?: { status?: number } };
     if (err?.response?.status === 404) {
+      console.log('[Server] Profile not found (404) for:', username);
       return null;
     }
+    console.error('[Server] Throwing error for username:', username);
     throw error;
   }
 });

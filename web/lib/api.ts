@@ -2,6 +2,9 @@ import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://openai-rewrite.onrender.com/jinnie/v1';
 
+console.log('[API Init] API_BASE_URL:', API_BASE_URL);
+console.log('[API Init] process.env.NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
+
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -281,7 +284,10 @@ export const api = {
 
   async getPublicProfile(username: string): Promise<PublicProfileResponse> {
     try {
+      console.log('[API] Fetching profile for username:', username);
+      console.log('[API] Request URL:', `${API_BASE_URL}/public/users/${username}`);
       const { data } = await apiClient.get(`/public/users/${username}`);
+      console.log('[API] Profile data received for:', username);
       const payload = data as {
         user: RawPublicProfileUser;
         wishlists?: RawWishlist[];
@@ -347,8 +353,14 @@ export const api = {
           ),
         },
       };
-    } catch (error) {
-      console.error('Error fetching public profile:', error);
+    } catch (error: any) {
+      console.error('[API] Error fetching public profile for:', username);
+      console.error('[API] Error details:', {
+        message: error?.message,
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        data: error?.response?.data,
+      });
       throw error;
     }
   }
