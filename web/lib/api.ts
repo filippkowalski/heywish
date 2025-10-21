@@ -353,13 +353,14 @@ export const api = {
           ),
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[API] Error fetching public profile for:', username);
+      const err = error as { message?: string; response?: { status?: number; statusText?: string; data?: unknown } };
       console.error('[API] Error details:', {
-        message: error?.message,
-        status: error?.response?.status,
-        statusText: error?.response?.statusText,
-        data: error?.response?.data,
+        message: err?.message,
+        status: err?.response?.status,
+        statusText: err?.response?.statusText,
+        data: err?.response?.data,
       });
       throw error;
     }
