@@ -1,18 +1,32 @@
-import axios from 'axios';
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://openai-rewrite.onrender.com/jinnie/v1';
 
 console.log('[API Init] API_BASE_URL:', API_BASE_URL);
 console.log('[API Init] process.env.NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
 
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-    'X-API-Version': '1.0',
-  },
-});
+// Helper function to make API calls with fetch (edge runtime compatible)
+async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`;
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Version': '1.0',
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    throw {
+      response: {
+        status: response.status,
+        statusText: response.statusText,
+        data: await response.text(),
+      },
+    };
+  }
+
+  return response.json();
+}
 
 // Types based on our API specification
 export interface Wish {
@@ -189,8 +203,8 @@ export const api = {
   // Get public wishlist by share token
   async getPublicWishlist(shareToken: string): Promise<PublicWishlistResponse> {
     try {
-      const { data } = await apiClient.get(`/public/wishlists/${shareToken}`);
-      const payload = data as { wishlist: RawWishlist };
+      const data = await apiRequest<{ wishlist: RawWishlist }>(`/public/wishlists/${shareToken}`);
+      const payload = data;
       const raw = payload.wishlist;
 
       const tags = Array.isArray(raw.tags)
@@ -244,21 +258,17 @@ export const api = {
         messageParts.push(note);
       }
 
-      await apiClient.post(
-        `/wishes/${wishId}/reserve`,
-        {
+      await apiRequest(`/wishes/${wishId}/reserve`, {
+        method: 'POST',
+        body: JSON.stringify({
           message: messageParts.join('\n') || undefined,
           hideFromOwner: false,
           reserver_name: name,
-        },
-        options?.idToken
-          ? {
-              headers: {
-                Authorization: `Bearer ${options.idToken}`,
-              },
-            }
-          : undefined
-      );
+        }),
+        headers: options?.idToken
+          ? { Authorization: `Bearer ${options.idToken}` }
+          : undefined,
+      });
     } catch (error) {
       console.error('Error reserving wish:', error);
       throw error;
@@ -268,14 +278,12 @@ export const api = {
   // Cancel wish reservation
   async cancelReservation(wishId: string, idToken?: string): Promise<void> {
     try {
-      await apiClient.delete(`/wishes/${wishId}/reserve`, idToken
-        ? {
-            headers: {
-              Authorization: `Bearer ${idToken}`,
-            },
-          }
-        : undefined,
-      );
+      await apiRequest(`/wishes/${wishId}/reserve`, {
+        method: 'DELETE',
+        headers: idToken
+          ? { Authorization: `Bearer ${idToken}` }
+          : undefined,
+      });
     } catch (error) {
       console.error('Error canceling reservation:', error);
       throw error;
@@ -286,13 +294,13 @@ export const api = {
     try {
       console.log('[API] Fetching profile for username:', username);
       console.log('[API] Request URL:', `${API_BASE_URL}/public/users/${username}`);
-      const { data } = await apiClient.get(`/public/users/${username}`);
-      console.log('[API] Profile data received for:', username);
-      const payload = data as {
+      const data = await apiRequest<{
         user: RawPublicProfileUser;
         wishlists?: RawWishlist[];
         totals?: RawProfileTotals;
-      };
+      }>(`/public/users/${username}`);
+      console.log('[API] Profile data received for:', username);
+      const payload = data;
 
       const rawWishlists = payload.wishlists ?? [];
 
