@@ -5,45 +5,20 @@ import {
   setPersistence,
   type Auth,
 } from "firebase/auth";
+import { firebaseConfig } from "./firebase-config";
 
-const REQUIRED_ENV_KEYS = [
-  "NEXT_PUBLIC_FIREBASE_API_KEY",
-  "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
-  "NEXT_PUBLIC_FIREBASE_PROJECT_ID",
-  "NEXT_PUBLIC_FIREBASE_APP_ID",
-];
-
-type FirebaseConfig = {
-  apiKey: string;
-  authDomain: string;
-  projectId: string;
-  appId: string;
-  storageBucket?: string;
-  messagingSenderId?: string;
-  measurementId?: string;
-};
-
-function readFirebaseConfig(): FirebaseConfig {
-  const env = process.env;
-  const missing = REQUIRED_ENV_KEYS.filter((key) => !env[key]);
-
-  if (missing.length > 0) {
+function validateFirebaseConfig() {
+  if (
+    !firebaseConfig.apiKey ||
+    !firebaseConfig.authDomain ||
+    !firebaseConfig.projectId ||
+    !firebaseConfig.appId
+  ) {
     throw new Error(
-      `Missing Firebase environment variables: ${missing.join(
-        ", ",
-      )}. Add them to .env.local.`,
+      `Missing required Firebase configuration. Ensure NEXT_PUBLIC_FIREBASE_* environment variables are set in Cloudflare Pages. ` +
+        `Got: apiKey=${!!firebaseConfig.apiKey}, authDomain=${!!firebaseConfig.authDomain}, projectId=${!!firebaseConfig.projectId}, appId=${!!firebaseConfig.appId}`,
     );
   }
-
-  return {
-    apiKey: env.NEXT_PUBLIC_FIREBASE_API_KEY as string,
-    authDomain: env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN as string,
-    projectId: env.NEXT_PUBLIC_FIREBASE_PROJECT_ID as string,
-    appId: env.NEXT_PUBLIC_FIREBASE_APP_ID as string,
-    storageBucket: env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    measurementId: env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-  };
 }
 
 let firebaseApp: FirebaseApp | null = null;
@@ -54,8 +29,8 @@ export function getFirebaseApp(): FirebaseApp {
     return firebaseApp;
   }
 
-  const config = readFirebaseConfig();
-  firebaseApp = getApps().length ? getApp() : initializeApp(config);
+  validateFirebaseConfig();
+  firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
   return firebaseApp;
 }
 
