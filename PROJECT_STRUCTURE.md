@@ -1,26 +1,23 @@
-# HeyWish Project Structure
+# Jinnie Project Structure
 
 ## Overview
-HeyWish is organized as a monorepo with three main projects:
+Jinnie is organized as a monorepo with three main projects:
 
 ```
 heywish/
-├── web/                    # Next.js web application & API
+├── web/                    # Next.js web application (public profiles & wishlists)
 ├── mobile/                 # Flutter mobile app (iOS & Android)
 ├── extension/              # Chrome browser extension
 └── docs/                   # Project documentation
 ```
 
 ## Web Application (`/web`)
-Next.js 14 application with App Router serving both the web interface and API endpoints.
+Next.js 14 application exposing public profiles and wishlists with reservation flows.
 
 ### Key Directories:
-- `src/app/` - App Router pages and API routes
-- `src/components/` - React components
-- `src/lib/` - Utilities and configurations
-  - `lib/firebase/` - Firebase client and admin configs
-  - `lib/db/` - PostgreSQL database utilities
-- `src/db/migrations/` - Database schema and migrations
+- `app/` - App Router routes (`/[username]`, `/w/[token]`, and landing page)
+- `components/` - Shared UI primitives (shadcn-based) and feature widgets
+- `lib/` - Client SDKs (e.g. REST API wrapper)
 - `public/` - Static assets
 
 ### Tech Stack:

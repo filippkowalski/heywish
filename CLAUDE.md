@@ -2,9 +2,39 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## App Name: Jinnie
+
+**Jinnie** is our brand name, inspired by genies and djinn from mythology. The name was chosen for several strategic reasons:
+
+### Why "Jinnie"?
+
+1. **Sound and Feel**:
+   - Short, warm, and phonetic - rolls off the tongue easily
+   - Sounds friendly and approachable (like "Jenny") but with a magical twist
+   - Natural to say: "I'll add it to Jinnie"
+
+2. **Meaning and Association**:
+   - Instantly recalls genie/djinn without being heavy or exoticized
+   - Represents the approachable, modern descendant of mythic wish-granters
+   - Perfect for a wishlist app - the helper who quietly makes wishes happen
+
+3. **Brandability**:
+   - Easy to spell and pronounce globally
+   - Works across multiple markets (English, Spanish, Portuguese speakers)
+   - Can be personified as a digital genie mascot
+   - Better domain availability than "genie.app"
+
+4. **Emotional Tone**:
+   - Approachable yet enchanting
+   - Think "Duolingo meets Aladdin"
+   - Whisper of magic without being overpowering
+
+### Future Brand Direction
+The "Jinnie" character can be developed as a mascot - a modern genie who manages your wishes and makes gift-giving magical. Brand around "your modern genie" concept.
+
 ## App Features Overview
 
-HeyWish combines wishlist management, social features, and gift coordination across mobile (Flutter) and web (Next.js) platforms.
+Jinnie combines wishlist management, social features, and gift coordination across mobile (Flutter) and web (Next.js) platforms.
 
 ### Mobile App Pages/Screens (Flutter)
 - **Authentication & Onboarding**: Splash screen, login/signup, 7-step guided onboarding (username, profile, notifications, friend discovery, account creation)
@@ -12,9 +42,12 @@ HeyWish combines wishlist management, social features, and gift coordination acr
 - **Wishlist & Item Management**: Wishlist detail/edit/create screens, add/edit wish screens
 - **Social Features**: Friends screen (friends/requests tabs), Activity feed with filters
 
-### Web App Pages (Next.js)
-- **Marketing & Public**: Homepage, About, Blog, Public shareable wishlist pages
-- **Web Application**: Dashboard with anonymous onboarding, Create wishlist page
+### Web App Surface (Next.js)
+- **Landing**: Minimal lookup form for usernames or share tokens (`/`).
+- **Profile View**: Read-only public profile page showing published wishlists (`/[username]`).
+- **Wishlist View**: Public wishlist detail with reservation dialog (`/[username]/[wishlist]`, legacy share links: `/w/[token]`).
+- **Email Verify**: Magic-link completion page for reservations (`/verify-reservation`).
+- **Scope**: Web is presently read-only—creation and editing remain mobile-only.
 
 ### General Features (Cross-Platform)
 - **Authentication**: Firebase integration (anonymous, Google, Apple, email/password), account linking
@@ -26,7 +59,7 @@ HeyWish combines wishlist management, social features, and gift coordination acr
 
 ## Project Overview
 
-HeyWish is a next-generation wishlist platform that aims to compete with GoWish by offering a modern, fast, and social-first experience targeting younger demographics.
+Jinnie is a next-generation wishlist platform that aims to compete with GoWish by offering a modern, fast, and social-first experience targeting younger demographics.
 
 ## Technology Stack
 
@@ -61,11 +94,10 @@ The PostgreSQL schema is defined in `docs/TECHNICAL_SPEC.md`. Key tables include
 
 ## Authentication Integration
 
-1. Users must create an account to use the app - no anonymous access.
-2. Firebase handles all authentication methods (email/password, Google, Apple).
-3. On any Firebase authentication event, the `/api/auth/sync` endpoint is called to create or update the user in the PostgreSQL database.
-4. All API calls require a valid Firebase ID token in the `Authorization` header.
-5. The backend verifies the token with the Firebase Admin SDK before processing requests.
+1. Mobile requires Firebase-authenticated users; the current web preview allows anonymous browsing/reservations.
+2. When auth is enabled, Firebase handles email/password, Google, and Apple flows.
+3. On any Firebase authentication event, the `/api/auth/sync` endpoint creates or updates the user in PostgreSQL.
+4. Authenticated API calls include a Firebase ID token in the `Authorization` header and are verified server-side.
 
 ## API Structure
 
