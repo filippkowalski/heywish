@@ -55,3 +55,4 @@ Firebase credentials power the magic-link reservation flow; without them, visito
 - Keep new component tests alongside their routes under `__tests__/`.
 - Snapshot/visual checks can be automated with Playwright when available; otherwise document manual QA.
 - Always run `npm run lint` before submitting a PR.
+# Trigger build
