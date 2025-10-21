@@ -292,10 +292,10 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
           );
         }
 
-        setFormNotice("Check your email for a magic link to confirm your reservation.");
+        setFormNotice("Check your email for a link to confirm your reservation.");
       } catch (err: unknown) {
         console.error("Error sending reservation verification link:", err);
-        setFormError("We couldn't send the magic link. Please double-check your email and try again.");
+        setFormError("We couldn't send the confirmation link. Please double-check your email and try again.");
       } finally {
         setSubmitting(false);
       }
@@ -347,7 +347,7 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
         };
       });
 
-      setBanner(`Reserved "${activeWish.title}". We've let the owner know.`);
+      setBanner(`Reserved "${activeWish.title}". Your reservation is confirmed.`);
       handleDialogChange(false);
   } catch (err: unknown) {
     console.error("Error reserving wish:", err);
@@ -369,7 +369,7 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
       const current = auth.currentUser;
 
       if (!current) {
-        setFormError("Open the magic link email to manage your reservations.");
+        setFormError("Open the confirmation link from your email to manage your reservations.");
         return;
       }
 
@@ -800,10 +800,9 @@ function ReservationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Reserve “{wish?.title ?? "Wish"}”</DialogTitle>
+          <DialogTitle>Reserve "{wish?.title ?? "Wish"}"</DialogTitle>
           <DialogDescription>
-            Leave your details so the wishlist owner can coordinate with you. You&apos;ll get a
-            confirmation email from them directly.
+            Your reservation will be tied to this email address. You can manage your reservations using the link we&apos;ll send you.
           </DialogDescription>
         </DialogHeader>
         <form
