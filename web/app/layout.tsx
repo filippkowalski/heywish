@@ -16,24 +16,27 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "HeyWish - Making Gifting Delightful",
-  description: "Create beautiful wishlists, share them with friends and family, and never miss the perfect gift again. The modern wishlist platform for thoughtful gifting.",
-  keywords: ["wishlist", "gifts", "birthday", "christmas", "wedding registry", "gift ideas", "sharing"],
-  authors: [{ name: "HeyWish Team" }],
-  creator: "HeyWish",
-  publisher: "HeyWish",
-  metadataBase: new URL("https://heywish.com"),
+  title: {
+    default: "Jinnie · Public wishlists made simple",
+    template: "%s · Jinnie",
+  },
+  description: "Browse public profiles, explore wishlists, and reserve gifts without friction.",
+  keywords: ["wishlist", "gift registry", "jinnie", "public profile"],
+  authors: [{ name: "Jinnie Team" }],
+  creator: "Jinnie",
+  publisher: "Jinnie",
+  metadataBase: new URL("https://jinnie.app"),
   openGraph: {
-    title: "HeyWish - Making Gifting Delightful",
-    description: "Create beautiful wishlists, share them with friends and family, and never miss the perfect gift again.",
-    url: "https://heywish.com",
-    siteName: "HeyWish",
+    title: "Jinnie · Public wishlists made simple",
+    description: "Explore public profiles and reserve wishes in just a few clicks.",
+    url: "https://jinnie.app",
+    siteName: "Jinnie",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "HeyWish - Making Gifting Delightful",
+        alt: "Jinnie · Public wishlists",
       },
     ],
     locale: "en_US",
@@ -41,8 +44,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "HeyWish - Making Gifting Delightful",
-    description: "Create beautiful wishlists, share them with friends and family, and never miss the perfect gift again.",
+    title: "Jinnie · Public wishlists made simple",
+    description: "Explore public profiles and reserve wishes in just a few clicks.",
     images: ["/og-image.png"],
   },
   robots: {
@@ -66,7 +69,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${poppins.variable} font-sans antialiased`}
+        className={`${inter.variable} ${poppins.variable} font-sans antialiased bg-background text-foreground`}
       >
         {children}
       </body>

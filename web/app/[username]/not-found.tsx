@@ -17,11 +17,8 @@ export default function ProfileNotFound() {
           <Button asChild>
             <Link href="/">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to HeyWish
+              Back to Jinnie
             </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/blog">Read our stories</Link>
           </Button>
         </div>
       </div>

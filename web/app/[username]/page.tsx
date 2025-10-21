@@ -1,29 +1,22 @@
-import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { cache } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { api, PublicProfileResponse, Wishlist, Wish } from '@/lib/api';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShareButton } from '@/components/profile/share-button';
-import {
-  Gift,
-  Heart,
-  Users,
-  Sparkles,
-  ArrowUpRight,
-  MapPin,
-  Calendar,
-  ShieldCheck,
-} from 'lucide-react';
+import { cache } from "react";
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+
+export const runtime = 'edge';
+import { notFound } from "next/navigation";
+import { Heart, MapPin, Users, Gift, BookmarkCheck } from "lucide-react";
+import { api, PublicProfileResponse, Wish, Wishlist } from "@/lib/api";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ShareButton } from "@/components/profile/share-button";
+import { buildWishlistPath, getWishlistSlug } from "@/lib/slug";
 
 const getProfile = cache(async (username: string): Promise<PublicProfileResponse | null> => {
   try {
-    const profile = await api.getPublicProfile(username);
-    return profile;
+    return await api.getPublicProfile(username);
   } catch (error: unknown) {
     const err = error as { response?: { status?: number } };
     if (err?.response?.status === 404) {
@@ -43,48 +36,43 @@ export async function generateMetadata({
 
   if (!profile) {
     return {
-      title: 'Profile not found · HeyWish',
-      description: 'The profile you are looking for could not be found on HeyWish.',
+      title: "Profile not found · Jinnie",
+      description: "The profile you are looking for does not exist or is not public on Jinnie.",
     };
   }
 
   const displayName = profile.user.fullName?.trim() || `@${profile.user.username}`;
   const description = profile.user.bio
     ? profile.user.bio
-    : `Explore ${displayName}'s wishlists on HeyWish.`;
-
-  const openGraph = {
-    title: `${displayName} · HeyWish`,
-    description,
-  };
+    : `Browse public wishlists shared by ${displayName} on Jinnie.`;
 
   return {
-    title: `${displayName} · HeyWish`,
+    title: `${displayName} · Jinnie`,
     description,
-    openGraph,
+    openGraph: {
+      title: `${displayName} · Jinnie`,
+      description,
+    },
     twitter: {
-      card: 'summary_large_image',
-      title: openGraph.title,
-      description: openGraph.description,
+      card: "summary_large_image",
+      title: `${displayName} · Jinnie`,
+      description,
     },
   };
 }
 
-function formatNumber(value: number) {
-  const formatter = new Intl.NumberFormat('en-US', {
-    notation: value >= 1000 ? 'compact' : 'standard',
+const formatNumber = (value: number) =>
+  new Intl.NumberFormat("en-US", {
+    notation: value >= 1000 ? "compact" : "standard",
     maximumFractionDigits: value >= 1000 ? 1 : 0,
-  });
+  }).format(value);
 
-  return formatter.format(value);
-}
-
-function formatPrice(amount?: number, currency: string = 'USD') {
+function formatPrice(amount?: number, currency: string = "USD") {
   if (amount == null) return null;
 
   try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -93,147 +81,10 @@ function formatPrice(amount?: number, currency: string = 'USD') {
   }
 }
 
-function highlightItems(wishes: Wish[] = []) {
-  return wishes
-    .filter((wish) => wish.status !== 'purchased')
-    .slice(0, 3);
-}
+const getHighlights = (wishes: Wish[] = []) =>
+  wishes.filter((wish) => wish.status !== "purchased").slice(0, 3);
 
-function WishlistItems({ wishes }: { wishes?: Wish[] }) {
-  const featured = highlightItems(wishes ?? []);
-
-  if (featured.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed border-muted-foreground/20 bg-muted/20 p-4 text-sm text-muted-foreground">
-        No public items yet. Check back soon!
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      {featured.map((wish) => {
-        const price = formatPrice(wish.price, wish.currency);
-        return (
-          <div
-            key={wish.id}
-            className="group relative overflow-hidden rounded-lg border border-muted/30 bg-card/60 p-4 transition-all hover:border-primary/30 hover:shadow-lg"
-          >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-base font-semibold leading-snug">
-                    {wish.title}
-                  </p>
-                  {wish.priority > 7 && (
-                    <Badge variant="secondary" className="bg-primary/10 text-primary">
-                      Top pick
-                    </Badge>
-                  )}
-                </div>
-                {wish.description && (
-                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-                    {wish.description}
-                  </p>
-                )}
-                <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                  {price && (
-                    <span className="flex items-center gap-1 font-medium text-foreground">
-                      <Gift className="h-3.5 w-3.5" />
-                      {price}
-                    </span>
-                  )}
-                  {wish.url && (
-                    <a
-                      href={wish.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                    >
-                      View item
-                      <ArrowUpRight className="h-3 w-3" />
-                    </a>
-                  )}
-                  <Badge variant={wish.status === 'reserved' ? 'secondary' : 'outline'}>
-                    {wish.status === 'reserved' ? 'Reserved' : 'Available'}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function WishlistCard({ wishlist }: { wishlist: Wishlist }) {
-  const coverImage = wishlist.coverImageUrl;
-  const sharePath = wishlist.shareToken ? `/w/${wishlist.shareToken}` : '';
-
-  return (
-    <Card className="overflow-hidden border-0 bg-gradient-to-br from-card via-card to-card shadow-lg transition hover:shadow-xl">
-      {coverImage && (
-        <div className="relative h-40 w-full">
-          <Image
-            src={coverImage}
-            alt={`${wishlist.name} cover`}
-            fill
-            className="object-cover"
-            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40" />
-        </div>
-      )}
-      <CardHeader className="space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <Badge variant="outline" className="mb-2 text-xs uppercase tracking-wide">
-              Public
-            </Badge>
-            <CardTitle className="text-xl font-semibold">
-              {wishlist.name}
-            </CardTitle>
-          </div>
-          <ShareButton
-            path={sharePath}
-            title={`${wishlist.name} · HeyWish`}
-            text={`Explore ${wishlist.name} on HeyWish`}
-          />
-        </div>
-        {wishlist.description && (
-          <p className="text-sm text-muted-foreground line-clamp-3">
-            {wishlist.description}
-          </p>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <Heart className="h-4 w-4 text-primary" />
-            {wishlist.wishCount} wishes
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <ShieldCheck className="h-4 w-4 text-primary" />
-            {wishlist.reservedCount} reserved
-          </span>
-        </div>
-        <WishlistItems wishes={wishlist.wishes} />
-        {sharePath && (
-          <div className="flex flex-wrap gap-3">
-            <Button asChild size="sm">
-              <Link href={sharePath} prefetch>
-                View wishlist
-              </Link>
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-export default async function ProfilePage({
+export default async function PublicProfilePage({
   params,
 }: {
   params: Promise<{ username: string }>;
@@ -245,158 +96,211 @@ export default async function ProfilePage({
     notFound();
   }
 
-  const { user } = profile;
-  const totals = profile.totals || { wishCount: 0, reservedCount: 0 };
-  const publicWishlists = profile.wishlists.filter((wishlist) => wishlist.visibility === 'public');
-  const displayName = user.fullName?.trim() || user.username;
-  const initials = displayName
-    .split(' ')
-    .map((part) => part.charAt(0))
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-  const joinedDate = user.createdAt ? new Date(user.createdAt) : null;
-  const joinedLabel = joinedDate
-    ? new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(joinedDate)
-    : null;
-
-  const stats = [
-    {
-      label: 'Public wishlists',
-      value: publicWishlists.length,
-      icon: Gift,
-    },
-    {
-      label: 'Wishes shared',
-      value: totals.wishCount,
-      icon: Heart,
-    },
-    {
-      label: 'Friends',
-      value: user.friendCount,
-      icon: Users,
-    },
-  ];
+  const { user, totals, wishlists } = profile;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background">
-      <header className="border-b border-border/40 bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-12 md:flex-row md:items-center md:justify-between md:py-16">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center">
-            <div className="relative h-24 w-24 overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/20 via-purple-500/20 to-primary/10 shadow-lg">
-              <Avatar className="h-full w-full">
-                {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={displayName} />}
-                <AvatarFallback className="bg-transparent text-2xl font-semibold text-primary">
-                  {initials || user.username.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-                  {displayName}
+    <main className="min-h-screen bg-background">
+      <header className="border-b bg-card/50">
+        <div className="container mx-auto flex flex-col gap-6 px-4 py-12 md:flex-row md:items-center md:justify-between md:px-6">
+          <div className="flex items-start gap-5">
+            <Avatar className="h-20 w-20 rounded-xl border border-border">
+              {user.avatarUrl ? (
+                <AvatarImage src={user.avatarUrl} alt={user.fullName ?? user.username} />
+              ) : null}
+              <AvatarFallback className="rounded-xl text-lg font-semibold">
+                {(user.fullName ?? user.username).slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-semibold md:text-3xl">
+                  {user.fullName?.trim() || user.username}
                 </h1>
-                <Badge variant="outline" className="text-sm">
-                  @{user.username}
+                <Badge variant="secondary" className="text-xs uppercase tracking-wide">
+                  Public profile
                 </Badge>
               </div>
-              {user.bio && (
-                <p className="mt-3 max-w-xl text-base text-muted-foreground">
-                  {user.bio}
-                </p>
-              )}
-              <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                {user.location && (
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
+              <p className="text-sm text-muted-foreground">
+                @{user.username}
+                {user.location ? (
+                  <span className="ml-2 inline-flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5" />
                     {user.location}
                   </span>
-                )}
-                {joinedLabel && (
-                  <span className="inline-flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    Joined {joinedLabel}
-                  </span>
-                )}
+                ) : null}
+              </p>
+              {user.bio ? (
+                <p className="max-w-xl text-sm text-muted-foreground">{user.bio}</p>
+              ) : null}
+
+              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                <span className="inline-flex items-center gap-2">
+                  <Gift className="h-4 w-4 text-primary" />
+                  {wishlists.length} public wishlists
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <Heart className="h-4 w-4 text-rose-500" />
+                  {formatNumber(totals.wishCount)} wishes
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <BookmarkCheck className="h-4 w-4 text-emerald-500" />
+                  {formatNumber(totals.reservedCount)} reserved
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <Users className="h-4 w-4 text-sky-500" />
+                  {formatNumber(user.friendCount)} connections
+                </span>
               </div>
             </div>
           </div>
-          <div className="flex flex-col items-start gap-3 sm:flex-row">
-            <ShareButton
-              path={`/${user.username}`}
-              label="Share profile"
-              title={`${displayName} · HeyWish`}
-              text={`Explore ${displayName}'s wishlists on HeyWish`}
-            />
-            <Button
-              asChild
-              className="gap-2"
-              size="sm"
-            >
-              <a href="https://heywish.com/download" target="_blank" rel="noopener noreferrer">
-                <Sparkles className="h-4 w-4" />
-                Get the app
-              </a>
-            </Button>
-          </div>
+
+          <ShareButton
+            path={`/${user.username}`}
+            label="Share profile"
+            title={`${user.fullName ?? user.username} · Jinnie`}
+            text={`Browse ${user.fullName ?? user.username}'s public wishlists on Jinnie.`}
+            className="self-start"
+          />
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-12 px-4 py-12 md:py-16">
-        <section className="grid gap-6 md:grid-cols-3">
-          {stats.map((stat) => (
-            <Card
-              key={stat.label}
-              className="border-0 bg-gradient-to-br from-primary/5 via-purple-500/5 to-primary/10 shadow-md"
-            >
-              <CardContent className="flex items-center gap-4 p-6">
-                <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-                  <stat.icon className="h-6 w-6" />
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    {stat.label}
-                  </p>
-                  <p className="text-2xl font-semibold text-foreground">
-                    {formatNumber(stat.value)}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </section>
-
-        <section className="space-y-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
-                Public wishlists
-              </h2>
-              <p className="text-sm text-muted-foreground md:text-base">
-                Beautiful collections your friends can browse and reserve from.
-              </p>
-            </div>
-          </div>
-
-          {publicWishlists.length === 0 ? (
-            <Card className="border-dashed border-primary/20 bg-muted/20">
-              <CardContent className="flex flex-col items-center gap-3 p-12 text-center">
-                <Heart className="h-10 w-10 text-primary" />
-                <h3 className="text-lg font-semibold">No public wishlists yet</h3>
-                <p className="max-w-md text-sm text-muted-foreground">
-                  This user hasn’t shared any wishlists publicly. Check back later or ask them to share their favorites with you!
+      <section className="container mx-auto px-4 py-12 md:px-6">
+        {wishlists.length === 0 ? (
+          <Card className="bg-muted/40">
+            <CardContent className="flex flex-col items-center gap-4 p-10 text-center">
+              <Gift className="h-10 w-10 text-muted-foreground" />
+              <div>
+                <h2 className="text-lg font-semibold">No public wishlists yet</h2>
+                <p className="text-sm text-muted-foreground">
+                  Ask {user.fullName ?? user.username} to share a list from the mobile app.
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-2">
+            {wishlists.map((wishlist) => (
+              <WishlistCard key={wishlist.id} wishlist={wishlist} username={user.username} />
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}
+
+function WishlistCard({ wishlist, username }: { wishlist: Wishlist; username: string }) {
+  const coverImage = wishlist.coverImageUrl;
+  const slug = getWishlistSlug(wishlist);
+  const canonicalPath = buildWishlistPath(username, slug);
+  const canView = Boolean(wishlist.shareToken);
+  const sharePath = canView ? canonicalPath : "";
+  const totalItems = wishlist.wishes?.length ?? wishlist.items?.length ?? wishlist.wishCount ?? 0;
+  const reservedCount = wishlist.reservedCount ?? 0;
+  const highlights = getHighlights(wishlist.wishes ?? wishlist.items ?? []);
+
+  return (
+    <Card className="overflow-hidden border border-border/60">
+      {coverImage ? (
+        <div className="relative h-36 w-full bg-muted">
+          <Image
+            src={coverImage}
+            alt={`${wishlist.name} cover image`}
+            fill
+            className="object-cover"
+            sizes="(min-width: 1024px) 50vw, (min-width: 768px) 60vw, 100vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        </div>
+      ) : null}
+
+      <CardHeader className="flex flex-col gap-2 pb-3">
+        <Badge variant="outline" className="w-fit text-xs uppercase tracking-wide">
+          Public
+        </Badge>
+        <CardTitle className="text-xl font-semibold">{wishlist.name}</CardTitle>
+        {wishlist.description ? (
+          <p className="text-sm text-muted-foreground line-clamp-3">{wishlist.description}</p>
+        ) : null}
+
+        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+          <span>{totalItems} items</span>
+          <span>{reservedCount} reserved</span>
+          {wishlist.updatedAt ? (
+            <span>
+              Updated{" "}
+              {new Intl.DateTimeFormat("en", {
+                month: "short",
+                day: "numeric",
+              }).format(new Date(wishlist.updatedAt))}
+            </span>
+          ) : null}
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {highlights.length > 0 ? (
+          <div className="space-y-3">
+            {highlights.map((wish) => (
+              <WishRow key={wish.id} wish={wish} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-md border border-dashed border-border/60 px-4 py-6 text-sm text-muted-foreground">
+            No featured items yet—open the wishlist to browse everything.
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          {canView ? (
+            <Button asChild size="sm">
+              <Link href={sharePath}>View wishlist</Link>
+            </Button>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2">
-              {publicWishlists.map((wishlist) => (
-                <WishlistCard key={wishlist.id} wishlist={wishlist} />
-              ))}
-            </div>
+            <Button size="sm" variant="outline" disabled>
+              View wishlist
+            </Button>
           )}
-        </section>
-      </main>
+          <ShareButton
+            path={sharePath}
+            label="Copy link"
+            title={`${wishlist.name} · Jinnie`}
+            text={`Check out the ${wishlist.name} wishlist on Jinnie.`}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function WishRow({ wish }: { wish: Wish }) {
+  const price = formatPrice(wish.price, wish.currency);
+  const isReserved = wish.status === "reserved";
+
+  return (
+    <div className="flex flex-col gap-2 rounded-md border border-border/50 bg-card/40 px-4 py-3 text-sm md:flex-row md:items-center md:justify-between">
+      <div className="space-y-1">
+        <p className="font-medium leading-tight">{wish.title}</p>
+        {wish.description ? (
+          <p className="text-xs text-muted-foreground line-clamp-2">{wish.description}</p>
+        ) : null}
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          {price ? <span>{price}</span> : null}
+          {wish.url ? (
+            <a
+              href={wish.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary hover:underline"
+            >
+              View item
+            </a>
+          ) : null}
+        </div>
+      </div>
+      <Badge variant={isReserved ? "secondary" : "outline"} className="self-start md:self-auto">
+        {isReserved ? "Reserved" : "Available"}
+      </Badge>
     </div>
   );
 }

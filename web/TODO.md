@@ -1,7 +1,7 @@
-# HeyWish Web TODO
+# Jinnie Web TODO
 
-- Integrate Firebase auth flow so the web app mirrors mobile sign-in and onboarding steps.
-- Surface private and friends-only wishlists on profile pages after verifying viewer permissions.
-- Implement wishlist management screens (create, edit, reserve) with live backend wiring.
-- Add Playwright smoke tests for profile rendering and wish reservation journeys.
-- Consolidate on a single package manager (pnpm vs npm) to resolve dual-lockfile warnings in builds.
+- Gate reservations with verified email addresses (magic links or one-time codes).
+- Expand the public profile surface with friends-only filtering once auth arrives.
+- Reintroduce wishlist management for logged-in users after the web MVP ships.
+- Add Playwright flows covering profile lookup, wishlist browsing, and reservation dialog.
+- Evaluate the backend proxy’s rate limits before opening the lookup form publicly.

@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Jinnie Web Preview
 
-## Getting Started
+Jinnie’s web client focuses on a read-only experience that mirrors the public surface area of the mobile app. Visitors can:
 
-First, run the development server:
+- Look up a profile by username or wishlist share token.
+- Browse public profiles with their published wishlists.
+- Reserve wishes after leaving an email address (next release will validate/verify).
+
+The app is built with **Next.js 14**, **shadcn/ui**, and **Tailwind CSS**.
+
+## Local Development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The dev server runs on [http://localhost:3000](http://localhost:3000). Routes of interest:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `/` – landing page + profile/wishlist lookup.
+- `/[username]` – public profile view sourced from the backend.
+- `/[username]/[wishlist]` – public wishlist detail with reservation dialog.
+- `/w/[token]` – legacy share-token route (kept for backwards compatibility).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Code Organization
 
-## Learn More
+- `app/` – App Router routes and metadata definitions.
+- `components/` – shadcn-based primitives and feature components.
+- `lib/api.ts` – lightweight REST client for the backend proxy.
+- `public/` – static assets and Open Graph imagery.
 
-To learn more about Next.js, take a look at the following resources:
+## Helpful Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `npm run dev` – start the local dev server.
+- `npm run lint` – run Next.js/ESLint using the shared config.
+- `npm run build` – production build (helpful before deploying to Cloudflare Pages).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Environment
 
-## Deploy on Vercel
+Create `web/.env.local` with the values listed in `web/.env.example`. At minimum you need:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `NEXT_PUBLIC_API_BASE_URL`
+- `NEXT_PUBLIC_FIREBASE_API_KEY`
+- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+- `NEXT_PUBLIC_FIREBASE_APP_ID`
+- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+- `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Firebase credentials power the magic-link reservation flow; without them, visitors cannot verify email addresses.
+
+## Testing & QA
+
+- Keep new component tests alongside their routes under `__tests__/`.
+- Snapshot/visual checks can be automated with Playwright when available; otherwise document manual QA.
+- Always run `npm run lint` before submitting a PR.

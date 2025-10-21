@@ -1,0 +1,6 @@
+name = "jinnie-web"
+compatibility_date = "2024-10-21"
+pages_build_output_dir = ".vercel/output/static"
+
+# Node.js compatibility for server functions
+compatibility_flags = ["nodejs_compat"]

@@ -30,8 +30,8 @@ export function ShareButton({ path, label = 'Share', className, title, text }: S
   const handleShare = useCallback(async () => {
     if (!shareUrl) return;
 
-    const resolvedTitle = title ?? 'HeyWish wishlist';
-    const resolvedText = text ?? 'Explore this wishlist on HeyWish';
+    const resolvedTitle = title ?? 'Jinnie wishlist';
+    const resolvedText = text ?? 'Explore this wishlist on Jinnie';
 
     try {
       if (typeof navigator !== 'undefined' && navigator.share) {
@@ -59,6 +59,7 @@ export function ShareButton({ path, label = 'Share', className, title, text }: S
 
   return (
     <Button
+      type="button"
       variant={copied ? 'secondary' : 'outline'}
       size="sm"
       onClick={handleShare}
