@@ -305,6 +305,7 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
     try {
       setSubmitting(true);
       const idToken = await verifiedUser.getIdToken(true);
+      const currentUserUid = verifiedUser.uid;
 
       await api.reserveWish(activeWish.id, {
         email: trimmedEmail,
@@ -330,8 +331,8 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
             ? {
                 ...wish,
                 status: "reserved" as const,
-                reservedBy: wish.reservedBy,
-                reservedByUid: viewerUid ?? wish.reservedByUid,
+                reservedBy: trimmedEmail,
+                reservedByUid: currentUserUid,
                 reservedMessage: trimmedMessage || undefined,
                 reserverName: trimmedName || undefined,
                 reservedAt: new Date().toISOString(),
@@ -346,7 +347,7 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
         };
       });
 
-      setBanner(`Reserved “${activeWish.title}”. We’ve let the owner know.`);
+      setBanner(`Reserved "${activeWish.title}". We've let the owner know.`);
       handleDialogChange(false);
   } catch (err: unknown) {
     console.error("Error reserving wish:", err);
