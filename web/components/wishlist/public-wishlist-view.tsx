@@ -405,7 +405,12 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
         };
       });
 
-      setBanner(`Cancelled reservation for “${wish.title}”.`);
+      setBanner(`Cancelled reservation for "${wish.title}".`);
+
+      // Refresh the page to ensure UI reflects the cancellation
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (err: unknown) {
       console.error("Error cancelling reservation:", err);
       setFormError("We couldn't cancel that reservation. Please try again.");
