@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { KeyboardEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Gift } from "lucide-react";
 import type { Wishlist, Wish } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { WishDetailDialog } from "@/components/wishlist/wish-detail-dialog";
 import { WishlistFilter } from "./wishlist-filter";
 
 interface WishlistGridProps {
@@ -52,24 +56,31 @@ function buildWishlistPath(username: string, slug: string): string {
 interface WishPreviewCardProps {
   wish: Wish;
   wishlist: Wishlist;
-  username: string;
+  onSelect: () => void;
 }
 
-function WishPreviewCard({ wish, wishlist, username }: WishPreviewCardProps) {
+function WishPreviewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
   const coverImage = wish.images?.[0];
   const price = formatPrice(wish.price, wish.currency);
   const isReserved = wish.status === "reserved";
-  const slug = getWishlistSlug(wishlist);
-  const wishlistPath = buildWishlistPath(username, slug);
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect();
+    }
+  };
 
   return (
-    <Link
-      href={wishlistPath}
-      className="group block break-inside-avoid-column mb-4"
-    >
-      <Card className="overflow-hidden border border-border/40 transition-all hover:border-border hover:shadow-lg">
+    <div className="group break-inside-avoid-column mb-4">
+      <Card
+        role="button"
+        tabIndex={0}
+        onClick={onSelect}
+        onKeyDown={handleKeyDown}
+        className="group/card h-full gap-0 overflow-hidden border border-border/40 bg-card p-0 shadow-sm transition-all hover:border-border hover:shadow-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      >
         {coverImage ? (
-          <div className="relative w-full aspect-square bg-muted">
+          <div className="relative w-full aspect-[3/4] bg-muted">
             <Image
               src={coverImage}
               alt={wish.title}
@@ -86,7 +97,7 @@ function WishPreviewCard({ wish, wishlist, username }: WishPreviewCardProps) {
             )}
           </div>
         ) : (
-          <div className="relative w-full aspect-square bg-muted/30 flex items-center justify-center">
+          <div className="relative flex w-full items-center justify-center bg-muted/30 aspect-[3/4]">
             <div className="text-center space-y-2">
               <Gift className="h-12 w-12 text-muted-foreground/30 mx-auto" />
               <p className="text-sm text-muted-foreground px-4">{wish.title}</p>
@@ -101,9 +112,9 @@ function WishPreviewCard({ wish, wishlist, username }: WishPreviewCardProps) {
           </div>
         )}
 
-        <CardContent className="p-4">
+        <CardContent className="flex flex-1 flex-col gap-3 px-5 pb-5 pt-4">
           <div className="space-y-2">
-            <h3 className="font-semibold text-base leading-tight line-clamp-2 group-hover:underline">
+            <h3 className="text-base font-semibold leading-tight line-clamp-2 group-hover/card:underline">
               {wish.title}
             </h3>
             {wish.description && (
@@ -111,25 +122,90 @@ function WishPreviewCard({ wish, wishlist, username }: WishPreviewCardProps) {
                 {wish.description}
               </p>
             )}
-            <div className="flex items-center justify-between pt-1">
-              {price && (
-                <span className="text-sm font-medium">
-                  {price}
-                </span>
-              )}
-              <span className="text-xs text-muted-foreground">
-                {wishlist.name}
-              </span>
-            </div>
+          </div>
+          <div className="mt-auto flex items-end justify-between gap-2 pt-4">
+            <span className="flex min-h-[1.25rem] items-end text-sm font-semibold text-foreground">
+              {price ?? ""}
+            </span>
+            <span className="text-xs font-medium text-muted-foreground text-right">
+              {wishlist.name}
+            </span>
           </div>
         </CardContent>
       </Card>
-    </Link>
+    </div>
   );
 }
 
 export function WishlistGrid({ wishlists, username }: WishlistGridProps) {
-  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const wishlistParam = searchParams?.get("wishlist") ?? null;
+
+  const findWishlistByParam = useCallback(
+    (param: string | null): Wishlist | null => {
+      if (!param) return null;
+      return (
+        wishlists.find((w) => w.id === param)
+        ?? wishlists.find((w) => getWishlistSlug(w) === param)
+        ?? wishlists.find((w) => w.shareToken === param)
+        ?? null
+      );
+    },
+    [wishlists],
+  );
+
+  const derivedSelection = useMemo(() => {
+    return findWishlistByParam(wishlistParam)?.id ?? null;
+  }, [findWishlistByParam, wishlistParam]);
+
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(derivedSelection);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [activePreview, setActivePreview] = useState<{ wish: Wish; wishlist: Wishlist } | null>(null);
+
+  useEffect(() => {
+    if (derivedSelection !== selectedFilter) {
+      setSelectedFilter(derivedSelection);
+    }
+  }, [derivedSelection, selectedFilter]);
+
+  const handleFilterChange = useCallback((wishlistId: string | null) => {
+    if (wishlistId === selectedFilter) return;
+
+    if (wishlistId === null) {
+      setSelectedFilter(null);
+      const params = new URLSearchParams(searchParams?.toString() ?? "");
+      params.delete("wishlist");
+      const queryString = params.toString();
+      router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+      return;
+    }
+
+    const targetWishlist = wishlists.find((w) => w.id === wishlistId);
+    if (!targetWishlist) {
+      return;
+    }
+
+    setSelectedFilter(wishlistId);
+    const slug = getWishlistSlug(targetWishlist);
+    const params = new URLSearchParams(searchParams?.toString() ?? "");
+    params.set("wishlist", slug);
+    const queryString = params.toString();
+    router.replace(`${pathname}?${queryString}`, { scroll: false });
+  }, [pathname, router, searchParams, selectedFilter, wishlists]);
+
+  const selectedWishlist = useMemo(() => {
+    if (!selectedFilter) return null;
+    return wishlists.find((w) => w.id === selectedFilter) ?? null;
+  }, [selectedFilter, wishlists]);
+
+  const sharePath = useMemo(() => {
+    if (!selectedWishlist) return undefined;
+    const slug = getWishlistSlug(selectedWishlist);
+    return `/${username}?wishlist=${encodeURIComponent(slug)}`;
+  }, [selectedWishlist, username]);
 
   const filteredWishes = useMemo(() => {
     if (selectedFilter === null) {
@@ -156,7 +232,9 @@ export function WishlistGrid({ wishlists, username }: WishlistGridProps) {
     <>
       <WishlistFilter
         wishlists={wishlists}
-        onFilterChange={setSelectedFilter}
+        selectedWishlistId={selectedFilter}
+        onFilterChange={handleFilterChange}
+        sharePath={sharePath}
       />
 
       <div className="container mx-auto px-4 py-6 md:px-6">
@@ -166,11 +244,42 @@ export function WishlistGrid({ wishlists, username }: WishlistGridProps) {
               key={wish.id}
               wish={wish}
               wishlist={wishlist}
-              username={username}
+              onSelect={() => {
+                setActivePreview({ wish, wishlist });
+                setDetailOpen(true);
+              }}
             />
           ))}
         </div>
       </div>
+      <WishDetailDialog
+        open={detailOpen}
+        onOpenChange={(open) => {
+          setDetailOpen(open);
+          if (!open) {
+            setActivePreview(null);
+          }
+        }}
+        wish={activePreview?.wish ?? null}
+        footer={({ close }) => (
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:gap-3">
+            <Button
+              variant="outline"
+              onClick={close}
+              className="flex-1 h-11 sm:h-12 text-base font-medium"
+            >
+              Close
+            </Button>
+            {activePreview ? (
+              <Button asChild className="flex-1 h-11 sm:h-12 text-base font-medium">
+                <Link href={buildWishlistPath(username, getWishlistSlug(activePreview.wishlist))}>
+                  View wishlist
+                </Link>
+              </Button>
+            ) : null}
+          </div>
+        )}
+      />
     </>
   );
 }

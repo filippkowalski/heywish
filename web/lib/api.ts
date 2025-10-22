@@ -178,6 +178,12 @@ type RawProfileTotals = {
   reservedCount?: number | string | null;
 };
 
+const parseCount = (value: unknown): number => {
+  if (value == null) return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 const mapRawWish = (wish: RawWish): Wish => ({
   id: String(wish.id),
   title: wish.title,
@@ -313,6 +319,13 @@ export const api = {
           : [];
 
         const wishes = (wishlist.items ?? wishlist.wishes ?? []).map(mapRawWish);
+        const computedWishCount = wishes.length;
+        const providedWishCount = parseCount(wishlist.item_count ?? wishlist.wish_count);
+        const wishCount = Math.max(providedWishCount, computedWishCount);
+
+        const reservedFromItems = wishes.reduce((count, wish) => (wish.status === 'reserved' ? count + 1 : count), 0);
+        const providedReservedCount = parseCount(wishlist.reserved_count);
+        const reservedCount = Math.max(providedReservedCount, reservedFromItems);
 
         return {
           id: String(wishlist.id),
@@ -326,8 +339,8 @@ export const api = {
           username: payload.user.username,
           fullName: payload.user.full_name ?? payload.user.fullName ?? null,
           tags,
-          wishCount: Number(wishlist.item_count ?? wishlist.wish_count ?? wishes.length),
-          reservedCount: Number(wishlist.reserved_count ?? 0),
+          wishCount,
+          reservedCount,
           createdAt: wishlist.created_at,
           updatedAt: wishlist.updated_at,
           wishes,
@@ -353,15 +366,13 @@ export const api = {
         },
         wishlists: normalizedWishlists,
         totals: {
-          wishCount: Number(
-            payload.totals?.wish_count
-              ?? payload.totals?.wishCount
-              ?? normalizedWishlists.reduce((sum, w) => sum + (w.wishCount || 0), 0),
+          wishCount: Math.max(
+            parseCount(payload.totals?.wish_count ?? payload.totals?.wishCount),
+            normalizedWishlists.reduce((sum, w) => sum + w.wishCount, 0),
           ),
-          reservedCount: Number(
-            payload.totals?.reserved_count
-              ?? payload.totals?.reservedCount
-              ?? normalizedWishlists.reduce((sum, w) => sum + (w.reservedCount || 0), 0),
+          reservedCount: Math.max(
+            parseCount(payload.totals?.reserved_count ?? payload.totals?.reservedCount),
+            normalizedWishlists.reduce((sum, w) => sum + w.reservedCount, 0),
           ),
         },
       };
