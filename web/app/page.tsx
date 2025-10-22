@@ -8,8 +8,23 @@ export default function HomePage() {
     <main className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b">
+        {/* Animated gradient orbs */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -left-40 top-20 h-96 w-96 animate-float rounded-full bg-gradient-to-br from-primary/10 to-transparent blur-3xl" />
+          <div className="absolute -right-40 top-60 h-96 w-96 animate-float-delayed rounded-full bg-gradient-to-bl from-primary/10 to-transparent blur-3xl animation-delay-2000" />
+          <div className="absolute left-1/3 -bottom-40 h-96 w-96 animate-float-slow rounded-full bg-gradient-to-tr from-primary/5 to-transparent blur-3xl animation-delay-1000" />
+        </div>
+
         {/* Subtle gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] via-transparent to-primary/[0.03]" />
+
+        {/* Floating decorative icons */}
+        <div className="absolute inset-0 overflow-hidden">
+          <Sparkles className="absolute left-[10%] top-[20%] h-6 w-6 animate-float text-primary/20 animation-delay-500" />
+          <Heart className="absolute right-[15%] top-[30%] h-5 w-5 animate-float-delayed text-primary/15 animation-delay-1500" />
+          <Gift className="absolute left-[85%] top-[60%] h-6 w-6 animate-float-slow text-primary/20 animation-delay-3000" />
+          <Sparkles className="absolute left-[20%] bottom-[25%] h-4 w-4 animate-float text-primary/15 animation-delay-2500" />
+        </div>
 
         <div className="container relative mx-auto flex min-h-[85vh] flex-col items-center justify-center px-4 py-24 text-center md:px-6 md:py-32">
           <div className="mx-auto max-w-4xl space-y-10">
@@ -68,6 +83,65 @@ export default function HomePage() {
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
             <div className="h-10 w-6 rounded-full border-2 border-primary/20">
               <div className="mx-auto mt-2 h-1.5 w-1.5 rounded-full bg-primary/40" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* App Preview Section */}
+      <section className="relative overflow-hidden border-b bg-gradient-to-b from-background to-muted/20">
+        <div className="container mx-auto px-4 py-20 md:px-6 md:py-32">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-16 text-center">
+              <h2 className="font-poppins text-3xl font-semibold tracking-tight md:text-4xl lg:text-5xl">
+                Beautiful wishlists,{" "}
+                <span className="text-primary">right in your pocket</span>
+              </h2>
+              <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+                Experience seamless wishlist management with our intuitive mobile app
+              </p>
+            </div>
+
+            {/* Phone Mockup - Placeholder for screenshots */}
+            <div className="relative mx-auto max-w-4xl">
+              <div className="flex items-center justify-center gap-8">
+                {/* Center Phone */}
+                <div className="relative animate-float-slow">
+                  <div className="relative h-[600px] w-[280px] rounded-[3rem] border-8 border-foreground/10 bg-background shadow-2xl">
+                    <div className="absolute left-1/2 top-6 h-1 w-16 -translate-x-1/2 rounded-full bg-foreground/20" />
+                    <div className="mt-12 flex h-full flex-col items-center justify-center gap-8 px-8 pb-12">
+                      <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
+                        <Heart className="h-10 w-10 text-primary" />
+                      </div>
+                      <div className="space-y-2 text-center">
+                        <h3 className="font-poppins text-xl font-semibold">Your Wishlists</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Create and manage unlimited wishlists
+                        </p>
+                      </div>
+                      {/* Placeholder wishlist items */}
+                      <div className="w-full space-y-3">
+                        {[1, 2, 3].map((i) => (
+                          <div
+                            key={i}
+                            className="flex items-center gap-3 rounded-xl border border-primary/10 bg-muted/50 p-3"
+                          >
+                            <div className="h-12 w-12 rounded-lg bg-primary/10" />
+                            <div className="flex-1 space-y-1.5">
+                              <div className="h-2 w-3/4 rounded bg-foreground/10" />
+                              <div className="h-2 w-1/2 rounded bg-foreground/5" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Decorative elements */}
+              <div className="absolute -left-20 top-1/4 h-40 w-40 animate-float rounded-full bg-gradient-to-br from-primary/20 to-transparent blur-3xl" />
+              <div className="absolute -right-20 bottom-1/4 h-40 w-40 animate-float-delayed rounded-full bg-gradient-to-bl from-primary/20 to-transparent blur-3xl animation-delay-2000" />
             </div>
           </div>
         </div>
