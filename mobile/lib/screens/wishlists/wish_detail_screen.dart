@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/wish.dart';
@@ -9,6 +8,7 @@ import '../../widgets/cached_image.dart';
 import '../../common/utils/wish_category_detector.dart';
 import '../../common/navigation/native_page_route.dart';
 import '../../common/widgets/confirmation_bottom_sheet.dart';
+import 'edit_wish_screen.dart';
 
 class WishDetailScreen extends StatefulWidget {
   final String wishId;
@@ -420,8 +420,12 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
     // Close the detail bottom sheet first
     Navigator.of(context).pop();
 
-    // Navigate to edit screen
-    final result = await context.push('/wishlists/${widget.wishlistId}/items/${widget.wishId}/edit');
+    // Show edit screen as bottom sheet
+    final result = await EditWishScreen.show(
+      context,
+      wishId: widget.wishId,
+      wishlistId: widget.wishlistId,
+    );
 
     // If edit was successful, the wishlist screen will refresh automatically
     if (result == true) {
