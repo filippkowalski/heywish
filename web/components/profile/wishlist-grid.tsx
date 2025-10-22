@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { WishDetailDialog } from "@/components/wishlist/wish-detail-dialog";
 import { WishlistFilter } from "./wishlist-filter";
 import { ShareButton } from "./share-button";
+import { getWishlistSlug, matchesWishlistSlug } from "@/lib/slug";
 
 interface WishlistGridProps {
   wishlists: Wishlist[];
@@ -122,19 +123,32 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
 
   // Sync URL parameter with filter state
   useEffect(() => {
-    const wishlistParam = searchParams.get('w');
-    if (wishlistParam && wishlistParam !== selectedFilter) {
-      setSelectedFilter(wishlistParam);
+    const wishlistSlug = searchParams.get('w');
+    if (wishlistSlug) {
+      // Find wishlist by slug
+      const matchedWishlist = wishlists.find(w => matchesWishlistSlug(w, wishlistSlug));
+      if (matchedWishlist && matchedWishlist.id !== selectedFilter) {
+        setSelectedFilter(matchedWishlist.id);
+      }
     }
-  }, [searchParams, selectedFilter]);
+  }, [searchParams, wishlists, selectedFilter]);
 
   const handleFilterChange = (wishlistId: string | null) => {
     setSelectedFilter(wishlistId);
 
-    // Update URL parameter
+    // Update URL parameter with slug instead of ID
     const params = new URLSearchParams(searchParams.toString());
     if (wishlistId) {
-      params.set('w', wishlistId);
+      const wishlist = wishlists.find(w => w.id === wishlistId);
+      if (wishlist) {
+        const slug = getWishlistSlug({
+          slug: wishlist.slug,
+          name: wishlist.name,
+          shareToken: wishlist.shareToken,
+          id: wishlist.id,
+        });
+        params.set('w', slug);
+      }
     } else {
       params.delete('w');
     }
@@ -153,8 +167,14 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
       // Share profile page when "All" is selected
       return `/${username}`;
     }
-    // Share profile page with wishlist filter
-    return `/${username}?w=${selectedWishlist.id}`;
+    // Share profile page with wishlist filter using slug
+    const slug = getWishlistSlug({
+      slug: selectedWishlist.slug,
+      name: selectedWishlist.name,
+      shareToken: selectedWishlist.shareToken,
+      id: selectedWishlist.id,
+    });
+    return `/${username}?w=${encodeURIComponent(slug)}`;
   }, [selectedWishlist, username]);
 
   const filteredWishes = useMemo(() => {

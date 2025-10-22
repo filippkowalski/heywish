@@ -4,7 +4,7 @@ import { cache } from "react";
 import { api } from "@/lib/api";
 
 export const runtime = 'edge';
-import { matchesWishlistSlug } from "@/lib/slug";
+import { matchesWishlistSlug, getWishlistSlug } from "@/lib/slug";
 
 const getProfile = cache((username: string) => api.getPublicProfile(username));
 
@@ -74,6 +74,12 @@ export default async function WishlistBySlugPage({
 
   const { wishlist } = resolved;
 
-  // Redirect to profile page with wishlist filter
-  redirect(`/${username}?w=${wishlist.id}`);
+  // Redirect to profile page with wishlist filter using slug
+  const slug = getWishlistSlug({
+    slug: wishlist.slug,
+    name: wishlist.name,
+    shareToken: wishlist.shareToken,
+    id: wishlist.id,
+  });
+  redirect(`/${username}?w=${encodeURIComponent(slug)}`);
 }

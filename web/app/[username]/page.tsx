@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WishlistGrid } from "@/components/profile/wishlist-grid";
+import { matchesWishlistSlug } from "@/lib/slug";
 
 const getProfile = cache(async (username: string): Promise<PublicProfileResponse | null> => {
   try {
@@ -86,7 +87,7 @@ export default async function PublicProfilePage({
   searchParams: Promise<{ w?: string }>;
 }) {
   const { username } = await params;
-  const { w: wishlistId } = await searchParams;
+  const { w: wishlistSlug } = await searchParams;
   const profile = await getProfile(username);
 
   if (!profile) {
@@ -94,6 +95,13 @@ export default async function PublicProfilePage({
   }
 
   const { user, totals, wishlists } = profile;
+
+  // Resolve wishlist slug to ID if provided
+  let initialWishlistId: string | undefined;
+  if (wishlistSlug) {
+    const matchedWishlist = wishlists.find(w => matchesWishlistSlug(w, wishlistSlug));
+    initialWishlistId = matchedWishlist?.id;
+  }
 
   // Check if profile is private
   if (user.isProfilePublic === false) {
@@ -225,7 +233,7 @@ export default async function PublicProfilePage({
         <WishlistGrid
           wishlists={wishlists}
           username={user.username}
-          initialWishlistId={wishlistId}
+          initialWishlistId={initialWishlistId}
         />
       )}
     </main>
