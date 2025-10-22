@@ -7,7 +7,7 @@ import { Heart, MapPin, Users, Gift, BookmarkCheck } from "lucide-react";
 import { api, PublicProfileResponse } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShareButton } from "@/components/profile/share-button";
 import { WishlistGrid } from "@/components/profile/wishlist-grid";
 
@@ -70,20 +70,6 @@ const formatNumber = (value: number) =>
     notation: value >= 1000 ? "compact" : "standard",
     maximumFractionDigits: value >= 1000 ? 1 : 0,
   }).format(value);
-
-function formatPrice(amount?: number, currency: string = "USD") {
-  if (amount == null) return null;
-
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  } catch {
-    return `$${amount}`;
-  }
-}
 
 export default async function PublicProfilePage({
   params,
@@ -240,4 +226,3 @@ export default async function PublicProfilePage({
     </main>
   );
 }
-
