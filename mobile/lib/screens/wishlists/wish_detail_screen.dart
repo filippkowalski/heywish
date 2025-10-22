@@ -118,57 +118,66 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // Header with handle bar and close button
-          Container(
-            padding: const EdgeInsets.fromLTRB(24, 12, 12, 12),
-            child: Row(
-              children: [
-                // Handle bar
-                Expanded(
-                  child: Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
+          GestureDetector(
+            onVerticalDragUpdate: (details) {
+              // If dragging down, dismiss the sheet
+              if (details.primaryDelta! > 0) {
+                Navigator.of(context).pop();
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(24, 12, 12, 12),
+              color: Colors.transparent,
+              child: Row(
+                children: [
+                  // Handle bar
+                  Expanded(
+                    child: Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                // Menu button
-                PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert, color: Colors.grey[600]),
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      _editWish();
-                    } else if (value == 'delete') {
-                      _deleteWish();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit_outlined, size: 20),
-                          SizedBox(width: 12),
-                          Text('Edit'),
-                        ],
+                  // Menu button
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert, color: Colors.grey[600]),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _editWish();
+                      } else if (value == 'delete') {
+                        _deleteWish();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined, size: 20),
+                            SizedBox(width: 12),
+                            Text('Edit'),
+                          ],
+                        ),
                       ),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                          const SizedBox(width: 12),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
-                        ],
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                            const SizedBox(width: 12),
+                            Text('Delete', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
 

@@ -1,17 +1,15 @@
 import { cache } from "react";
 import type { Metadata } from "next";
-import Image from "next/image";
-import Link from "next/link";
 
 export const runtime = 'edge';
 import { notFound } from "next/navigation";
 import { Heart, MapPin, Users, Gift, BookmarkCheck } from "lucide-react";
-import { api, PublicProfileResponse, Wish, Wishlist } from "@/lib/api";
+import { api, PublicProfileResponse } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ShareButton } from "@/components/profile/share-button";
-import { buildWishlistPath, getWishlistSlug } from "@/lib/slug";
+import { WishlistGrid } from "@/components/profile/wishlist-grid";
 
 const getProfile = cache(async (username: string): Promise<PublicProfileResponse | null> => {
   try {
@@ -213,8 +211,8 @@ export default async function PublicProfilePage({
         </div>
       </header>
 
-      <section className="container mx-auto px-4 py-12 md:px-6">
-        {wishlists.length === 0 ? (
+      {wishlists.length === 0 ? (
+        <section className="container mx-auto px-4 py-12 md:px-6">
           <Card className="bg-muted/40">
             <CardContent className="flex flex-col items-center gap-4 p-10 text-center">
               <Gift className="h-10 w-10 text-muted-foreground" />
@@ -226,104 +224,11 @@ export default async function PublicProfilePage({
               </div>
             </CardContent>
           </Card>
-        ) : (
-          <div className="columns-1 gap-4 space-y-4 sm:columns-2 lg:columns-3 xl:columns-4">
-            {wishlists.flatMap((wishlist) => {
-              const allWishes = wishlist.wishes ?? wishlist.items ?? [];
-              return allWishes
-                .filter(wish => wish.status !== 'purchased')
-                .slice(0, 12)
-                .map((wish) => (
-                  <WishPreviewCard
-                    key={wish.id}
-                    wish={wish}
-                    wishlist={wishlist}
-                    username={user.username}
-                  />
-                ));
-            })}
-          </div>
-        )}
-      </section>
+        </section>
+      ) : (
+        <WishlistGrid wishlists={wishlists} username={user.username} />
+      )}
     </main>
   );
 }
 
-function WishPreviewCard({
-  wish,
-  wishlist,
-  username
-}: {
-  wish: Wish;
-  wishlist: Wishlist;
-  username: string;
-}) {
-  const coverImage = wish.images?.[0];
-  const price = formatPrice(wish.price, wish.currency);
-  const isReserved = wish.status === "reserved";
-  const slug = getWishlistSlug(wishlist);
-  const wishlistPath = buildWishlistPath(username, slug);
-
-  return (
-    <Link
-      href={wishlistPath}
-      className="group block break-inside-avoid-column mb-4"
-    >
-      <Card className="overflow-hidden border border-border/40 transition-all hover:border-border hover:shadow-lg">
-        {coverImage ? (
-          <div className="relative w-full bg-muted" style={{ aspectRatio: 'auto' }}>
-            <Image
-              src={coverImage}
-              alt={wish.title}
-              width={400}
-              height={400}
-              className="w-full h-auto object-cover"
-              sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 40vw, 90vw"
-            />
-            {isReserved && (
-              <div className="absolute top-2 right-2">
-                <Badge variant="secondary" className="bg-black/70 text-white border-0 backdrop-blur-sm text-xs px-2 py-1">
-                  Reserved
-                </Badge>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="relative w-full bg-muted/30 flex items-center justify-center" style={{ minHeight: '200px' }}>
-            <Gift className="h-12 w-12 text-muted-foreground/30" />
-            {isReserved && (
-              <div className="absolute top-2 right-2">
-                <Badge variant="secondary" className="bg-black/70 text-white border-0 backdrop-blur-sm text-xs px-2 py-1">
-                  Reserved
-                </Badge>
-              </div>
-            )}
-          </div>
-        )}
-
-        <CardContent className="p-3">
-          <div className="space-y-1">
-            <h3 className="font-semibold text-sm leading-tight line-clamp-2 group-hover:underline">
-              {wish.title}
-            </h3>
-            {wish.description && (
-              <p className="text-xs text-muted-foreground line-clamp-2">
-                {wish.description}
-              </p>
-            )}
-            <div className="flex items-center justify-between pt-1">
-              {price && (
-                <span className="text-sm font-medium">
-                  {price}
-                </span>
-              )}
-              <span className="text-xs text-muted-foreground">
-                {wishlist.name}
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
-  );
-}

@@ -242,8 +242,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       // Upload avatar if changed
       String? newAvatarUrl = _avatarUrl;
       if (_selectedImage != null) {
-        // TODO: Implement avatar upload to Cloudflare R2
-        // For now, we'll skip this and implement it later
+        newAvatarUrl = await apiService.uploadAvatarImage(
+          imageFile: _selectedImage!,
+        );
+
+        if (newAvatarUrl == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to upload avatar image'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          setState(() => _isLoading = false);
+          return;
+        }
       }
 
       // Update profile

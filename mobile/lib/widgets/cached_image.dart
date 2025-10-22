@@ -64,6 +64,13 @@ class CachedImageWidget extends StatelessWidget {
   }
 
   Widget _buildErrorWidget() {
+    // Calculate icon size, ensuring it's finite
+    double iconSize = 24;
+    if (width != null && height != null && width!.isFinite && height!.isFinite) {
+      final minDimension = width! < height! ? width! : height!;
+      iconSize = minDimension * 0.4;
+    }
+
     return Container(
       width: width,
       height: height,
@@ -71,9 +78,7 @@ class CachedImageWidget extends StatelessWidget {
       child: Icon(
         Icons.image_not_supported_outlined,
         color: Colors.grey.shade400,
-        size: (width != null && height != null) 
-            ? (width! < height! ? width! : height!) * 0.4
-            : 24,
+        size: iconSize,
       ),
     );
   }

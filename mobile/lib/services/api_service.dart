@@ -301,6 +301,66 @@ class ApiService {
     }
   }
 
+  /// Upload avatar image and return the public URL
+  Future<String?> uploadAvatarImage({
+    required File imageFile,
+  }) async {
+    try {
+      final pathSegments = imageFile.path.split('.');
+      final extension = pathSegments.length > 1 ? pathSegments.last : 'jpg';
+
+      final normalizedExtension = extension.toLowerCase();
+      String resolvedContentType;
+      switch (normalizedExtension) {
+        case 'png':
+          resolvedContentType = 'image/png';
+          break;
+        case 'webp':
+          resolvedContentType = 'image/webp';
+          break;
+        case 'jpeg':
+        case 'jpg':
+        default:
+          resolvedContentType = 'image/jpeg';
+      }
+
+      debugPrint('👤 API: Getting upload URL for avatar');
+
+      // Get presigned upload URL from backend
+      final uploadConfig = await post('/upload/avatar', {
+        'fileExtension': normalizedExtension,
+        'contentType': resolvedContentType,
+      });
+
+      final uploadUrl = uploadConfig?['uploadUrl'] as String?;
+      final publicUrl = uploadConfig?['publicUrl'] as String?;
+
+      if (uploadUrl == null || publicUrl == null) {
+        debugPrint('❌ API: Upload config missing URL fields');
+        return null;
+      }
+
+      debugPrint('👤 API: Uploading avatar to presigned URL');
+
+      final success = await uploadImageToPresignedUrl(
+        uploadUrl,
+        imageFile,
+        contentType: resolvedContentType,
+      );
+
+      if (success) {
+        debugPrint('✅ API: Avatar uploaded successfully');
+        return publicUrl;
+      } else {
+        debugPrint('❌ API: Failed to upload avatar to R2');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('❌ API: Failed to upload avatar: $e');
+      return null;
+    }
+  }
+
   /// Upload wish image and return the public URL
   Future<String?> uploadWishImage({
     required File imageFile,
