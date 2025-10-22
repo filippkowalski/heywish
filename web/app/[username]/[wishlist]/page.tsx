@@ -75,5 +75,5 @@ export default async function WishlistBySlugPage({
   const { wishlist } = resolved;
 
   // Redirect to profile page with wishlist filter
-  redirect(`/${username}?wishlist=${wishlist.id}`);
+  redirect(`/${username}?w=${wishlist.id}`);
 }

@@ -83,10 +83,10 @@ export default async function PublicProfilePage({
   searchParams,
 }: {
   params: Promise<{ username: string }>;
-  searchParams: Promise<{ wishlist?: string }>;
+  searchParams: Promise<{ w?: string }>;
 }) {
   const { username } = await params;
-  const { wishlist: wishlistId } = await searchParams;
+  const { w: wishlistId } = await searchParams;
   const profile = await getProfile(username);
 
   if (!profile) {

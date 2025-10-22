@@ -122,7 +122,7 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
 
   // Sync URL parameter with filter state
   useEffect(() => {
-    const wishlistParam = searchParams.get('wishlist');
+    const wishlistParam = searchParams.get('w');
     if (wishlistParam && wishlistParam !== selectedFilter) {
       setSelectedFilter(wishlistParam);
     }
@@ -134,9 +134,9 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
     // Update URL parameter
     const params = new URLSearchParams(searchParams.toString());
     if (wishlistId) {
-      params.set('wishlist', wishlistId);
+      params.set('w', wishlistId);
     } else {
-      params.delete('wishlist');
+      params.delete('w');
     }
 
     const newUrl = params.toString() ? `/${username}?${params.toString()}` : `/${username}`;
@@ -154,7 +154,7 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
       return `/${username}`;
     }
     // Share profile page with wishlist filter
-    return `/${username}?wishlist=${selectedWishlist.id}`;
+    return `/${username}?w=${selectedWishlist.id}`;
   }, [selectedWishlist, username]);
 
   const filteredWishes = useMemo(() => {
