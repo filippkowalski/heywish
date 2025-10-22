@@ -279,9 +279,6 @@ function WishPreviewCard({
               height={400}
               className="w-full h-auto object-cover"
               sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 40vw, 90vw"
-              onError={(event) => {
-                event.currentTarget.style.display = "none";
-              }}
             />
             {isReserved && (
               <div className="absolute top-2 right-2">

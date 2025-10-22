@@ -18,26 +18,44 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: {
-    default: "Jinnie · Public wishlists made simple",
+    default: "Jinnie · Your Modern Wishlist Platform",
     template: "%s · Jinnie",
   },
-  description: "Browse public profiles, explore wishlists, and reserve gifts without friction.",
-  keywords: ["wishlist", "gift registry", "jinnie", "public profile"],
-  authors: [{ name: "Jinnie Team" }],
+  description: "Create and share beautiful wishlists for any occasion. Discover trending gifts, reserve items for friends, and make gift-giving magical. Your modern genie for wishes.",
+  keywords: [
+    "wishlist",
+    "gift registry",
+    "gift ideas",
+    "christmas gifts",
+    "birthday wishlist",
+    "wedding registry",
+    "baby registry",
+    "jinnie",
+    "wish list app",
+    "gift planning",
+    "social wishlist",
+    "gift reservation",
+    "holiday shopping",
+  ],
+  authors: [{ name: "Jinnie" }],
   creator: "Jinnie",
   publisher: "Jinnie",
-  metadataBase: new URL("https://jinnie.app"),
+  applicationName: "Jinnie",
+  metadataBase: new URL("https://jinnie.co"),
+  alternates: {
+    canonical: "https://jinnie.co",
+  },
   openGraph: {
-    title: "Jinnie · Public wishlists made simple",
-    description: "Explore public profiles and reserve wishes in just a few clicks.",
-    url: "https://jinnie.app",
+    title: "Jinnie · Your Modern Wishlist Platform",
+    description: "Create beautiful wishlists, discover trending gifts, and make gift-giving effortless. Share your wishes with friends and family.",
+    url: "https://jinnie.co",
     siteName: "Jinnie",
     images: [
       {
-        url: "/og-image.png",
+        url: "https://jinnie.co/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Jinnie · Public wishlists",
+        alt: "Jinnie - Your Modern Wishlist Platform",
       },
     ],
     locale: "en_US",
@@ -45,9 +63,11 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Jinnie · Public wishlists made simple",
-    description: "Explore public profiles and reserve wishes in just a few clicks.",
-    images: ["/og-image.png"],
+    title: "Jinnie · Your Modern Wishlist Platform",
+    description: "Create beautiful wishlists, discover trending gifts, and make gift-giving effortless.",
+    images: ["https://jinnie.co/og-image.png"],
+    creator: "@jinnieapp",
+    site: "@jinnieapp",
   },
   robots: {
     index: true,
@@ -60,6 +80,8 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  category: "lifestyle",
+  classification: "Gift Planning & Wishlist Platform",
 };
 
 export default function RootLayout({
