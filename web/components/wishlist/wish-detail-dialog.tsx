@@ -138,13 +138,13 @@ export function WishDetailDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-h-[95vh] p-0"
+        className="max-h-[90vh] p-0 overflow-hidden"
         containerClassName="max-w-3xl overflow-hidden rounded-3xl border border-border/60 bg-card shadow-2xl flex flex-col"
         hideClose
       >
         {/* Image Gallery Section */}
         {images.length > 0 ? (
-          <div className="relative w-full bg-muted" style={{ aspectRatio: "1/1" }}>
+          <div className="relative w-full bg-muted max-h-[50vh]" style={{ aspectRatio: "4/3" }}>
             <Image
               src={images[currentImageIndex]}
               alt={wish.title}
@@ -170,7 +170,7 @@ export function WishDetailDialog({
             )}
           </div>
         ) : (
-          <div className="relative w-full bg-muted/30 flex items-center justify-center" style={{ aspectRatio: "1/1" }}>
+          <div className="relative w-full bg-muted/30 flex items-center justify-center" style={{ aspectRatio: "4/3", maxHeight: "50vh" }}>
             <Gift className="h-20 w-20 text-muted-foreground/30" />
             {isReserved && (
               <div className="absolute top-4 right-4">

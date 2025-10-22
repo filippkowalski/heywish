@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WishDetailDialog } from "@/components/wishlist/wish-detail-dialog";
 import { WishlistFilter } from "./wishlist-filter";
+import { ShareButton } from "./share-button";
 
 interface WishlistGridProps {
   wishlists: Wishlist[];
@@ -81,7 +82,7 @@ function WishPreviewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
         className="group/card h-full gap-0 overflow-hidden border border-border/40 bg-card p-0 shadow-sm transition-all hover:border-border hover:shadow-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
       >
         {showImage ? (
-          <div className="relative w-full aspect-[3/4] bg-muted">
+          <div className="relative w-full aspect-[4/3] bg-muted">
             <Image
               src={coverImage!}
               alt={wish.title}
@@ -100,14 +101,14 @@ function WishPreviewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
           </div>
         ) : null}
 
-        <CardContent className="flex flex-1 flex-col gap-3 px-5 pb-5 pt-4">
-          <div className="space-y-2">
+        <CardContent className={`flex flex-1 flex-col gap-3 px-4 ${showImage ? 'pb-4 pt-3' : 'py-4'}`}>
+          <div className="space-y-1.5">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="text-base font-semibold leading-tight line-clamp-2 group-hover/card:underline">
+              <h3 className="text-sm font-semibold leading-tight line-clamp-2 group-hover/card:underline">
                 {wish.title}
               </h3>
               {!showImage && isReserved ? (
-                <Badge variant="secondary" className="bg-black/70 text-white border-0 px-2 py-0.5 text-[10px] uppercase">
+                <Badge variant="secondary" className="bg-black/70 text-white border-0 px-2 py-0.5 text-[10px] uppercase flex-shrink-0">
                   Reserved
                 </Badge>
               ) : null}
@@ -118,11 +119,11 @@ function WishPreviewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
               </p>
             )}
           </div>
-          <div className="mt-auto flex items-end justify-between gap-2 pt-4">
+          <div className="mt-auto flex items-end justify-between gap-2">
             <span className="flex min-h-[1.25rem] items-end text-sm font-semibold text-foreground">
               {price ?? ""}
             </span>
-            <span className="text-xs font-medium text-muted-foreground text-right">
+            <span className="text-xs font-medium text-muted-foreground text-right truncate">
               {wishlist.name}
             </span>
           </div>
@@ -143,7 +144,11 @@ export function WishlistGrid({ wishlists, username }: WishlistGridProps) {
   }, [selectedFilter, wishlists]);
 
   const sharePath = useMemo(() => {
-    if (!selectedWishlist) return undefined;
+    if (!selectedWishlist) {
+      // Share profile page when "All" is selected
+      return `/${username}`;
+    }
+    // Share specific wishlist page
     const slug = getWishlistSlug(selectedWishlist);
     return buildWishlistPath(username, slug);
   }, [selectedWishlist, username]);
@@ -175,11 +180,18 @@ export function WishlistGrid({ wishlists, username }: WishlistGridProps) {
         wishlists={wishlists}
         selectedWishlistId={selectedFilter}
         onFilterChange={setSelectedFilter}
-        sharePath={sharePath}
       />
 
       <div className="container mx-auto px-4 py-6 md:px-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex-1" />
+          <ShareButton
+            path={sharePath}
+            label={selectedFilter ? "Copy wishlist link" : "Copy profile link"}
+            className="flex-shrink-0"
+          />
+        </div>
+        <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5">
           {filteredWishes.map(({ wish, wishlist }) => (
             <WishPreviewCard
               key={wish.id}
@@ -202,8 +214,6 @@ export function WishlistGrid({ wishlists, username }: WishlistGridProps) {
           }
         }}
         wish={activePreview?.wish ?? null}
-        reserveHref={activePreview ? buildWishlistPath(username, getWishlistSlug(activePreview.wishlist)) : undefined}
-        reserveLabel="Open wishlist to reserve"
       />
     </>
   );

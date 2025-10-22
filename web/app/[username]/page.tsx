@@ -8,7 +8,6 @@ import { api, PublicProfileResponse } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShareButton } from "@/components/profile/share-button";
 import { WishlistGrid } from "@/components/profile/wishlist-grid";
 
 const getProfile = cache(async (username: string): Promise<PublicProfileResponse | null> => {
@@ -145,43 +144,34 @@ export default async function PublicProfilePage({
         <div className="container mx-auto px-4 py-6 sm:py-8 md:py-10 md:px-6">
           {/* Profile Header */}
           <div className="flex flex-col gap-4 sm:gap-5">
-            <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-start md:justify-between">
-              <div className="flex items-start gap-3 sm:gap-4">
-                <Avatar className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl border border-border flex-shrink-0">
-                  {user.avatarUrl ? (
-                    <AvatarImage src={user.avatarUrl} alt={user.fullName ?? user.username} />
-                  ) : null}
-                  <AvatarFallback className="rounded-xl text-base sm:text-lg font-semibold">
-                    {(user.fullName ?? user.username).slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1 space-y-1.5 sm:space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="truncate text-xl font-semibold sm:text-2xl md:text-3xl">
-                      {user.fullName?.trim() || user.username}
-                    </h1>
-                    <Badge variant="secondary" className="flex-shrink-0 text-[10px] uppercase tracking-wide sm:text-xs">
-                      Public
-                    </Badge>
-                  </div>
-                  <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground sm:text-sm">
-                    <span className="truncate">@{user.username}</span>
-                    {user.location ? (
-                      <span className="inline-flex items-center gap-1 flex-shrink-0">
-                        <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                        <span className="truncate">{user.location}</span>
-                      </span>
-                    ) : null}
-                  </p>
+            <div className="flex items-start gap-3 sm:gap-4">
+              <Avatar className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl border border-border flex-shrink-0">
+                {user.avatarUrl ? (
+                  <AvatarImage src={user.avatarUrl} alt={user.fullName ?? user.username} />
+                ) : null}
+                <AvatarFallback className="rounded-xl text-base sm:text-lg font-semibold">
+                  {(user.fullName ?? user.username).slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1 space-y-1.5 sm:space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="truncate text-xl font-semibold sm:text-2xl md:text-3xl">
+                    {user.fullName?.trim() || user.username}
+                  </h1>
+                  <Badge variant="secondary" className="flex-shrink-0 text-[10px] uppercase tracking-wide sm:text-xs">
+                    Public
+                  </Badge>
                 </div>
+                <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground sm:text-sm">
+                  <span className="truncate">@{user.username}</span>
+                  {user.location ? (
+                    <span className="inline-flex items-center gap-1 flex-shrink-0">
+                      <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      <span className="truncate">{user.location}</span>
+                    </span>
+                  ) : null}
+                </p>
               </div>
-              <ShareButton
-                path={`/${user.username}`}
-                label="Share profile"
-                title={`${user.fullName ?? user.username} · Jinnie`}
-                text={`Browse ${user.fullName ?? user.username}'s public wishlists on Jinnie.`}
-                className="mt-2 inline-flex w-full justify-center rounded-full border-border/60 bg-card/60 px-4 py-2 text-xs font-medium shadow-sm backdrop-blur sm:w-auto sm:justify-between sm:text-sm md:mt-0 md:self-start"
-              />
             </div>
 
             {/* Bio */}

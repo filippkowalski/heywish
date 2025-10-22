@@ -537,9 +537,7 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
             {/* Share Button */}
             <ShareButton
               path={computedSharePath}
-              label="Share wishlist"
-              title={`${wishlist.name} · ${ownerDisplayName} · Jinnie`}
-              text={`Check out ${ownerDisplayName}'s ${wishlist.name} wishlist on Jinnie.`}
+              label="Copy wishlist link"
               className="w-full sm:w-auto"
             />
           </div>
