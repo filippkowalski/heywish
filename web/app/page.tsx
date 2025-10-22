@@ -150,34 +150,35 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/50 to-background/85" />
 
         <div className="container relative mx-auto flex min-h-[85vh] flex-col items-center justify-center px-4 py-24 text-center md:px-6 md:py-32">
-          <div className="mx-auto max-w-4xl space-y-10">
+          <div className="mx-auto max-w-4xl space-y-6 md:space-y-10 bg-white/90 backdrop-blur-lg rounded-3xl px-6 py-12 md:px-12 md:py-16 shadow-2xl">
             {/* Badge */}
             <div className="animate-fade-in-up">
               <Badge
                 variant="outline"
-                className="inline-flex items-center gap-2 border-primary/20 bg-background/50 px-4 py-1.5 text-xs font-medium tracking-wide backdrop-blur-sm"
+                style={{ color: '#000', borderColor: 'rgba(0,0,0,0.2)' }}
+                className="inline-flex items-center gap-2 bg-white/60 px-4 py-1.5 text-xs font-medium tracking-wide backdrop-blur-sm"
               >
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <Sparkles className="h-3.5 w-3.5" style={{ color: '#000' }} />
                 Your Modern Wishlist Platform
               </Badge>
             </div>
 
             {/* Main Heading */}
-            <div className="space-y-6 animate-fade-in-up animation-delay-100">
-              <h1 className="font-poppins text-5xl font-semibold leading-[1.15] tracking-tight md:text-6xl lg:text-7xl">
+            <div className="space-y-4 md:space-y-6 animate-fade-in-up animation-delay-100">
+              <h1 className="font-poppins text-4xl sm:text-5xl font-semibold leading-[1.15] tracking-tight md:text-6xl lg:text-7xl px-2" style={{ color: '#000' }}>
                 Keep wishlists in sync with the people you{" "}
                 <span className="relative inline-block">
                   <span className="relative z-10">care about</span>
-                  <span className="absolute -bottom-2 left-0 h-3 w-full bg-primary/10 -rotate-1" />
+                  <span className="absolute -bottom-2 left-0 h-3 w-full -rotate-1" style={{ backgroundColor: 'rgba(0,0,0,0.1)' }} />
                 </span>
               </h1>
-              <p className="mx-auto max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">
+              <p className="mx-auto max-w-2xl text-base sm:text-lg leading-relaxed md:text-xl px-4" style={{ color: '#374151' }}>
                 Create, manage, and share your wishlists effortlessly. Make gift-giving magical with the Jinnie mobile app.
               </p>
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col items-center gap-4 pt-4 animate-fade-in-up animation-delay-200 sm:flex-row sm:justify-center">
+            <div className="flex flex-col items-center gap-3 md:gap-4 pt-2 md:pt-4 animate-fade-in-up animation-delay-200 sm:flex-row sm:justify-center">
               <Button
                 asChild
                 size="lg"
