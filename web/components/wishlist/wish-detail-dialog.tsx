@@ -287,9 +287,32 @@ export function WishDetailDialog({
 
   const verifiedEmail = authUser?.emailVerified ? authUser.email ?? null : null;
 
+  // Also check localStorage for saved email if no verified email yet
+  const savedEmail = typeof window !== 'undefined'
+    ? window.localStorage.getItem(RESERVATION_EMAIL_STORAGE_KEY)
+    : null;
+
   // Check if current user is the reserver by comparing emails
-  const isMyReservation = isReserved && verifiedEmail && wish.reservedBy &&
-    verifiedEmail.toLowerCase() === wish.reservedBy.toLowerCase();
+  const currentUserEmail = verifiedEmail || savedEmail;
+  const isMyReservation = isReserved && currentUserEmail && wish.reservedBy &&
+    currentUserEmail.toLowerCase() === wish.reservedBy.toLowerCase();
+
+  // Debug logging
+  useEffect(() => {
+    if (wish && isReserved) {
+      console.log('[WishDetailDialog] Debug reservation:', {
+        isReserved,
+        verifiedEmail,
+        savedEmail,
+        currentUserEmail,
+        wishReservedBy: wish.reservedBy,
+        isMyReservation,
+        shareToken,
+        isMine,
+        onCancel: !!onCancel,
+      });
+    }
+  }, [wish, isReserved, verifiedEmail, savedEmail, currentUserEmail, isMyReservation, shareToken, isMine, onCancel]);
 
   const renderFooter = () => {
     if (footer) {
@@ -299,14 +322,14 @@ export function WishDetailDialog({
     }
 
     if (isReserved) {
-      const showCancelButton = (isMine && onCancel) || (isMyReservation && shareToken);
+      const showCancelButton = (isMine && onCancel) || isMyReservation;
 
       return (
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           {showCancelButton && (
             <Button
               variant="outline"
-              onClick={isMyReservation && shareToken ? handleCancelReservation : onCancel}
+              onClick={isMyReservation ? handleCancelReservation : onCancel}
               disabled={submitting}
               className="flex-1 h-11 sm:h-12 text-base font-medium"
             >
