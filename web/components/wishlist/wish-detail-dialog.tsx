@@ -3,14 +3,33 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Gift, X, ExternalLink } from "lucide-react";
+import { Gift, X, ExternalLink, Loader2, Mail, User } from "lucide-react";
+import {
+  onAuthStateChanged,
+  sendSignInLinkToEmail,
+  type ActionCodeSettings,
+  type User as FirebaseUser,
+} from "firebase/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import type { Wish } from "@/lib/api";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { api, type Wish } from "@/lib/api";
+import {
+  getFirebaseAuth,
+  RESERVATION_EMAIL_STORAGE_KEY,
+  RESERVATION_PENDING_STORAGE_KEY,
+} from "@/lib/firebase-client";
+import { emailPattern } from "@/lib/validators";
 
 function formatPrice(amount?: number, currency: string = "USD") {
   if (amount == null) return null;
@@ -62,10 +81,57 @@ export function WishDetailDialog({
   shareToken,
 }: WishDetailDialogProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showReservationForm, setShowReservationForm] = useState(false);
+  const [formValues, setFormValues] = useState({ name: "", email: "", message: "" });
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formNotice, setFormNotice] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [authUser, setAuthUser] = useState<FirebaseUser | null>(null);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   useEffect(() => {
     setCurrentImageIndex(0);
+    setShowReservationForm(false);
+    setFormError(null);
+    setFormNotice(null);
   }, [wish?.id]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const savedEmail = window.localStorage.getItem(RESERVATION_EMAIL_STORAGE_KEY);
+    if (savedEmail) {
+      setFormValues((prev) => ({ ...prev, email: savedEmail }));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let unsubscribe: (() => void) | undefined;
+
+    try {
+      const auth = getFirebaseAuth();
+      unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          try {
+            await user.reload();
+          } catch (reloadError) {
+            console.warn("Failed to reload Firebase user", reloadError);
+          }
+        }
+
+        setAuthUser(user);
+        setAuthInitialized(true);
+      });
+    } catch (authError) {
+      console.error("Firebase Auth is not configured:", authError);
+      setAuthInitialized(true);
+    }
+
+    return () => {
+      unsubscribe?.();
+    };
+  }, []);
 
   if (!wish) return null;
 
@@ -73,7 +139,123 @@ export function WishDetailDialog({
   const price = formatPrice(wish.price, wish.currency);
   const isReserved = wish.status === "reserved";
 
-  const handleClose = () => onOpenChange(false);
+  const handleClose = () => {
+    onOpenChange(false);
+    setShowReservationForm(false);
+  };
+
+  const handleStartReservation = () => {
+    if (shareToken) {
+      setShowReservationForm(true);
+    } else if (onReserve) {
+      onReserve();
+    }
+  };
+
+  const handleReservationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!wish || !shareToken) return;
+
+    const trimmedEmail = formValues.email.trim();
+    const trimmedName = formValues.name.trim();
+    const trimmedMessage = formValues.message.trim();
+
+    if (!trimmedEmail) {
+      setFormError("Enter your email so the wishlist owner knows who reserved.");
+      return;
+    }
+
+    if (!emailPattern.test(trimmedEmail)) {
+      setFormError("That email looks incorrect. Double-check and try again.");
+      return;
+    }
+
+    let auth;
+    try {
+      auth = getFirebaseAuth();
+    } catch (authError) {
+      console.error("Firebase Auth is unavailable:", authError);
+      setFormError("Reservations are temporarily unavailable. Please try again later.");
+      return;
+    }
+
+    setFormError(null);
+    setFormNotice(null);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(RESERVATION_EMAIL_STORAGE_KEY, trimmedEmail);
+    }
+
+    await auth.currentUser?.reload();
+    const verifiedUser = auth.currentUser && auth.currentUser.emailVerified ? auth.currentUser : null;
+
+    if (!verifiedUser) {
+      try {
+        setSubmitting(true);
+        const actionCodeSettings: ActionCodeSettings = {
+          url: `${window.location.origin}/verify-reservation?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+          handleCodeInApp: true,
+        };
+
+        await sendSignInLinkToEmail(auth, trimmedEmail, actionCodeSettings);
+
+        if (typeof window !== "undefined") {
+          const payload = {
+            shareToken,
+            wishId: wish.id,
+            email: trimmedEmail,
+          };
+          window.localStorage.setItem(
+            RESERVATION_PENDING_STORAGE_KEY,
+            JSON.stringify(payload),
+          );
+        }
+
+        setFormNotice("Check your email for a link to confirm your reservation.");
+      } catch (err: unknown) {
+        console.error("Error sending reservation verification link:", err);
+        setFormError("We couldn't send the confirmation link. Please double-check your email and try again.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const idToken = await verifiedUser.getIdToken(true);
+
+      await api.reserveWish(wish.id, {
+        email: trimmedEmail,
+        name: trimmedName || undefined,
+        message: trimmedMessage || undefined,
+        idToken,
+      });
+
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(RESERVATION_PENDING_STORAGE_KEY);
+      }
+
+      setFormNotice(`Reserved "${wish.title}". Your reservation is confirmed.`);
+      setTimeout(() => {
+        handleClose();
+        window.location.reload();
+      }, 1500);
+    } catch (err: unknown) {
+      console.error("Error reserving wish:", err);
+      const axiosError = err as { response?: { status?: number; data?: { error?: { message?: string } } } };
+      const message =
+        axiosError.response?.data?.error?.message ??
+        (axiosError.response?.status === 409
+          ? "Someone just reserved this wish. Pick another item."
+          : "Something went wrong while reserving. Try again.");
+      setFormError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const verifiedEmail = authUser?.emailVerified ? authUser.email ?? null : null;
 
   const renderFooter = () => {
     if (footer) {
@@ -143,14 +325,111 @@ export function WishDetailDialog({
             </Button>
           ) : shareToken ? (
             <Button
-              asChild
+              onClick={handleStartReservation}
               className="flex-1 h-11 sm:h-12 text-base font-medium"
             >
-              <Link href={`/w/${shareToken}`}>Reserve</Link>
+              Reserve
             </Button>
           ) : null
         )}
       </div>
+    );
+  };
+
+  // If showing reservation form, render that instead
+  if (showReservationForm) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Reserve &quot;{wish.title}&quot;</DialogTitle>
+            <DialogDescription>
+              Your reservation will be tied to this email address. You can manage your reservations using the link we&apos;ll send you.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleReservationSubmit} className="space-y-4">
+            {verifiedEmail ? (
+              <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-900">
+                Signed in as <span className="font-semibold">{verifiedEmail}</span>. This email will be shared with the wishlist owner.
+              </div>
+            ) : null}
+
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="reserve-name" className="inline-flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  Your name
+                </Label>
+                <Input
+                  id="reserve-name"
+                  placeholder="Optional"
+                  value={formValues.name}
+                  onChange={(e) => setFormValues((prev) => ({ ...prev, name: e.target.value }))}
+                  autoComplete="name"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="reserve-email" className="inline-flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  Email address
+                </Label>
+                <Input
+                  id="reserve-email"
+                  type="email"
+                  required
+                  value={formValues.email}
+                  onChange={(e) => setFormValues((prev) => ({ ...prev, email: e.target.value }))}
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="reserve-message">Message for the owner</Label>
+                <Textarea
+                  id="reserve-message"
+                  placeholder="Add a note (optional)"
+                  value={formValues.message}
+                  onChange={(e) => setFormValues((prev) => ({ ...prev, message: e.target.value }))}
+                  rows={4}
+                />
+              </div>
+            </div>
+
+            {formError ? (
+              <p className="text-sm font-medium text-destructive">{formError}</p>
+            ) : null}
+
+            {formNotice ? (
+              <p className="rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-primary">
+                {formNotice}
+              </p>
+            ) : null}
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowReservationForm(false)}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting || !authInitialized}>
+                {submitting ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Reserving…
+                  </span>
+                ) : (
+                  "Reserve wish"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     );
   };
 
