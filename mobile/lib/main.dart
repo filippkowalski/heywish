@@ -6,7 +6,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:quick_actions/quick_actions.dart';
 import 'dart:async';
@@ -26,8 +25,6 @@ import 'services/screenshot_detection_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding/onboarding_flow_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/auth/login_screen.dart';
-import 'screens/auth/signup_screen.dart';
 import 'screens/wishlists/wishlist_new_screen.dart';
 import 'screens/wishlists/add_wish_screen.dart';
 import 'screens/wishlists/wish_detail_screen.dart';
@@ -97,6 +94,7 @@ class JinnieApp extends StatefulWidget {
 class _JinnieAppState extends State<JinnieApp> {
   final ScreenshotController _screenshotController = ScreenshotController();
   final QuickActions _quickActions = const QuickActions();
+  static const platform = MethodChannel('com.wishlists.gifts/share');
 
   @override
   void initState() {
@@ -111,6 +109,94 @@ class _JinnieAppState extends State<JinnieApp> {
     // Initialize quick actions (iOS and Android only)
     if (Platform.isIOS || Platform.isAndroid) {
       _initializeQuickActions();
+    }
+
+    // Initialize share extension handler (iOS only)
+    if (Platform.isIOS) {
+      _initializeShareHandler();
+      // Check for shared content on startup
+      _checkForSharedContent();
+    }
+  }
+
+  void _initializeShareHandler() {
+    platform.setMethodCallHandler((call) async {
+      if (call.method == 'handleSharedContent') {
+        debugPrint('📱 Received shared content: ${call.arguments}');
+        _handleSharedContent(call.arguments);
+      }
+    });
+  }
+
+  Future<void> _checkForSharedContent() async {
+    // Wait a bit for the app to fully initialize
+    await Future.delayed(const Duration(milliseconds: 1000));
+
+    try {
+      final result = await platform.invokeMethod('getSharedContent');
+      if (result != null) {
+        debugPrint('📱 Found shared content on startup: $result');
+        _handleSharedContent(result);
+      }
+    } catch (e) {
+      debugPrint('Error checking for shared content: $e');
+    }
+  }
+
+  void _handleSharedContent(dynamic arguments) {
+    if (arguments is! Map) {
+      debugPrint('⚠️ Invalid shared content format');
+      return;
+    }
+
+    final sharedData = Map<String, dynamic>.from(arguments);
+    final type = sharedData['type'] as String?;
+    final value = sharedData['value'] as String?;
+
+    if (type == null || value == null) {
+      debugPrint('⚠️ Missing type or value in shared content');
+      return;
+    }
+
+    debugPrint('✅ Processing shared $type: $value');
+
+    // Navigate to add wish screen with the shared URL
+    final context = _router.routerDelegate.navigatorKey.currentContext;
+    if (context != null) {
+      // Wait a moment to ensure home screen is loaded
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (type == 'url') {
+          Navigator.of(context).push(
+            NativePageRoute(
+              child: AddWishScreen(
+                initialUrl: value,
+              ),
+            ),
+          );
+        } else if (type == 'image') {
+          // Handle image sharing - use prefilledData for image path
+          Navigator.of(context).push(
+            NativePageRoute(
+              child: AddWishScreen(
+                prefilledData: {
+                  'image': value,
+                },
+              ),
+            ),
+          );
+        } else if (type == 'text') {
+          // Handle text sharing - use prefilledData for title
+          Navigator.of(context).push(
+            NativePageRoute(
+              child: AddWishScreen(
+                prefilledData: {
+                  'title': value,
+                },
+              ),
+            ),
+          );
+        }
+      });
     }
   }
 
@@ -265,26 +351,6 @@ final _router = GoRouter(
           restorationId: state.pageKey.value,
         );
       },
-    ),
-    GoRoute(
-      path: '/auth/login',
-      pageBuilder: (context, state) => NativeTransitions.page(
-        child: const LoginScreen(),
-        key: state.pageKey,
-        name: state.name,
-        arguments: state.extra,
-        restorationId: state.pageKey.value,
-      ),
-    ),
-    GoRoute(
-      path: '/auth/signup',
-      pageBuilder: (context, state) => NativeTransitions.page(
-        child: const SignupScreen(),
-        key: state.pageKey,
-        name: state.name,
-        arguments: state.extra,
-        restorationId: state.pageKey.value,
-      ),
     ),
     GoRoute(
       path: '/wishlists/new',

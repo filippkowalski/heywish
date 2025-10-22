@@ -161,36 +161,6 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<void> signInWithEmail(String email, String password) async {
-    try {
-      await _firebaseAuth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-    } catch (e) {
-      debugPrint('Error signing in with email: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> signUpWithEmail(String email, String password) async {
-    try {
-      final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      // Note: Display name will be set from username during onboarding
-      // No need to set display name here since we use username system
-
-      // Sync with backend and pass signup method
-      await syncUserWithBackend(signUpMethod: 'email_password');
-      _scheduleTokenRefresh();
-    } catch (e) {
-      debugPrint('Error signing up: $e');
-      rethrow;
-    }
-  }
 
   Future<void> signInWithGoogle() async {
     try {
@@ -287,7 +257,11 @@ class AuthService extends ChangeNotifier {
       // Create OAuth credential for Firebase
       final oauthCredential = firebase.OAuthProvider(
         "apple.com",
-      ).credential(idToken: appleCredential.identityToken, rawNonce: rawNonce);
+      ).credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+        accessToken: appleCredential.authorizationCode,
+      );
 
       // Sign in to Firebase with Apple credential
       final userCredential = await _firebaseAuth.signInWithCredential(
@@ -444,7 +418,11 @@ class AuthService extends ChangeNotifier {
 
       final oauthCredential = firebase.OAuthProvider(
         "apple.com",
-      ).credential(idToken: appleCredential.identityToken, rawNonce: rawNonce);
+      ).credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+        accessToken: appleCredential.authorizationCode,
+      );
 
       // Link the credential (preserves firebase_uid!)
       await currentUser.linkWithCredential(oauthCredential);
@@ -577,7 +555,11 @@ class AuthService extends ChangeNotifier {
       // Create OAuth credential for Firebase
       final oauthCredential = firebase.OAuthProvider(
         "apple.com",
-      ).credential(idToken: appleCredential.identityToken, rawNonce: rawNonce);
+      ).credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+        accessToken: appleCredential.authorizationCode,
+      );
 
       // Sign in to Firebase with Apple credential
       final userCredential = await _firebaseAuth.signInWithCredential(
@@ -651,14 +633,6 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<void> resetPassword(String email) async {
-    try {
-      await _firebaseAuth.sendPasswordResetEmail(email: email);
-    } catch (e) {
-      debugPrint('Error resetting password: $e');
-      rethrow;
-    }
-  }
 
   Future<String?> getIdToken() async {
     return await _firebaseUser?.getIdToken();

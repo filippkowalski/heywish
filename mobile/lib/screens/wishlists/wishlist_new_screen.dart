@@ -162,17 +162,19 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
     final mediaQuery = MediaQuery.of(context);
     final bottomPadding = mediaQuery.viewInsets.bottom;
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: mediaQuery.size.height * 0.92,
-      ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: mediaQuery.size.height * 0.92,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
           // Handle bar
           Center(
             child: Container(
@@ -346,6 +348,7 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -359,32 +362,35 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
     int maxLines = 1,
     TextCapitalization textCapitalization = TextCapitalization.none,
   }) {
-    return TextField(
-      controller: controller,
-      focusNode: focusNode,
-      style: TextStyle(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: AppTheme.primary,
-        height: 1.3, // Allow proper line height for multi-line text
-      ),
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: TextStyle(
+    return Material(
+      color: Colors.transparent,
+      child: TextField(
+        controller: controller,
+        focusNode: focusNode,
+        style: TextStyle(
           fontSize: fontSize,
           fontWeight: fontWeight,
-          color: Colors.grey[400],
-          height: 1.3,
+          color: AppTheme.primary,
+          height: 1.3, // Allow proper line height for multi-line text
         ),
-        border: InputBorder.none,
-        enabledBorder: InputBorder.none,
-        focusedBorder: InputBorder.none,
-        isDense: true,
-        contentPadding: EdgeInsets.zero,
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            color: Colors.grey[400],
+            height: 1.3,
+          ),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
+        ),
+        maxLines: maxLines,
+        minLines: 1,
+        textCapitalization: textCapitalization,
       ),
-      maxLines: maxLines,
-      minLines: 1,
-      textCapitalization: textCapitalization,
     );
   }
 

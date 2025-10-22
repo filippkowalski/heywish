@@ -6,31 +6,29 @@
 //
 
 import UIKit
-import Social
 import UniformTypeIdentifiers
 
-class ShareViewController: SLComposeServiceViewController {
+class ShareViewController: UIViewController {
 
     // IMPORTANT: This must match the App Group you created!
     let appGroupId = "group.com.wishlists.gifts"
-    let sharedKey = "HeyWishSharedContent"
+    let sharedKey = "JinnieSharedContent"
 
-    override func isContentValid() -> Bool {
-        // Always return true to allow posting
-        return true
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        // Immediately process and dismiss - no UI needed
+        processSharedContent()
     }
 
-    override func didSelectPost() {
-        // Main entry point when user taps "Post"
-        if let content = extensionContext?.inputItems.first as? NSExtensionItem {
-            if let attachments = content.attachments {
-                handleAttachments(attachments)
-            } else {
-                completeRequest()
-            }
-        } else {
+    private func processSharedContent() {
+        guard let extensionItem = extensionContext?.inputItems.first as? NSExtensionItem,
+              let attachments = extensionItem.attachments else {
             completeRequest()
+            return
         }
+
+        handleAttachments(attachments)
     }
 
     private func handleAttachments(_ attachments: [NSItemProvider]) {
@@ -100,7 +98,7 @@ class ShareViewController: SLComposeServiceViewController {
     }
 
     private func saveImageToTemp(_ image: UIImage) -> String? {
-        let fileName = "heywish_shared_\(Date().timeIntervalSince1970).jpg"
+        let fileName = "jinnie_shared_\(Date().timeIntervalSince1970).jpg"
         let tempDir = FileManager.default.temporaryDirectory
         let fileURL = tempDir.appendingPathComponent(fileName)
 
@@ -147,35 +145,13 @@ class ShareViewController: SLComposeServiceViewController {
     }
 
     private func completeRequest() {
-        // Close the share extension
+        // Simply dismiss the extension
+        // The main app will check for shared content when it's opened
         DispatchQueue.main.async { [weak self] in
-            self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
-        }
-
-        // Open the main app with custom URL scheme
-        self.openMainApp()
-    }
-
-    private func openMainApp() {
-        guard let url = URL(string: "heywish://share") else {
-            return
-        }
-
-        // Use selector to open URL (works in extension context)
-        var responder = self as UIResponder?
-        let selectorOpenURL = sel_registerName("openURL:")
-
-        while let currentResponder = responder {
-            if currentResponder.responds(to: selectorOpenURL) {
-                currentResponder.perform(selectorOpenURL, with: url)
-                break
-            }
-            responder = currentResponder.next
+            self?.extensionContext?.completeRequest(returningItems: [], completionHandler: { _ in
+                print("✅ Share extension completed")
+            })
         }
     }
 
-    override func configurationItems() -> [Any]! {
-        // No configuration items needed
-        return []
-    }
 }

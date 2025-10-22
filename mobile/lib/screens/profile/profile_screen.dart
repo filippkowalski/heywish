@@ -9,6 +9,7 @@ import '../../widgets/cached_image.dart';
 import '../../common/navigation/native_page_route.dart';
 import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
+import 'privacy_settings_screen.dart';
 import 'wishlist_management_screen.dart';
 import '../onboarding/widgets/sign_in_bottom_sheet.dart';
 
@@ -431,7 +432,57 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
 
-          const SizedBox(height: 28),
+          const SizedBox(height: 12),
+
+          // Profile Visibility
+          if (user != null)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  // Navigate to Privacy Settings
+                  Navigator.of(context).push(
+                    NativePageRoute(
+                      child: const PrivacySettingsScreen(),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      Icon(
+                        user.isProfilePublic ? Icons.public : Icons.lock_outline,
+                        size: 18,
+                        color: user.isProfilePublic ? Colors.green.shade600 : Colors.orange.shade600,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          user.isProfilePublic
+                            ? 'profile.profile_public'.tr()
+                            : 'profile.profile_private'.tr(),
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: user.isProfilePublic ? Colors.green.shade600 : Colors.orange.shade600,
+                            height: 1.4,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 18,
+                        color: const Color(0xFF8E8E93),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          const SizedBox(height: 16),
 
           // Stats section - now full width and properly spaced
           Container(

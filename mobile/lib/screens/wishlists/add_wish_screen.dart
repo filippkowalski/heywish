@@ -139,8 +139,20 @@ class _AddWishScreenState extends State<AddWishScreen> {
       });
     }
 
-    // Pre-select wishlist if provided
+    // Pre-select wishlist if provided, or select first available wishlist
     _selectedWishlistId = widget.wishlistId;
+
+    // Auto-select first wishlist after a short delay if none is pre-selected
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted && _selectedWishlistId == null) {
+        final wishlistService = context.read<WishlistService>();
+        if (wishlistService.wishlists.isNotEmpty) {
+          setState(() {
+            _selectedWishlistId = wishlistService.wishlists.first.id;
+          });
+        }
+      }
+    });
   }
 
   @override
@@ -593,18 +605,20 @@ class _AddWishScreenState extends State<AddWishScreen> {
     final mediaQuery = MediaQuery.of(context);
     final bottomPadding = mediaQuery.viewInsets.bottom;
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: mediaQuery.size.height * 0.92,
-      ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle bar
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: mediaQuery.size.height * 0.92,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
           Center(
             child: Container(
               width: 40,
@@ -931,6 +945,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -993,7 +1008,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
       spacing: 8,
       runSpacing: 8,
       children: availableFields.map((field) {
-        return InkWell(
+        return GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
             setState(() {
@@ -1009,7 +1024,6 @@ class _AddWishScreenState extends State<AddWishScreen> {
               }
             });
           },
-          borderRadius: BorderRadius.circular(8),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(

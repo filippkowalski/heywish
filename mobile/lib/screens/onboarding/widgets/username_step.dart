@@ -133,37 +133,65 @@ class _UsernameStepState extends State<UsernameStep> {
 
   void _onUsernameChanged(String value) {
     final onboardingService = context.read<OnboardingService>();
-    
+
     // Clean the input (remove spaces, convert to lowercase)
     final cleanedValue = _cleanUsername(value);
-    
+
     // Update the text field if it was cleaned
     if (cleanedValue != value) {
       final cursorPosition = _usernameController.selection.baseOffset;
       _usernameController.value = TextEditingValue(
         text: cleanedValue,
         selection: TextSelection.collapsed(
-          offset: cursorPosition > cleanedValue.length 
-              ? cleanedValue.length 
+          offset: cursorPosition > cleanedValue.length
+              ? cleanedValue.length
               : cursorPosition,
         ),
       );
     }
-    
+
     // Validate the username
     final validationError = _validateUsername(cleanedValue);
     setState(() {
       _validationError = validationError;
     });
-    
+
     onboardingService.updateUsername(cleanedValue);
-    
+
     // Only check availability if username is valid
     _debounceTimer?.cancel();
     if (validationError == null && cleanedValue.isNotEmpty) {
       _debounceTimer = Timer(const Duration(milliseconds: 500), () {
         onboardingService.checkUsernameAvailability(cleanedValue);
       });
+    }
+  }
+
+  Future<void> _handleContinue(OnboardingService onboardingService) async {
+    try {
+      debugPrint('🎯 UsernameStep: Saving profile to backend...');
+
+      // Save profile to backend
+      final success = await onboardingService.completeOnboarding();
+
+      if (success) {
+        debugPrint('✅ UsernameStep: Profile saved successfully');
+        // Move to complete step
+        onboardingService.nextStep();
+      } else {
+        debugPrint('❌ UsernameStep: Failed to save profile');
+        // Error is already shown by OnboardingService
+      }
+    } catch (e) {
+      debugPrint('❌ UsernameStep: Error saving profile: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('errors.unknown_error'.tr()),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -328,8 +356,13 @@ class _UsernameStepState extends State<UsernameStep> {
                                 fontWeight: FontWeight.w400,
                                 fontSize: 20,
                               ),
-                              prefixIcon: Padding(
-                                padding: const EdgeInsets.only(right: 8),
+                              prefixIcon: Container(
+                                margin: const EdgeInsets.only(right: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.textSecondary.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                                 child: Icon(
                                   Icons.alternate_email,
                                   color: AppColors.textSecondary.withValues(alpha: 0.6),
@@ -395,7 +428,8 @@ class _UsernameStepState extends State<UsernameStep> {
 
               return PrimaryButton(
                 text: 'app.continue'.tr(),
-                onPressed: canProceed ? onboardingService.nextStep : null,
+                onPressed: canProceed ? () => _handleContinue(onboardingService) : null,
+                isLoading: onboardingService.isLoading,
               );
             },
           ),

@@ -144,133 +144,163 @@ class _AccountCreationStepState extends State<AccountCreationStep>
               );
             },
           ),
-          // Main content
-          Padding(
-            padding: EdgeInsets.only(
-              left: 32.0,
-              right: 32.0,
-              top: topPadding + 60.0,
-              bottom: bottomPadding + 40.0,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header section
-                Text(
-                  'onboarding.account_teaser'.tr(),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary.withValues(alpha: 0.7),
-                    letterSpacing: 0.3,
+          // Main content with fixed footer
+          Column(
+            children: [
+              // Scrollable content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.only(
+                    left: 32.0,
+                    right: 32.0,
+                    top: topPadding + 60.0,
+                    bottom: 24.0,
                   ),
-                  textAlign: TextAlign.left,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'onboarding.account_title'.tr(),
-                  style: const TextStyle(
-                    fontSize: 34,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                    letterSpacing: -0.5,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Header section
+                      Text(
+                        'onboarding.account_teaser'.tr(),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary.withValues(alpha: 0.7),
+                          letterSpacing: 0.3,
+                        ),
+                        textAlign: TextAlign.left,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'onboarding.account_title'.tr(),
+                        style: const TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.5,
+                        ),
+                        textAlign: TextAlign.left,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'onboarding.account_subtitle'.tr(),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.textSecondary.withValues(alpha: 0.8),
+                          height: 1.5,
+                        ),
+                        textAlign: TextAlign.left,
+                      ),
+
+                      const SizedBox(height: 48),
+
+                      // Benefits cards
+                      _buildBenefitCard(
+                        icon: Icons.layers_rounded,
+                        iconColor: const Color(0xFF3B82F6), // Blue
+                        title: 'onboarding.benefit_sync_title'.tr(),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildBenefitCard(
+                        icon: Icons.shield_outlined,
+                        iconColor: const Color(0xFF8B5CF6), // Purple
+                        title: 'onboarding.benefit_never_lose_title'.tr(),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildBenefitCard(
+                        icon: Icons.person_add_outlined,
+                        iconColor: const Color(0xFF3B82F6), // Blue
+                        title: 'onboarding.benefit_username_title'.tr(),
+                      ),
+                    ],
                   ),
-                  textAlign: TextAlign.left,
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  'onboarding.account_subtitle'.tr(),
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColors.textSecondary.withValues(alpha: 0.8),
-                    height: 1.5,
+              ),
+
+              // Fixed footer with buttons
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.0),
+                      Colors.white.withValues(alpha: 0.95),
+                    ],
+                    stops: const [0.0, 0.3],
                   ),
-                  textAlign: TextAlign.left,
                 ),
-
-                const SizedBox(height: 48),
-
-                // Benefits cards
-                _buildBenefitCard(
-                  icon: Icons.layers_rounded,
-                  iconColor: const Color(0xFF3B82F6), // Blue
-                  title: 'onboarding.benefit_sync_title'.tr(),
+                padding: EdgeInsets.only(
+                  left: 32.0,
+                  right: 32.0,
+                  top: 24.0,
+                  bottom: bottomPadding + 24.0,
                 ),
-                const SizedBox(height: 16),
-                _buildBenefitCard(
-                  icon: Icons.shield_outlined,
-                  iconColor: const Color(0xFF8B5CF6), // Purple
-                  title: 'onboarding.benefit_never_lose_title'.tr(),
-                ),
-                const SizedBox(height: 16),
-                _buildBenefitCard(
-                  icon: Icons.person_add_outlined,
-                  iconColor: const Color(0xFF3B82F6), // Blue
-                  title: 'onboarding.benefit_username_title'.tr(),
-                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Buttons section - Platform specific
+                    // iOS: Show both Apple and Google
+                    // Android: Only show Google
+                    if (Platform.isIOS) ...[
+                      _buildSignInButton(
+                        context: context,
+                        onPressed: () => _signUpWithApple(context),
+                        backgroundColor: const Color(0xFF1F2937), // Dark gray/black
+                        foregroundColor: Colors.white,
+                        icon: Icons.apple,
+                        label: 'auth.sign_in_apple'.tr(),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
 
-                const Spacer(),
+                    _buildSignInButton(
+                      context: context,
+                      onPressed: () => _signUpWithGoogle(context),
+                      backgroundColor: const Color(0xFFDB4437), // Google red
+                      foregroundColor: Colors.white,
+                      customIcon: Image.asset(
+                        'assets/icons/google.png',
+                        height: 20,
+                        width: 20,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.g_mobiledata,
+                            size: 22,
+                            color: Colors.white,
+                          );
+                        },
+                      ),
+                      label: 'auth.sign_in_google'.tr(),
+                      hasBorder: false,
+                    ),
 
-                // Buttons section - Platform specific
-                // iOS: Show both Apple and Google
-                // Android: Only show Google
-                if (Platform.isIOS) ...[
-                  _buildSignInButton(
-                    context: context,
-                    onPressed: () => _signUpWithApple(context),
-                    backgroundColor: const Color(0xFF1F2937), // Dark gray/black
-                    foregroundColor: Colors.white,
-                    icon: Icons.apple,
-                    label: 'auth.sign_in_apple'.tr(),
-                  ),
-                  const SizedBox(height: 14),
-                ],
+                    const SizedBox(height: 20),
 
-                _buildSignInButton(
-                  context: context,
-                  onPressed: () => _signUpWithGoogle(context),
-                  backgroundColor: const Color(0xFFDB4437), // Google red
-                  foregroundColor: Colors.white,
-                  customIcon: Image.asset(
-                    'assets/icons/google.png',
-                    height: 20,
-                    width: 20,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.g_mobiledata,
-                        size: 22,
-                        color: Colors.white,
-                      );
-                    },
-                  ),
-                  label: 'auth.sign_in_google'.tr(),
-                  hasBorder: false,
-                ),
-
-                const SizedBox(height: 28),
-
-                // Skip button
-                Center(
-                  child: TextButton(
-                    onPressed: () => _skipAccountCreation(context),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 24,
+                    // Skip button
+                    Center(
+                      child: TextButton(
+                        onPressed: () => _skipAccountCreation(context),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 24,
+                          ),
+                        ),
+                        child: Text(
+                          'onboarding.skip_for_now'.tr(),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
                     ),
-                    child: Text(
-                      'onboarding.skip_for_now'.tr(),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -501,9 +531,9 @@ class _AccountCreationStepState extends State<AccountCreationStep>
     );
 
     try {
-      // Generate username
-      final username = _generateAnonymousUsername();
-      debugPrint('Generated anonymous username: $username');
+      // Generate unique username with collision check
+      final username = await _generateUniqueAnonymousUsername(onboarding);
+      debugPrint('✅ Generated unique anonymous username: $username');
 
       onboarding.setGeneratedUsername(username);
       onboarding.setSkipUsernameStep(true);
@@ -553,5 +583,53 @@ class _AccountCreationStepState extends State<AccountCreationStep>
     final random = Random();
     final digits = 1000000 + random.nextInt(9000000);
     return 'user$digits';
+  }
+
+  /// Generate unique anonymous username with collision check
+  Future<String> _generateUniqueAnonymousUsername(
+    OnboardingService onboarding,
+  ) async {
+    const maxAttempts = 10;
+    int attempts = 0;
+
+    while (attempts < maxAttempts) {
+      attempts++;
+      final username = _generateAnonymousUsername();
+
+      debugPrint(
+        '🎲 Checking username availability (attempt $attempts/$maxAttempts): $username',
+      );
+
+      try {
+        await onboarding.checkUsernameAvailability(username);
+
+        // Check if username is available
+        if (onboarding.usernameCheckResult == 'Available') {
+          debugPrint('✅ Username available: $username');
+          return username;
+        } else {
+          debugPrint(
+            '❌ Username taken: $username (${onboarding.usernameCheckResult})',
+          );
+          // Try again with a different username
+          continue;
+        }
+      } catch (e) {
+        debugPrint('❌ Error checking username: $e');
+        // If there's an error checking, we'll retry
+        if (attempts < maxAttempts) {
+          await Future.delayed(Duration(milliseconds: 500 * attempts));
+          continue;
+        }
+        // On final attempt, throw the error
+        rethrow;
+      }
+    }
+
+    // Fallback: if we couldn't find a unique username after max attempts,
+    // throw an error
+    throw Exception(
+      'Failed to generate unique username after $maxAttempts attempts',
+    );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:easy_localization/easy_localization.dart';
 import '../services/friends_service.dart';
 import '../models/friend.dart';
 import '../theme/app_theme.dart';
@@ -119,7 +120,7 @@ class _SearchScreenState extends State<SearchScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Friend request sent to ${user.displayName}'),
+            content: Text('friends.request_sent'.tr(namedArgs: {'name': user.displayName})),
             backgroundColor: Colors.green.shade400,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -132,7 +133,55 @@ class _SearchScreenState extends State<SearchScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error sending friend request: $e'),
+            content: Text('friends.error_sending_request'.tr()),
+            backgroundColor: Colors.red.shade400,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _cancelFriendRequest(UserSearchResult user) async {
+    try {
+      await _friendsService.cancelFriendRequest(user.id);
+
+      // Update the user in the results list
+      setState(() {
+        final index = _userSearchResults.indexWhere((u) => u.id == user.id);
+        if (index != -1) {
+          _userSearchResults[index] = UserSearchResult(
+            id: user.id,
+            username: user.username,
+            fullName: user.fullName,
+            avatarUrl: user.avatarUrl,
+            bio: user.bio,
+            friendshipStatus: null,
+            requestDirection: null,
+          );
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('friends.request_cancelled'.tr()),
+            backgroundColor: Colors.orange.shade400,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('friends.error_cancelling_request'.tr()),
             backgroundColor: Colors.red.shade400,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -465,34 +514,21 @@ class _SearchScreenState extends State<SearchScreen> {
 
     if (user.hasPendingRequest) {
       if (user.requestSentByMe) {
-        return Container(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.orange.shade50,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: Colors.orange.shade200,
-              width: 1,
-            ),
+        return OutlinedButton.icon(
+          onPressed: () => _cancelFriendRequest(user),
+          icon: Icon(Icons.close, size: 14),
+          label: Text(
+            'friends.cancel_request'.tr(),
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.schedule,
-                size: 14,
-                color: Colors.orange.shade700,
-              ),
-              SizedBox(width: 4),
-              Text(
-                'Pending',
-                style: TextStyle(
-                  color: Colors.orange.shade700,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.orange.shade700,
+            side: BorderSide(color: Colors.orange.shade300),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            minimumSize: Size(0, 32),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
       } else {
@@ -632,7 +668,7 @@ class _SearchScreenState extends State<SearchScreen> {
       return OutlinedButton.icon(
         onPressed: () {},
         icon: Icon(Icons.check_circle_outline),
-        label: Text('Already Friends'),
+        label: Text('friends.already_friends'.tr()),
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.green.shade700,
           side: BorderSide(color: Colors.green.shade300),
@@ -646,9 +682,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
     if (user.hasPendingRequest && user.requestSentByMe) {
       return OutlinedButton.icon(
-        onPressed: () {},
-        icon: Icon(Icons.schedule),
-        label: Text('Request Pending'),
+        onPressed: () {
+          Navigator.pop(context);
+          _cancelFriendRequest(user);
+        },
+        icon: Icon(Icons.close),
+        label: Text('friends.cancel_request'.tr()),
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.orange.shade700,
           side: BorderSide(color: Colors.orange.shade300),
@@ -666,7 +705,7 @@ class _SearchScreenState extends State<SearchScreen> {
         _sendFriendRequest(user);
       },
       icon: Icon(Icons.person_add),
-      label: Text('Add Friend'),
+      label: Text('friends.add_friend'.tr()),
       style: FilledButton.styleFrom(
         backgroundColor: AppTheme.primaryAccent,
         foregroundColor: Colors.white,

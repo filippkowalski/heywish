@@ -85,27 +85,29 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
             ],
             bottom: TabBar(
               controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
               tabs: [
                 Tab(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.people),
-                      SizedBox(width: 8),
+                      Icon(Icons.people, size: 20),
+                      SizedBox(width: 6),
                       Text('Friends'),
                       if (friendsService.friends.isNotEmpty) ...[
                         SizedBox(width: 4),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                           decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.primary,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             '${friendsService.friends.length}',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 12,
+                              fontSize: 11,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -118,22 +120,22 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.inbox),
-                      SizedBox(width: 8),
+                      Icon(Icons.inbox, size: 20),
+                      SizedBox(width: 6),
                       Text('Requests'),
                       if (friendsService.friendRequests.isNotEmpty) ...[
                         SizedBox(width: 4),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                           decoration: BoxDecoration(
                             color: Colors.orange.shade600,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             '${friendsService.friendRequests.length}',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 12,
+                              fontSize: 11,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -146,22 +148,22 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.send),
-                      SizedBox(width: 8),
+                      Icon(Icons.send, size: 20),
+                      SizedBox(width: 6),
                       Text('Sent'),
                       if (friendsService.sentRequests.isNotEmpty) ...[
                         SizedBox(width: 4),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                           decoration: BoxDecoration(
                             color: Colors.blue.shade600,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             '${friendsService.sentRequests.length}',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 12,
+                              fontSize: 11,
                               fontWeight: FontWeight.bold,
                             ),
                           ),

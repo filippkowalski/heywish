@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../services/auth_service.dart';
@@ -146,6 +147,13 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                         ),
                       ),
                     ),
+
+                    // Public URL section
+                    if (_isProfilePublic) ...[
+                      const SizedBox(height: 24),
+                      _buildPublicUrlSection(context),
+                    ],
+
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -239,6 +247,94 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
               onChanged: onChanged,
               activeColor: AppTheme.primaryAccent,
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPublicUrlSection(BuildContext context) {
+    final authService = context.watch<AuthService>();
+    final username = authService.currentUser?.username ?? '';
+    final publicUrl = 'jinnie.co/@$username';
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: AppTheme.primaryAccent.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.link,
+                color: AppTheme.primaryAccent,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'profile.public_url'.tr(),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF2F2F7),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    publicUrl,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.primaryAccent,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.copy, size: 20),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: 'https://$publicUrl'));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('profile.url_copied'.tr()),
+                        backgroundColor: AppTheme.primaryAccent,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  color: AppTheme.primaryAccent,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'profile.public_url_description'.tr(),
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF8E8E93),
+              height: 1.4,
+            ),
+          ),
         ],
       ),
     );

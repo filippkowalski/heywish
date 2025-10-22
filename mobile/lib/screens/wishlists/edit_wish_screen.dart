@@ -194,8 +194,11 @@ class _EditWishScreenState extends State<EditWishScreen> {
           _isCompressingImage = true;
         });
 
-        final compressedFile = await _imageCacheService.compressImage(
-          File(image.path),
+        final compressedFile = await _imageCacheService.compressAndCacheImage(
+          imageFile: File(image.path),
+          quality: 85,
+          maxWidth: 1920,
+          maxHeight: 1080,
         );
 
         setState(() {
@@ -236,8 +239,10 @@ class _EditWishScreenState extends State<EditWishScreen> {
 
       // Handle image upload
       if (_selectedImage != null) {
-        final imageUrl = await apiService.uploadImage(_selectedImage!);
-        images = [imageUrl];
+        final imageUrl = await apiService.uploadWishImage(imageFile: _selectedImage!);
+        if (imageUrl != null) {
+          images = [imageUrl];
+        }
       } else if (_existingImageUrl != null) {
         // Keep existing image
         images = [_existingImageUrl!];

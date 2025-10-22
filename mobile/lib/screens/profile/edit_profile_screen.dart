@@ -38,6 +38,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+
+    // Add listeners to update button state when text changes
+    _fullNameController.addListener(_updateButtonState);
+    _bioController.addListener(_updateButtonState);
   }
 
   void _loadUserData() {
@@ -51,6 +55,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _avatarUrl = user.avatarUrl;
       _originalUsername = user.username;
     }
+  }
+
+  void _updateButtonState() {
+    setState(() {
+      // Just trigger a rebuild to update _canSave
+    });
   }
 
   /// Validate username according to Instagram-style rules
@@ -277,6 +287,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   void dispose() {
+    _fullNameController.removeListener(_updateButtonState);
+    _bioController.removeListener(_updateButtonState);
     _fullNameController.dispose();
     _usernameController.dispose();
     _bioController.dispose();
@@ -289,12 +301,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (_usernameValidationError != null) return false;
 
     // If username changed, it must be available
-    if (_usernameController.text != _originalUsername) {
+    if (_usernameController.text.trim() != _originalUsername) {
       if (_usernameCheckResult != 'Available') return false;
     }
 
     // Full name is required
     if (_fullNameController.text.trim().isEmpty) return false;
+
+    // Check if anything has changed
+    final authService = context.read<AuthService>();
+    final user = authService.currentUser;
+    if (user != null) {
+      final hasChanges =
+        _fullNameController.text.trim() != (user.name ?? '') ||
+        _usernameController.text.trim() != (user.username ?? '') ||
+        _bioController.text.trim() != (user.bio ?? '') ||
+        _selectedImage != null;
+
+      if (!hasChanges) return false;
+    }
 
     return true;
   }
@@ -320,13 +345,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           onPressed: _isLoading ? null : () => Navigator.pop(context),
         ),
       ),
-      body: Stack(
+      body: Column(
         children: [
-          Form(
-            key: _formKey,
-            child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
+          Expanded(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                children: [
               // Avatar section
               Center(
                 child: Stack(
@@ -492,51 +518,55 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                 ),
               ),
+                ],
+              ),
+            ),
+          ),
 
-              const SizedBox(height: 32),
-
-              // Save button
-              ElevatedButton(
+          // Fixed save button at bottom
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              24.0,
+              0.0,
+              24.0,
+              MediaQuery.of(context).padding.bottom + 16.0,
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: 62,
+              child: ElevatedButton(
                 onPressed: _isLoading || !_canSave ? null : _saveProfile,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryAccent,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  disabledBackgroundColor: const Color(0xFFE5E5EA),
+                  disabledForegroundColor: const Color(0xFF8E8E93),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  disabledBackgroundColor: AppTheme.primaryAccent.withOpacity(0.4),
-                ),
-                child: Text(
-                  'profile.save_changes'.tr(),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-
-        // Loading overlay
-        if (_isLoading)
-          Container(
-            color: Colors.black.withOpacity(0.5),
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const CircularProgressIndicator(),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        'profile.save_changes'.tr(),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
             ),
           ),
-      ],
-    ),
+        ],
+      ),
     );
   }
 }

@@ -74,6 +74,7 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
   const [banner, setBanner] = useState<string | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [activeWish, setActiveWish] = useState<Wish | null>(null);
   const [formValues, setFormValues] = useState<ReservationForm>({
     name: "",
@@ -426,9 +427,11 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
     [wishlist]
   );
 
-  const availableWishes = allWishes.filter((wish) => wish.status === "available");
-  const reservedWishes = allWishes.filter((wish) => wish.status === "reserved");
-  const purchasedWishes = allWishes.filter((wish) => wish.status === "purchased");
+  const displayWishes = useMemo(() =>
+    allWishes.filter((wish) => wish.status !== "purchased"),
+    [allWishes]
+  );
+
   const verifiedEmail = authUser?.emailVerified ? authUser.email ?? null : null;
   const viewerUid = authUser?.uid ?? null;
 
@@ -541,62 +544,37 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
           </button>
         ) : null}
 
-        {availableWishes.length === 0 ? (
+        {displayWishes.length === 0 ? (
           <Card className="bg-muted/40">
             <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
               <Gift className="h-10 w-10 text-muted-foreground" />
               <div>
-                <h2 className="text-lg font-semibold">Nothing left to reserve</h2>
+                <h2 className="text-lg font-semibold">No wishes yet</h2>
                 <p className="text-sm text-muted-foreground">
-                  All wishes have been claimed. Check back soon or ask for another list.
+                  This wishlist is empty. Check back soon!
                 </p>
               </div>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
-            <h2 className="text-lg font-semibold">Available wishes</h2>
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {availableWishes.map((wish) => (
-                <WishCard
-                  key={wish.id}
-                  wish={wish}
-                  onReserve={() => startReservation(wish)}
-                  reserving={submitting && activeWish?.id === wish.id}
-                />
-              ))}
-            </div>
+          <div className="columns-1 gap-4 space-y-4 sm:columns-2 lg:columns-3 xl:columns-4">
+            {displayWishes.map((wish) => (
+              <WishCard
+                key={wish.id}
+                wish={wish}
+                onClick={() => {
+                  setActiveWish(wish);
+                  setDetailDialogOpen(true);
+                }}
+                onReserve={() => startReservation(wish)}
+                onCancel={viewerUid != null && wish.reservedByUid === viewerUid ? () => handleCancelReservation(wish) : undefined}
+                reserving={submitting && activeWish?.id === wish.id}
+                cancelling={cancellingIds.has(wish.id)}
+                isMine={viewerUid != null && wish.reservedByUid === viewerUid}
+              />
+            ))}
           </div>
         )}
-
-        {reservedWishes.length > 0 ? (
-          <div className="mt-12 space-y-4">
-            <h2 className="text-base font-semibold text-muted-foreground">Already reserved</h2>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {reservedWishes.map((wish) => (
-                <WishStatusCard
-                  key={wish.id}
-                  wish={wish}
-                  statusLabel="Reserved"
-                  isMine={viewerUid != null && wish.reservedByUid === viewerUid}
-                  onCancel={viewerUid != null && wish.reservedByUid === viewerUid ? () => handleCancelReservation(wish) : undefined}
-                  cancelling={cancellingIds.has(wish.id)}
-                />
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {purchasedWishes.length > 0 ? (
-          <div className="mt-10 space-y-4">
-            <h2 className="text-base font-semibold text-muted-foreground">Purchased</h2>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {purchasedWishes.map((wish) => (
-                <WishStatusCard key={wish.id} wish={wish} statusLabel="Purchased" />
-              ))}
-            </div>
-          </div>
-        ) : null}
       </section>
 
       <ReservationDialog
@@ -611,6 +589,21 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
         notice={formNotice}
         verifiedEmail={verifiedEmail}
         authReady={authInitialized}
+      />
+
+      <WishDetailDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        wish={activeWish}
+        onReserve={() => {
+          setDetailDialogOpen(false);
+          startReservation(activeWish!);
+        }}
+        onCancel={viewerUid != null && activeWish?.reservedByUid === viewerUid ? () => {
+          setDetailDialogOpen(false);
+          handleCancelReservation(activeWish!);
+        } : undefined}
+        isMine={viewerUid != null && activeWish?.reservedByUid === viewerUid}
       />
     </main>
   );
@@ -632,145 +625,127 @@ function formatPrice(amount?: number, currency: string = "USD") {
 
 function WishCard({
   wish,
+  onClick,
   onReserve,
+  onCancel,
   reserving,
+  cancelling,
+  isMine,
 }: {
   wish: Wish;
+  onClick: () => void;
   onReserve: () => void;
+  onCancel?: () => void;
   reserving: boolean;
+  cancelling?: boolean;
+  isMine?: boolean;
 }) {
   const coverImage = wish.images?.[0];
   const price = formatPrice(wish.price, wish.currency);
+  const isReserved = wish.status === "reserved";
 
   return (
-    <Card className="flex flex-col overflow-hidden border border-border/60">
-      {coverImage ? (
-        <div className="relative h-40 w-full bg-muted">
-          <Image
-            src={coverImage}
-            alt={wish.title}
-            fill
-            className="object-cover"
-            sizes="(min-width: 1280px) 25vw, (min-width: 768px) 40vw, 100vw"
-            onError={(event) => {
-              event.currentTarget.style.display = "none";
-            }}
-          />
-        </div>
-      ) : null}
+    <Card className="flex flex-col overflow-hidden border border-border/40 break-inside-avoid-column mb-4 hover:border-border hover:shadow-lg transition-all cursor-pointer group">
+      <div onClick={onClick}>
+        {coverImage ? (
+          <div className="relative w-full bg-muted">
+            <Image
+              src={coverImage}
+              alt={wish.title}
+              width={400}
+              height={400}
+              className="w-full h-auto object-cover group-hover:opacity-90 transition-opacity"
+              sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 40vw, 90vw"
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+              }}
+            />
+            {isReserved && (
+              <div className="absolute top-3 right-3">
+                <Badge variant="secondary" className="bg-black/70 text-white border-0 backdrop-blur-sm text-xs px-3 py-1">
+                  {isMine ? "Reserved by you" : "Reserved"}
+                </Badge>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="relative w-full bg-muted/30 flex items-center justify-center" style={{ minHeight: '240px' }}>
+            <Gift className="h-16 w-16 text-muted-foreground/30" />
+            {isReserved && (
+              <div className="absolute top-3 right-3">
+                <Badge variant="secondary" className="bg-black/70 text-white border-0 backdrop-blur-sm text-xs px-3 py-1">
+                  {isMine ? "Reserved by you" : "Reserved"}
+                </Badge>
+              </div>
+            )}
+          </div>
+        )}
 
-      <CardHeader className="space-y-2">
-        <CardTitle className="text-base leading-tight">{wish.title}</CardTitle>
-        {wish.description ? (
-          <p className="text-sm text-muted-foreground line-clamp-2">{wish.description}</p>
-        ) : null}
-      </CardHeader>
-
-      <CardContent className="mt-auto space-y-4">
-        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          {price ? <span className="font-medium text-foreground">{price}</span> : null}
-          {wish.url ? (
-            <a
-              href={wish.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-primary hover:underline"
-            >
-              View item
-            </a>
-          ) : null}
-        </div>
-
-        <Button
-          onClick={onReserve}
-          disabled={reserving}
-          className="w-full"
-        >
-          {reserving ? (
-            <span className="inline-flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Reserving…
-            </span>
-          ) : (
-            "Reserve"
-          )}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
-function WishStatusCard({
-  wish,
-  statusLabel,
-  isMine = false,
-  onCancel,
-  cancelling = false,
-}: {
-  wish: Wish;
-  statusLabel: string;
-  isMine?: boolean;
-  onCancel?: () => void;
-  cancelling?: boolean;
-}) {
-  const price = formatPrice(wish.price, wish.currency);
-  const badgeLabel = isMine ? "Reserved · You" : statusLabel;
-
-  return (
-    <Card className="border border-dashed border-border/60 bg-muted/30">
-      <CardHeader className="space-y-1 pb-2">
-        <CardTitle className="text-base">{wish.title}</CardTitle>
-        <Badge variant="outline" className="w-fit text-xs uppercase">
-          {badgeLabel}
-        </Badge>
-      </CardHeader>
-      <CardContent className="space-y-2 text-sm text-muted-foreground">
-        {wish.description ? <p>{wish.description}</p> : null}
-        <div className="flex flex-wrap gap-3 text-xs">
-          {price ? <span>{price}</span> : null}
-          {wish.url ? (
-            <a
-              href={wish.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-primary hover:underline"
-            >
-              View item
-            </a>
-          ) : null}
-        </div>
-        {(wish.reserverName || wish.reservedMessage) ? (
-          <div className="space-y-1 text-xs text-muted-foreground">
-            {wish.reserverName ? (
-              <p>
-                Reserved by <span className="font-medium text-foreground">{wish.reserverName}</span>
+        <CardContent className="p-4 space-y-2">
+          <div className="space-y-1">
+            <h3 className="font-semibold text-base leading-tight group-hover:underline">
+              {wish.title}
+            </h3>
+            {wish.description && (
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {wish.description}
               </p>
-            ) : null}
-            {wish.reservedMessage ? (
-              <p className="italic">“{wish.reservedMessage}”</p>
-            ) : null}
+            )}
           </div>
-        ) : null}
-        {isMine && onCancel ? (
-          <div className="pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onCancel}
-              disabled={cancelling}
-              className="gap-2"
-            >
-              {cancelling ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Cancelling…
-                </>
-              ) : (
-                "Cancel reservation"
-              )}
-            </Button>
-          </div>
-        ) : null}
+
+          {price && (
+            <div className="text-sm font-semibold text-foreground">
+              {price}
+            </div>
+          )}
+        </CardContent>
+      </div>
+
+      <CardContent className="px-4 pb-4 pt-0 mt-auto">
+        {isReserved ? (
+          <>
+            {isMine && onCancel && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCancel();
+                }}
+                disabled={cancelling}
+                className="w-full"
+              >
+                {cancelling ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Cancelling…
+                  </span>
+                ) : (
+                  "Cancel reservation"
+                )}
+              </Button>
+            )}
+          </>
+        ) : (
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onReserve();
+            }}
+            disabled={reserving}
+            className="w-full"
+            size="sm"
+          >
+            {reserving ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Reserving…
+              </span>
+            ) : (
+              "Reserve"
+            )}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
@@ -903,6 +878,156 @@ function ReservationDialog({
             </Button>
           </DialogFooter>
         </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function WishDetailDialog({
+  open,
+  onOpenChange,
+  wish,
+  onReserve,
+  onCancel,
+  isMine,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  wish: Wish | null;
+  onReserve: () => void;
+  onCancel?: () => void;
+  isMine?: boolean;
+}) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  if (!wish) return null;
+
+  const images = wish.images ?? [];
+  const price = formatPrice(wish.price, wish.currency);
+  const isReserved = wish.status === "reserved";
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">{wish.title}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {images.length > 0 && (
+            <div className="space-y-3">
+              <div className="relative w-full bg-muted rounded-lg overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                <Image
+                  src={images[currentImageIndex]}
+                  alt={wish.title}
+                  fill
+                  className="object-contain"
+                  sizes="(min-width: 768px) 50vw, 90vw"
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                  }}
+                />
+                {isReserved && (
+                  <div className="absolute top-4 right-4">
+                    <Badge variant="secondary" className="bg-black/80 text-white border-0 backdrop-blur-sm px-4 py-2">
+                      {isMine ? "Reserved by you" : "Reserved"}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+
+              {images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentImageIndex(idx)}
+                      className={`relative flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 transition-all ${
+                        idx === currentImageIndex
+                          ? 'border-primary'
+                          : 'border-border hover:border-border/60'
+                      }`}
+                    >
+                      <Image
+                        src={img}
+                        alt={`${wish.title} - Image ${idx + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="80px"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {price && (
+              <div className="text-3xl font-bold">{price}</div>
+            )}
+
+            {wish.description && (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-lg">Description</h3>
+                <p className="text-muted-foreground leading-relaxed">{wish.description}</p>
+              </div>
+            )}
+
+            {wish.url && (
+              <div className="pt-2">
+                <a
+                  href={wish.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
+                >
+                  View product details →
+                </a>
+              </div>
+            )}
+
+            {isReserved && (wish.reserverName || wish.reservedMessage) && (
+              <div className="space-y-2 pt-4 border-t">
+                <h3 className="font-semibold text-sm text-muted-foreground">Reservation Details</h3>
+                {wish.reserverName && (
+                  <p className="text-sm">
+                    Reserved by <span className="font-medium">{wish.reserverName}</span>
+                  </p>
+                )}
+                {wish.reservedMessage && (
+                  <p className="text-sm italic text-muted-foreground">
+                    "{wish.reservedMessage}"
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter className="flex gap-2">
+          {isReserved ? (
+            <>
+              {isMine && onCancel && (
+                <Button variant="outline" onClick={onCancel} className="flex-1">
+                  Cancel reservation
+                </Button>
+              )}
+              <Button variant="secondary" onClick={() => onOpenChange(false)} className="flex-1">
+                Close
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+                Close
+              </Button>
+              <Button onClick={onReserve} className="flex-1">
+                Reserve this item
+              </Button>
+            </>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

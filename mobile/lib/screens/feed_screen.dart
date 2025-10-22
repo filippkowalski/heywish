@@ -113,6 +113,7 @@ class _FeedScreenState extends State<FeedScreen> {
             feedItems.add(FeedItem(
               id: activity.id,
               friendName: activity.fullName ?? activity.username,
+              friendUsername: activity.username,
               friendAvatar: activity.avatarUrl,
               wishTitle: activity.data['wish_title'] ?? 'Unknown Item',
               wishImage: activity.data['wish_image'],
@@ -190,6 +191,7 @@ class _FeedScreenState extends State<FeedScreen> {
           feedItems.add(FeedItem(
             id: wish['id'],
             friendName: fullName,
+            friendUsername: 'jinnie',
             friendAvatar: avatarUrl,
             wishTitle: wish['title'] ?? 'Unknown Item',
             wishImage: imageUrl,
@@ -822,54 +824,66 @@ class _FeedScreenState extends State<FeedScreen> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: item.friendAvatar == null
-                      ? Theme.of(context).colorScheme.surfaceContainerHighest
-                      : Colors.transparent,
-                  backgroundImage: item.friendAvatar != null
-                      ? NetworkImage(item.friendAvatar!)
-                      : null,
-                  child: item.friendAvatar == null
-                      ? Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
-                              width: 1,
+                // Clickable avatar
+                GestureDetector(
+                  onTap: () {
+                    context.push('/profile/${item.friendUsername}');
+                  },
+                  child: CircleAvatar(
+                    radius: 20,
+                    backgroundColor: item.friendAvatar == null
+                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                        : Colors.transparent,
+                    backgroundImage: item.friendAvatar != null
+                        ? NetworkImage(item.friendAvatar!)
+                        : null,
+                    child: item.friendAvatar == null
+                        ? Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                                width: 1,
+                              ),
                             ),
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.person,
-                              size: 20,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            child: Center(
+                              child: Icon(
+                                Icons.person,
+                                size: 20,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
                             ),
-                          ),
-                        )
-                      : null,
+                          )
+                        : null,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      RichText(
-                        text: TextSpan(
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppTheme.primary,
+                      // Clickable username
+                      GestureDetector(
+                        onTap: () {
+                          context.push('/profile/${item.friendUsername}');
+                        },
+                        child: RichText(
+                          text: TextSpan(
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: AppTheme.primary,
+                                ),
+                            children: [
+                              TextSpan(
+                                text: item.friendName,
+                                style: const TextStyle(fontWeight: FontWeight.w600),
                               ),
-                          children: [
-                            TextSpan(
-                              text: item.friendName,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                            TextSpan(
-                              text: ' ${item.action}',
-                              style: const TextStyle(fontWeight: FontWeight.normal),
-                            ),
-                          ],
+                              TextSpan(
+                                text: ' ${item.action}',
+                                style: const TextStyle(fontWeight: FontWeight.normal),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -1094,6 +1108,7 @@ class _FeedScreenState extends State<FeedScreen> {
 class FeedItem {
   final String id;
   final String friendName;
+  final String friendUsername;
   final String? friendAvatar;
   final String wishTitle;
   final String? wishImage;
@@ -1107,6 +1122,7 @@ class FeedItem {
   FeedItem({
     required this.id,
     required this.friendName,
+    required this.friendUsername,
     this.friendAvatar,
     required this.wishTitle,
     this.wishImage,

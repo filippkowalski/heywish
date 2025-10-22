@@ -15,34 +15,52 @@ import FirebaseMessaging
     // Register Flutter plugins
     GeneratedPluginRegistrant.register(with: self)
 
-    // Request notification permissions (iOS 10+)
+    // Set up notification center delegate and FCM delegate
+    // BUT DO NOT request permissions here - let Flutter handle it during onboarding
     if #available(iOS 10.0, *) {
       UNUserNotificationCenter.current().delegate = self
-
-      let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
-      UNUserNotificationCenter.current().requestAuthorization(
-        options: authOptions,
-        completionHandler: { granted, error in
-          if granted {
-            print("✅ Notification permission granted")
-          } else if let error = error {
-            print("❌ Notification permission error: \(error)")
-          }
-        }
-      )
-    } else {
-      let settings: UIUserNotificationSettings =
-        UIUserNotificationSettings(types: [.alert, .badge, .sound], categories: nil)
-      application.registerUserNotificationSettings(settings)
     }
-
-    // Register for remote notifications
-    application.registerForRemoteNotifications()
 
     // Set FCM messaging delegate
     Messaging.messaging().delegate = self
 
+    // Set up share extension method channel
+    if let controller = window?.rootViewController as? FlutterViewController {
+      let channel = FlutterMethodChannel(name: "com.wishlists.gifts/share",
+                                        binaryMessenger: controller.binaryMessenger)
+      channel.setMethodCallHandler { [weak self] (call, result) in
+        if call.method == "getSharedContent" {
+          self?.getSharedContent(result: result)
+        } else {
+          result(FlutterMethodNotImplemented)
+        }
+      }
+    }
+
+    // Note: We don't call registerForRemoteNotifications() here
+    // It will be called automatically when Flutter requests permissions during onboarding
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  private func getSharedContent(result: FlutterResult) {
+    let appGroupId = "group.com.wishlists.gifts"
+    let sharedKey = "JinnieSharedContent"
+
+    guard let userDefaults = UserDefaults(suiteName: appGroupId),
+          let sharedData = userDefaults.dictionary(forKey: sharedKey) else {
+      print("⚠️ No shared content found")
+      result(nil)
+      return
+    }
+
+    print("✅ Retrieved shared content: \(sharedData)")
+
+    // Clear the shared data after reading
+    userDefaults.removeObject(forKey: sharedKey)
+    userDefaults.synchronize()
+
+    result(sharedData)
   }
 
   // Handle APNs token registration
@@ -56,6 +74,45 @@ import FirebaseMessaging
   override func application(_ application: UIApplication,
                             didFailToRegisterForRemoteNotificationsWithError error: Error) {
     print("❌ Failed to register for remote notifications: \(error)")
+  }
+
+  // Handle URL schemes (e.g., from share extension)
+  override func application(_ app: UIApplication,
+                            open url: URL,
+                            options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+    print("📱 URL opened: \(url.absoluteString)")
+
+    // Check if it's from share extension
+    if url.scheme == "jinnie" && url.host == "share" {
+      print("✅ Share extension URL detected")
+
+      // Retrieve shared data from App Group
+      let appGroupId = "group.com.wishlists.gifts"
+      let sharedKey = "JinnieSharedContent"
+
+      if let userDefaults = UserDefaults(suiteName: appGroupId),
+         let sharedData = userDefaults.dictionary(forKey: sharedKey) {
+        print("✅ Retrieved shared data: \(sharedData)")
+
+        // Send to Flutter via MethodChannel
+        if let controller = window?.rootViewController as? FlutterViewController {
+          let channel = FlutterMethodChannel(name: "com.wishlists.gifts/share",
+                                            binaryMessenger: controller.binaryMessenger)
+          channel.invokeMethod("handleSharedContent", arguments: sharedData)
+          print("✅ Sent shared data to Flutter")
+        }
+
+        // Clear the shared data after processing
+        userDefaults.removeObject(forKey: sharedKey)
+        userDefaults.synchronize()
+      } else {
+        print("⚠️ No shared data found in App Group")
+      }
+
+      return true
+    }
+
+    return super.application(app, open: url, options: options)
   }
 }
 

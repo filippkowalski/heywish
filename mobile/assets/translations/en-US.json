@@ -55,9 +55,9 @@
   },
   "home": {
     "title": "My Wishlists",
-    "empty_title": "No wishlists yet",
-    "empty_subtitle": "Create your first wishlist to get started",
-    "create_first_wishlist": "Create Your First Wishlist"
+    "empty_title": "No wishes yet",
+    "empty_subtitle": "Add your first wish to get started",
+    "create_first_wish": "Add Your First Wish"
   },
   "wishlist": {
     "title": "Wishlist",

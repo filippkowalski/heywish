@@ -125,14 +125,28 @@ class FriendsService extends ChangeNotifier {
   Future<void> sendFriendRequest(String userId) async {
     try {
       debugPrint('📤 FriendsService: Sending friend request to user: $userId');
-      
+
       await _apiService.post('/friends/request', {
         'user_id': userId,
       });
-      
+
       debugPrint('📤 FriendsService: Friend request sent successfully');
     } catch (e) {
       debugPrint('❌ FriendsService: Error sending friend request: $e');
+      rethrow;
+    }
+  }
+
+  // Cancel friend request
+  Future<void> cancelFriendRequest(String userId) async {
+    try {
+      debugPrint('🗑️ FriendsService: Cancelling friend request to user: $userId');
+
+      await _apiService.delete('/friends/request/$userId');
+
+      debugPrint('🗑️ FriendsService: Friend request cancelled successfully');
+    } catch (e) {
+      debugPrint('❌ FriendsService: Error cancelling friend request: $e');
       rethrow;
     }
   }

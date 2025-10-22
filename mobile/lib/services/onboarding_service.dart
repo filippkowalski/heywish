@@ -6,8 +6,8 @@ import '../models/user.dart';
 
 enum OnboardingStep {
   welcome,
-  profileDetails, // Deepen engagement
-  shoppingInterests, // Visual category selector
+  shoppingInterests, // Visual category selector - fun and engaging first
+  profileDetails, // Deepen engagement after interests
   notifications, // Enable connection
   accountCreation, // Strike while motivation is high
   checkUserStatus, // Check if existing user after auth
@@ -104,12 +104,12 @@ class OnboardingService extends ChangeNotifier {
     final previousStep = _currentStep;
     switch (_currentStep) {
       case OnboardingStep.welcome:
-        _currentStep = OnboardingStep.profileDetails;
-        break;
-      case OnboardingStep.profileDetails:
         _currentStep = OnboardingStep.shoppingInterests;
         break;
       case OnboardingStep.shoppingInterests:
+        _currentStep = OnboardingStep.profileDetails;
+        break;
+      case OnboardingStep.profileDetails:
         _currentStep = OnboardingStep.notifications;
         break;
       case OnboardingStep.notifications:
@@ -151,14 +151,14 @@ class OnboardingService extends ChangeNotifier {
       case OnboardingStep.welcome:
         // Can't go back from first step
         break;
-      case OnboardingStep.profileDetails:
-        // Can't go back from profile details (first step after welcome)
-        break;
       case OnboardingStep.shoppingInterests:
-        _currentStep = OnboardingStep.profileDetails;
+        // Can't go back from shopping interests (first step after welcome)
+        break;
+      case OnboardingStep.profileDetails:
+        _currentStep = OnboardingStep.shoppingInterests;
         break;
       case OnboardingStep.notifications:
-        _currentStep = OnboardingStep.shoppingInterests;
+        _currentStep = OnboardingStep.profileDetails;
         break;
       case OnboardingStep.accountCreation:
         _currentStep = OnboardingStep.notifications;

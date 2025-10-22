@@ -74,43 +74,37 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
   }
 
   Future<void> _completeOnboardingAndNavigate() async {
-    final onboardingService = context.read<OnboardingService>();
     final authService = context.read<AuthService>();
-    final messenger = ScaffoldMessenger.of(context);
+    final onboardingService = context.read<OnboardingService>();
     final router = GoRouter.of(context);
 
-    // Prevent duplicate calls while loading
-    if (onboardingService.isLoading) {
-      debugPrint('⚠️  OnboardingCompleteStep: Already loading, skipping duplicate call');
-      return;
-    }
-
     try {
-      // Attempt to complete onboarding (this will update the profile)
-      final success = await onboardingService.completeOnboarding();
+      // If user skipped username step (anonymous), save profile now
+      if (onboardingService.shouldSkipUsernameStep) {
+        debugPrint('🔄 OnboardingCompleteStep: Saving anonymous user profile...');
+        final success = await onboardingService.completeOnboarding();
+        if (!success) {
+          debugPrint('❌ OnboardingCompleteStep: Failed to save anonymous profile');
+          return;
+        }
+      }
+
+      // Profile has already been saved when user completed username step (for non-anonymous)
+      // Just mark onboarding as completed and navigate to home
+      await authService.markOnboardingCompleted();
+      debugPrint('✅ OnboardingCompleteStep: Onboarding marked as completed');
 
       if (!mounted) {
         return;
       }
 
-      if (success) {
-        // Mark onboarding as completed and navigate to home
-        await authService.markOnboardingCompleted();
-        debugPrint('✅ OnboardingCompleteStep: Onboarding marked as completed');
-        router.go('/home');
-      } else {
-        // Show error message if completion failed
-        final message =
-            onboardingService.error ??
-            'Failed to save your profile. Please try again.';
-        messenger.showSnackBar(SnackBar(content: Text(message)));
-      }
+      router.go('/home');
     } catch (e) {
-      debugPrint('❌ OnboardingCompleteStep: Error completing onboarding: $e');
+      debugPrint('❌ OnboardingCompleteStep: Error navigating to home: $e');
       if (!mounted) {
         return;
       }
-      messenger.showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Something went wrong. Please try again.'),
         ),
@@ -393,12 +387,8 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
                         ),
                       ),
                     PrimaryButton(
-                      onPressed:
-                          onboardingService.isLoading
-                              ? null
-                              : _completeOnboardingAndNavigate,
+                      onPressed: _completeOnboardingAndNavigate,
                       text: 'onboarding.start_wishing'.tr(),
-                      isLoading: onboardingService.isLoading,
                     ),
                   ],
                 ),

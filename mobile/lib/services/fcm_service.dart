@@ -20,17 +20,10 @@ class FCMService {
       // This allows us to handle messages if permission is granted later
       _setupMessageHandlers();
 
-      // Check if we already have permission silently (without triggering prompt)
-      // If we do, register the token
-      final settings = await _messaging.getNotificationSettings();
-
-      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
-          settings.authorizationStatus == AuthorizationStatus.provisional) {
-        debugPrint('FCM: Notifications already authorized, registering token');
-        await _registerToken();
-      } else {
-        debugPrint('FCM: Notifications not authorized yet (will request during onboarding)');
-      }
+      // DON'T check or register token on initialization
+      // This prevents any accidental permission prompts on iOS
+      // Token registration will happen explicitly after permission is granted
+      debugPrint('FCM: Initialization complete (waiting for permission grant)');
     } catch (e) {
       debugPrint('FCM: Error initializing: $e');
     }

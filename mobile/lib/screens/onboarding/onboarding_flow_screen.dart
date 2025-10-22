@@ -66,9 +66,12 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                     left: 16,
                     child: IconButton(
                       onPressed: onboardingService.previousStep,
+                      padding: const EdgeInsets.all(12),
+                      constraints: const BoxConstraints(),
                       icon: const Icon(
                         Icons.arrow_back_ios,
                         color: AppColors.textPrimary,
+                        size: 20,
                       ),
                     ),
                   ),
@@ -111,10 +114,10 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     switch (currentStep) {
       case OnboardingStep.welcome:
         return const WelcomeStep();
-      case OnboardingStep.profileDetails:
-        return const ProfileDetailsStep();
       case OnboardingStep.shoppingInterests:
         return const ShoppingInterestsStep();
+      case OnboardingStep.profileDetails:
+        return const ProfileDetailsStep();
       case OnboardingStep.notifications:
         return const NotificationsStep();
       case OnboardingStep.accountCreation:
@@ -148,7 +151,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   bool _canGoBack(OnboardingStep step) {
     // Don't show back button on certain steps
     return step != OnboardingStep.welcome &&
-           step != OnboardingStep.profileDetails &&
+           step != OnboardingStep.shoppingInterests &&
            step != OnboardingStep.accountCreation &&
            step != OnboardingStep.checkUserStatus &&
            step != OnboardingStep.username &&

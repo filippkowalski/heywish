@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../services/friends_service.dart';
 import '../models/friend.dart';
-import 'package:intl/intl.dart';
 import '../widgets/cached_image.dart';
 import '../common/widgets/native_refresh_indicator.dart';
 
@@ -271,29 +272,39 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar
-              CachedAvatarImage(
-                imageUrl: activity.avatarUrl,
-                radius: 20,
-                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              // Avatar - Clickable
+              GestureDetector(
+                onTap: () {
+                  context.push('/profile/${activity.username}');
+                },
+                child: CachedAvatarImage(
+                  imageUrl: activity.avatarUrl,
+                  radius: 20,
+                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                ),
               ),
               const SizedBox(width: 12),
-              
+
               // Content
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    RichText(
-                      text: TextSpan(
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        children: [
-                          TextSpan(
-                            text: activity.userDisplayName,
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          TextSpan(text: ' ${activity.description}'),
-                        ],
+                    GestureDetector(
+                      onTap: () {
+                        context.push('/profile/${activity.username}');
+                      },
+                      child: RichText(
+                        text: TextSpan(
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          children: [
+                            TextSpan(
+                              text: activity.userDisplayName,
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            TextSpan(text: ' ${activity.description}'),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -321,7 +332,7 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
                   ],
                 ),
               ),
-              
+
               // Action icon
               _buildActionIcon(activity.activityType),
             ],

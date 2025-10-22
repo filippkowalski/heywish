@@ -126,7 +126,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Friend request sent!'),
+            content: Text('friends.request_sent'.tr(namedArgs: {'name': _userData!['username'] ?? 'User'})),
             backgroundColor: Colors.green.shade600,
           ),
         );
@@ -135,7 +135,48 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to send friend request'),
+            content: Text('friends.error_sending_request'.tr()),
+            backgroundColor: Colors.red.shade600,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSendingRequest = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _cancelFriendRequest() async {
+    if (_userData == null || _userData!['id'] == null) return;
+
+    setState(() {
+      _isSendingRequest = true;
+    });
+
+    try {
+      final friendsService = context.read<FriendsService>();
+      await friendsService.cancelFriendRequest(_userData!['id']);
+
+      // Refresh friendship status
+      await friendsService.getFriendRequests(type: 'sent');
+      await _checkFriendshipStatus();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('friends.request_cancelled'.tr()),
+            backgroundColor: Colors.orange.shade600,
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('friends.error_cancelling_request'.tr()),
             backgroundColor: Colors.red.shade600,
           ),
         );
@@ -403,33 +444,27 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     }
 
     if (_hasSentRequest) {
-      // Request already sent
-      return Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-        decoration: BoxDecoration(
-          color: Colors.orange.shade50,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.orange.shade200,
+      // We sent them a request - show cancel button
+      return OutlinedButton.icon(
+        onPressed: _isSendingRequest ? null : _cancelFriendRequest,
+        icon: _isSendingRequest
+            ? SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.orange.shade700,
+                ),
+              )
+            : const Icon(Icons.close, size: 18),
+        label: Text(_isSendingRequest ? 'Cancelling...' : 'friends.cancel_request'.tr()),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.orange.shade700,
+          side: BorderSide(color: Colors.orange.shade300),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.schedule,
-              size: 18,
-              color: Colors.orange.shade700,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Request Sent',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.orange.shade700,
-                  ),
-            ),
-          ],
         ),
       );
     }
@@ -470,7 +505,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               ),
             )
           : const Icon(Icons.person_add, size: 18),
-      label: Text(_isSendingRequest ? 'Sending...' : 'Add Friend'),
+      label: Text(_isSendingRequest ? 'Sending...' : 'friends.add_friend'.tr()),
       style: FilledButton.styleFrom(
         backgroundColor: AppTheme.primaryAccent,
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),

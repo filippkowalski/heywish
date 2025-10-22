@@ -30,6 +30,7 @@ class WishDetailScreen extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       isDismissible: true,
+      enableDrag: true,
       child: WishDetailScreen(
         wishId: wishId,
         wishlistId: wishlistId,

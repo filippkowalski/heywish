@@ -1,6 +1,7 @@
 {
   "app": {
     "title": "Jinnie",
+    "name": "Jinnie",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
@@ -16,6 +17,16 @@
     "skip": "Skip",
     "done": "Done",
     "retry": "Retry"
+  },
+  "about": {
+    "app_version": "App Version",
+    "copyright": "Copyright",
+    "legal": "Legal",
+    "terms_of_service": "Terms of Service",
+    "privacy_policy": "Privacy Policy",
+    "support": "Support",
+    "contact_us": "Contact Us",
+    "website": "Website"
   },
   "errors": {
     "not_found": "Resource not found",
@@ -76,7 +87,7 @@
     "complete_title": "Your Profile is Ready! 🎉",
     "complete_subtitle": "You now have a unique username and your own wishlist page to share with friends.",
     "anonymous_username_hint": "Sign in later to claim a custom username.",
-    "start_wishing": "Start Creating Wishlists"
+    "start_wishing": "Start Adding Wishes"
   },
   "notifications": {
     "title": "Stay in the loop 🔔",
@@ -117,9 +128,9 @@
   },
   "home": {
     "title": "Home",
-    "empty_title": "No wishlists yet",
-    "empty_subtitle": "Create your first wishlist to get started",
-    "create_first_wishlist": "Create Your First Wishlist"
+    "empty_title": "No wishes yet",
+    "empty_subtitle": "Add your first wish to get started",
+    "create_first_wish": "Add Your First Wish"
   },
   "feed": {
     "title": "Friends Activity",
@@ -156,7 +167,14 @@
     "search_placeholder": "Search friends, gifts or ideas...",
     "empty_title": "No friends yet",
     "empty_subtitle": "Connect with friends to share wishlists and discover gift ideas",
-    "add_friend": "Add Friend"
+    "add_friend": "Add Friend",
+    "cancel_request": "Cancel Request",
+    "request_pending": "Request Pending",
+    "already_friends": "Already Friends",
+    "request_sent": "Friend request sent to {name}",
+    "request_cancelled": "Friend request cancelled",
+    "error_sending_request": "Error sending friend request",
+    "error_cancelling_request": "Error cancelling friend request"
   },
   "wishlist": {
     "title": "Wishlist",
@@ -293,12 +311,6 @@
     "add_price": "Add Price",
     "choose_wishlist": "Choose Wishlist"
   },
-  "clipboard": {
-    "url_detected_title": "Link Detected",
-    "url_detected_message": "We found a link in your clipboard. Would you like to add it as a wish?",
-    "add_as_wish": "Add as Wish",
-    "not_now": "Not Now"
-  },
   "profile": {
     "title": "Profile",
     "settings": "Settings",
@@ -322,6 +334,9 @@
     "profile_public_subtitle": "Anyone can find and view your full profile",
     "profile_private": "Private Profile",
     "profile_private_subtitle": "Profile is visible but marked private until you're friends",
+    "public_url": "Your Public Profile URL",
+    "public_url_description": "Share this link with anyone to let them view your public profile",
+    "url_copied": "URL copied to clipboard",
     "help_support": "Help & Support",
     "help_subtitle": "Get help and contact support",
     "about_subtitle": "App information and terms",

@@ -87,6 +87,7 @@ export interface PublicProfileUser {
   updatedAt: string;
   wishlistCount: number;
   friendCount: number;
+  isProfilePublic?: boolean;
 }
 
 export interface PublicProfileResponse {
@@ -166,6 +167,8 @@ type RawPublicProfileUser = {
   wishlistCount?: number | string | null;
   friend_count?: number | string | null;
   friendCount?: number | string | null;
+  is_profile_public?: boolean;
+  isProfilePublic?: boolean;
 };
 
 type RawProfileTotals = {
@@ -346,6 +349,7 @@ export const api = {
             payload.user.wishlist_count ?? payload.user.wishlistCount ?? normalizedWishlists.length,
           ),
           friendCount: Number(payload.user.friend_count ?? payload.user.friendCount ?? 0),
+          isProfilePublic: payload.user.is_profile_public ?? payload.user.isProfilePublic ?? true,
         },
         wishlists: normalizedWishlists,
         totals: {

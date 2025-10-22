@@ -18,7 +18,7 @@ class User {
     this.username,
     this.avatarUrl,
     this.bio,
-    this.isProfilePublic = false,
+    this.isProfilePublic = true,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -32,7 +32,7 @@ class User {
       username: json['username'],
       avatarUrl: json['avatar_url'],
       bio: json['bio'],
-      isProfilePublic: json['is_profile_public'] ?? false,
+      isProfilePublic: json['is_profile_public'] ?? true,
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
     );
