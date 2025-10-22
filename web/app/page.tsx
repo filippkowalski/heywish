@@ -1,30 +1,128 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Apple, PlaySquare, Heart, Users, Gift } from "lucide-react";
+
+// Sample wish images from the Jinnie wishlist
+const wishImages = [
+  "https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=400",
+  "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400",
+  "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400",
+  "https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=400",
+  "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?w=400",
+  "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=400",
+  "https://images.unsplash.com/photo-1580909612062-f9e9bb933990?w=400",
+  "https://images.unsplash.com/photo-1583292650898-7d22cd27ca6f?w=400",
+  "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400",
+  "https://images.unsplash.com/photo-1591561954557-26941169b49e?w=400",
+  "https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?w=400",
+  "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=400",
+  "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=400",
+  "https://images.unsplash.com/photo-1593811167562-9cef47bfc4d7?w=400",
+  "https://images.unsplash.com/photo-1608181715578-5c7c13f88f15?w=400",
+  "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=400",
+  "https://images.unsplash.com/photo-1603006905003-be475563bc59?w=400",
+  "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=400",
+  "https://images.unsplash.com/photo-1531346878377-a5be20888e57?w=400",
+  "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400",
+  "https://images.unsplash.com/photo-1543589077-47d81606c1bf?w=400",
+  "https://images.unsplash.com/photo-1576919228236-a097c32a5cd4?w=400",
+  "https://images.unsplash.com/photo-1544552866-82bd464e7f9b?w=400",
+  "https://images.unsplash.com/photo-1585232350370-ef72a3bd0efd?w=400",
+  "https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=400",
+  "https://images.unsplash.com/photo-1602874801006-c2b5f633e0a7?w=400",
+  "https://images.unsplash.com/photo-1513805959324-96eb66ca8713?w=400",
+  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400",
+  "https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=400",
+  "https://images.unsplash.com/photo-1607081830014-f808b8954a10?w=400",
+];
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b">
-        {/* Animated gradient orbs */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -left-40 top-20 h-96 w-96 animate-float rounded-full bg-gradient-to-br from-primary/10 to-transparent blur-3xl" />
-          <div className="absolute -right-40 top-60 h-96 w-96 animate-float-delayed rounded-full bg-gradient-to-bl from-primary/10 to-transparent blur-3xl animation-delay-2000" />
-          <div className="absolute left-1/3 -bottom-40 h-96 w-96 animate-float-slow rounded-full bg-gradient-to-tr from-primary/5 to-transparent blur-3xl animation-delay-1000" />
+        {/* Animated grid background */}
+        <div className="absolute inset-0 overflow-hidden opacity-[0.15]">
+          {/* Row 1 - Moving right */}
+          <div className="flex gap-4 py-2 animate-scroll-right">
+            {[...wishImages.slice(0, 10), ...wishImages.slice(0, 10)].map((img, i) => (
+              <div key={`row1-${i}`} className="relative h-32 w-32 flex-shrink-0">
+                <Image
+                  src={img}
+                  alt=""
+                  fill
+                  className="rounded-xl object-cover"
+                  sizes="128px"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Row 2 - Moving left */}
+          <div className="flex gap-4 py-2 animate-scroll-left">
+            {[...wishImages.slice(10, 20), ...wishImages.slice(10, 20)].map((img, i) => (
+              <div key={`row2-${i}`} className="relative h-32 w-32 flex-shrink-0">
+                <Image
+                  src={img}
+                  alt=""
+                  fill
+                  className="rounded-xl object-cover"
+                  sizes="128px"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Row 3 - Moving right */}
+          <div className="flex gap-4 py-2 animate-scroll-right-slow">
+            {[...wishImages.slice(20, 30), ...wishImages.slice(0, 10)].map((img, i) => (
+              <div key={`row3-${i}`} className="relative h-32 w-32 flex-shrink-0">
+                <Image
+                  src={img}
+                  alt=""
+                  fill
+                  className="rounded-xl object-cover"
+                  sizes="128px"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Row 4 - Moving left */}
+          <div className="flex gap-4 py-2 animate-scroll-left-slow">
+            {[...wishImages.slice(5, 15), ...wishImages.slice(5, 15)].map((img, i) => (
+              <div key={`row4-${i}`} className="relative h-32 w-32 flex-shrink-0">
+                <Image
+                  src={img}
+                  alt=""
+                  fill
+                  className="rounded-xl object-cover"
+                  sizes="128px"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Row 5 - Moving right */}
+          <div className="flex gap-4 py-2 animate-scroll-right">
+            {[...wishImages.slice(15, 25), ...wishImages.slice(15, 25)].map((img, i) => (
+              <div key={`row5-${i}`} className="relative h-32 w-32 flex-shrink-0">
+                <Image
+                  src={img}
+                  alt=""
+                  fill
+                  className="rounded-xl object-cover"
+                  sizes="128px"
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Subtle gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] via-transparent to-primary/[0.03]" />
-
-        {/* Floating decorative icons */}
-        <div className="absolute inset-0 overflow-hidden">
-          <Sparkles className="absolute left-[10%] top-[20%] h-6 w-6 animate-float text-primary/20 animation-delay-500" />
-          <Heart className="absolute right-[15%] top-[30%] h-5 w-5 animate-float-delayed text-primary/15 animation-delay-1500" />
-          <Gift className="absolute left-[85%] top-[60%] h-6 w-6 animate-float-slow text-primary/20 animation-delay-3000" />
-          <Sparkles className="absolute left-[20%] bottom-[25%] h-4 w-4 animate-float text-primary/15 animation-delay-2500" />
-        </div>
+        {/* Gradient overlay to fade images */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
 
         <div className="container relative mx-auto flex min-h-[85vh] flex-col items-center justify-center px-4 py-24 text-center md:px-6 md:py-32">
           <div className="mx-auto max-w-4xl space-y-10">
@@ -83,65 +181,6 @@ export default function HomePage() {
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
             <div className="h-10 w-6 rounded-full border-2 border-primary/20">
               <div className="mx-auto mt-2 h-1.5 w-1.5 rounded-full bg-primary/40" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* App Preview Section */}
-      <section className="relative overflow-hidden border-b bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto px-4 py-20 md:px-6 md:py-32">
-          <div className="mx-auto max-w-6xl">
-            <div className="mb-16 text-center">
-              <h2 className="font-poppins text-3xl font-semibold tracking-tight md:text-4xl lg:text-5xl">
-                Beautiful wishlists,{" "}
-                <span className="text-primary">right in your pocket</span>
-              </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-                Experience seamless wishlist management with our intuitive mobile app
-              </p>
-            </div>
-
-            {/* Phone Mockup - Placeholder for screenshots */}
-            <div className="relative mx-auto max-w-4xl">
-              <div className="flex items-center justify-center gap-8">
-                {/* Center Phone */}
-                <div className="relative animate-float-slow">
-                  <div className="relative h-[600px] w-[280px] rounded-[3rem] border-8 border-foreground/10 bg-background shadow-2xl">
-                    <div className="absolute left-1/2 top-6 h-1 w-16 -translate-x-1/2 rounded-full bg-foreground/20" />
-                    <div className="mt-12 flex h-full flex-col items-center justify-center gap-8 px-8 pb-12">
-                      <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
-                        <Heart className="h-10 w-10 text-primary" />
-                      </div>
-                      <div className="space-y-2 text-center">
-                        <h3 className="font-poppins text-xl font-semibold">Your Wishlists</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Create and manage unlimited wishlists
-                        </p>
-                      </div>
-                      {/* Placeholder wishlist items */}
-                      <div className="w-full space-y-3">
-                        {[1, 2, 3].map((i) => (
-                          <div
-                            key={i}
-                            className="flex items-center gap-3 rounded-xl border border-primary/10 bg-muted/50 p-3"
-                          >
-                            <div className="h-12 w-12 rounded-lg bg-primary/10" />
-                            <div className="flex-1 space-y-1.5">
-                              <div className="h-2 w-3/4 rounded bg-foreground/10" />
-                              <div className="h-2 w-1/2 rounded bg-foreground/5" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Decorative elements */}
-              <div className="absolute -left-20 top-1/4 h-40 w-40 animate-float rounded-full bg-gradient-to-br from-primary/20 to-transparent blur-3xl" />
-              <div className="absolute -right-20 bottom-1/4 h-40 w-40 animate-float-delayed rounded-full bg-gradient-to-bl from-primary/20 to-transparent blur-3xl animation-delay-2000" />
             </div>
           </div>
         </div>
