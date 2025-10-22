@@ -80,10 +80,13 @@ const formatNumber = (value: number) =>
 
 export default async function PublicProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ wishlist?: string }>;
 }) {
   const { username } = await params;
+  const { wishlist: wishlistId } = await searchParams;
   const profile = await getProfile(username);
 
   if (!profile) {
@@ -219,7 +222,11 @@ export default async function PublicProfilePage({
           </Card>
         </section>
       ) : (
-        <WishlistGrid wishlists={wishlists} username={user.username} />
+        <WishlistGrid
+          wishlists={wishlists}
+          username={user.username}
+          initialWishlistId={wishlistId}
+        />
       )}
     </main>
   );

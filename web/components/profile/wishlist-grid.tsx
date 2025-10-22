@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { KeyboardEvent } from "react";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Wishlist, Wish } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ import { ShareButton } from "./share-button";
 interface WishlistGridProps {
   wishlists: Wishlist[];
   username: string;
+  initialWishlistId?: string;
 }
 
 function formatPrice(price?: number, currency?: string): string | null {
@@ -26,28 +28,6 @@ function formatPrice(price?: number, currency?: string): string | null {
   } catch {
     return `$${price}`;
   }
-}
-
-function slugify(value: string = ""): string {
-  return value
-    .toString()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-");
-}
-
-function getWishlistSlug(wishlist: Wishlist): string {
-  if (wishlist.slug) return wishlist.slug;
-  if (wishlist.name) return slugify(wishlist.name);
-  if (wishlist.shareToken) return `wishlist-${wishlist.shareToken}`;
-  return wishlist.id;
-}
-
-function buildWishlistPath(username: string, slug: string): string {
-  return `/${username}/${slug}`;
 }
 
 interface WishPreviewCardProps {
@@ -133,10 +113,35 @@ function WishPreviewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
   );
 }
 
-export function WishlistGrid({ wishlists, username }: WishlistGridProps) {
-  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+export function WishlistGrid({ wishlists, username, initialWishlistId }: WishlistGridProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(initialWishlistId ?? null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [activePreview, setActivePreview] = useState<{ wish: Wish; wishlist: Wishlist } | null>(null);
+
+  // Sync URL parameter with filter state
+  useEffect(() => {
+    const wishlistParam = searchParams.get('wishlist');
+    if (wishlistParam && wishlistParam !== selectedFilter) {
+      setSelectedFilter(wishlistParam);
+    }
+  }, [searchParams, selectedFilter]);
+
+  const handleFilterChange = (wishlistId: string | null) => {
+    setSelectedFilter(wishlistId);
+
+    // Update URL parameter
+    const params = new URLSearchParams(searchParams.toString());
+    if (wishlistId) {
+      params.set('wishlist', wishlistId);
+    } else {
+      params.delete('wishlist');
+    }
+
+    const newUrl = params.toString() ? `/${username}?${params.toString()}` : `/${username}`;
+    router.push(newUrl, { scroll: false });
+  };
 
   const selectedWishlist = useMemo(() => {
     if (!selectedFilter) return null;
@@ -148,9 +153,8 @@ export function WishlistGrid({ wishlists, username }: WishlistGridProps) {
       // Share profile page when "All" is selected
       return `/${username}`;
     }
-    // Share specific wishlist page
-    const slug = getWishlistSlug(selectedWishlist);
-    return buildWishlistPath(username, slug);
+    // Share profile page with wishlist filter
+    return `/${username}?wishlist=${selectedWishlist.id}`;
   }, [selectedWishlist, username]);
 
   const filteredWishes = useMemo(() => {
@@ -179,7 +183,7 @@ export function WishlistGrid({ wishlists, username }: WishlistGridProps) {
       <WishlistFilter
         wishlists={wishlists}
         selectedWishlistId={selectedFilter}
-        onFilterChange={setSelectedFilter}
+        onFilterChange={handleFilterChange}
       />
 
       <div className="container mx-auto px-4 py-6 md:px-6">

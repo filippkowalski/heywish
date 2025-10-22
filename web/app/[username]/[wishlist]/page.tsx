@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { cache } from "react";
 import { api } from "@/lib/api";
 
 export const runtime = 'edge';
-import { PublicWishlistView } from "@/components/wishlist/public-wishlist-view";
-import { buildWishlistPath, getWishlistSlug, matchesWishlistSlug } from "@/lib/slug";
+import { matchesWishlistSlug } from "@/lib/slug";
 
 const getProfile = cache((username: string) => api.getPublicProfile(username));
 
@@ -75,19 +74,6 @@ export default async function WishlistBySlugPage({
 
   const { wishlist } = resolved;
 
-  if (!wishlist.shareToken) {
-    notFound();
-  }
-
-  const canonicalSlug = getWishlistSlug({
-    slug: wishlist.slug,
-    name: wishlist.name,
-    shareToken: wishlist.shareToken,
-    id: wishlist.id,
-  });
-  const sharePath = buildWishlistPath(username, canonicalSlug);
-
-  return (
-    <PublicWishlistView shareToken={wishlist.shareToken} sharePath={sharePath} />
-  );
+  // Redirect to profile page with wishlist filter
+  redirect(`/${username}?wishlist=${wishlist.id}`);
 }
