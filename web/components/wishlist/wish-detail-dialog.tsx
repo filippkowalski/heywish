@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Gift, X, ExternalLink, Loader2, Mail, User } from "lucide-react";
+import { Gift, X, ExternalLink, Loader2, Mail } from "lucide-react";
 import {
   onAuthStateChanged,
   sendSignInLinkToEmail,
@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { api, type Wish } from "@/lib/api";
 import {
   getFirebaseAuth,
@@ -157,11 +156,9 @@ export function WishDetailDialog({
     if (!wish || !shareToken) return;
 
     const trimmedEmail = formValues.email.trim();
-    const trimmedName = formValues.name.trim();
-    const trimmedMessage = formValues.message.trim();
 
     if (!trimmedEmail) {
-      setFormError("Enter your email so the wishlist owner knows who reserved.");
+      setFormError("Please enter your email address.");
       return;
     }
 
@@ -227,8 +224,6 @@ export function WishDetailDialog({
 
       await api.reserveWish(wish.id, {
         email: trimmedEmail,
-        name: trimmedName || undefined,
-        message: trimmedMessage || undefined,
         idToken,
       });
 
@@ -340,35 +335,21 @@ export function WishDetailDialog({
   if (showReservationForm) {
     return (
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Reserve &quot;{wish.title}&quot;</DialogTitle>
-            <DialogDescription>
-              Your reservation will be tied to this email address. You can manage your reservations using the link we&apos;ll send you.
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-center">Reserve &quot;{wish.title}&quot;</DialogTitle>
+            <DialogDescription className="text-center">
+              You can manage your reservations using the link we&apos;ll send you.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleReservationSubmit} className="space-y-4">
+          <form onSubmit={handleReservationSubmit} className="space-y-4 px-6">
             {verifiedEmail ? (
-              <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-900">
-                Signed in as <span className="font-semibold">{verifiedEmail}</span>. This email will be shared with the wishlist owner.
+              <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-900 text-center">
+                Signed in as <span className="font-semibold">{verifiedEmail}</span>
               </div>
             ) : null}
 
             <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="reserve-name" className="inline-flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  Your name
-                </Label>
-                <Input
-                  id="reserve-name"
-                  placeholder="Optional"
-                  value={formValues.name}
-                  onChange={(e) => setFormValues((prev) => ({ ...prev, name: e.target.value }))}
-                  autoComplete="name"
-                />
-              </div>
-
               <div className="grid gap-2">
                 <Label htmlFor="reserve-email" className="inline-flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
@@ -384,39 +365,29 @@ export function WishDetailDialog({
                   placeholder="you@example.com"
                 />
               </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="reserve-message">Message for the owner</Label>
-                <Textarea
-                  id="reserve-message"
-                  placeholder="Add a note (optional)"
-                  value={formValues.message}
-                  onChange={(e) => setFormValues((prev) => ({ ...prev, message: e.target.value }))}
-                  rows={4}
-                />
-              </div>
             </div>
 
             {formError ? (
-              <p className="text-sm font-medium text-destructive">{formError}</p>
+              <p className="text-sm font-medium text-destructive text-center">{formError}</p>
             ) : null}
 
             {formNotice ? (
-              <p className="rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-primary">
+              <p className="rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-primary text-center">
                 {formNotice}
               </p>
             ) : null}
 
-            <DialogFooter>
+            <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setShowReservationForm(false)}
                 disabled={submitting}
+                className="flex-1"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting || !authInitialized}>
+              <Button type="submit" disabled={submitting || !authInitialized} className="flex-1">
                 {submitting ? (
                   <span className="inline-flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
