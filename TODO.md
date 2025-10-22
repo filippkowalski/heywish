@@ -218,11 +218,11 @@ Test by sharing URL from Safari
 
 ### Option 2: Universal Links (Future)
 Requires:
-- Domain ownership (heywish.com)
+- Domain ownership (jinnie.co)
 - AASA file configuration
 - Can be done in Info.plist
 
-Allows: `heywish.com/add?url=...` → Opens app
+Allows: `jinnie.co/add?url=...` → Opens app
 
 ### Option 3: User Education
 Add onboarding tutorial:

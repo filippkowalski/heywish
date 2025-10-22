@@ -194,6 +194,92 @@ AnimatedSwitcher(
 )
 ```
 
+### Standard Layout Pattern for Forms and Detail Views
+For any screen with scrollable content and a primary action button (forms, settings, detail views), ALWAYS use this pattern:
+
+**Layout Structure:**
+```dart
+Scaffold(
+  appBar: AppBar(...),
+  body: Column(
+    children: [
+      // 1. Scrollable content area
+      Expanded(
+        child: SingleChildScrollView(  // or ListView
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+          child: Column(
+            children: [
+              // Your content here
+            ],
+          ),
+        ),
+      ),
+
+      // 2. Fixed button at bottom
+      Padding(
+        padding: EdgeInsets.fromLTRB(
+          24.0,
+          0.0,
+          24.0,
+          MediaQuery.of(context).padding.bottom + 16.0,
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          height: 62,
+          child: ElevatedButton(
+            onPressed: isLoading || !canSave ? null : onSave,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryAccent,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: const Color(0xFFE5E5EA),
+              disabledForegroundColor: const Color(0xFF8E8E93),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: isLoading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    'Button Text',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    ],
+  ),
+)
+```
+
+**Key Requirements:**
+- Button height: exactly 62px
+- Button border radius: 16px
+- Button is full width (`double.infinity`)
+- Horizontal padding from edges: 24px
+- Bottom padding: `MediaQuery.of(context).padding.bottom + 16.0` (respects safe area)
+- Disabled colors: background `#E5E5EA`, text `#8E8E93`
+- Loading indicator: 16px white CircularProgressIndicator with strokeWidth 2
+- Text style: fontSize 18, fontWeight w600
+- Use `Expanded` + `SingleChildScrollView`/`ListView` for scrollable content
+- Content padding: `EdgeInsets.fromLTRB(20, 20, 20, 24)` (no bottom padding needed for button overlap)
+
+**Examples:**
+- Onboarding steps (username_step.dart, profile_details_step.dart, etc.)
+- Edit profile screen
+- Any form with save/submit button
+- Settings screens with apply button
+
 ## TODO Before Release
 
 ### Backend Setup

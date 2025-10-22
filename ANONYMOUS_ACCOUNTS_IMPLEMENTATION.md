@@ -151,11 +151,11 @@ users (
 ## Sharing System
 
 ### Before
-- Used `share_token` for sharing: `heywish.com/w/{token}`
+- Used `share_token` for sharing: `jinnie.co/w/{token}`
 - Token in database, complex to manage
 
 ### After
-- Use `username` for sharing: `heywish.com/{username}`
+- Use `username` for sharing: `jinnie.co/{username}`
 - Works for both anonymous (`user1234567`) and full accounts (`johnsmith`)
 - If user changes username, old links break (like Instagram)
 - Someone else can claim the old username (404, not redirect)

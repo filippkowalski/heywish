@@ -2,8 +2,8 @@
 
 ## Base URL
 ```
-Production: https://api.heywish.com/v1
-Staging: https://staging-api.heywish.com/v1
+Production: https://api.jinnie.co/v1
+Staging: https://staging-api.jinnie.co/v1
 Local: http://localhost:8080/v1
 ```
 
@@ -138,7 +138,7 @@ Get user's wishlists.
       "description": "Things I want for my birthday",
       "occasionType": "birthday",
       "visibility": "friends",
-      "coverImageUrl": "https://cdn.heywish.com/covers/123.jpg",
+      "coverImageUrl": "https://cdn.jinnie.co/covers/123.jpg",
       "eventDate": "2024-06-15",
       "itemCount": 12,
       "reservedCount": 3,
@@ -167,7 +167,7 @@ Create new wishlist.
   "occasionType": "christmas",
   "visibility": "public",
   "eventDate": "2024-12-25",
-  "coverImageUrl": "https://cdn.heywish.com/covers/xmas.jpg"
+  "coverImageUrl": "https://cdn.jinnie.co/covers/xmas.jpg"
 }
 ```
 
@@ -177,7 +177,7 @@ Create new wishlist.
   "id": "550e8400-e29b-41d4-a716-446655440002",
   "name": "Christmas 2024",
   "shareToken": "xyz789abc",
-  "shareUrl": "https://heywish.com/list/xyz789abc"
+  "shareUrl": "https://jinnie.co/list/xyz789abc"
 }
 ```
 
@@ -200,7 +200,7 @@ Get wishlist details with items.
         "price": 349.99,
         "currency": "USD",
         "images": [
-          "https://cdn.heywish.com/items/headphones.jpg"
+          "https://cdn.jinnie.co/items/headphones.jpg"
         ],
         "status": "available",
         "priority": 1,
@@ -241,7 +241,7 @@ Generate/update share settings.
 **Response (200):**
 ```json
 {
-  "shareUrl": "https://heywish.com/list/xyz789abc",
+  "shareUrl": "https://jinnie.co/list/xyz789abc",
   "shareToken": "xyz789abc",
   "qrCode": "data:image/png;base64,..."
 }
@@ -489,7 +489,7 @@ Upload avatar image.
 **Response (200):**
 ```json
 {
-  "avatarUrl": "https://cdn.heywish.com/avatars/user-123.jpg"
+  "avatarUrl": "https://cdn.jinnie.co/avatars/user-123.jpg"
 }
 ```
 
