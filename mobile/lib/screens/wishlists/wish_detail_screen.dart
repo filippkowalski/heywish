@@ -144,8 +144,6 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                       _editWish();
                     } else if (value == 'delete') {
                       _deleteWish();
-                    } else if (value == 'reserve') {
-                      _toggleReservation();
                     }
                   },
                   itemBuilder: (context) => [
@@ -156,19 +154,6 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                           Icon(Icons.edit_outlined, size: 20),
                           SizedBox(width: 12),
                           Text('Edit'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'reserve',
-                      child: Row(
-                        children: [
-                          Icon(
-                            wish!.isReserved ? Icons.bookmark_remove_outlined : Icons.bookmark_add_outlined,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(wish!.isReserved ? 'Unreserve' : 'Reserve'),
                         ],
                       ),
                     ),
@@ -579,38 +564,6 @@ From my Jinnie wishlist 🎁
     // If edit was successful, the wishlist screen will refresh automatically
     if (result == true) {
       // Optional: could show a success message
-    }
-  }
-
-  void _toggleReservation() async {
-    if (wish == null) return;
-
-    bool success = false;
-    if (wish!.isReserved) {
-      success = await context.read<WishlistService>().unreserveWish(widget.wishId);
-    } else {
-      success = await context.read<WishlistService>().reserveWish(widget.wishId, null);
-    }
-
-    if (success && mounted) {
-      _loadWish(); // Refresh the wish details
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            wish!.isReserved ? 'Item reserved successfully' : 'Item unreserved successfully',
-          ),
-          backgroundColor: AppTheme.primaryAccent,
-        ),
-      );
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to ${wish!.isReserved ? 'unreserve' : 'reserve'} item',
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
