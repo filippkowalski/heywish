@@ -44,11 +44,15 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b">
         {/* Animated grid background */}
-        <div className="absolute inset-0 overflow-hidden opacity-30">
+        <div className="absolute inset-0 overflow-hidden opacity-50">
           {/* Row 1 - Moving right */}
           <div className="flex gap-4 py-2 animate-scroll-right">
             {[...wishImages.slice(0, 10), ...wishImages.slice(0, 10)].map((img, i) => (
-              <div key={`row1-${i}`} className="relative h-32 w-32 flex-shrink-0">
+              <div
+                key={`row1-${i}`}
+                className="relative h-32 w-32 flex-shrink-0"
+                style={{ transform: `rotate(${[2, -3, 1, -2, 3, -1, 2, -3, 1, -2, 3, -1, 2, -3, 1, -2, 3, -1, 2, -3][i % 20]}deg)` }}
+              >
                 <Image
                   src={img}
                   alt=""
@@ -63,7 +67,11 @@ export default function HomePage() {
           {/* Row 2 - Moving left */}
           <div className="flex gap-4 py-2 animate-scroll-left">
             {[...wishImages.slice(10, 20), ...wishImages.slice(10, 20)].map((img, i) => (
-              <div key={`row2-${i}`} className="relative h-32 w-32 flex-shrink-0">
+              <div
+                key={`row2-${i}`}
+                className="relative h-32 w-32 flex-shrink-0"
+                style={{ transform: `rotate(${[-2, 3, -1, 2, -3, 1, -2, 3, -1, 2, -3, 1, -2, 3, -1, 2, -3, 1, -2, 3][i % 20]}deg)` }}
+              >
                 <Image
                   src={img}
                   alt=""
@@ -78,7 +86,11 @@ export default function HomePage() {
           {/* Row 3 - Moving right */}
           <div className="flex gap-4 py-2 animate-scroll-right-slow">
             {[...wishImages.slice(20, 30), ...wishImages.slice(0, 10)].map((img, i) => (
-              <div key={`row3-${i}`} className="relative h-32 w-32 flex-shrink-0">
+              <div
+                key={`row3-${i}`}
+                className="relative h-32 w-32 flex-shrink-0"
+                style={{ transform: `rotate(${[3, -2, 2, -1, 3, -3, 1, -2, 2, -1, 3, -3, 1, -2, 2, -1, 3, -3, 1, -2][i % 20]}deg)` }}
+              >
                 <Image
                   src={img}
                   alt=""
@@ -93,7 +105,11 @@ export default function HomePage() {
           {/* Row 4 - Moving left */}
           <div className="flex gap-4 py-2 animate-scroll-left-slow">
             {[...wishImages.slice(5, 15), ...wishImages.slice(5, 15)].map((img, i) => (
-              <div key={`row4-${i}`} className="relative h-32 w-32 flex-shrink-0">
+              <div
+                key={`row4-${i}`}
+                className="relative h-32 w-32 flex-shrink-0"
+                style={{ transform: `rotate(${[-1, 2, -3, 3, -2, 1, -3, 2, -1, 3, -2, 1, -3, 2, -1, 3, -2, 1, -3, 2][i % 20]}deg)` }}
+              >
                 <Image
                   src={img}
                   alt=""
@@ -108,7 +124,11 @@ export default function HomePage() {
           {/* Row 5 - Moving right */}
           <div className="flex gap-4 py-2 animate-scroll-right">
             {[...wishImages.slice(15, 25), ...wishImages.slice(15, 25)].map((img, i) => (
-              <div key={`row5-${i}`} className="relative h-32 w-32 flex-shrink-0">
+              <div
+                key={`row5-${i}`}
+                className="relative h-32 w-32 flex-shrink-0"
+                style={{ transform: `rotate(${[1, -2, 3, -3, 2, -1, 3, -2, 1, -3, 2, -1, 3, -2, 1, -3, 2, -1, 3, -2][i % 20]}deg)` }}
+              >
                 <Image
                   src={img}
                   alt=""
@@ -122,7 +142,7 @@ export default function HomePage() {
         </div>
 
         {/* Gradient overlay to fade images */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/70 to-background/95" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/60 to-background/90" />
 
         <div className="container relative mx-auto flex min-h-[85vh] flex-col items-center justify-center px-4 py-24 text-center md:px-6 md:py-32">
           <div className="mx-auto max-w-4xl space-y-10">
@@ -174,13 +194,6 @@ export default function HomePage() {
                   Get it on Google Play
                 </Link>
               </Button>
-            </div>
-          </div>
-
-          {/* Scroll indicator */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-            <div className="h-10 w-6 rounded-full border-2 border-primary/20">
-              <div className="mx-auto mt-2 h-1.5 w-1.5 rounded-full bg-primary/40" />
             </div>
           </div>
         </div>
