@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { KeyboardEvent } from "react";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import type { Wishlist, Wish } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -115,7 +115,6 @@ function WishPreviewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
 }
 
 export function WishlistGrid({ wishlists, username, initialWishlistId }: WishlistGridProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedFilter, setSelectedFilter] = useState<string | null>(initialWishlistId ?? null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -136,7 +135,7 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
   const handleFilterChange = (wishlistId: string | null) => {
     setSelectedFilter(wishlistId);
 
-    // Update URL parameter with slug instead of ID
+    // Update URL parameter with slug instead of ID using history API for instant updates
     const params = new URLSearchParams(searchParams.toString());
     if (wishlistId) {
       const wishlist = wishlists.find(w => w.id === wishlistId);
@@ -154,7 +153,11 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
     }
 
     const newUrl = params.toString() ? `/${username}?${params.toString()}` : `/${username}`;
-    router.push(newUrl, { scroll: false });
+
+    // Use window.history.pushState for instant URL update without page reload
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', newUrl);
+    }
   };
 
   const selectedWishlist = useMemo(() => {
@@ -238,6 +241,7 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
           }
         }}
         wish={activePreview?.wish ?? null}
+        shareToken={activePreview?.wishlist.shareToken}
       />
     </>
   );

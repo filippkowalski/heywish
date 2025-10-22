@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Gift } from "lucide-react";
+import { Gift, X, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +46,7 @@ export interface WishDetailDialogProps {
   footer?: FooterRenderer;
   reserveHref?: string;
   reserveLabel?: string;
+  shareToken?: string;
 }
 
 export function WishDetailDialog({
@@ -58,6 +59,7 @@ export function WishDetailDialog({
   footer,
   reserveHref,
   reserveLabel,
+  shareToken,
 }: WishDetailDialogProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -92,45 +94,62 @@ export function WishDetailDialog({
               Cancel reservation
             </Button>
           )}
-          <Button
-            variant="secondary"
-            onClick={handleClose}
-            className="flex-1 h-11 sm:h-12 text-base font-medium"
-          >
-            Close
-          </Button>
+          {wish.url && (
+            <Button
+              asChild
+              variant="outline"
+              className="flex-1 h-11 sm:h-12 text-base font-medium gap-2"
+            >
+              <a href={wish.url} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4" />
+                View details
+              </a>
+            </Button>
+          )}
         </div>
       );
     }
 
-    const canReserve = !isReserved && (onReserve != null || reserveHref);
+    const canReserve = !isReserved && (onReserve != null || reserveHref || shareToken);
 
     return (
       <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
-        <Button
-          variant="outline"
-          onClick={handleClose}
-          className="flex-1 h-11 sm:h-12 text-base font-medium"
-        >
-          Close
-        </Button>
-        {canReserve ? (
+        {wish.url && (
+          <Button
+            asChild
+            variant="outline"
+            className="flex-1 h-11 sm:h-12 text-base font-medium gap-2"
+          >
+            <a href={wish.url} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-4 w-4" />
+              View details
+            </a>
+          </Button>
+        )}
+        {canReserve && (
           onReserve ? (
             <Button
               onClick={onReserve}
               className="flex-1 h-11 sm:h-12 text-base font-medium"
             >
-              {reserveLabel ?? "Reserve this item"}
+              {reserveLabel ?? "Reserve"}
             </Button>
           ) : reserveHref ? (
             <Button
               asChild
               className="flex-1 h-11 sm:h-12 text-base font-medium"
             >
-              <Link href={reserveHref}>{reserveLabel ?? "Reserve this item"}</Link>
+              <Link href={reserveHref}>{reserveLabel ?? "Reserve"}</Link>
+            </Button>
+          ) : shareToken ? (
+            <Button
+              asChild
+              className="flex-1 h-11 sm:h-12 text-base font-medium"
+            >
+              <Link href={`/w/${shareToken}`}>Reserve</Link>
             </Button>
           ) : null
-        ) : null}
+        )}
       </div>
     );
   };
@@ -142,6 +161,15 @@ export function WishDetailDialog({
         containerClassName="max-w-3xl overflow-hidden rounded-3xl border border-border/60 bg-card shadow-2xl flex flex-col"
         hideClose
       >
+        {/* Close Button - Top Right */}
+        <button
+          onClick={handleClose}
+          className="absolute top-4 right-4 z-50 rounded-full bg-black/60 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-white/50"
+          aria-label="Close"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
         {/* Image Gallery Section */}
         {images.length > 0 ? (
           <div className="relative w-full bg-muted max-h-[50vh]" style={{ aspectRatio: "4/3" }}>
@@ -154,7 +182,7 @@ export function WishDetailDialog({
               priority
             />
             {isReserved && (
-              <div className="absolute top-4 right-4">
+              <div className="absolute top-4 left-4">
                 <Badge variant="secondary" className="bg-black/80 text-white border-0 backdrop-blur-sm px-3 py-1.5 text-xs sm:text-sm">
                   {isMine ? "Reserved by you" : "Reserved"}
                 </Badge>
@@ -173,7 +201,7 @@ export function WishDetailDialog({
           <div className="relative w-full bg-muted/30 flex items-center justify-center" style={{ aspectRatio: "4/3", maxHeight: "50vh" }}>
             <Gift className="h-20 w-20 text-muted-foreground/30" />
             {isReserved && (
-              <div className="absolute top-4 right-4">
+              <div className="absolute top-4 left-4">
                 <Badge variant="secondary" className="bg-black/80 text-white border-0 backdrop-blur-sm px-3 py-1.5 text-xs sm:text-sm">
                   {isMine ? "Reserved by you" : "Reserved"}
                 </Badge>
@@ -224,17 +252,6 @@ export function WishDetailDialog({
                   {wish.description}
                 </p>
               </div>
-            )}
-
-            {wish.url && (
-              <a
-                href={wish.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-primary hover:underline font-medium text-sm sm:text-base"
-              >
-                View product details →
-              </a>
             )}
 
             {isReserved && (wish.reserverName || wish.reservedMessage) && (
