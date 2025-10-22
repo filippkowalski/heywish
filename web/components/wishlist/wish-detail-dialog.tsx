@@ -151,6 +151,41 @@ export function WishDetailDialog({
     }
   };
 
+  const handleCancelReservation = async () => {
+    if (!wish) return;
+
+    const confirmCancel = window.confirm(
+      `Cancel your reservation for "${wish.title}"? This action cannot be undone.`
+    );
+
+    if (!confirmCancel) return;
+
+    try {
+      setSubmitting(true);
+      const auth = getFirebaseAuth();
+      await auth.currentUser?.reload();
+      const verifiedUser = auth.currentUser && auth.currentUser.emailVerified ? auth.currentUser : null;
+
+      if (verifiedUser) {
+        const idToken = await verifiedUser.getIdToken(true);
+        await api.cancelReservation(wish.id, idToken);
+      } else {
+        // No auth - shouldn't happen, but handle gracefully
+        await api.cancelReservation(wish.id);
+      }
+
+      handleClose();
+      window.location.reload();
+    } catch (err: unknown) {
+      console.error("Error canceling reservation:", err);
+      const axiosError = err as { response?: { status?: number; data?: { error?: { message?: string } } } };
+      const message = axiosError.response?.data?.error?.message ?? "Failed to cancel reservation. Please try again.";
+      alert(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleReservationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wish || !shareToken) return;
@@ -252,6 +287,10 @@ export function WishDetailDialog({
 
   const verifiedEmail = authUser?.emailVerified ? authUser.email ?? null : null;
 
+  // Check if current user is the reserver by comparing emails
+  const isMyReservation = isReserved && verifiedEmail && wish.reservedBy &&
+    verifiedEmail.toLowerCase() === wish.reservedBy.toLowerCase();
+
   const renderFooter = () => {
     if (footer) {
       return typeof footer === "function"
@@ -260,15 +299,18 @@ export function WishDetailDialog({
     }
 
     if (isReserved) {
+      const showCancelButton = (isMine && onCancel) || (isMyReservation && shareToken);
+
       return (
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-          {isMine && onCancel && (
+          {showCancelButton && (
             <Button
               variant="outline"
-              onClick={onCancel}
+              onClick={isMyReservation && shareToken ? handleCancelReservation : onCancel}
+              disabled={submitting}
               className="flex-1 h-11 sm:h-12 text-base font-medium"
             >
-              Cancel reservation
+              {submitting ? "Canceling..." : "Cancel reservation"}
             </Button>
           )}
           {wish.url && (
@@ -501,24 +543,6 @@ export function WishDetailDialog({
                 <p className="text-foreground leading-relaxed text-sm sm:text-base">
                   {wish.description}
                 </p>
-              </div>
-            )}
-
-            {isReserved && (wish.reserverName || wish.reservedMessage) && (
-              <div className="space-y-2 pt-4 border-t">
-                <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                  Reservation Details
-                </h3>
-                {wish.reserverName && (
-                  <p className="text-sm">
-                    Reserved by <span className="font-medium">{wish.reserverName}</span>
-                  </p>
-                )}
-                {wish.reservedMessage && (
-                  <p className="text-sm italic text-muted-foreground">
-                    &quot;{wish.reservedMessage}&quot;
-                  </p>
-                )}
               </div>
             )}
           </div>
