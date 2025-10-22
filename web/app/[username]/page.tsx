@@ -169,9 +169,6 @@ export default async function PublicProfilePage({
                   <h1 className="truncate text-xl font-semibold sm:text-2xl md:text-3xl">
                     {user.fullName?.trim() || user.username}
                   </h1>
-                  <Badge variant="secondary" className="flex-shrink-0 text-[10px] uppercase tracking-wide sm:text-xs">
-                    Public
-                  </Badge>
                 </div>
                 <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground sm:text-sm">
                   <span className="truncate">@{user.username}</span>

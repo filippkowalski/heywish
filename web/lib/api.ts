@@ -256,21 +256,12 @@ export const api = {
   ): Promise<void> {
     try {
       const name = options?.name?.trim() || undefined;
-      const email = options?.email?.trim();
       const note = options?.message?.trim();
-
-      const messageParts = [];
-      if (email) {
-        messageParts.push(`Email: ${email}`);
-      }
-      if (note) {
-        messageParts.push(note);
-      }
 
       await apiRequest(`/wishes/${wishId}/reserve`, {
         method: 'POST',
         body: JSON.stringify({
-          message: messageParts.join('\n') || undefined,
+          message: note || undefined,
           hideFromOwner: false,
           reserver_name: name,
         }),
