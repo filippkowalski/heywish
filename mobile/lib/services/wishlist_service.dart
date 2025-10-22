@@ -163,9 +163,9 @@ class WishlistService extends ChangeNotifier {
     } catch (e) {
       // Remove failed optimistic wishlist
       _wishlists.removeWhere((w) => w.id == optimisticId);
-      
-      _error = e.toString();
+
       debugPrint('Error creating wishlist: $e');
+      // Don't set _error - let the caller handle the error with a snackbar
       notifyListeners();
       return null;
     }
@@ -197,8 +197,8 @@ class WishlistService extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      _error = e.toString();
       debugPrint('Error updating wishlist: $e');
+      // Don't set _error - let the caller handle the error with a snackbar
       notifyListeners();
       return false;
     }
@@ -213,8 +213,8 @@ class WishlistService extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = e.toString();
       debugPrint('Error deleting wishlist: $e');
+      // Don't set _error - let the caller handle the error with a snackbar
       notifyListeners();
       return false;
     }
@@ -326,10 +326,9 @@ class WishlistService extends ChangeNotifier {
     } catch (e) {
       // Remove failed optimistic wish
       _allWishes.removeWhere((w) => w.id == optimisticId);
-      notifyListeners();
-      
-      _error = e.toString();
-      print('❌ WishlistService: Error adding wish: $e');
+
+      debugPrint('Error adding wish: $e');
+      // Don't set _error - let the caller handle the error with a snackbar
       notifyListeners();
       return false;
     }
@@ -351,9 +350,9 @@ class WishlistService extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      _error = e.toString();
       _isLoading = false;
       debugPrint('Error updating wish positions: $e');
+      // Don't set _error - let the caller handle the error with a snackbar
       notifyListeners();
       return false;
     }
@@ -397,8 +396,8 @@ class WishlistService extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      _error = e.toString();
       debugPrint('Error updating wish: $e');
+      // Don't set _error - let the caller handle the error with a snackbar
       notifyListeners();
       return false;
     }
@@ -423,11 +422,10 @@ class WishlistService extends ChangeNotifier {
       // Restore deleted wish on failure
       if (deletedWish != null) {
         _allWishes.insert(wishIndex, deletedWish);
-        notifyListeners();
       }
 
-      _error = e.toString();
       debugPrint('Error deleting wish: $e');
+      // Don't set _error here - the wish is restored, so UI should show the list
       notifyListeners();
       return false;
     }
@@ -449,8 +447,8 @@ class WishlistService extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      _error = e.toString();
       debugPrint('Error reserving wish: $e');
+      // Don't set _error - let the caller handle the error with a snackbar
       notifyListeners();
       return false;
     }
@@ -470,8 +468,8 @@ class WishlistService extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      _error = e.toString();
       debugPrint('Error unreserving wish: $e');
+      // Don't set _error - let the caller handle the error with a snackbar
       notifyListeners();
       return false;
     }
