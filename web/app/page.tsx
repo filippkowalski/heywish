@@ -44,7 +44,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b">
         {/* Animated grid background */}
-        <div className="absolute inset-0 overflow-hidden opacity-50">
+        <div className="absolute inset-0 overflow-hidden opacity-70">
           {/* Row 1 - Moving right */}
           <div className="flex gap-4 py-2 animate-scroll-right">
             {[...wishImages.slice(0, 10), ...wishImages.slice(0, 10)].map((img, i) => (
@@ -142,7 +142,7 @@ export default function HomePage() {
         </div>
 
         {/* Gradient overlay to fade images */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/60 to-background/90" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/50 to-background/85" />
 
         <div className="container relative mx-auto flex min-h-[85vh] flex-col items-center justify-center px-4 py-24 text-center md:px-6 md:py-32">
           <div className="mx-auto max-w-4xl space-y-10">
