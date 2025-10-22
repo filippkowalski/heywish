@@ -738,8 +738,7 @@ class _WishCardState extends State<_WishCard> {
                   padding: const EdgeInsets.all(12.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         widget.wish.title,
@@ -759,13 +758,15 @@ class _WishCardState extends State<_WishCard> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       if (widget.wish.price != null) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text(
                           '${widget.wish.currency ?? 'USD'} ${widget.wish.price!.toStringAsFixed(2)}',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: AppTheme.primary,
                               ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ],
