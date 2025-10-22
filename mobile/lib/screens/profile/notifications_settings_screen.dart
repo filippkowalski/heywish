@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'dart:io';
 import '../../services/fcm_service.dart';
 import '../../theme/app_theme.dart';
 import '../../common/navigation/native_page_route.dart';

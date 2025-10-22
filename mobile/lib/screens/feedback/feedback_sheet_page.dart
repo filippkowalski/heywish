@@ -132,7 +132,7 @@ class _FeedbackSheetPageState extends State<FeedbackSheetPage> {
               Text(
                 'feedback.subtitle'.tr(),
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(height: 24),
@@ -146,19 +146,19 @@ class _FeedbackSheetPageState extends State<FeedbackSheetPage> {
                   contentPadding: const EdgeInsets.all(16),
                   hintText: 'feedback.hint'.tr(),
                   hintStyle: TextStyle(
-                    color: theme.colorScheme.onSurface.withOpacity(0.4),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                     borderSide: BorderSide(
-                      color: theme.colorScheme.outline.withOpacity(0.3),
+                      color: theme.colorScheme.outline.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                     borderSide: BorderSide(
-                      color: theme.colorScheme.outline.withOpacity(0.3),
+                      color: theme.colorScheme.outline.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -170,7 +170,7 @@ class _FeedbackSheetPageState extends State<FeedbackSheetPage> {
                     ),
                   ),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 ),
               ),
               const SizedBox(height: 16),
@@ -184,22 +184,22 @@ class _FeedbackSheetPageState extends State<FeedbackSheetPage> {
                   hintText: 'feedback.email_hint'.tr(),
                   prefixIcon: Icon(
                     Icons.email_outlined,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   hintStyle: TextStyle(
-                    color: theme.colorScheme.onSurface.withOpacity(0.4),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                     borderSide: BorderSide(
-                      color: theme.colorScheme.outline.withOpacity(0.3),
+                      color: theme.colorScheme.outline.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                     borderSide: BorderSide(
-                      color: theme.colorScheme.outline.withOpacity(0.3),
+                      color: theme.colorScheme.outline.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -211,7 +211,7 @@ class _FeedbackSheetPageState extends State<FeedbackSheetPage> {
                     ),
                   ),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 ),
               ),
               const SizedBox(height: 24),

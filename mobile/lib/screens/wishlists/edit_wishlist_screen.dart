@@ -290,7 +290,7 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
         Text(
           'wishlist.basic_information_desc'.tr(),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.primary.withOpacity(0.7),
+                color: AppTheme.primary.withValues(alpha: 0.7),
               ),
         ),
         const SizedBox(height: 24),
@@ -340,7 +340,7 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
         Text(
           'wishlist.header_image_desc'.tr(),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.primary.withOpacity(0.7),
+                color: AppTheme.primary.withValues(alpha: 0.7),
               ),
         ),
         const SizedBox(height: 24),
@@ -440,7 +440,7 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
         Text(
           'wishlist.privacy_settings_desc'.tr(),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.primary.withOpacity(0.7),
+                color: AppTheme.primary.withValues(alpha: 0.7),
               ),
         ),
         const SizedBox(height: 24),
@@ -481,7 +481,7 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primary.withOpacity(0.1) : Colors.white,
+          color: isSelected ? AppTheme.primary.withValues(alpha: 0.1) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppTheme.primary : Colors.grey.shade300,

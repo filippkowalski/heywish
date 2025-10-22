@@ -379,7 +379,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         : CachedAvatarImage(
                             imageUrl: _avatarUrl,
                             radius: 60,
-                            backgroundColor: AppTheme.primaryAccent.withOpacity(0.1),
+                            backgroundColor: AppTheme.primaryAccent.withValues(alpha: 0.1),
                           ),
                     Positioned(
                       bottom: 0,
@@ -424,7 +424,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 decoration: InputDecoration(
                   hintText: 'profile.full_name_placeholder'.tr(),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -464,7 +464,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 decoration: InputDecoration(
                   hintText: 'profile.username_placeholder'.tr(),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -481,7 +481,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           padding: const EdgeInsets.all(12),
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: AppTheme.primaryAccent.withOpacity(0.6),
+                            color: AppTheme.primaryAccent.withValues(alpha: 0.6),
                           ),
                         )
                       : _usernameCheckResult == 'Available'
@@ -521,7 +521,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 decoration: InputDecoration(
                   hintText: 'profile.bio_placeholder'.tr(),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,

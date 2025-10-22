@@ -301,7 +301,7 @@ class _SearchScreenState extends State<SearchScreen> {
               Icon(
                 Icons.person_search,
                 size: 80,
-                color: AppTheme.primaryAccent.withOpacity(0.3),
+                color: AppTheme.primaryAccent.withValues(alpha: 0.3),
               ),
               const SizedBox(height: 24),
               Text(
@@ -406,7 +406,7 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -425,7 +425,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 CachedAvatarImage(
                   imageUrl: user.avatarUrl,
                   radius: 28,
-                  backgroundColor: AppTheme.primaryAccent.withOpacity(0.1),
+                  backgroundColor: AppTheme.primaryAccent.withValues(alpha: 0.1),
                 ),
                 const SizedBox(width: 16),
 
@@ -608,7 +608,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         CachedAvatarImage(
                           imageUrl: user.avatarUrl,
                           radius: 48,
-                          backgroundColor: AppTheme.primaryAccent.withOpacity(0.1),
+                          backgroundColor: AppTheme.primaryAccent.withValues(alpha: 0.1),
                         ),
                         SizedBox(height: 20),
 

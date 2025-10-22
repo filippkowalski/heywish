@@ -77,7 +77,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 Text(
                   'All your wishes, in one place.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.black.withOpacity(0.7),
+                    color: Colors.black.withValues(alpha: 0.7),
                     fontSize: 18,
                   ),
                 ),

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../services/onboarding_service.dart';
 import '../../../theme/app_theme.dart';
-import '../../../common/theme/app_colors.dart';
 import 'sign_in_bottom_sheet.dart';
 
 class WelcomeStep extends StatefulWidget {

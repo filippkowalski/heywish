@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
-import '../../theme/app_theme.dart';
 import '../../services/friends_service.dart';
 import '../../models/friend.dart';
 import '../../widgets/cached_image.dart';

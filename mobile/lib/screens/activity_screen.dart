@@ -205,8 +205,8 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.blue.withOpacity(0.1),
-            Colors.blue.withOpacity(0.1),
+            Colors.blue.withValues(alpha: 0.1),
+            Colors.blue.withValues(alpha: 0.1),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -218,7 +218,7 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.2),
+              color: Colors.blue.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -280,7 +280,7 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
                 child: CachedAvatarImage(
                   imageUrl: activity.avatarUrl,
                   radius: 20,
-                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                 ),
               ),
               const SizedBox(width: 12),
@@ -347,7 +347,7 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: _getActivityColor(type).withOpacity(0.1),
+        color: _getActivityColor(type).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(

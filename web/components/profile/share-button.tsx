@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { Share2, Check } from 'lucide-react';
+import { Link2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -9,11 +9,9 @@ interface ShareButtonProps {
   path: string;
   label?: string;
   className?: string;
-  title?: string;
-  text?: string;
 }
 
-export function ShareButton({ path, label = 'Share', className, title, text }: ShareButtonProps) {
+export function ShareButton({ path, label = 'Copy link', className }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const shareUrl = useMemo(() => {
@@ -27,24 +25,8 @@ export function ShareButton({ path, label = 'Share', className, title, text }: S
     return path.startsWith('/') ? path : `/${path}`;
   }, [path]);
 
-  const handleShare = useCallback(async () => {
+  const handleCopy = useCallback(async () => {
     if (!shareUrl) return;
-
-    const resolvedTitle = title ?? 'Jinnie wishlist';
-    const resolvedText = text ?? 'Explore this wishlist on Jinnie';
-
-    try {
-      if (typeof navigator !== 'undefined' && navigator.share) {
-        await navigator.share({
-          url: shareUrl,
-          title: resolvedTitle,
-          text: resolvedText,
-        });
-        return;
-      }
-    } catch (error) {
-      console.warn('Share failed, falling back to clipboard:', error);
-    }
 
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -55,18 +37,18 @@ export function ShareButton({ path, label = 'Share', className, title, text }: S
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
     }
-  }, [shareUrl, text, title]);
+  }, [shareUrl]);
 
   return (
     <Button
       type="button"
       variant={copied ? 'secondary' : 'outline'}
       size="sm"
-      onClick={handleShare}
+      onClick={handleCopy}
       className={cn('gap-2', className)}
       disabled={!shareUrl}
     >
-      {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+      {copied ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
       <span>{copied ? 'Link copied' : label}</span>
     </Button>
   );

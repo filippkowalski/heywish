@@ -115,7 +115,7 @@ class _FeatureHighlightsStepState extends State<FeatureHighlightsStep> {
                 decoration: BoxDecoration(
                   color: _currentPage == index
                       ? AppColors.primary
-                      : AppColors.primary.withOpacity(0.3),
+                      : AppColors.primary.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),

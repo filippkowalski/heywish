@@ -8,10 +8,10 @@ class AppTheme {
   static const Color primaryAccent = Color(0xFFE91E63); // Pink accent for interactive elements - perfect for girls wishlist app
   
   // Card and Border Colors
-  static Color cardBorder = Colors.black.withOpacity(0.12);
-  static Color cardBorderActive = Colors.black.withOpacity(0.2);
-  static Color cardShadow = Colors.black.withOpacity(0.02);
-  static Color arrowIndicator = Colors.black.withOpacity(0.4);
+  static Color cardBorder = Colors.black.withValues(alpha: 0.12);
+  static Color cardBorderActive = Colors.black.withValues(alpha: 0.2);
+  static Color cardShadow = Colors.black.withValues(alpha: 0.02);
+  static Color arrowIndicator = Colors.black.withValues(alpha: 0.4);
   
   // Status Colors (minimal usage)
   static const Color success = Color(0xFF22C55E);
@@ -117,7 +117,7 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.white,
         elevation: 0.5,
-        shadowColor: Colors.black.withOpacity(0.1),
+        shadowColor: Colors.black.withValues(alpha: 0.1),
         centerTitle: true,
         // Force icon colors to be dark - this should override Material 3
         iconTheme: const IconThemeData(
@@ -152,7 +152,7 @@ class AppTheme {
           backgroundColor: primaryAccent,
           foregroundColor: Colors.white,
           elevation: 0,
-          shadowColor: Colors.black.withOpacity(0.1),
+          shadowColor: Colors.black.withValues(alpha: 0.1),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -239,10 +239,10 @@ class AppTheme {
       
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.white,
-        indicatorColor: primaryAccent.withOpacity(0.1),
+        indicatorColor: primaryAccent.withValues(alpha: 0.1),
         height: 70,
         elevation: 0,
-        shadowColor: Colors.black.withOpacity(0.05),
+        shadowColor: Colors.black.withValues(alpha: 0.05),
         surfaceTintColor: Colors.transparent,
         labelTextStyle: MaterialStateProperty.resolveWith((states) {
           if (states.contains(MaterialState.selected)) {

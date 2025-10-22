@@ -106,7 +106,7 @@ class CachedAvatarImage extends StatelessWidget {
     if (imageUrl == null || imageUrl!.isEmpty) {
       return CircleAvatar(
         radius: radius,
-        backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.primary.withOpacity(0.1),
+        backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
         child: errorWidget ?? Icon(
           Icons.person,
           color: Theme.of(context).colorScheme.primary,
@@ -117,7 +117,7 @@ class CachedAvatarImage extends StatelessWidget {
 
     return CircleAvatar(
       radius: radius,
-      backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.primary.withOpacity(0.1),
+      backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
       child: ClipOval(
         child: CachedNetworkImage(
           imageUrl: imageUrl!,

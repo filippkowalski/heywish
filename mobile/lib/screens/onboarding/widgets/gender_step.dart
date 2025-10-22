@@ -146,7 +146,7 @@ class _GenderStepState extends State<GenderStep> {
                                               ? Theme.of(context)
                                                   .colorScheme
                                                   .primary
-                                                  .withOpacity(0.1)
+                                                  .withValues(alpha: 0.1)
                                               : Colors.white,
                                       border: Border.all(
                                         color:
@@ -172,7 +172,7 @@ class _GenderStepState extends State<GenderStep> {
                                                     ? Theme.of(context)
                                                         .colorScheme
                                                         .primary
-                                                        .withOpacity(0.1)
+                                                        .withValues(alpha: 0.1)
                                                     : Colors.grey.shade100,
                                             borderRadius: BorderRadius.circular(
                                               12,

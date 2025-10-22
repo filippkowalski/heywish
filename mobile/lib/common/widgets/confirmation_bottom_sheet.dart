@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'dart:io';
 import '../../theme/app_theme.dart';
 import '../navigation/native_page_route.dart';
 
@@ -101,7 +99,7 @@ class _ConfirmationBottomSheetState extends State<ConfirmationBottomSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -131,9 +129,9 @@ class _ConfirmationBottomSheetState extends State<ConfirmationBottomSheet> {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: widget.isDestructive 
-                        ? AppTheme.error.withOpacity(0.1)
-                        : AppTheme.primaryAccent.withOpacity(0.1),
+                    color: widget.isDestructive
+                        ? AppTheme.error.withValues(alpha: 0.1)
+                        : AppTheme.primaryAccent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(32),
                   ),
                   child: Icon(
@@ -220,7 +218,7 @@ class _ConfirmationBottomSheetState extends State<ConfirmationBottomSheet> {
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white.withOpacity(0.8),
+                                  Colors.white.withValues(alpha: 0.8),
                                 ),
                               ),
                             )

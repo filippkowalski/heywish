@@ -251,7 +251,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
               Icon(
                 Icons.error_outline,
                 size: 80,
-                color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 16),
               Text(

@@ -18,7 +18,7 @@ class SkipButton extends StatelessWidget {
       style: TextButton.styleFrom(
         backgroundColor: Colors.transparent,
         foregroundColor: AppColors.textSecondary,
-        overlayColor: Colors.grey.withOpacity(0.1),
+        overlayColor: Colors.grey.withValues(alpha: 0.1),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
       child: Text(
