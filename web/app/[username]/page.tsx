@@ -49,18 +49,26 @@ export async function generateMetadata({
   const description = profile.user.bio
     ? profile.user.bio
     : `Browse public wishlists shared by ${displayName} on Jinnie.`;
+  const canonicalPath = `/${profile.user.username}`;
 
   return {
-    title: `${displayName} · Jinnie`,
+    title: `${displayName} • Jinnie`,
     description,
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://jinnie.co"),
     openGraph: {
-      title: `${displayName} · Jinnie`,
+      url: canonicalPath,
+      title: `${displayName} • Jinnie`,
       description,
+      type: "profile",
+      siteName: "Jinnie",
     },
     twitter: {
       card: "summary_large_image",
-      title: `${displayName} · Jinnie`,
+      title: `${displayName} • Jinnie`,
       description,
+    },
+    alternates: {
+      canonical: canonicalPath,
     },
   };
 }

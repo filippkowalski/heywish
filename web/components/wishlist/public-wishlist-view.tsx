@@ -654,24 +654,27 @@ function WishCard({
   isMine?: boolean;
 }) {
   const coverImage = wish.images?.[0];
+  const [imageFailed, setImageFailed] = useState(false);
+  useEffect(() => {
+    setImageFailed(false);
+  }, [coverImage]);
   const price = formatPrice(wish.price, wish.currency);
   const isReserved = wish.status === "reserved";
+  const showImage = Boolean(coverImage && !imageFailed);
 
   return (
     <Card className="flex flex-col overflow-hidden border border-border/40 break-inside-avoid-column mb-4 hover:border-border hover:shadow-lg transition-all cursor-pointer group">
       <div onClick={onClick}>
-        {coverImage ? (
+        {showImage ? (
           <div className="relative w-full bg-muted">
             <Image
-              src={coverImage}
+              src={coverImage!}
               alt={wish.title}
               width={400}
               height={400}
               className="w-full h-auto object-cover group-hover:opacity-90 transition-opacity"
               sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 40vw, 90vw"
-              onError={(event) => {
-                event.currentTarget.style.display = "none";
-              }}
+              onError={() => setImageFailed(true)}
             />
             {isReserved && (
               <div className="absolute top-3 right-3">
@@ -681,24 +684,20 @@ function WishCard({
               </div>
             )}
           </div>
-        ) : (
-          <div className="relative w-full bg-muted/30 flex items-center justify-center" style={{ minHeight: '240px' }}>
-            <Gift className="h-16 w-16 text-muted-foreground/30" />
-            {isReserved && (
-              <div className="absolute top-3 right-3">
-                <Badge variant="secondary" className="bg-black/70 text-white border-0 backdrop-blur-sm text-xs px-3 py-1">
-                  {isMine ? "Reserved by you" : "Reserved"}
-                </Badge>
-              </div>
-            )}
-          </div>
-        )}
+        ) : null}
 
         <CardContent className="p-4 space-y-2">
           <div className="space-y-1">
-            <h3 className="font-semibold text-base leading-tight group-hover:underline">
-              {wish.title}
-            </h3>
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="font-semibold text-base leading-tight group-hover:underline">
+                {wish.title}
+              </h3>
+              {!showImage && isReserved && (
+                <Badge variant="secondary" className="bg-black/70 text-white border-0 px-2 py-0.5 text-[10px] uppercase">
+                  {isMine ? "Reserved by you" : "Reserved"}
+                </Badge>
+              )}
+            </div>
             {wish.description && (
               <p className="text-sm text-muted-foreground line-clamp-2">
                 {wish.description}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { Gift } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,8 @@ export interface WishDetailDialogProps {
   onCancel?: () => void;
   isMine?: boolean;
   footer?: FooterRenderer;
+  reserveHref?: string;
+  reserveLabel?: string;
 }
 
 export function WishDetailDialog({
@@ -53,6 +56,8 @@ export function WishDetailDialog({
   onCancel,
   isMine = false,
   footer,
+  reserveHref,
+  reserveLabel,
 }: WishDetailDialogProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -98,6 +103,8 @@ export function WishDetailDialog({
       );
     }
 
+    const canReserve = !isReserved && (onReserve != null || reserveHref);
+
     return (
       <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
         <Button
@@ -107,21 +114,34 @@ export function WishDetailDialog({
         >
           Close
         </Button>
-        {onReserve && (
-          <Button
-            onClick={onReserve}
-            className="flex-1 h-11 sm:h-12 text-base font-medium"
-          >
-            Reserve this item
-          </Button>
-        )}
+        {canReserve ? (
+          onReserve ? (
+            <Button
+              onClick={onReserve}
+              className="flex-1 h-11 sm:h-12 text-base font-medium"
+            >
+              {reserveLabel ?? "Reserve this item"}
+            </Button>
+          ) : reserveHref ? (
+            <Button
+              asChild
+              className="flex-1 h-11 sm:h-12 text-base font-medium"
+            >
+              <Link href={reserveHref}>{reserveLabel ?? "Reserve this item"}</Link>
+            </Button>
+          ) : null
+        ) : null}
       </div>
     );
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[95vh] p-0 gap-0 overflow-hidden flex flex-col">
+      <DialogContent
+        className="max-h-[95vh] p-0"
+        containerClassName="max-w-3xl overflow-hidden rounded-3xl border border-border/60 bg-card shadow-2xl flex flex-col"
+        hideClose
+      >
         {/* Image Gallery Section */}
         {images.length > 0 ? (
           <div className="relative w-full bg-muted" style={{ aspectRatio: "1/1" }}>
