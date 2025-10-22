@@ -148,66 +148,75 @@ export default async function PublicProfilePage({
   return (
     <main className="min-h-screen bg-background">
       <header className="border-b bg-card/50">
-        <div className="container mx-auto flex flex-col gap-6 px-4 py-12 md:flex-row md:items-center md:justify-between md:px-6">
-          <div className="flex items-start gap-5">
-            <Avatar className="h-20 w-20 rounded-xl border border-border">
-              {user.avatarUrl ? (
-                <AvatarImage src={user.avatarUrl} alt={user.fullName ?? user.username} />
-              ) : null}
-              <AvatarFallback className="rounded-xl text-lg font-semibold">
-                {(user.fullName ?? user.username).slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-semibold md:text-3xl">
-                  {user.fullName?.trim() || user.username}
-                </h1>
-                <Badge variant="secondary" className="text-xs uppercase tracking-wide">
-                  Public profile
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                @{user.username}
-                {user.location ? (
-                  <span className="ml-2 inline-flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {user.location}
-                  </span>
+        <div className="container mx-auto px-4 py-6 sm:py-8 md:py-10 md:px-6">
+          {/* Profile Header */}
+          <div className="flex flex-col gap-4 sm:gap-5">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <Avatar className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl border border-border flex-shrink-0">
+                {user.avatarUrl ? (
+                  <AvatarImage src={user.avatarUrl} alt={user.fullName ?? user.username} />
                 ) : null}
-              </p>
-              {user.bio ? (
-                <p className="max-w-xl text-sm text-muted-foreground">{user.bio}</p>
-              ) : null}
-
-              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                <span className="inline-flex items-center gap-2">
-                  <Gift className="h-4 w-4 text-primary" />
-                  {wishlists.length} public wishlists
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <Heart className="h-4 w-4 text-rose-500" />
-                  {formatNumber(totals.wishCount)} wishes
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <BookmarkCheck className="h-4 w-4 text-emerald-500" />
-                  {formatNumber(totals.reservedCount)} reserved
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <Users className="h-4 w-4 text-sky-500" />
-                  {formatNumber(user.friendCount)} connections
-                </span>
+                <AvatarFallback className="rounded-xl text-base sm:text-lg font-semibold">
+                  {(user.fullName ?? user.username).slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0 space-y-1.5 sm:space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold truncate">
+                    {user.fullName?.trim() || user.username}
+                  </h1>
+                  <Badge variant="secondary" className="text-[10px] sm:text-xs uppercase tracking-wide flex-shrink-0">
+                    Public
+                  </Badge>
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground flex items-center flex-wrap gap-x-2">
+                  <span className="truncate">@{user.username}</span>
+                  {user.location ? (
+                    <span className="inline-flex items-center gap-1 flex-shrink-0">
+                      <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      <span className="truncate">{user.location}</span>
+                    </span>
+                  ) : null}
+                </p>
               </div>
             </div>
-          </div>
 
-          <ShareButton
-            path={`/${user.username}`}
-            label="Share profile"
-            title={`${user.fullName ?? user.username} · Jinnie`}
-            text={`Browse ${user.fullName ?? user.username}'s public wishlists on Jinnie.`}
-            className="self-start"
-          />
+            {/* Bio */}
+            {user.bio ? (
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                {user.bio}
+              </p>
+            ) : null}
+
+            {/* Stats */}
+            <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs sm:text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 sm:gap-2">
+                <Gift className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                <span className="font-medium text-foreground">{wishlists.length}</span> wishlists
+              </span>
+              <span className="inline-flex items-center gap-1.5 sm:gap-2">
+                <Heart className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-rose-500 flex-shrink-0" />
+                <span className="font-medium text-foreground">{formatNumber(totals.wishCount)}</span> wishes
+              </span>
+              <span className="inline-flex items-center gap-1.5 sm:gap-2">
+                <BookmarkCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-500 flex-shrink-0" />
+                <span className="font-medium text-foreground">{formatNumber(totals.reservedCount)}</span> reserved
+              </span>
+              <span className="inline-flex items-center gap-1.5 sm:gap-2">
+                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-sky-500 flex-shrink-0" />
+                <span className="font-medium text-foreground">{formatNumber(user.friendCount)}</span> friends
+              </span>
+            </div>
+
+            {/* Share Button */}
+            <ShareButton
+              path={`/${user.username}`}
+              label="Share profile"
+              title={`${user.fullName ?? user.username} · Jinnie`}
+              text={`Browse ${user.fullName ?? user.username}'s public wishlists on Jinnie.`}
+              className="w-full sm:w-auto"
+            />
+          </div>
         </div>
       </header>
 
