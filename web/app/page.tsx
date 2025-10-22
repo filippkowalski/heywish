@@ -62,7 +62,7 @@ export default function HomePage() {
             </Link>
           </Button>
           <Button variant="ghost" size="sm" asChild>
-            <Link href="https://heywish.notion.site/Jinnie-Preview" target="_blank" rel="noreferrer">
+            <Link href="https://jinnie.notion.site/Jinnie-Preview" target="_blank" rel="noreferrer">
               Product roadmap
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>

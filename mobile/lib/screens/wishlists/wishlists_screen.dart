@@ -149,7 +149,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
                           ? _buildLoadingShimmer()
                           : wishlistService.error != null
                               ? _buildErrorState(wishlistService.error!)
-                              : wishlistService.wishlists.isEmpty
+                              : (wishlistService.wishlists.isEmpty && wishlistService.allWishes.isEmpty)
                                   ? _buildEmptyState(context)
                                   : _buildContent(wishlistService.wishlists),
                 ),
@@ -158,7 +158,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
           ),
         ),
       ),
-      floatingActionButton: !_hasCompletedInitialLoad || wishlistService.isLoading || wishlistService.wishlists.isEmpty
+      floatingActionButton: !_hasCompletedInitialLoad || wishlistService.isLoading
           ? null
           : FloatingActionButton(
               onPressed: () async {
@@ -178,6 +178,9 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
   }
 
   Widget _buildHeader(BuildContext context, AuthService authService) {
+    final wishlistService = context.watch<WishlistService>();
+    final hasAnyWishes = wishlistService.allWishes.isNotEmpty;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Row(
@@ -203,22 +206,23 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
               ],
             ),
           ),
-          // Share button
-          Container(
-            decoration: BoxDecoration(
-              color: AppTheme.primaryAccent,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              onPressed: () => _showShareBottomSheet(context),
-              icon: const Icon(
-                Icons.share_outlined,
-                color: Colors.white,
-                size: 20,
+          // Share button - only show when user has at least one wish
+          if (hasAnyWishes)
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.primaryAccent,
+                borderRadius: BorderRadius.circular(12),
               ),
-              tooltip: 'app.share'.tr(),
+              child: IconButton(
+                onPressed: () => _showShareBottomSheet(context),
+                icon: const Icon(
+                  Icons.share_outlined,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                tooltip: 'app.share'.tr(),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -237,35 +241,37 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
   }
 
   Widget _buildErrorState(String error) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 80,
-              color: Theme.of(context).colorScheme.error.withOpacity(0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Something went wrong',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              error,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: _loadWishlists,
-              icon: Icon(Icons.refresh),
-              label: const Text('Try Again'),
-            ),
-          ],
+    return SingleChildScrollView(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 80,
+                color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Something went wrong',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: _loadWishlists,
+                icon: Icon(Icons.refresh),
+                label: const Text('Try Again'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -534,54 +540,60 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
 
 
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(24),
+    return SingleChildScrollView(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(40.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Icon(
+                  Icons.card_giftcard_outlined,
+                  size: 48,
+                  color: Colors.grey.shade600,
+                ),
               ),
-              child: Icon(
-                Icons.list_alt_outlined,
-                size: 48,
-                color: Colors.grey.shade600,
+
+              const SizedBox(height: 24),
+
+              Text(
+                'home.empty_title'.tr(),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 8),
 
-            Text(
-              'home.empty_title'.tr(),
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              Text(
+                'home.empty_subtitle'.tr(),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-            ),
 
-            const SizedBox(height: 8),
+              const SizedBox(height: 32),
 
-            Text(
-              'home.empty_subtitle'.tr(),
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-
-            const SizedBox(height: 32),
-
-            ElevatedButton.icon(
-              onPressed: () {
-                context.push('/wishlists/new');
-              },
-              icon: Icon(Icons.add),
-              label: Text('home.create_first_wishlist'.tr()),
-            ),
-          ],
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final result = await AddWishScreen.show(context);
+                  // Refresh if wish was added successfully
+                  if (result == true && mounted) {
+                    await _loadWishlists();
+                  }
+                },
+                icon: Icon(Icons.add),
+                label: Text('home.create_first_wish'.tr()),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -814,8 +826,8 @@ class _ShareBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     // Construct share URL (without https://)
     final shareUrl = wishlistName != null
-        ? 'quieroo.co/$username/${wishlistName!.toLowerCase().replaceAll(' ', '-')}'
-        : 'quieroo.co/$username';
+        ? 'jinnie.co/$username/${wishlistName!.toLowerCase().replaceAll(' ', '-')}'
+        : 'jinnie.co/$username';
 
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
@@ -975,7 +987,7 @@ class _ShareBottomSheetState extends State<_ShareBottomSheet> {
   @override
   Widget build(BuildContext context) {
     // Construct profile URL (without https://)
-    final profileUrl = 'quieroo.co/${widget.username}';
+    final profileUrl = 'jinnie.co/${widget.username}';
 
     return Container(
       decoration: BoxDecoration(
@@ -1073,7 +1085,7 @@ class _ShareBottomSheetState extends State<_ShareBottomSheet> {
                       // Wishlist Items
                       ...widget.wishlists.map((wishlist) {
                         final wishlistUrl =
-                            'quieroo.co/${widget.username}/${wishlist.name.toLowerCase().replaceAll(' ', '-')}';
+                            'jinnie.co/${widget.username}/${wishlist.name.toLowerCase().replaceAll(' ', '-')}';
                         final isPrivate = wishlist.visibility == 'private';
                         final isUpdating = _updatingVisibility[wishlist.id] ?? false;
 

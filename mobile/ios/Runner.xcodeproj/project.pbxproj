@@ -17,6 +17,7 @@
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		CEF1A4CFA5C801C454264DC5 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 8CE6262CF07FA43ACDC94073 /* GoogleService-Info.plist */; };
+		D2DACC1B2EA63A87000ADBB1 /* Share Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D2DACC062EA63987000ADBB1 /* Share Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -27,17 +28,25 @@
 			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
 			remoteInfo = Runner;
 		};
+		D2DACC1A2EA63A87000ADBB1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D2DACC052EA63987000ADBB1;
+			remoteInfo = "Share Extension";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		9705A1C41CF9048500538489 /* Embed Frameworks */ = {
+		9705A1C41CF9048500538489 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolderSpec = 10;
+			dstSubfolderSpec = 13;
 			files = (
+				D2DACC1B2EA63A87000ADBB1 /* Share Extension.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed Frameworks";
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -247,7 +256,7 @@
 				97C146EA1CF9000F007C117D /* Sources */,
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
-				9705A1C41CF9048500538489 /* Embed Frameworks */,
+				9705A1C41CF9048500538489 /* Embed Foundation Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				A868067C64AC8EA4C4F9C6CC /* [CP] Embed Pods Frameworks */,
 				E88DDE3CBAD79B749E69536F /* [CP] Copy Pods Resources */,
@@ -255,6 +264,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				D2DACC1C2EA63A87000ADBB1 /* PBXTargetDependency */,
 			);
 			name = Runner;
 			productName = Runner;
@@ -498,6 +508,11 @@
 			isa = PBXTargetDependency;
 			target = 97C146ED1CF9000F007C117D /* Runner */;
 			targetProxy = 331C8085294A63A400263BE5 /* PBXContainerItemProxy */;
+		};
+		D2DACC1C2EA63A87000ADBB1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D2DACC052EA63987000ADBB1 /* Share Extension */;
+			targetProxy = D2DACC1A2EA63A87000ADBB1 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -831,7 +846,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Share Extension/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Quieroo;
+				INFOPLIST_KEY_CFBundleDisplayName = Jinnie;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -872,7 +887,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Share Extension/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Quieroo;
+				INFOPLIST_KEY_CFBundleDisplayName = Jinnie;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -910,7 +925,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Share Extension/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Quieroo;
+				INFOPLIST_KEY_CFBundleDisplayName = Jinnie;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				LD_RUNPATH_SEARCH_PATHS = (
