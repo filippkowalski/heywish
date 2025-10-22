@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Terms of Service - Jinnie',
@@ -16,7 +17,7 @@ export default function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Acceptance of Terms</h2>
             <p className="text-gray-700 mb-4">
-              Welcome to Jinnie! By accessing or using our wishlist platform ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do not use our Service.
+              Welcome to Jinnie! By accessing or using our wishlist platform (&quot;Service&quot;), you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you do not agree to these Terms, please do not use our Service.
             </p>
             <p className="text-gray-700">
               These Terms apply to all visitors, users, and others who access or use the Service, whether through our mobile application or website.
@@ -31,7 +32,7 @@ export default function TermsOfService() {
             <ul className="list-disc pl-6 text-gray-700 space-y-2">
               <li>Create and manage personal wishlists</li>
               <li>Share wishlists with friends and family</li>
-              <li>Reserve gifts from friends' wishlists</li>
+              <li>Reserve gifts from friends&apos; wishlists</li>
               <li>Discover new products through our platform</li>
               <li>Connect with other users through social features</li>
             </ul>
@@ -105,9 +106,9 @@ export default function TermsOfService() {
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Privacy</h2>
             <p className="text-gray-700">
               Your privacy is important to us. Please review our{' '}
-              <a href="/privacy" className="text-blue-600 hover:text-blue-800 underline">
+              <Link href="/privacy" className="text-blue-600 hover:text-blue-800 underline">
                 Privacy Policy
-              </a>
+              </Link>
               {' '}to understand how we collect, use, and protect your personal information.
             </p>
           </section>
@@ -151,7 +152,7 @@ export default function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">10. Disclaimers</h2>
             <p className="text-gray-700 mb-4">
-              THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO:
+              THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO:
             </p>
             <ul className="list-disc pl-6 text-gray-700 space-y-2">
               <li>Warranties of merchantability or fitness for a particular purpose</li>

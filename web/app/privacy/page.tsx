@@ -16,10 +16,10 @@ export default function PrivacyPolicy() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Introduction</h2>
             <p className="text-gray-700 mb-4">
-              Welcome to Jinnie ("we," "our," or "us"). We are committed to protecting your privacy and ensuring you have a positive experience when using our wishlist platform.
+              Welcome to Jinnie (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). We are committed to protecting your privacy and ensuring you have a positive experience when using our wishlist platform.
             </p>
             <p className="text-gray-700">
-              This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and website (collectively, the "Service"). Please read this privacy policy carefully.
+              This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and website (collectively, the &quot;Service&quot;). Please read this privacy policy carefully.
             </p>
           </section>
 
@@ -112,7 +112,7 @@ export default function PrivacyPolicy() {
 
             <h3 className="text-xl font-semibold text-gray-900 mb-3">4.4 Legal Requirements</h3>
             <p className="text-gray-700 mb-4">
-              We may disclose your information if required by law or if we believe it's necessary to:
+              We may disclose your information if required by law or if we believe it&apos;s necessary to:
             </p>
             <ul className="list-disc pl-6 text-gray-700 space-y-2">
               <li>Comply with legal processes, government requests, or court orders</li>
@@ -181,7 +181,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Children's Privacy</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Children&apos;s Privacy</h2>
             <p className="text-gray-700">
               Our Service is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us so we can delete it.
             </p>
@@ -220,7 +220,7 @@ export default function PrivacyPolicy() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. Changes to This Privacy Policy</h2>
             <p className="text-gray-700">
-              We may update this Privacy Policy from time to time. We will notify you of any material changes by posting the new Privacy Policy on this page and updating the "Last updated" date. We may also send you an email or in-app notification about significant changes.
+              We may update this Privacy Policy from time to time. We will notify you of any material changes by posting the new Privacy Policy on this page and updating the &quot;Last updated&quot; date. We may also send you an email or in-app notification about significant changes.
             </p>
           </section>
 

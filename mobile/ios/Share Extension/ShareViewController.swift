@@ -145,13 +145,34 @@ class ShareViewController: UIViewController {
     }
 
     private func completeRequest() {
-        // Simply dismiss the extension
-        // The main app will check for shared content when it's opened
+        // Open the main app using the URL scheme
+        let appURL = URL(string: "jinnie://share")!
+
         DispatchQueue.main.async { [weak self] in
+            // Try to open the app
+            self?.openURL(appURL)
+
+            // Complete the extension request
             self?.extensionContext?.completeRequest(returningItems: [], completionHandler: { _ in
-                print("✅ Share extension completed")
+                print("✅ Share extension completed and app opened")
             })
         }
+    }
+
+    @objc func openURL(_ url: URL) {
+        var responder: UIResponder? = self
+        while responder != nil {
+            if let application = responder as? UIApplication {
+                application.open(url, options: [:], completionHandler: nil)
+                return
+            }
+            responder = responder?.next
+        }
+
+        // Fallback: Use extensionContext to open URL
+        extensionContext?.open(url, completionHandler: { success in
+            print(success ? "✅ App opened successfully" : "❌ Failed to open app")
+        })
     }
 
 }

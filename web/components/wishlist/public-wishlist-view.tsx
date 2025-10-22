@@ -27,7 +27,7 @@ import { api, type Wish, type Wishlist } from "@/lib/api";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -780,7 +780,7 @@ function ReservationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Reserve "{wish?.title ?? "Wish"}"</DialogTitle>
+          <DialogTitle>Reserve &quot;{wish?.title ?? "Wish"}&quot;</DialogTitle>
           <DialogDescription>
             Your reservation will be tied to this email address. You can manage your reservations using the link we&apos;ll send you.
           </DialogDescription>
@@ -997,7 +997,7 @@ function WishDetailDialog({
                 )}
                 {wish.reservedMessage && (
                   <p className="text-sm italic text-muted-foreground">
-                    "{wish.reservedMessage}"
+                    &quot;{wish.reservedMessage}&quot;
                   </p>
                 )}
               </div>

@@ -42,7 +42,7 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
   final ImageCacheService _imageCacheService = ImageCacheService();
 
   // Form state
-  String _selectedVisibility = 'private';
+  String _selectedVisibility = 'public';
   File? _selectedHeaderImage;
   bool _isLoading = false;
   bool _isCompressingImage = false;
@@ -396,58 +396,51 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
 
   Widget _buildVisibilitySelector() {
     final visibilityOptions = [
-      {'value': 'private', 'label': 'Private', 'icon': Icons.lock_outlined},
-      {'value': 'friends', 'label': 'Friends', 'icon': Icons.people_outlined},
       {'value': 'public', 'label': 'Public', 'icon': Icons.public_outlined},
+      {'value': 'friends', 'label': 'Friends', 'icon': Icons.people_outlined},
+      {'value': 'private', 'label': 'Private', 'icon': Icons.lock_outlined},
     ];
 
-    return SizedBox(
-      height: 32,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: visibilityOptions.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final option = visibilityOptions[index];
-          final isSelected = _selectedVisibility == option['value'];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: visibilityOptions.map((option) {
+        final isSelected = _selectedVisibility == option['value'];
 
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedVisibility = option['value'] as String;
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSelected ? AppTheme.primaryAccent : Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      option['icon'] as IconData,
-                      size: 16,
-                      color: isSelected ? Colors.white : AppTheme.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      option['label'] as String,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: isSelected ? Colors.white : AppTheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedVisibility = option['value'] as String;
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: isSelected ? AppTheme.primaryAccent : Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
             ),
-          );
-        },
-      ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  option['icon'] as IconData,
+                  size: 16,
+                  color: isSelected ? Colors.white : AppTheme.primary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  option['label'] as String,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected ? Colors.white : AppTheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
