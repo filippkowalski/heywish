@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../models/wish.dart';
 import '../../services/wishlist_service.dart';
 import '../../theme/app_theme.dart';
@@ -347,59 +345,31 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
           ),
 
           // Bottom action buttons
-          Container(
-            padding: EdgeInsets.fromLTRB(24, 16, 24, bottomPadding + 24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                top: BorderSide(color: Colors.grey[200]!, width: 1),
+          if (wish!.url != null)
+            Container(
+              padding: EdgeInsets.fromLTRB(24, 16, 24, bottomPadding + 24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(color: Colors.grey[200]!, width: 1),
+                ),
               ),
-            ),
-            child: Row(
-              children: [
-                // Share button
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      onPressed: _shareWish,
-                      icon: const Icon(Icons.share_outlined, size: 18),
-                      label: const Text('Share'),
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        side: BorderSide(color: Colors.grey[300]!),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: FilledButton.icon(
+                  onPressed: _openUrl,
+                  icon: const Icon(Icons.open_in_new, size: 18),
+                  label: const Text('View Product'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.primaryAccent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 ),
-                if (wish!.url != null) ...[
-                  const SizedBox(width: 12),
-                  // View Product button
-                  Expanded(
-                    flex: 2,
-                    child: SizedBox(
-                      height: 48,
-                      child: FilledButton.icon(
-                        onPressed: _openUrl,
-                        icon: const Icon(Icons.open_in_new, size: 18),
-                        label: const Text('View Product'),
-                        style: FilledButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          backgroundColor: AppTheme.primaryAccent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
+              ),
             ),
-          ),
         ],
         ),
       ),
@@ -443,114 +413,6 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
           );
         }
       }
-    }
-  }
-
-  void _shareWish() async {
-    if (wish == null) return;
-
-    try {
-      final shareText = '''
-${wish!.title}
-
-${wish!.description ?? 'An item from my wishlist'}
-
-${wish!.price != null ? '${wish!.currency ?? 'USD'} ${wish!.price!.toStringAsFixed(2)}' : ''}
-
-${wish!.url != null ? 'Product link: ${wish!.url}' : ''}
-
-From my Jinnie wishlist 🎁
-''';
-
-      // Show sharing options
-      await showModalBottomSheet<void>(
-        context: context,
-        backgroundColor: Colors.transparent,
-        builder: (BuildContext context) {
-          return Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Handle bar
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(top: 12, bottom: 24),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  ListTile(
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryAccent.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.share, color: AppTheme.primaryAccent),
-                    ),
-                    title: const Text('Share via...', style: TextStyle(fontWeight: FontWeight.w600)),
-                    onTap: () async {
-                      Navigator.pop(context);
-                      await Share.share(shareText, subject: 'Check out this item: ${wish!.title}');
-                    },
-                  ),
-                  ListTile(
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryAccent.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.copy, color: AppTheme.primaryAccent),
-                    ),
-                    title: const Text('Copy details to clipboard', style: TextStyle(fontWeight: FontWeight.w600)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Clipboard.setData(ClipboardData(text: shareText));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Item details copied to clipboard')),
-                      );
-                    },
-                  ),
-                  if (wish!.url != null)
-                    ListTile(
-                      leading: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryAccent.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.link, color: AppTheme.primaryAccent),
-                      ),
-                      title: const Text('Copy product URL', style: TextStyle(fontWeight: FontWeight.w600)),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Clipboard.setData(ClipboardData(text: wish!.url!));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Product URL copied to clipboard')),
-                        );
-                      },
-                    ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to share: $e')),
-      );
     }
   }
 
