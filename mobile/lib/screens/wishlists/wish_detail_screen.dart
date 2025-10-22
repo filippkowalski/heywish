@@ -624,12 +624,14 @@ From my Jinnie wishlist 🎁
     );
 
     if (shouldDelete == true && mounted) {
+      // Close the detail sheet immediately before starting deletion
+      Navigator.of(context).pop(true);
+
+      // Perform deletion (optimistic UI handles removal)
       final success = await context.read<WishlistService>().deleteWish(widget.wishId);
 
-      if (success && mounted) {
-        // Navigate back and signal that refresh is needed
-        Navigator.of(context).pop(true);
-      } else if (mounted) {
+      if (!success && mounted) {
+        // Show error if deletion failed (the wish will be restored by the service)
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to delete item'),
