@@ -174,8 +174,8 @@ class _EditWishScreenState extends State<EditWishScreen> {
       if (!permissionStatus.isGranted) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Photo library access is required to add images'),
+            SnackBar(
+              content: Text('wish.photo_library_access_required'.tr()),
             ),
           );
         }
@@ -215,7 +215,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick image: $e')),
+          SnackBar(content: Text('wish.failed_to_pick_image'.tr(namedArgs: {'error': e.toString()}))),
         );
       }
     }
@@ -224,7 +224,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
   Future<void> _updateWish() async {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a title')),
+        SnackBar(content: Text('wish.please_enter_title'.tr())),
       );
       return;
     }
@@ -276,7 +276,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text('Item updated successfully'),
+                content: Text('wish.item_updated'.tr()),
                 backgroundColor: AppTheme.primaryAccent,
               ),
             );
@@ -291,7 +291,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to update item: $e'),
+            content: Text('wish.failed_to_update'.tr(namedArgs: {'error': e.toString()})),
             backgroundColor: Colors.red,
           ),
         );
@@ -335,126 +335,267 @@ class _EditWishScreenState extends State<EditWishScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header with handle bar
-            Container(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-              child: Column(
-                children: [
-                  // Handle bar
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Title row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Edit Item',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.primary,
-                          ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(top: 12, bottom: 24),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
 
             // Scrollable content
             Flexible(
               child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(24, 0, 24, bottomPadding + 24),
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title Field
-                    TextField(
-                      controller: _titleController,
-                      focusNode: _titleFocusNode,
-                      decoration: InputDecoration(
-                        hintText: 'Item name',
-                        hintStyle: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 16,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: AppTheme.primary,
-                      ),
-                      textCapitalization: TextCapitalization.sentences,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Visible fields
-                    ..._buildVisibleFields(),
-
-                    const SizedBox(height: 12),
-
-                    // Add field buttons
-                    if (_visibleFields.length < 4) ..._buildAddFieldButtons(),
-
-                    const SizedBox(height: 24),
-
-                    // Save button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: FilledButton(
-                        onPressed: (_isLoading || _titleController.text.trim().isEmpty)
-                            ? null
-                            : _updateWish,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppTheme.primaryAccent,
-                          disabledBackgroundColor: Colors.grey[300],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                    // Title field - Always visible, big and borderless
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _buildBorderlessTextField(
+                            controller: _titleController,
+                            focusNode: _titleFocusNode,
+                            hintText: 'wish.title_placeholder'.tr(),
+                            fontSize: 28,
+                            fontWeight: FontWeight.w600,
+                            maxLines: 2,
+                            textCapitalization: TextCapitalization.words,
                           ),
                         ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              )
-                            : const Text(
-                                'Update',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                      ],
+                    ),
+
+                    // Description Field (if visible)
+                    if (_visibleFields.contains('description')) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _buildBorderlessTextField(
+                              controller: _descriptionController,
+                              focusNode: _descriptionFocusNode,
+                              hintText: 'Description',
+                              fontSize: 17,
+                              fontWeight: FontWeight.w500,
+                              maxLines: 3,
+                              textCapitalization: TextCapitalization.sentences,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              setState(() {
+                                _visibleFields.remove('description');
+                                _descriptionController.clear();
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              child: Icon(
+                                Icons.close,
+                                size: 24,
+                                color: Colors.grey[400],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+
+                    // URL Field (if visible)
+                    if (_visibleFields.contains('url')) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _buildBorderlessTextField(
+                              controller: _urlController,
+                              focusNode: _urlFocusNode,
+                              hintText: 'Link',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              keyboardType: TextInputType.url,
+                              textColor: Colors.grey[600],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              setState(() {
+                                _visibleFields.remove('url');
+                                _urlController.clear();
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              child: Icon(
+                                Icons.close,
+                                size: 24,
+                                color: Colors.grey[400],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+
+                    // Image Field (if visible)
+                    if (_visibleFields.contains('image')) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: (_selectedImage != null || _existingImageUrl != null || _scrapedImageUrl != null)
+                                  ? _buildImagePreview()
+                                  : _buildAddImageButton(),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                setState(() {
+                                  _visibleFields.remove('image');
+                                  _selectedImage = null;
+                                  _existingImageUrl = null;
+                                  _scrapedImageUrl = null;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                child: Icon(
+                                  Icons.close,
+                                  size: 24,
+                                  color: Colors.grey[400],
                                 ),
                               ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
+
+                    // Price Field (if visible)
+                    if (_visibleFields.contains('price')) ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: _buildBorderlessTextField(
+                                    controller: _priceController,
+                                    focusNode: _priceFocusNode,
+                                    hintText: 'Price',
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w500,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                DropdownButton<String>(
+                                  value: _currency,
+                                  underline: const SizedBox(),
+                                  items: _currencies.map((currency) {
+                                    return DropdownMenuItem(
+                                      value: currency,
+                                      child: Text(
+                                        currency,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _currency = value!;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              setState(() {
+                                _visibleFields.remove('price');
+                                _priceController.clear();
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              child: Icon(
+                                Icons.close,
+                                size: 24,
+                                color: Colors.grey[400],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+
+                    // Add More Details buttons
+                    const SizedBox(height: 20),
+                    _buildAddFieldButtons(),
                   ],
+                ),
+              ),
+            ),
+
+            // Bottom button
+            Container(
+              padding: EdgeInsets.fromLTRB(24, 12, 24, bottomPadding + 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(color: Colors.grey[200]!, width: 1),
+                ),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: FilledButton(
+                  onPressed: (_isLoading || _titleController.text.trim().isEmpty) ? null : _updateWish,
+                  style: FilledButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    backgroundColor: AppTheme.primaryAccent,
+                    disabledBackgroundColor: Colors.grey[300],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Update',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -464,352 +605,74 @@ class _EditWishScreenState extends State<EditWishScreen> {
     );
   }
 
-  List<Widget> _buildVisibleFields() {
-    final fields = <Widget>[];
-
-    for (final fieldKey in _visibleFields) {
-      Widget? field;
-
-      switch (fieldKey) {
-        case 'description':
-          field = _buildDescriptionField();
-          break;
-        case 'price':
-          field = _buildPriceField();
-          break;
-        case 'url':
-          field = _buildUrlField();
-          break;
-        case 'image':
-          field = _buildImageField();
-          break;
-      }
-
-      if (field != null) {
-        fields.add(field);
-        fields.add(const SizedBox(height: 16));
-      }
-    }
-
-    return fields;
-  }
-
-  Widget _buildDescriptionField() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.description_outlined, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: _descriptionController,
-              focusNode: _descriptionFocusNode,
-              decoration: InputDecoration(
-                hintText: 'Description',
-                hintStyle: TextStyle(color: Colors.grey[400]),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-              style: const TextStyle(fontSize: 14),
-              maxLines: 3,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPriceField() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.attach_money, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: _priceController,
-              focusNode: _priceFocusNode,
-              decoration: InputDecoration(
-                hintText: 'Price',
-                hintStyle: TextStyle(color: Colors.grey[400]),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-              style: const TextStyle(fontSize: 14),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            ),
-          ),
-          const SizedBox(width: 8),
-          DropdownButton<String>(
-            value: _currency,
-            underline: const SizedBox(),
-            isDense: true,
-            items: _currencies.map((currency) {
-              return DropdownMenuItem(
-                value: currency,
-                child: Text(
-                  currency,
-                  style: const TextStyle(fontSize: 14),
-                ),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _currency = value!;
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUrlField() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.link, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: _urlController,
-              focusNode: _urlFocusNode,
-              decoration: InputDecoration(
-                hintText: 'URL',
-                hintStyle: TextStyle(color: Colors.grey[400]),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-              style: const TextStyle(fontSize: 14),
-              keyboardType: TextInputType.url,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildImageField() {
-    return GestureDetector(
-      onTap: _pickImage,
-      child: Container(
-        height: 200,
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
+  Widget _buildBorderlessTextField({
+    required TextEditingController controller,
+    FocusNode? focusNode,
+    required String hintText,
+    double fontSize = 16,
+    FontWeight fontWeight = FontWeight.w400,
+    int maxLines = 1,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+    TextInputType? keyboardType,
+    Color? textColor,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: TextField(
+        controller: controller,
+        focusNode: focusNode,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          color: textColor ?? AppTheme.primary,
+          height: 1.3,
         ),
-        child: _isCompressingImage
-            ? const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 12),
-                    Text(
-                      'Compressing image...',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppTheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : _selectedImage != null
-                ? Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(11),
-                        child: Image.file(
-                          _selectedImage!,
-                          width: double.infinity,
-                          height: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.6),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                            onPressed: () {
-                              setState(() {
-                                _selectedImage = null;
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                : _existingImageUrl != null
-                    ? Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(11),
-                            child: CachedImageWidget(
-                              imageUrl: _existingImageUrl!,
-                              width: double.infinity,
-                              height: double.infinity,
-                              fit: BoxFit.cover,
-                              errorWidget: Center(
-                                child: Icon(
-                                  WishCategoryDetector.getIconFromTitle(_titleController.text),
-                                  size: 48,
-                                  color: WishCategoryDetector.getColorFromTitle(_titleController.text),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.6),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: IconButton(
-                                icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                                onPressed: () {
-                                  setState(() {
-                                    _existingImageUrl = null;
-                                  });
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : _scrapedImageUrl != null
-                        ? Stack(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(11),
-                                child: CachedImageWidget(
-                                  imageUrl: _scrapedImageUrl!,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorWidget: Center(
-                                    child: Icon(
-                                      WishCategoryDetector.getIconFromTitle(_titleController.text),
-                                      size: 48,
-                                      color: WishCategoryDetector.getColorFromTitle(_titleController.text),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                top: 8,
-                                right: 8,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.6),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: IconButton(
-                                    icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                                    onPressed: () {
-                                      setState(() {
-                                        _scrapedImageUrl = null;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        : Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.add_photo_alternate_outlined,
-                                  size: 40,
-                                  color: Colors.grey[400],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Add image',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            color: Colors.grey[400],
+            height: 1.3,
+          ),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
+        ),
+        maxLines: maxLines,
+        minLines: 1,
+        textCapitalization: textCapitalization,
+        keyboardType: keyboardType,
       ),
     );
   }
 
-  List<Widget> _buildAddFieldButtons() {
+  Widget _buildAddFieldButtons() {
     final availableFields = [
-      if (!_visibleFields.contains('description'))
-        {
-          'key': 'description',
-          'icon': Icons.description_outlined,
-          'label': 'Description',
-          'focusNode': _descriptionFocusNode,
-        },
-      if (!_visibleFields.contains('price'))
-        {
-          'key': 'price',
-          'icon': Icons.attach_money,
-          'label': 'Price',
-          'focusNode': _priceFocusNode,
-        },
-      if (!_visibleFields.contains('url'))
-        {
-          'key': 'url',
-          'icon': Icons.link,
-          'label': 'URL',
-          'focusNode': _urlFocusNode,
-        },
-      if (!_visibleFields.contains('image'))
-        {
-          'key': 'image',
-          'icon': Icons.image_outlined,
-          'label': 'Image',
-        },
+      if (!_visibleFields.contains('description')) {'key': 'description', 'label': 'Description', 'icon': Icons.notes, 'focusNode': _descriptionFocusNode},
+      if (!_visibleFields.contains('url')) {'key': 'url', 'label': 'Link', 'icon': Icons.link, 'focusNode': _urlFocusNode},
+      if (!_visibleFields.contains('image')) {'key': 'image', 'label': 'Photo', 'icon': Icons.image},
+      if (!_visibleFields.contains('price')) {'key': 'price', 'label': 'Price', 'icon': Icons.attach_money, 'focusNode': _priceFocusNode},
     ];
 
-    return availableFields.map((field) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: GestureDetector(
+    if (availableFields.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: availableFields.map((field) {
+        return GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
             setState(() {
               _visibleFields.add(field['key'] as String);
             });
+
+            // Request focus or perform action after setState
             Future.delayed(const Duration(milliseconds: 100), () {
               if (field['key'] == 'image') {
                 _pickImage();
@@ -825,21 +688,107 @@ class _EditWishScreenState extends State<EditWishScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(field['icon'] as IconData, size: 20, color: Colors.grey[600]),
-                const SizedBox(width: 12),
+                Icon(
+                  field['icon'] as IconData,
+                  size: 16,
+                  color: Colors.grey[600],
+                ),
+                const SizedBox(width: 6),
                 Text(
                   field['label'] as String,
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildImagePreview() {
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        width: double.infinity,
+        height: 180,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey.shade100,
         ),
-      );
-    }).toList();
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: _selectedImage != null
+              ? Image.file(
+                  _selectedImage!,
+                  fit: BoxFit.cover,
+                )
+              : _existingImageUrl != null
+                  ? CachedImageWidget(
+                      imageUrl: _existingImageUrl!,
+                      fit: BoxFit.cover,
+                      errorWidget: Center(
+                        child: Icon(
+                          WishCategoryDetector.getIconFromTitle(_titleController.text),
+                          size: 48,
+                          color: WishCategoryDetector.getColorFromTitle(_titleController.text),
+                        ),
+                      ),
+                    )
+                  : _scrapedImageUrl != null
+                      ? CachedImageWidget(
+                          imageUrl: _scrapedImageUrl!,
+                          fit: BoxFit.cover,
+                          errorWidget: Center(
+                            child: Icon(
+                              WishCategoryDetector.getIconFromTitle(_titleController.text),
+                              size: 48,
+                              color: WishCategoryDetector.getColorFromTitle(_titleController.text),
+                            ),
+                          ),
+                        )
+                      : const SizedBox(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddImageButton() {
+    return GestureDetector(
+      onTap: _isCompressingImage ? null : _pickImage,
+      child: Container(
+        width: double.infinity,
+        height: 180,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey[50],
+          border: Border.all(color: Colors.grey[300]!, width: 1.5),
+        ),
+        child: Center(
+          child: _isCompressingImage
+              ? const CircularProgressIndicator(strokeWidth: 2)
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.image_outlined, size: 48, color: Colors.grey[400]),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tap to add photo',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
   }
 }

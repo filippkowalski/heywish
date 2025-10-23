@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../../services/onboarding_service.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/widgets/primary_button.dart';
@@ -15,11 +16,11 @@ class GenderStep extends StatefulWidget {
 class _GenderStepState extends State<GenderStep> {
   String? selectedGender;
 
-  final List<Map<String, dynamic>> genderOptions = [
-    {'value': 'female', 'label': 'Woman', 'icon': '👩'},
-    {'value': 'male', 'label': 'Man', 'icon': '👨'},
-    {'value': 'non_binary', 'label': 'Non-binary', 'icon': '🌟'},
-    {'value': 'prefer_not_to_say', 'label': 'Prefer not to say', 'icon': '✨'},
+  List<Map<String, dynamic>> get genderOptions => [
+    {'value': 'female', 'label': 'onboarding.gender_woman'.tr(), 'icon': '👩'},
+    {'value': 'male', 'label': 'onboarding.gender_man'.tr(), 'icon': '👨'},
+    {'value': 'non_binary', 'label': 'onboarding.gender_non_binary'.tr(), 'icon': '🌟'},
+    {'value': 'prefer_not_to_say', 'label': 'onboarding.gender_prefer_not_say'.tr(), 'icon': '✨'},
   ];
 
   @override

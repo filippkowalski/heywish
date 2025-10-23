@@ -489,7 +489,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
       child: Padding(
         padding: const EdgeInsets.all(40.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 96,
@@ -540,13 +540,19 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
 
 
   Widget _buildEmptyState(BuildContext context) {
-    return SingleChildScrollView(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(40.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight,
+            ),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(40.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
               Container(
                 width: 96,
                 height: 96,
@@ -592,10 +598,13 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
                 icon: Icon(Icons.add),
                 label: Text('home.create_first_wish'.tr()),
               ),
-            ],
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

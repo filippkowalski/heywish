@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../services/friends_service.dart';
 import '../models/friend.dart';
 import '../widgets/cached_image.dart';
@@ -68,7 +69,7 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Activity'),
+        title: Text('activity.title'.tr()),
         automaticallyImplyLeading: false,
         bottom: TabBar(
           controller: _tabController,
@@ -89,10 +90,10 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
             }
             _onFilterChanged(filter);
           },
-          tabs: const [
-            Tab(text: 'Friends', icon: Icon(Icons.people)),
-            Tab(text: 'Discover', icon: Icon(Icons.explore)),
-            Tab(text: 'My Activity', icon: Icon(Icons.person)),
+          tabs: [
+            Tab(text: 'activity.tab_friends'.tr(), icon: Icon(Icons.people)),
+            Tab(text: 'activity.tab_discover'.tr(), icon: Icon(Icons.explore)),
+            Tab(text: 'activity.tab_my_activity'.tr(), icon: Icon(Icons.person)),
           ],
         ),
       ),
@@ -114,23 +115,23 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
 
     switch (_selectedFilter) {
       case 'friends':
-        title = 'No friend activity';
-        subtitle = 'Connect with friends to see their\nwishlist activities here';
+        title = 'activity.no_friend_activity_title'.tr();
+        subtitle = 'activity.no_friend_activity_subtitle'.tr();
         icon = Icons.people_outline;
         break;
       case 'all':
-        title = 'No activity to discover';
-        subtitle = 'Public activities will appear here\nwhen users share their wishlists';
+        title = 'activity.no_discover_activity_title'.tr();
+        subtitle = 'activity.no_discover_activity_subtitle'.tr();
         icon = Icons.explore_outlined;
         break;
       case 'own':
-        title = 'No activity yet';
-        subtitle = 'Your wishlist activities will\nappear here as you use the app';
+        title = 'activity.no_my_activity_title'.tr();
+        subtitle = 'activity.no_my_activity_subtitle'.tr();
         icon = Icons.person_outline;
         break;
       default:
-        title = 'No activity yet';
-        subtitle = 'Activities will appear here';
+        title = 'activity.no_activity'.tr();
+        subtitle = 'activity.no_activity'.tr();
         icon = Icons.notifications_none;
     }
 
@@ -163,7 +164,7 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
                 // Navigate to search screen - need to pass callback from home screen
               },
               icon: Icon(Icons.person_add),
-              label: Text('Find Friends'),
+              label: Text('friends.find_friends'.tr()),
             ),
           ],
         ],
@@ -233,14 +234,14 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Stay Connected',
+                  'activity.stay_connected_title'.tr(),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Get updates when friends interact with your wishlists',
+                  'activity.stay_connected_subtitle'.tr(),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.grey.shade600,
                   ),

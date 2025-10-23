@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'cached_image.dart';
 import '../common/navigation/native_page_route.dart';
 
@@ -87,7 +88,7 @@ class WishlistCoverImage extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Add Cover Photo',
+            'wishlist.add_cover_photo'.tr(),
             style: TextStyle(
               color: Colors.grey.shade600,
               fontSize: height > 120 ? 14 : 12,
@@ -170,12 +171,12 @@ class WishlistCoverImage extends StatelessWidget {
             children: [
               ListTile(
                 leading: const Icon(Icons.photo_camera),
-                title: const Text('Camera'),
+                title: Text('wishlist.camera'.tr()),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
-                title: const Text('Gallery'),
+                title: Text('wishlist.gallery'.tr()),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
             ],
@@ -216,15 +217,15 @@ class WishlistCoverImage extends StatelessWidget {
         if (success) {
           onImageChanged?.call();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Cover image updated successfully'),
+            SnackBar(
+              content: Text('wishlist.cover_updated'.tr()),
               backgroundColor: Colors.green,
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to update cover image'),
+            SnackBar(
+              content: Text('wishlist.failed_update_cover'.tr()),
               backgroundColor: Colors.red,
             ),
           );
@@ -235,7 +236,7 @@ class WishlistCoverImage extends StatelessWidget {
         Navigator.pop(context); // Remove loading dialog if it's shown
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('wishlist.error_occurred'.tr(namedArgs: {'error': e.toString()})),
             backgroundColor: Colors.red,
           ),
         );
@@ -248,16 +249,16 @@ class WishlistCoverImage extends StatelessWidget {
     final bool? confirmed = await NativeTransitions.showNativeDialog<bool>(
       context: context,
       child: AlertDialog(
-        title: const Text('Remove Cover Image'),
-        content: const Text('Are you sure you want to remove the cover image?'),
+        title: Text('wishlist.remove_cover_title'.tr()),
+        content: Text('wishlist.remove_cover_message'.tr()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text('app.cancel'.tr()),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Remove'),
+            child: Text('wishlist.remove'.tr()),
             style: TextButton.styleFrom(
               foregroundColor: Colors.red,
             ),
@@ -289,15 +290,15 @@ class WishlistCoverImage extends StatelessWidget {
         if (success) {
           onImageChanged?.call();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Cover image removed successfully'),
+            SnackBar(
+              content: Text('wishlist.cover_removed'.tr()),
               backgroundColor: Colors.green,
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to remove cover image'),
+            SnackBar(
+              content: Text('wishlist.failed_remove_cover'.tr()),
               backgroundColor: Colors.red,
             ),
           );
@@ -308,7 +309,7 @@ class WishlistCoverImage extends StatelessWidget {
         Navigator.pop(context); // Remove loading dialog if it's shown
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('wishlist.error_occurred'.tr(namedArgs: {'error': e.toString()})),
             backgroundColor: Colors.red,
           ),
         );

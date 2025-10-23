@@ -46,6 +46,8 @@ class SettingsScreen extends StatelessWidget {
                 context,
                 'profile.settings'.tr().toUpperCase(),
                 [
+                  _buildLanguageMenuItem(context),
+                  _buildMenuDivider(),
                   _buildMenuItem(
                     context,
                     Icons.notifications_none_outlined,
@@ -280,6 +282,192 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       barrierDismissible: false,
       builder: (context) => _DeleteAccountDialog(),
+    );
+  }
+
+  Widget _buildLanguageMenuItem(BuildContext context) {
+    // Get current language name
+    String getCurrentLanguageName() {
+      final locale = context.locale;
+      if (locale.languageCode == 'en') return 'English';
+      if (locale.languageCode == 'de') return 'Deutsch';
+      if (locale.languageCode == 'es') return 'Español';
+      if (locale.languageCode == 'fr') return 'Français';
+      if (locale.languageCode == 'pt') return 'Português';
+      return 'English';
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showLanguageSelector(context),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.language_outlined,
+                color: AppTheme.primaryAccent,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'settings.language'.tr(),
+                      style: const TextStyle(
+                        fontSize: 17,
+                        color: Colors.black,
+                      ),
+                    ),
+                    Text(
+                      getCurrentLanguageName(),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF8E8E93), // iOS gray
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: Color(0xFFC7C7CC), // iOS chevron color
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showLanguageSelector(BuildContext context) {
+    final languages = [
+      {'code': 'en', 'country': null, 'name': 'English', 'nativeName': 'English'},
+      {'code': 'de', 'country': null, 'name': 'German', 'nativeName': 'Deutsch'},
+      {'code': 'es', 'country': null, 'name': 'Spanish', 'nativeName': 'Español'},
+      {'code': 'fr', 'country': null, 'name': 'French', 'nativeName': 'Français'},
+      {'code': 'pt', 'country': 'BR', 'name': 'Portuguese', 'nativeName': 'Português (Brasil)'},
+    ];
+
+    NativeTransitions.showNativeModalBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 36,
+                height: 5,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE5E5EA),
+                  borderRadius: BorderRadius.circular(2.5),
+                ),
+              ),
+            ),
+
+            // Title
+            Text(
+              'settings.select_language'.tr(),
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.primary,
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Language options
+            ...languages.map((lang) {
+              final locale = lang['country'] != null
+                  ? Locale(lang['code'] as String, lang['country'] as String)
+                  : Locale(lang['code'] as String);
+              final isSelected = context.locale == locale;
+
+              return Column(
+                children: [
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () async {
+                        await context.setLocale(locale);
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppTheme.primaryAccent.withValues(alpha: 0.08)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppTheme.primaryAccent.withValues(alpha: 0.3)
+                                : Colors.grey.withValues(alpha: 0.2),
+                            width: isSelected ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    lang['nativeName'] as String,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                      color: isSelected
+                                          ? AppTheme.primaryAccent
+                                          : AppTheme.primary,
+                                    ),
+                                  ),
+                                  Text(
+                                    lang['name'] as String,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (isSelected)
+                              const Icon(
+                                Icons.check_circle,
+                                color: AppTheme.primaryAccent,
+                                size: 24,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (lang != languages.last) const SizedBox(height: 12),
+                ],
+              );
+            }).toList(),
+          ],
+        ),
+      ),
     );
   }
 

@@ -190,25 +190,28 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                 children: [
                   // Image if available
                   if (wish!.imageUrl != null) ...[
-                    Container(
-                      width: double.infinity,
-                      height: 200,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: Colors.grey.shade100,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: CachedImageWidget(
-                          imageUrl: wish!.imageUrl,
-                          fit: BoxFit.cover,
-                          errorWidget: Container(
-                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            child: Icon(
-                              WishCategoryDetector.getIconFromTitle(wish!.title),
-                              size: 64,
-                              color: WishCategoryDetector.getColorFromTitle(wish!.title),
+                    GestureDetector(
+                      onTap: () => _showFullscreenImage(context),
+                      child: Container(
+                        width: double.infinity,
+                        height: 200,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.grey.shade100,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: CachedImageWidget(
+                            imageUrl: wish!.imageUrl,
+                            fit: BoxFit.cover,
+                            errorWidget: Container(
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              child: Icon(
+                                WishCategoryDetector.getIconFromTitle(wish!.title),
+                                size: 64,
+                                color: WishCategoryDetector.getColorFromTitle(wish!.title),
+                              ),
                             ),
                           ),
                         ),
@@ -413,13 +416,13 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
 
   void _openUrl() async {
     if (wish?.url != null) {
-      final uri = Uri.parse(wish!.url!);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
+      try {
+        final uri = Uri.parse(wish!.url!);
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open URL')),
+            SnackBar(content: Text('Could not open URL: $e')),
           );
         }
       }
@@ -469,5 +472,54 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
         );
       }
     }
+  }
+
+  void _showFullscreenImage(BuildContext context) {
+    if (wish?.imageUrl == null) return;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          body: Stack(
+            children: [
+              // Full screen image
+              Center(
+                child: InteractiveViewer(
+                  minScale: 0.5,
+                  maxScale: 4.0,
+                  child: CachedImageWidget(
+                    imageUrl: wish!.imageUrl,
+                    fit: BoxFit.contain,
+                    errorWidget: Container(
+                      color: Colors.black,
+                      child: Icon(
+                        WishCategoryDetector.getIconFromTitle(wish!.title),
+                        size: 64,
+                        color: WishCategoryDetector.getColorFromTitle(wish!.title),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Close button
+              SafeArea(
+                child: Positioned(
+                  top: 16,
+                  right: 16,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

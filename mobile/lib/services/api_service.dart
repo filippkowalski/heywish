@@ -482,6 +482,7 @@ class ApiService {
     String? username,
     String? fullName,
     String? bio,
+    String? avatarUrl,
     String? birthdate,
     String? gender,
     String? phoneNumber,
@@ -497,6 +498,7 @@ class ApiService {
       if (username != null) data['username'] = username;
       if (fullName != null) data['full_name'] = fullName;
       if (bio != null) data['bio'] = bio;
+      if (avatarUrl != null) data['avatar_url'] = avatarUrl;
       if (birthdate != null) data['birthdate'] = birthdate;
       if (gender != null) data['gender'] = gender;
       if (phoneNumber != null) data['phone_number'] = phoneNumber;

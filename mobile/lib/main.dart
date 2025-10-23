@@ -76,7 +76,13 @@ void main() async {
 
   runApp(
     EasyLocalization(
-      supportedLocales: const [Locale('en')],
+      supportedLocales: const [
+        Locale('en'), // English
+        Locale('de'), // German
+        Locale('es'), // Spanish
+        Locale('fr'), // French
+        Locale('pt', 'BR'), // Portuguese (Brazilian)
+      ],
       path: 'assets/translations',
       fallbackLocale: const Locale('en'),
       child: const JinnieApp(),

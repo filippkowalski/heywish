@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../../services/onboarding_service.dart';
 import '../../../services/auth_service.dart';
 import '../../../common/theme/app_colors.dart';
@@ -109,7 +110,7 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: AutoSizeText(
-                        'Create your account',
+                        'onboarding.create_account_title'.tr(),
                         style: Theme.of(
                           context,
                         ).textTheme.headlineMedium?.copyWith(
@@ -129,7 +130,7 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: AutoSizeText(
-                        'Save your progress and keep your wishlist safe',
+                        'onboarding.create_account_subtitle'.tr(),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w400,
@@ -161,14 +162,14 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
                           child: Column(
                             children: [
                               _buildSummaryItem(
-                                'Username',
+                                'onboarding.summary_username'.tr(),
                                 '@${userData.username ?? 'Not set'}',
                               ),
 
                               if (userData.birthday != null) ...[
                                 const SizedBox(height: 12),
                                 _buildSummaryItem(
-                                  'Birthday',
+                                  'onboarding.summary_birthday'.tr(),
                                   _formatDate(userData.birthday!),
                                 ),
                               ],
@@ -176,7 +177,7 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
                               if (userData.gender != null) ...[
                                 const SizedBox(height: 12),
                                 _buildSummaryItem(
-                                  'Gender',
+                                  'onboarding.summary_gender'.tr(),
                                   _getGenderDisplayName(userData.gender!),
                                 ),
                               ],
@@ -215,7 +216,7 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
                                 ),
                               )
                               : const Icon(Icons.g_mobiledata),
-                      label: const Text('Continue with Google'),
+                      label: Text('onboarding.continue_with_google'.tr()),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         minimumSize: const Size(double.infinity, 56),
@@ -231,7 +232,7 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
                       child: OutlinedButton.icon(
                         onPressed: _isSigningIn ? null : _handleAppleSignIn,
                         icon: const Icon(Icons.apple),
-                        label: const Text('Continue with Apple'),
+                        label: Text('onboarding.continue_with_apple'.tr()),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           minimumSize: const Size(double.infinity, 56),
@@ -244,7 +245,7 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
 
                   // Security note
                   Text(
-                    'Your data will be securely backed up',
+                    'onboarding.data_security_note'.tr(),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary,
                       fontSize: 12,
@@ -305,13 +306,13 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
   String _getGenderDisplayName(String gender) {
     switch (gender) {
       case 'female':
-        return 'Woman';
+        return 'onboarding.gender_woman'.tr();
       case 'male':
-        return 'Man';
+        return 'onboarding.gender_man'.tr();
       case 'non-binary':
-        return 'Non-binary';
+        return 'onboarding.gender_non_binary'.tr();
       case 'prefer-not-to-say':
-        return 'Prefer not to say';
+        return 'onboarding.gender_prefer_not_say'.tr();
       default:
         return gender;
     }

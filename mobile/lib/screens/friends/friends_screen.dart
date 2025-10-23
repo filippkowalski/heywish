@@ -49,7 +49,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Friend request ${action}ed'),
+            content: Text('friends.request_action_success'.tr(namedArgs: {'action': action})),
             backgroundColor: Colors.green.shade600,
           ),
         );
@@ -58,7 +58,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error responding to request: $e'),
+            content: Text('friends.request_action_error'.tr(namedArgs: {'error': e.toString()})),
             backgroundColor: Colors.red.shade600,
           ),
         );
@@ -73,7 +73,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
         return Scaffold(
           backgroundColor: Colors.white,
           appBar: AppBar(
-            title: Text('Friends'),
+            title: Text('friends.title'.tr()),
             actions: [
               IconButton(
                 onPressed: () {
@@ -93,7 +93,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                     children: [
                       Icon(Icons.people, size: 20),
                       SizedBox(width: 6),
-                      Text('Friends'),
+                      Text('friends.tab_friends'.tr()),
                       if (friendsService.friends.isNotEmpty) ...[
                         SizedBox(width: 4),
                         Container(
@@ -121,7 +121,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                     children: [
                       Icon(Icons.inbox, size: 20),
                       SizedBox(width: 6),
-                      Text('Requests'),
+                      Text('friends.tab_requests'.tr()),
                       if (friendsService.friendRequests.isNotEmpty) ...[
                         SizedBox(width: 4),
                         Container(
@@ -149,7 +149,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                     children: [
                       Icon(Icons.send, size: 20),
                       SizedBox(width: 6),
-                      Text('Sent'),
+                      Text('friends.tab_sent'.tr()),
                       if (friendsService.sentRequests.isNotEmpty) ...[
                         SizedBox(width: 4),
                         Container(
@@ -204,13 +204,13 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
             ),
             SizedBox(height: 16),
             Text(
-              'No friends yet',
+              'friends.no_friends_title'.tr(),
               style: Theme.of(context).textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 8),
             Text(
-              'Find and add friends to see their wishlists',
+              'friends.no_friends_subtitle'.tr(),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.grey.shade600,
               ),
@@ -222,7 +222,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                 widget.onNavigateToSearch?.call();
               },
               icon: Icon(Icons.person_add),
-              label: Text('Find Friends'),
+              label: Text('friends.find_friends'.tr()),
             ),
           ],
         ),
@@ -259,13 +259,13 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
             ),
             SizedBox(height: 16),
             Text(
-              'No friend requests',
+              'friends.no_requests_title'.tr(),
               style: Theme.of(context).textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 8),
             Text(
-              'You\'ll see friend requests here',
+              'friends.no_requests_subtitle'.tr(),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.grey.shade600,
               ),
@@ -302,13 +302,13 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
             ),
             SizedBox(height: 16),
             Text(
-              'No sent requests',
+              'friends.no_sent_requests_title'.tr(),
               style: Theme.of(context).textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 8),
             Text(
-              'Friend requests you send will appear here',
+              'friends.no_sent_requests_subtitle'.tr(),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.grey.shade600,
               ),

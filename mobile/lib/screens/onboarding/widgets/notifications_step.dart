@@ -61,15 +61,8 @@ class _NotificationsStepState extends State<NotificationsStep> {
     NativeTransitions.showNativeDialog(
       context: context,
       child: AlertDialog(
-        title: const Text('Notification Permission'),
-        content: const Text(
-          'Notifications were previously denied. To enable them:\n\n'
-          '1. Open iPhone Settings\n'
-          '2. Find "Jinnie" in the app list\n'
-          '3. Tap "Notifications"\n'
-          '4. Turn on "Allow Notifications"\n\n'
-          'You can continue without notifications for now.',
-        ),
+        title: Text('notifications.permission_denied_title'.tr()),
+        content: Text('notifications.permission_denied_message'.tr()),
         actions: [
           TextButton(
             onPressed: () {
@@ -77,7 +70,7 @@ class _NotificationsStepState extends State<NotificationsStep> {
               // Continue with onboarding
               context.read<OnboardingService>().nextStep();
             },
-            child: const Text('Continue'),
+            child: Text('app.continue'.tr()),
           ),
           TextButton(
             onPressed: () {
@@ -87,7 +80,7 @@ class _NotificationsStepState extends State<NotificationsStep> {
                 openAppSettings();
               });
             },
-            child: const Text('Open Settings'),
+            child: Text('notifications.open_settings'.tr()),
           ),
         ],
       ),
@@ -142,9 +135,9 @@ class _NotificationsStepState extends State<NotificationsStep> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // Title
-                      const Text(
-                        'Stay in the loop 🔔',
-                        style: TextStyle(
+                      Text(
+                        'notifications.title'.tr(),
+                        style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
@@ -155,9 +148,9 @@ class _NotificationsStepState extends State<NotificationsStep> {
                       const SizedBox(height: 8),
 
                       // Subtitle
-                      const Text(
-                        'Get notified about friend\'s birthdays, coupons, and price discounts',
-                        style: TextStyle(
+                      Text(
+                        'notifications.subtitle'.tr(),
+                        style: const TextStyle(
                           fontSize: 16,
                           color: AppColors.textSecondary,
                           height: 1.5,
@@ -170,8 +163,8 @@ class _NotificationsStepState extends State<NotificationsStep> {
                       // Notification options
                       _buildNotificationOption(
                         icon: '🎂',
-                        title: 'Friend\'s Birthdays',
-                        subtitle: 'Get notified when your friends have birthdays',
+                        title: 'notifications.birthday_title'.tr(),
+                        subtitle: 'notifications.birthday_subtitle'.tr(),
                         value:
                             onboardingService
                                 .data
@@ -189,8 +182,8 @@ class _NotificationsStepState extends State<NotificationsStep> {
 
                       _buildNotificationOption(
                         icon: '🎟️',
-                        title: 'Coupons',
-                        subtitle: 'Get notified when coupons are available',
+                        title: 'notifications.coupons_title'.tr(),
+                        subtitle: 'notifications.coupons_subtitle'.tr(),
                         value:
                             onboardingService
                                 .data
@@ -208,8 +201,8 @@ class _NotificationsStepState extends State<NotificationsStep> {
 
                       _buildNotificationOption(
                         icon: '💰',
-                        title: 'Price Discounts',
-                        subtitle: 'Get notified when prices drop on items you\'re watching',
+                        title: 'notifications.discounts_title'.tr(),
+                        subtitle: 'notifications.discounts_subtitle'.tr(),
                         value:
                             onboardingService
                                 .data
@@ -250,9 +243,9 @@ class _NotificationsStepState extends State<NotificationsStep> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Permission info text
-                    const Text(
-                      'You will be asked for notification permission',
-                      style: TextStyle(
+                    Text(
+                      'notifications.permission_info'.tr(),
+                      style: const TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
                         height: 1.5,
@@ -264,7 +257,7 @@ class _NotificationsStepState extends State<NotificationsStep> {
 
                     // Continue button
                     PrimaryButton(
-                      text: 'Enable Notifications',
+                      text: 'notifications.enable_button'.tr(),
                       onPressed: _requestNotificationPermissionAndContinue,
                     ),
                   ],

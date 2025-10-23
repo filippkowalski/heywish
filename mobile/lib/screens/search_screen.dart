@@ -81,7 +81,7 @@ class _SearchScreenState extends State<SearchScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error searching users: $e'),
+            content: Text('search.error_searching'.tr(namedArgs: {'error': e.toString()})),
             backgroundColor: Colors.red.shade400,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -205,7 +205,7 @@ class _SearchScreenState extends State<SearchScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Find Friends',
+          'search.find_friends_title'.tr(),
           style: TextStyle(
             color: AppTheme.primary,
             fontWeight: FontWeight.w600,
@@ -226,7 +226,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 fontSize: 16,
               ),
               decoration: InputDecoration(
-                hintText: 'Search by username or name...',
+                hintText: 'search.search_placeholder'.tr(),
                 hintStyle: TextStyle(
                   color: Colors.grey.shade400,
                   fontSize: 16,
@@ -305,7 +305,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                'Find Your Friends',
+                'search.empty_title'.tr(),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: AppTheme.primary,
                   fontWeight: FontWeight.bold,
@@ -313,7 +313,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Search for friends by their username or name to connect and see their wishlists',
+                'search.empty_subtitle'.tr(),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.grey.shade600,
                 ),
@@ -337,7 +337,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Searching...',
+              'search.searching'.tr(),
               style: TextStyle(
                 color: Colors.grey.shade600,
                 fontSize: 15,
@@ -363,7 +363,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'No users found',
+                'search.no_users_found'.tr(),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: Colors.grey.shade600,
                   fontWeight: FontWeight.w600,
@@ -371,7 +371,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Try a different search term',
+                'search.try_different_search'.tr(),
                 style: TextStyle(
                   color: Colors.grey.shade500,
                   fontSize: 14,

@@ -93,6 +93,7 @@ class AuthService extends ChangeNotifier {
     int retries = 1,
     String? signUpMethod,
     String? username,
+    bool sendFullName = false,
   }) async {
     if (_firebaseUser == null) return;
 
@@ -115,9 +116,10 @@ class AuthService extends ChangeNotifier {
         // Prepare sync data to match backend expectations
         // Note: firebase_uid and email come from Firebase token verification, not request body
         final syncData = <String, dynamic>{
-          'fullName':
-              refreshedUser
-                  ?.displayName, // null for anonymous, set for Google/Apple
+          // Only send fullName during initial sync (sign up), not during profile refresh
+          // This prevents overwriting user's custom full_name with Firebase displayName
+          if (sendFullName && refreshedUser?.displayName != null)
+            'fullName': refreshedUser?.displayName,
           if (signUpMethod != null) 'signUpMethod': signUpMethod,
           if (username != null)
             'username':
@@ -213,7 +215,7 @@ class AuthService extends ChangeNotifier {
 
       // If this is a new user, sync with signup method
       if (isNewUser) {
-        await syncUserWithBackend(signUpMethod: 'google');
+        await syncUserWithBackend(signUpMethod: 'google', sendFullName: true);
       }
       _scheduleTokenRefresh();
     } catch (e) {
@@ -292,7 +294,7 @@ class AuthService extends ChangeNotifier {
 
       // If this is a new user, sync with signup method
       if (isNewUser) {
-        await syncUserWithBackend(signUpMethod: 'apple');
+        await syncUserWithBackend(signUpMethod: 'apple', sendFullName: true);
       }
       _scheduleTokenRefresh();
     } catch (e) {
@@ -375,8 +377,8 @@ class AuthService extends ChangeNotifier {
       debugPrint('✅ AuthService: Account linked successfully with Google');
       debugPrint('✅ Firebase UID preserved: ${currentUser.uid}');
 
-      // Sync with backend to update sign_up_method
-      await syncUserWithBackend(signUpMethod: 'google');
+      // Sync with backend to update sign_up_method and full_name
+      await syncUserWithBackend(signUpMethod: 'google', sendFullName: true);
     } catch (e) {
       debugPrint('❌ AuthService: Error linking with Google: $e');
       rethrow;
@@ -430,8 +432,8 @@ class AuthService extends ChangeNotifier {
       debugPrint('✅ AuthService: Account linked successfully with Apple');
       debugPrint('✅ Firebase UID preserved: ${currentUser.uid}');
 
-      // Sync with backend to update sign_up_method
-      await syncUserWithBackend(signUpMethod: 'apple');
+      // Sync with backend to update sign_up_method and full_name
+      await syncUserWithBackend(signUpMethod: 'apple', sendFullName: true);
     } catch (e) {
       debugPrint('❌ AuthService: Error linking with Apple: $e');
       rethrow;

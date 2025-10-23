@@ -87,7 +87,19 @@
     "complete_title": "Your Profile is Ready! 🎉",
     "complete_subtitle": "You now have a unique username and your own wishlist page to share with friends.",
     "anonymous_username_hint": "Sign in later to claim a custom username.",
-    "start_wishing": "Start Adding Wishes"
+    "start_wishing": "Start Adding Wishes",
+    "create_account_title": "Create your account",
+    "create_account_subtitle": "Save your progress and keep your wishlist safe",
+    "summary_username": "Username",
+    "summary_birthday": "Birthday",
+    "summary_gender": "Gender",
+    "continue_with_google": "Continue with Google",
+    "continue_with_apple": "Continue with Apple",
+    "data_security_note": "Your data will be securely backed up",
+    "gender_woman": "Woman",
+    "gender_man": "Man",
+    "gender_non_binary": "Non-binary",
+    "gender_prefer_not_say": "Prefer not to say"
   },
   "notifications": {
     "title": "Stay in the loop 🔔",
@@ -180,7 +192,20 @@
     "tab_friends": "Friends",
     "tab_requests": "Requests",
     "tab_sent": "Sent",
-    "find_friends": "Find Friends"
+    "find_friends": "Find Friends",
+    "no_friends_title": "No friends yet",
+    "no_friends_subtitle": "Find and add friends to see their wishlists",
+    "no_requests_title": "No friend requests",
+    "no_requests_subtitle": "You'll see friend requests here",
+    "no_sent_requests_title": "No sent requests",
+    "no_sent_requests_subtitle": "Friend requests you send will appear here",
+    "username_label": "@{username}",
+    "friends_since": "Friends since {date}",
+    "sent_date": "Sent {date}",
+    "pending": "Pending",
+    "view_wishlists": "View Wishlists",
+    "respond": "Respond",
+    "add": "Add"
   },
   "permissions": {
     "photo_library_required": "Photo Library Access Required",
@@ -196,6 +221,17 @@
     "save_changes": "Save Changes",
     "remove": "Remove",
     "list_created": "List created successfully!",
+    "failed_upload_cover": "Failed to upload cover image",
+    "add_cover_photo": "Add Cover Photo",
+    "camera": "Camera",
+    "gallery": "Gallery",
+    "cover_updated": "Cover image updated successfully",
+    "failed_update_cover": "Failed to update cover image",
+    "remove_cover_title": "Remove Cover Image",
+    "remove_cover_message": "Are you sure you want to remove the cover image?",
+    "cover_removed": "Cover image removed successfully",
+    "failed_remove_cover": "Failed to remove cover image",
+    "error_occurred": "Error: {error}",
     "create": "Create Wishlist",
     "name": "Name",
     "name_required": "Please enter a wishlist name",
@@ -281,6 +317,8 @@
     "failed_to_pick_image": "Failed to pick image: {error}",
     "please_enter_title": "Please enter a title",
     "item_deleted": "Item deleted successfully",
+    "item_updated": "Item updated successfully",
+    "failed_to_update": "Failed to update item: {error}",
     "try_again": "Try Again",
     "item_title": "Title",
     "title_required": "Please enter an item name",
@@ -347,6 +385,7 @@
     "check_friend_requests": "Check your friend requests in the Friends tab",
     "respond_to_request": "Respond to Request",
     "email_support_error": "Could not open email app. Please email us at bobbyfisher77+jinnie@icloud.com",
+    "danger_zone_title": "DANGER ZONE",
     "privacy": "Privacy",
     "notifications": "Notifications",
     "help": "Help",
@@ -437,12 +476,33 @@
     "title": "Search",
     "hint": "Search wishlists and items...",
     "no_results": "No results found",
-    "recent_searches": "Recent Searches"
+    "recent_searches": "Recent Searches",
+    "find_friends_title": "Find Friends",
+    "search_placeholder": "Search by username or name...",
+    "empty_title": "Find Your Friends",
+    "empty_subtitle": "Search for friends by their username or name to connect and see their wishlists",
+    "searching": "Searching...",
+    "no_users_found": "No users found",
+    "try_different_search": "Try a different search term",
+    "error_searching": "Error searching users: {error}"
   },
   "activity": {
     "title": "Activity",
     "recent_activity": "Recent Activity",
-    "no_activity": "No recent activity"
+    "no_activity": "No recent activity",
+    "tab_friends": "Friends",
+    "tab_discover": "Discover",
+    "tab_my_activity": "My Activity",
+    "no_friend_activity_title": "No friend activity",
+    "no_friend_activity_subtitle": "Connect with friends to see their\nwishlist activities here",
+    "no_discover_activity_title": "No activity to discover",
+    "no_discover_activity_subtitle": "Public activities will appear here\nwhen users share their wishlists",
+    "no_my_activity_title": "No activity yet",
+    "no_my_activity_subtitle": "Your wishlist activities will\nappear here as you use the app",
+    "stay_connected_title": "Stay Connected",
+    "stay_connected_subtitle": "Get updates when friends interact with your wishlists",
+    "in_wishlist": "in {wishlist_name}",
+    "item_label": "Item: {item_name}"
   },
   "common": {
     "optional": "(Optional)"
@@ -512,6 +572,8 @@
     "coupon_notifications_desc": "Get notified when coupons are available",
     "notifications_permission_required": "Notification Permission Required",
     "notifications_permission_message": "Notifications were previously denied. To enable them:\n\n1. Open Settings\n2. Find \"Jinnie\" in the app list\n3. Tap \"Notifications\"\n4. Turn on \"Allow Notifications\"\n\nYou can continue without notifications for now.",
-    "open_settings": "Open Settings"
+    "open_settings": "Open Settings",
+    "language": "Language",
+    "select_language": "Select Language"
   }
 }

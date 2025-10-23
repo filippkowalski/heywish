@@ -33,15 +33,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _usernameCheckResult;
   bool _isCheckingUsername = false;
   String? _originalUsername;
+  bool _hasLoadedInitialData = false;
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
-
     // Add listeners to update button state when text changes
     _fullNameController.addListener(_updateButtonState);
     _bioController.addListener(_updateButtonState);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Load user data only once when the widget is first built
+    if (!_hasLoadedInitialData) {
+      _loadUserData();
+      _hasLoadedInitialData = true;
+    }
   }
 
   void _loadUserData() {
@@ -265,6 +274,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         fullName: _fullNameController.text.trim(),
         username: _usernameController.text.trim(),
         bio: _bioController.text.trim(),
+        avatarUrl: newAvatarUrl,
       );
 
       if (result != null && mounted) {

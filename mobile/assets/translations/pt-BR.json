@@ -1,0 +1,25 @@
+{
+  "app": {
+    "title": "Jinnie",
+    "name": "Jinnie",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "continue": "Continuar",
+    "save": "Salvar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "share": "Compartilhar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "skip": "Pular",
+    "done": "Concluído",
+    "retry": "Tentar novamente"
+  },
+  "settings": {
+    "language": "Idioma",
+    "select_language": "Selecionar idioma"
+  }
+}
