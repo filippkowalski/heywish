@@ -45,7 +45,7 @@ export async function generateMetadata({
     };
   }
 
-  const displayName = profile.user.fullName?.trim() || `@${profile.user.username}`;
+  const displayName = `@${profile.user.username}`;
   const description = profile.user.bio
     ? profile.user.bio
     : `Browse public wishlists shared by ${displayName} on Jinnie.`;
@@ -158,27 +158,22 @@ export default async function PublicProfilePage({
             <div className="flex items-start gap-3 sm:gap-4">
               <Avatar className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl border border-border flex-shrink-0">
                 {user.avatarUrl ? (
-                  <AvatarImage src={user.avatarUrl} alt={user.fullName ?? user.username} />
+                  <AvatarImage src={user.avatarUrl} alt={`@${user.username}`} />
                 ) : null}
                 <AvatarFallback className="rounded-xl text-base sm:text-lg font-semibold">
-                  {(user.fullName ?? user.username).slice(0, 2).toUpperCase()}
+                  {user.username.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1 space-y-1.5 sm:space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="truncate text-xl font-semibold sm:text-2xl md:text-3xl">
-                    {user.fullName?.trim() || user.username}
-                  </h1>
-                </div>
-                <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground sm:text-sm">
-                  <span className="truncate">@{user.username}</span>
-                  {user.location ? (
-                    <span className="inline-flex items-center gap-1 flex-shrink-0">
-                      <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                      <span className="truncate">{user.location}</span>
-                    </span>
-                  ) : null}
-                </p>
+                <h1 className="truncate text-xl font-semibold sm:text-2xl md:text-3xl">
+                  @{user.username}
+                </h1>
+                {user.location ? (
+                  <p className="flex items-center gap-1 text-xs text-muted-foreground sm:text-sm">
+                    <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    <span className="truncate">{user.location}</span>
+                  </p>
+                ) : null}
               </div>
             </div>
 
@@ -220,7 +215,7 @@ export default async function PublicProfilePage({
               <div>
                 <h2 className="text-lg font-semibold">No public wishlists yet</h2>
                 <p className="text-sm text-muted-foreground">
-                  Ask {user.fullName ?? user.username} to share a list from the mobile app.
+                  Ask @{user.username} to share a list from the mobile app.
                 </p>
               </div>
             </CardContent>
