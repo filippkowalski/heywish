@@ -346,6 +346,8 @@ class _AddWishScreenState extends State<AddWishScreen> {
                     child: Text(
                       metadata.source == 'amazon'
                           ? '✨ Product details loaded from Amazon!'
+                          : metadata.source == 'bestbuy'
+                          ? '✨ Product details loaded from BestBuy!'
                           : '✨ Product details loaded!',
                     ),
                   ),
@@ -358,7 +360,24 @@ class _AddWishScreenState extends State<AddWishScreen> {
           );
         }
       } else if (mounted) {
+        // Show failure message
         debugPrint('URL scraping failed: ${response.error}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text('Could not load product details from link'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.orange[700],
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     } catch (e) {
       debugPrint('Error scraping URL: $e');
@@ -667,7 +686,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
                             controller: _descriptionController,
                             focusNode: _descriptionFocusNode,
                             hintText: 'Description',
-                            fontSize: 20,
+                            fontSize: 17,
                             fontWeight: FontWeight.w500,
                             maxLines: 3,
                             textCapitalization: TextCapitalization.sentences,
@@ -705,9 +724,10 @@ class _AddWishScreenState extends State<AddWishScreen> {
                             controller: _urlController,
                             focusNode: _urlFocusNode,
                             hintText: 'Link',
-                            fontSize: 20,
+                            fontSize: 16,
                             fontWeight: FontWeight.w500,
                             keyboardType: TextInputType.url,
+                            textColor: Colors.grey[600],
                           ),
                         ),
                         if (_isScrapingUrl)
@@ -958,6 +978,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
     int maxLines = 1,
     TextCapitalization textCapitalization = TextCapitalization.none,
     TextInputType? keyboardType,
+    Color? textColor,
   }) {
     return Material(
       color: Colors.transparent,
@@ -967,7 +988,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
         style: TextStyle(
           fontSize: fontSize,
           fontWeight: fontWeight,
-          color: AppTheme.primary,
+          color: textColor ?? AppTheme.primary,
           height: 1.3, // Allow proper line height for multi-line text
         ),
         decoration: InputDecoration(
