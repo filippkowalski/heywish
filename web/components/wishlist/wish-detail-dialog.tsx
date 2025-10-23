@@ -144,12 +144,18 @@ export function WishDetailDialog({
   const userEmail = authUser?.email ??
     (typeof window !== 'undefined' ? window.localStorage.getItem(RESERVATION_EMAIL_STORAGE_KEY) : null);
 
-  // Check if user's email matches the reservation email
+  // Check if user owns the reservation
+  // The backend stores Firebase UID in reservedByUid, so check that first
+  // If no UID available, fall back to email comparison with reservedBy
+  const userUid = authUser?.uid;
   const isMyReservation = Boolean(
     isReserved &&
-    userEmail &&
-    wish?.reservedBy &&
-    userEmail.toLowerCase() === wish.reservedBy.toLowerCase()
+    (
+      // Check UID match (most reliable)
+      (userUid && wish?.reservedByUid && userUid === wish.reservedByUid) ||
+      // Fallback: check if reservedBy is an email and matches
+      (userEmail && wish?.reservedBy && wish.reservedBy.includes('@') && userEmail.toLowerCase() === wish.reservedBy.toLowerCase())
+    )
   );
 
   // Debug logging
@@ -157,7 +163,9 @@ export function WishDetailDialog({
     console.log('[WishDetailDialog] Reservation check:', {
       isReserved,
       userEmail,
+      userUid,
       'wish.reservedBy': wish?.reservedBy,
+      'wish.reservedByUid': wish?.reservedByUid,
       isMyReservation,
       authUserEmail: authUser?.email,
       savedEmail: typeof window !== 'undefined' ? window.localStorage.getItem(RESERVATION_EMAIL_STORAGE_KEY) : null,
