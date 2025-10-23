@@ -346,10 +346,27 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Footer note */}
-          <p className="pt-8 text-xs text-muted-foreground/70">
-            © 2025 Jinnie. All rights reserved.
-          </p>
+          {/* Footer links */}
+          <div className="pt-8 space-y-3">
+            <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+              <Link
+                href="/privacy"
+                className="hover:text-foreground transition-colors underline-offset-4 hover:underline"
+              >
+                Privacy Policy
+              </Link>
+              <span className="text-muted-foreground/50">•</span>
+              <Link
+                href="/terms"
+                className="hover:text-foreground transition-colors underline-offset-4 hover:underline"
+              >
+                Terms of Service
+              </Link>
+            </div>
+            <p className="text-xs text-muted-foreground/70">
+              © 2025 Jinnie. All rights reserved.
+            </p>
+          </div>
         </div>
       </section>
     </main>
