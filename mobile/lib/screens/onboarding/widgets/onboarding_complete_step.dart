@@ -118,286 +118,401 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
       builder: (context, onboardingService, child) {
         final username = onboardingService.data.username ?? '';
         final profileUrl = 'jinnie.co/$username';
+        final mediaQuery = MediaQuery.of(context);
+        final bottomPadding = mediaQuery.padding.bottom;
 
         return Container(
-          color: Colors.white,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                const Color(0xFFF0F4FF), // Very light blue
+                const Color(0xFFF8F5FF), // Very light purple
+                Colors.white,
+              ],
+              stops: const [0.0, 0.3, 0.7],
+            ),
+          ),
           child: SafeArea(
             child: Column(
               children: [
-              // Scrollable content
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(
-                    left: 32.0,
-                    right: 32.0,
-                    top: 40.0,
-                    bottom: 24.0,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Title
-                      SlideTransition(
-                        position: _slideAnimation,
-                        child: FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: Text(
-                            'onboarding.complete_title'.tr(),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                              fontSize: 34,
-                              letterSpacing: -0.5,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Subtitle
-                      SlideTransition(
-                        position: _slideAnimation,
-                        child: FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: Text(
-                            'onboarding.complete_subtitle'.tr(),
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 16,
-                              height: 1.5,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-
-                      if (onboardingService.shouldSkipUsernameStep)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: Text(
-                            'onboarding.anonymous_username_hint'.tr(),
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 14,
-                              height: 1.4,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-
-                      const SizedBox(height: 40),
-
-                      // Username card
-                      FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 20,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                AppColors.primary.withValues(alpha: 0.08),
-                                AppColors.primary.withValues(alpha: 0.03),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: AppColors.primary.withValues(alpha: 0.2),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.person_outline_rounded,
-                                size: 28,
-                                color: AppColors.primary,
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'onboarding.your_username'.tr(),
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w500,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                '@$username',
-                                style: const TextStyle(
-                                  color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 22,
-                                  letterSpacing: -0.3,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Profile URL card
-                      FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.language_rounded,
-                                    size: 18,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'onboarding.your_personal_page'.tr(),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textSecondary,
-                                      fontSize: 14,
-                                      letterSpacing: 0.2,
-                                    ),
+                // Scrollable content
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32.0,
+                      vertical: 40.0,
+                    ),
+                    child: Column(
+                      children: [
+                        // Celebration icon
+                        SlideTransition(
+                          position: _slideAnimation,
+                          child: FadeTransition(
+                            opacity: _fadeAnimation,
+                            child: Container(
+                              width: 96,
+                              height: 96,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withValues(alpha: 0.15),
+                                    blurRadius: 24,
+                                    offset: const Offset(0, 8),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 10),
-                              Text(
-                                profileUrl,
-                                style: TextStyle(
-                                  color: AppColors.primary.withValues(
-                                    alpha: 0.9,
-                                  ),
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 16,
-                                  letterSpacing: -0.2,
+                              child: Center(
+                                child: Text(
+                                  '🎉',
+                                  style: const TextStyle(fontSize: 48),
                                 ),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // Title
+                        SlideTransition(
+                          position: _slideAnimation,
+                          child: FadeTransition(
+                            opacity: _fadeAnimation,
+                            child: Text(
+                              'onboarding.complete_title'.tr(),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                                fontSize: 34,
+                                letterSpacing: -0.5,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Subtitle
+                        SlideTransition(
+                          position: _slideAnimation,
+                          child: FadeTransition(
+                            opacity: _fadeAnimation,
+                            child: Text(
+                              'onboarding.complete_subtitle'.tr(),
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 16,
+                                height: 1.5,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+
+                        if (onboardingService.shouldSkipUsernameStep)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Text(
+                              'onboarding.anonymous_username_hint'.tr(),
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 14,
+                                height: 1.4,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+
+                        const SizedBox(height: 48),
+
+                        // Profile card - combined username and URL
+                        FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                // Avatar placeholder with checkmark
+                                Container(
+                                  width: 72,
+                                  height: 72,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        AppColors.primary.withValues(alpha: 0.1),
+                                        AppColors.primary.withValues(alpha: 0.05),
+                                      ],
+                                    ),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Stack(
+                                    children: [
+                                      Center(
+                                        child: Icon(
+                                          Icons.person_rounded,
+                                          size: 36,
+                                          color: AppColors.primary.withValues(alpha: 0.6),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        bottom: 0,
+                                        right: 0,
+                                        child: Container(
+                                          width: 24,
+                                          height: 24,
+                                          decoration: BoxDecoration(
+                                            color: AppColors.success,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.white,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: const Icon(
+                                            Icons.check_rounded,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                // Username
+                                Text(
+                                  '@$username',
+                                  style: const TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 24,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 8),
+
+                                // URL with subtle background
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceVariant,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.link_rounded,
+                                        size: 16,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        profileUrl,
+                                        style: const TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                // Copy link button - inline style
+                                Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () => _copyLink(username),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: _linkCopied
+                                              ? AppColors.success
+                                              : AppColors.outline,
+                                          width: 1.5,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            _linkCopied
+                                                ? Icons.check_circle_outline_rounded
+                                                : Icons.copy_rounded,
+                                            size: 18,
+                                            color: _linkCopied
+                                                ? AppColors.success
+                                                : AppColors.textSecondary,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            _linkCopied
+                                                ? 'onboarding.link_copied'.tr()
+                                                : 'onboarding.copy_link'.tr(),
+                                            style: TextStyle(
+                                              color: _linkCopied
+                                                  ? AppColors.success
+                                                  : AppColors.textPrimary,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // Features preview
+                        FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: Column(
+                            children: [
+                              _buildFeatureItem(
+                                icon: Icons.favorite_border_rounded,
+                                title: 'Create wishlists',
+                                subtitle: 'Organize your wishes beautifully',
+                              ),
+                              const SizedBox(height: 16),
+                              _buildFeatureItem(
+                                icon: Icons.people_outline_rounded,
+                                title: 'Share with friends',
+                                subtitle: 'Let others know what you want',
+                              ),
+                              const SizedBox(height: 16),
+                              _buildFeatureItem(
+                                icon: Icons.card_giftcard_rounded,
+                                title: 'Get the perfect gift',
+                                subtitle: 'Never miss what matters',
                               ),
                             ],
                           ),
                         ),
-                      ),
+                      ],
+                    ),
+                  ),
+                ),
 
-                      const SizedBox(height: 16),
-
-                      // Copy link button
-                      FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: OutlinedButton.icon(
-                          onPressed: () => _copyLink(username),
-                          icon: Icon(
-                            _linkCopied
-                                ? Icons.check_rounded
-                                : Icons.link_rounded,
-                            size: 20,
-                            color:
-                                _linkCopied
-                                    ? Colors.green.shade600
-                                    : AppColors.textSecondary,
-                          ),
-                          label: Text(
-                            _linkCopied
-                                ? 'onboarding.link_copied'.tr()
-                                : 'onboarding.copy_link'.tr(),
-                            style: TextStyle(
-                              color:
-                                  _linkCopied
-                                      ? Colors.green.shade600
-                                      : AppColors.textPrimary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                              letterSpacing: -0.1,
+                // Bottom button
+                Padding(
+                  padding: EdgeInsets.fromLTRB(24.0, 0.0, 24.0, bottomPadding + 16.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (onboardingService.error != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Text(
+                            onboardingService.error!,
+                            style: const TextStyle(
+                              color: AppColors.error,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
                             ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 16,
-                            ),
-                            side: BorderSide(
-                              color:
-                                  _linkCopied
-                                      ? Colors.green.shade600
-                                      : Colors.black.withValues(alpha: 0.12),
-                              width: 1.5,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
+                      PrimaryButton(
+                        onPressed: _completeOnboardingAndNavigate,
+                        text: 'onboarding.start_wishing'.tr(),
+                        icon: Icons.arrow_forward_rounded,
                       ),
                     ],
                   ),
                 ),
-              ),
-
-              // Fixed footer
-              Container(
-                padding: const EdgeInsets.only(
-                  left: 24.0,
-                  right: 24.0,
-                  top: 0.0,
-                  bottom: 16.0,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                    top: BorderSide(
-                      color: AppColors.outline.withValues(alpha: 0.1),
-                      width: 1,
-                    ),
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (onboardingService.error != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: Text(
-                          onboardingService.error!,
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    PrimaryButton(
-                      onPressed: _completeOnboardingAndNavigate,
-                      text: 'onboarding.start_wishing'.tr(),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildFeatureItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            color: AppColors.primary,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
