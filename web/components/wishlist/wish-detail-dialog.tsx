@@ -136,17 +136,17 @@ export function WishDetailDialog({
   const price = formatPrice(wish?.price, wish?.currency);
   const isReserved = wish?.status === "reserved";
 
-  const verifiedEmail = authUser?.emailVerified ? authUser.email ?? null : null;
+  // Get user's email from any available source
+  const userEmail = authUser?.email ??
+    (typeof window !== 'undefined' ? window.localStorage.getItem(RESERVATION_EMAIL_STORAGE_KEY) : null);
 
-  // Also check localStorage for saved email if no verified email yet
-  const savedEmail = typeof window !== 'undefined'
-    ? window.localStorage.getItem(RESERVATION_EMAIL_STORAGE_KEY)
-    : null;
-
-  // Check if current user is the reserver by comparing emails
-  const currentUserEmail = verifiedEmail || savedEmail;
-  const isMyReservation = isReserved && currentUserEmail && wish?.reservedBy &&
-    currentUserEmail.toLowerCase() === wish.reservedBy.toLowerCase();
+  // Check if user's email matches the reservation email
+  const isMyReservation = Boolean(
+    isReserved &&
+    userEmail &&
+    wish?.reservedBy &&
+    userEmail.toLowerCase() === wish.reservedBy.toLowerCase()
+  );
 
   if (!wish) return null;
 
@@ -175,14 +175,15 @@ export function WishDetailDialog({
     try {
       setSubmitting(true);
       const auth = getFirebaseAuth();
-      await auth.currentUser?.reload();
-      const verifiedUser = auth.currentUser && auth.currentUser.emailVerified ? auth.currentUser : null;
+      const currentUser = auth.currentUser;
 
-      if (verifiedUser) {
-        const idToken = await verifiedUser.getIdToken(true);
+      if (currentUser) {
+        // Try to get ID token from current user (verified or not)
+        await currentUser.reload();
+        const idToken = await currentUser.getIdToken(true);
         await api.cancelReservation(wish.id, idToken);
       } else {
-        // No auth - shouldn't happen, but handle gracefully
+        // No Firebase user - try without auth (shouldn't happen normally)
         await api.cancelReservation(wish.id);
       }
 
