@@ -158,20 +158,6 @@ export function WishDetailDialog({
     )
   );
 
-  // Debug logging
-  if (typeof window !== 'undefined' && isReserved) {
-    console.log('[WishDetailDialog] Reservation check:', {
-      isReserved,
-      userEmail,
-      userUid,
-      'wish.reservedBy': wish?.reservedBy,
-      'wish.reservedByUid': wish?.reservedByUid,
-      isMyReservation,
-      authUserEmail: authUser?.email,
-      savedEmail: typeof window !== 'undefined' ? window.localStorage.getItem(RESERVATION_EMAIL_STORAGE_KEY) : null,
-    });
-  }
-
   if (!wish) return null;
 
   const handleClose = () => {
