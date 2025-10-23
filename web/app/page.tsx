@@ -276,7 +276,7 @@ export default function HomePage() {
                 </form>
                 {submitStatus === "success" && (
                   <p className="text-sm text-emerald-600 font-medium">
-                    ✓ Thanks! We'll notify you when we launch.
+                    ✓ Thanks! We&apos;ll notify you when we launch.
                   </p>
                 )}
                 {submitStatus === "error" && (
