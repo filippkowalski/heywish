@@ -222,7 +222,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* CTA Buttons - Disabled with Coming Soon */}
+            {/* CTA Buttons - Launching End of October */}
             <div className="flex flex-col items-center gap-3 md:gap-4 pt-2 md:pt-4 animate-fade-in-up animation-delay-200">
               <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                 <Button
@@ -232,7 +232,7 @@ export default function HomePage() {
                 >
                   <Apple className="h-5 w-5" />
                   Download on App Store
-                  <Badge className="absolute -top-2 -right-2 text-[10px] bg-primary text-primary-foreground">Coming Soon</Badge>
+                  <Badge className="absolute -top-2 -right-2 text-[10px] bg-primary text-primary-foreground whitespace-nowrap">End of Oct</Badge>
                 </Button>
                 <Button
                   disabled
@@ -242,13 +242,13 @@ export default function HomePage() {
                 >
                   <PlaySquare className="h-5 w-5" />
                   Get it on Google Play
-                  <Badge className="absolute -top-2 -right-2 text-[10px] bg-primary text-primary-foreground">Coming Soon</Badge>
+                  <Badge className="absolute -top-2 -right-2 text-[10px] bg-primary text-primary-foreground whitespace-nowrap">End of Oct</Badge>
                 </Button>
               </div>
 
               {/* Waitlist Form */}
               <div className="w-full max-w-md pt-6 space-y-3">
-                <p className="text-sm font-medium text-foreground">Join the waitlist to be notified when we launch:</p>
+                <p className="text-sm font-medium text-foreground">Launching end of October! Join the waitlist to be notified:</p>
                 <form onSubmit={handleWaitlistSubmit} className="flex flex-col gap-2 sm:flex-row">
                   <Input
                     type="email"
