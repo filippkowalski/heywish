@@ -140,6 +140,7 @@ export function WishDetailDialog({
   const isReserved = wish?.status === "reserved";
 
   // Get user's email from any available source
+  const verifiedEmail = authUser?.emailVerified ? authUser.email ?? null : null;
   const userEmail = authUser?.email ??
     (typeof window !== 'undefined' ? window.localStorage.getItem(RESERVATION_EMAIL_STORAGE_KEY) : null);
 
