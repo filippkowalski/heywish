@@ -95,6 +95,13 @@ export function GlobalSearch() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, results, selectedIndex, router]);
 
+  const handleClose = useCallback(() => {
+    setIsOpen(false);
+    setQuery("");
+    setResults([]);
+    inputRef.current?.blur();
+  }, []);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -111,13 +118,6 @@ export function GlobalSearch() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [handleClose]);
-
-  const handleClose = useCallback(() => {
-    setIsOpen(false);
-    setQuery("");
-    setResults([]);
-    inputRef.current?.blur();
-  }, []);
 
   return (
     <div className="relative w-full max-w-md">
