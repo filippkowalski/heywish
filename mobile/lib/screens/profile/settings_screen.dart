@@ -355,39 +355,52 @@ class SettingsScreen extends StatelessWidget {
 
     NativeTransitions.showNativeModalBottomSheet(
       context: context,
-      isScrollControlled: false,
+      isScrollControlled: true,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Handle bar
-            Center(
-              child: Container(
-                width: 36,
-                height: 5,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE5E5EA),
-                  borderRadius: BorderRadius.circular(2.5),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+              child: Center(
+                child: Container(
+                  width: 36,
+                  height: 5,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE5E5EA),
+                    borderRadius: BorderRadius.circular(2.5),
+                  ),
                 ),
               ),
             ),
 
             // Title
-            Text(
-              'settings.select_language'.tr(),
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.primary,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                'settings.select_language'.tr(),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.primary,
+                ),
               ),
             ),
 
             const SizedBox(height: 24),
 
-            // Language options
-            ...languages.map((lang) {
+            // Scrollable language options
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: languages.map((lang) {
               final locale = lang['country'] != null
                   ? Locale(lang['code'] as String, lang['country'] as String)
                   : Locale(lang['code'] as String);
@@ -464,7 +477,10 @@ class SettingsScreen extends StatelessWidget {
                   if (lang != languages.last) const SizedBox(height: 12),
                 ],
               );
-            }).toList(),
+                  }).toList(),
+                ),
+              ),
+            ),
           ],
         ),
       ),

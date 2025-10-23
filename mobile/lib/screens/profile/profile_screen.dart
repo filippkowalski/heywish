@@ -481,72 +481,8 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
             ),
-
-          const SizedBox(height: 16),
-
-          // Stats section - now full width and properly spaced
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F8F8),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: const Color(0xFFE5E5EA),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem('0', 'profile.wishlists_count'.tr()),
-                _buildStatDivider(),
-                _buildStatItem('0', 'profile.friends_count'.tr()),
-                _buildStatDivider(),
-                _buildStatItem('0', 'profile.wishes_count'.tr()),
-              ],
-            ),
-          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStatItem(String value, String label) {
-    return Expanded(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: Colors.black,
-              letterSpacing: -0.5,
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF8E8E93),
-              fontWeight: FontWeight.w500,
-              height: 1.2,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatDivider() {
-    return Container(
-      width: 1,
-      height: 40,
-      color: const Color(0xFFE5E5EA),
     );
   }
 
