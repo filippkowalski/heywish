@@ -152,6 +152,18 @@ export function WishDetailDialog({
     userEmail.toLowerCase() === wish.reservedBy.toLowerCase()
   );
 
+  // Debug logging
+  if (typeof window !== 'undefined' && isReserved) {
+    console.log('[WishDetailDialog] Reservation check:', {
+      isReserved,
+      userEmail,
+      'wish.reservedBy': wish?.reservedBy,
+      isMyReservation,
+      authUserEmail: authUser?.email,
+      savedEmail: typeof window !== 'undefined' ? window.localStorage.getItem(RESERVATION_EMAIL_STORAGE_KEY) : null,
+    });
+  }
+
   if (!wish) return null;
 
   const handleClose = () => {
