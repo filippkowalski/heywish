@@ -87,12 +87,14 @@ export function WishDetailDialog({
   const [submitting, setSubmitting] = useState(false);
   const [authUser, setAuthUser] = useState<FirebaseUser | null>(null);
   const [authInitialized, setAuthInitialized] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     setCurrentImageIndex(0);
     setShowReservationForm(false);
     setFormError(null);
     setFormNotice(null);
+    setImageError(false);
   }, [wish?.id]);
 
   useEffect(() => {
@@ -133,6 +135,7 @@ export function WishDetailDialog({
   }, []);
 
   const images = wish?.images ?? [];
+  const hasValidImages = images.length > 0 && !imageError;
   const price = formatPrice(wish?.price, wish?.currency);
   const isReserved = wish?.status === "reserved";
 
@@ -472,7 +475,7 @@ export function WishDetailDialog({
         </button>
 
         {/* Image Gallery Section */}
-        {images.length > 0 ? (
+        {hasValidImages ? (
           <div className="relative w-full bg-muted max-h-[50vh]" style={{ aspectRatio: "4/3" }}>
             <Image
               src={images[currentImageIndex]}
@@ -481,6 +484,7 @@ export function WishDetailDialog({
               className="object-cover"
               sizes="(min-width: 768px) 50vw, 100vw"
               priority
+              onError={() => setImageError(true)}
             />
             {isReserved && (
               <div className="absolute top-4 left-4">
@@ -500,7 +504,7 @@ export function WishDetailDialog({
           </div>
         ) : null}
 
-        {images.length > 1 && (
+        {hasValidImages && images.length > 1 && (
           <div className="flex gap-2 overflow-x-auto px-4 py-3 border-b bg-background scrollbar-thin">
             {images.map((img, idx) => (
               <button
@@ -527,7 +531,14 @@ export function WishDetailDialog({
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 sm:p-6 space-y-4">
             <div className="space-y-2">
-              <h2 className="text-xl sm:text-2xl font-semibold leading-tight">{wish.title}</h2>
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-xl sm:text-2xl font-semibold leading-tight flex-1">{wish.title}</h2>
+                {isReserved && !hasValidImages && (
+                  <Badge variant="secondary" className="bg-black/70 text-white border-0 px-3 py-1.5 text-xs sm:text-sm flex-shrink-0">
+                    {isMine ? "Reserved by you" : "Reserved"}
+                  </Badge>
+                )}
+              </div>
               {price && (
                 <div className="text-2xl sm:text-3xl font-bold text-primary">{price}</div>
               )}
