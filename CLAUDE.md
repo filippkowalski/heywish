@@ -111,6 +111,12 @@ The REST API is implemented using Next.js API routes. Key characteristics includ
 ## WEB Guidelines
 - Shadcn design, black and white, elegant, sleek
 - Tailwind.css, React
+- **IMPORTANT**: Deployed on Cloudflare Pages which uses Edge runtime
+  - No Node.js-specific APIs available
+  - Use `@cloudflare/next-on-pages` adapter for building
+  - Build command: `npm run pages:build` (uses `npx @cloudflare/next-on-pages`)
+  - All pages use `export const runtime = 'edge'` when needed
+  - Client components with hooks (useState, useEffect, useRouter) are fine but must be marked with "use client"
 - Please use the playwright MCP server when making visual changes to the front-end website to check your work
 
 ## Mobile Guidelines

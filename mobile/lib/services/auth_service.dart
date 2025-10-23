@@ -33,6 +33,12 @@ class AuthService extends ChangeNotifier {
       _onAuthStateChanged,
     );
     _loadOnboardingStatus();
+
+    // Register token refresh callback with API service
+    _apiService.setTokenRefreshCallback(() async {
+      debugPrint('🔄 AuthService: Token refresh requested by API service');
+      return await _refreshAuthToken(force: true);
+    });
   }
 
   Future<void> _onAuthStateChanged(firebase.User? firebaseUser) async {

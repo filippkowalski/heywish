@@ -205,7 +205,11 @@
     "pending": "Pending",
     "view_wishlists": "View Wishlists",
     "respond": "Respond",
-    "add": "Add"
+    "add": "Add",
+    "request_sent": "Friend request sent",
+    "request_error": "Error sending friend request: {error}",
+    "status_friends": "Friends",
+    "status_pending": "Pending"
   },
   "permissions": {
     "photo_library_required": "Photo Library Access Required",
@@ -475,6 +479,7 @@
   "search": {
     "title": "Search",
     "hint": "Search wishlists and items...",
+    "hint_users": "Search by username or name...",
     "no_results": "No results found",
     "recent_searches": "Recent Searches",
     "find_friends_title": "Find Friends",
@@ -484,6 +489,8 @@
     "searching": "Searching...",
     "no_users_found": "No users found",
     "try_different_search": "Try a different search term",
+    "try_different": "Try a different search term",
+    "min_chars": "Type at least 2 characters to search",
     "error_searching": "Error searching users: {error}"
   },
   "activity": {

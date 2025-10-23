@@ -1,5 +1,5 @@
--- Baseline schema for HeyWish
--- Generated on 2025-03-09
+-- Baseline schema for Jinnie
+-- Generated on 2025-10-23
 
 SET search_path = public;
 
@@ -19,8 +19,10 @@ CREATE TABLE users (
     location text,
     birthdate date,
     interests text[],
+    shopping_interests text[] DEFAULT ARRAY[]::text[],
     gender varchar(20),
     phone_number varchar(20),
+    phone_verified boolean NOT NULL DEFAULT false,
     notification_preferences jsonb NOT NULL DEFAULT '{
         "birthday_notifications": true,
         "coupon_notifications": true,
@@ -34,6 +36,8 @@ CREATE TABLE users (
         "show_gender": false
     }'::jsonb,
     sign_up_method text,
+    is_profile_public boolean NOT NULL DEFAULT true,
+    fcm_token text,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     last_seen timestamptz NOT NULL DEFAULT now()
@@ -43,6 +47,7 @@ CREATE INDEX idx_users_firebase_uid ON users(firebase_uid);
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_username ON users(username);
 CREATE INDEX idx_users_sign_up_method ON users(sign_up_method);
+CREATE INDEX idx_users_shopping_interests ON users USING GIN (shopping_interests);
 
 -- Wishlists table
 CREATE TABLE wishlists (
@@ -52,8 +57,9 @@ CREATE TABLE wishlists (
     description text,
     visibility text NOT NULL DEFAULT 'private' CHECK (visibility IN ('private', 'friends', 'public')),
     wishlist_type text NOT NULL DEFAULT 'personal' CHECK (wishlist_type IN ('personal', 'kids', 'registry', 'holiday', 'event', 'other')),
+    slug text,
     cover_image_url text,
-    share_token text UNIQUE NOT NULL,
+    share_token text UNIQUE,
     share_password text,
     share_expires_at timestamptz,
     item_count integer NOT NULL DEFAULT 0,
@@ -63,6 +69,7 @@ CREATE TABLE wishlists (
 );
 
 CREATE INDEX idx_wishlists_user_id ON wishlists(user_id);
+CREATE INDEX idx_wishlists_slug ON wishlists(slug);
 CREATE INDEX idx_wishlists_share_token ON wishlists(share_token);
 CREATE INDEX idx_wishlists_visibility ON wishlists(visibility);
 CREATE INDEX idx_wishlists_created_at ON wishlists(created_at);
@@ -70,7 +77,8 @@ CREATE INDEX idx_wishlists_created_at ON wishlists(created_at);
 -- Wishes table
 CREATE TABLE wishes (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    wishlist_id uuid NOT NULL REFERENCES wishlists(id) ON DELETE CASCADE,
+    wishlist_id uuid REFERENCES wishlists(id) ON DELETE CASCADE,
+    created_by uuid REFERENCES users(id) ON DELETE CASCADE,
     title text NOT NULL,
     description text,
     url text,
@@ -92,9 +100,11 @@ CREATE TABLE wishes (
 );
 
 CREATE INDEX idx_wishes_wishlist_id ON wishes(wishlist_id);
+CREATE INDEX idx_wishes_created_by ON wishes(created_by);
 CREATE INDEX idx_wishes_status ON wishes(status);
 CREATE INDEX idx_wishes_reserved_by ON wishes(reserved_by);
 CREATE INDEX idx_wishes_created_at ON wishes(created_at);
+CREATE INDEX idx_wishes_uncategorized ON wishes(id) WHERE wishlist_id IS NULL;
 
 -- Friendships table
 CREATE TABLE friendships (
@@ -254,37 +264,50 @@ CREATE POLICY "Users can delete own wishlists" ON wishlists
     FOR DELETE USING (user_id = (SELECT id FROM users WHERE firebase_uid = current_setting('app.current_user_uid', true)));
 
 -- RLS policies for wishes
-CREATE POLICY "Users can view wishes in accessible wishlists" ON wishes
+CREATE POLICY "Users can view their own wishes" ON wishes
     FOR SELECT USING (
+        -- Own wishes in wishlists
         wishlist_id IN (
             SELECT id FROM wishlists
             WHERE user_id = (SELECT id FROM users WHERE firebase_uid = current_setting('app.current_user_uid', true))
-               OR visibility = 'public'
         )
+        -- Own uncategorized wishes
+        OR (wishlist_id IS NULL AND created_by = (SELECT id FROM users WHERE firebase_uid = current_setting('app.current_user_uid', true)))
+        -- Public wishlist wishes
+        OR wishlist_id IN (SELECT id FROM wishlists WHERE visibility = 'public')
     );
 
-CREATE POLICY "Users can create wishes in own wishlists" ON wishes
+CREATE POLICY "Users can create wishes" ON wishes
     FOR INSERT WITH CHECK (
-        wishlist_id IN (
+        -- In own wishlists
+        (wishlist_id IS NOT NULL AND wishlist_id IN (
             SELECT id FROM wishlists
             WHERE user_id = (SELECT id FROM users WHERE firebase_uid = current_setting('app.current_user_uid', true))
-        )
+        ))
+        -- As uncategorized
+        OR (wishlist_id IS NULL AND created_by = (SELECT id FROM users WHERE firebase_uid = current_setting('app.current_user_uid', true)))
     );
 
-CREATE POLICY "Users can update wishes in own wishlists" ON wishes
+CREATE POLICY "Users can update their wishes" ON wishes
     FOR UPDATE USING (
+        -- Own wishes in wishlists
         wishlist_id IN (
             SELECT id FROM wishlists
             WHERE user_id = (SELECT id FROM users WHERE firebase_uid = current_setting('app.current_user_uid', true))
         )
+        -- Own uncategorized wishes
+        OR (wishlist_id IS NULL AND created_by = (SELECT id FROM users WHERE firebase_uid = current_setting('app.current_user_uid', true)))
     );
 
-CREATE POLICY "Users can delete wishes in own wishlists" ON wishes
+CREATE POLICY "Users can delete their wishes" ON wishes
     FOR DELETE USING (
+        -- Own wishes in wishlists
         wishlist_id IN (
             SELECT id FROM wishlists
             WHERE user_id = (SELECT id FROM users WHERE firebase_uid = current_setting('app.current_user_uid', true))
         )
+        -- Own uncategorized wishes
+        OR (wishlist_id IS NULL AND created_by = (SELECT id FROM users WHERE firebase_uid = current_setting('app.current_user_uid', true)))
     );
 
 -- RLS policies for friendships

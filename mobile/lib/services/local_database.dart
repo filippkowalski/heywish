@@ -24,9 +24,8 @@ class LocalDatabase {
 
       _database = await openDatabase(
         path,
-        version: 3,
+        version: 2,
         onCreate: _onCreate,
-        onUpgrade: _onUpgrade,
       );
 
       _dbCompleter.complete(_database!);
@@ -54,10 +53,24 @@ class LocalDatabase {
         id TEXT PRIMARY KEY,
         firebase_uid TEXT UNIQUE NOT NULL,
         email TEXT,
+        email_verified INTEGER DEFAULT 0,
         full_name TEXT,
         username TEXT,
         avatar_url TEXT,
         bio TEXT,
+        location TEXT,
+        birthdate TEXT,
+        interests TEXT,
+        shopping_interests TEXT,
+        gender TEXT,
+        phone_number TEXT,
+        phone_verified INTEGER DEFAULT 0,
+        notification_preferences TEXT,
+        privacy_settings TEXT,
+        sign_up_method TEXT,
+        is_profile_public INTEGER DEFAULT 1,
+        fcm_token TEXT,
+        last_seen REAL,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         version INTEGER NOT NULL DEFAULT 1,
@@ -75,10 +88,13 @@ class LocalDatabase {
         description TEXT,
         visibility TEXT NOT NULL DEFAULT 'private',
         user_id TEXT NOT NULL,
+        slug TEXT,
         share_token TEXT,
         cover_image_url TEXT,
+        wishlist_type TEXT DEFAULT 'personal',
         item_count INTEGER DEFAULT 0,
         reserved_count INTEGER DEFAULT 0,
+        tags TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         version INTEGER NOT NULL DEFAULT 1,
@@ -93,7 +109,8 @@ class LocalDatabase {
     await db.execute('''
       CREATE TABLE wishes (
         id TEXT PRIMARY KEY,
-        wishlist_id TEXT NOT NULL,
+        wishlist_id TEXT,
+        created_by TEXT,
         title TEXT NOT NULL,
         description TEXT,
         price REAL,
@@ -105,10 +122,13 @@ class LocalDatabase {
         priority INTEGER DEFAULT 1,
         quantity INTEGER DEFAULT 1,
         notes TEXT,
-        is_reserved INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'available',
         reserved_by TEXT,
         reserved_at TEXT,
-        reserver_name TEXT,
+        reserved_message TEXT,
+        position INTEGER DEFAULT 0,
+        source TEXT DEFAULT 'manual',
+        metadata TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         version INTEGER NOT NULL DEFAULT 1,
@@ -165,27 +185,6 @@ class LocalDatabase {
     debugPrint('✅ LocalDatabase: Tables created successfully');
   }
 
-  /// Handle database upgrades
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    debugPrint('🔄 LocalDatabase: Upgrading from $oldVersion to $newVersion');
-    
-    if (oldVersion < 2) {
-      // Add sync_timestamps table for version 2
-      await db.execute('''
-        CREATE TABLE sync_timestamps (
-          entity_type TEXT PRIMARY KEY,
-          timestamp INTEGER NOT NULL
-        )
-      ''');
-      debugPrint('✅ LocalDatabase: Added sync_timestamps table');
-    }
-    
-    if (oldVersion < 3) {
-      // Rename wish_count to item_count for backend compatibility
-      await db.execute('ALTER TABLE wishlists RENAME COLUMN wish_count TO item_count');
-      debugPrint('✅ LocalDatabase: Renamed wish_count to item_count');
-    }
-  }
 
   // CRUD Operations
 
@@ -377,15 +376,33 @@ class LocalDatabase {
       localEntity['name'] = entity['name'] ?? '';
       localEntity['visibility'] = entity['visibility'] ?? 'private';
       localEntity['user_id'] = entity['user_id']?.toString() ?? '';
+      localEntity['slug'] = entity['slug'];
+      localEntity['wishlist_type'] = entity['wishlist_type'] ?? 'personal';
+
+      // Handle tags field - convert array to JSON string if needed
+      if (entity['tags'] != null) {
+        if (entity['tags'] is List) {
+          localEntity['tags'] = jsonEncode(entity['tags']);
+        } else if (entity['tags'] is String) {
+          localEntity['tags'] = entity['tags'];
+        } else {
+          localEntity['tags'] = '[]';
+        }
+      } else {
+        localEntity['tags'] = '[]';
+      }
     } else if (entityType == 'wish') {
       // Handle wish-specific fields
       localEntity['title'] = entity['title'] ?? '';
-      localEntity['wishlist_id'] = entity['wishlist_id']?.toString() ?? '';
+      localEntity['wishlist_id'] = entity['wishlist_id']?.toString();
+      localEntity['created_by'] = entity['created_by']?.toString();
       localEntity['priority'] = entity['priority'] ?? 1;
       localEntity['quantity'] = entity['quantity'] ?? 1;
       localEntity['currency'] = entity['currency'] ?? 'USD';
-      localEntity['status'] = entity['status'] ?? 'active';
-      
+      localEntity['status'] = entity['status'] ?? 'available';
+      localEntity['position'] = entity['position'] ?? 0;
+      localEntity['source'] = entity['source'] ?? 'manual';
+
       // Handle images field - convert array to JSON string if needed
       if (entity['images'] != null) {
         if (entity['images'] is List) {
@@ -415,8 +432,33 @@ class LocalDatabase {
       // Handle user-specific fields
       localEntity['firebase_uid'] = entity['firebase_uid'] ?? '';
       localEntity['email'] = entity['email'] ?? '';
+      localEntity['email_verified'] = (entity['email_verified'] == true) ? 1 : 0;
       localEntity['full_name'] = entity['full_name'] ?? '';
-      localEntity['bio'] = entity['bio'] ?? '';
+      localEntity['username'] = entity['username'];
+      localEntity['avatar_url'] = entity['avatar_url'];
+      localEntity['bio'] = entity['bio'];
+      localEntity['location'] = entity['location'];
+      localEntity['birthdate'] = entity['birthdate'];
+      localEntity['gender'] = entity['gender'];
+      localEntity['phone_number'] = entity['phone_number'];
+      localEntity['phone_verified'] = (entity['phone_verified'] == true) ? 1 : 0;
+      localEntity['sign_up_method'] = entity['sign_up_method'];
+      localEntity['is_profile_public'] = (entity['is_profile_public'] == true) ? 1 : 0;
+      localEntity['fcm_token'] = entity['fcm_token'];
+
+      // Handle JSON fields - convert to JSON string
+      if (entity['interests'] != null) {
+        localEntity['interests'] = entity['interests'] is List ? jsonEncode(entity['interests']) : entity['interests'];
+      }
+      if (entity['shopping_interests'] != null) {
+        localEntity['shopping_interests'] = entity['shopping_interests'] is List ? jsonEncode(entity['shopping_interests']) : entity['shopping_interests'];
+      }
+      if (entity['notification_preferences'] != null) {
+        localEntity['notification_preferences'] = entity['notification_preferences'] is Map ? jsonEncode(entity['notification_preferences']) : entity['notification_preferences'];
+      }
+      if (entity['privacy_settings'] != null) {
+        localEntity['privacy_settings'] = entity['privacy_settings'] is Map ? jsonEncode(entity['privacy_settings']) : entity['privacy_settings'];
+      }
     }
     
     await db.insert(

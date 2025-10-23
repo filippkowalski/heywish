@@ -134,35 +134,24 @@ class _UsernameStepState extends State<UsernameStep> {
   void _onUsernameChanged(String value) {
     final onboardingService = context.read<OnboardingService>();
 
-    // Clean the input (remove spaces, convert to lowercase)
-    final cleanedValue = _cleanUsername(value);
-
-    // Update the text field if it was cleaned
-    if (cleanedValue != value) {
-      final cursorPosition = _usernameController.selection.baseOffset;
-      _usernameController.value = TextEditingValue(
-        text: cleanedValue,
-        selection: TextSelection.collapsed(
-          offset: cursorPosition > cleanedValue.length
-              ? cleanedValue.length
-              : cursorPosition,
-        ),
-      );
-    }
+    // The input is already cleaned by the inputFormatters and LowerCaseTextFormatter
+    // No need to manually update the controller value
 
     // Validate the username
-    final validationError = _validateUsername(cleanedValue);
-    setState(() {
-      _validationError = validationError;
-    });
+    final validationError = _validateUsername(value);
+    if (_validationError != validationError) {
+      setState(() {
+        _validationError = validationError;
+      });
+    }
 
-    onboardingService.updateUsername(cleanedValue);
+    onboardingService.updateUsername(value);
 
     // Only check availability if username is valid
     _debounceTimer?.cancel();
-    if (validationError == null && cleanedValue.isNotEmpty) {
+    if (validationError == null && value.isNotEmpty) {
       _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-        onboardingService.checkUsernameAvailability(cleanedValue);
+        onboardingService.checkUsernameAvailability(value);
       });
     }
   }
@@ -261,6 +250,7 @@ class _UsernameStepState extends State<UsernameStep> {
           // Scrollable content
           Expanded(
             child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.only(
                 left: 32.0,
                 right: 32.0,
@@ -408,6 +398,9 @@ class _UsernameStepState extends State<UsernameStep> {
                               textAlign: TextAlign.left,
                             ),
                           ),
+
+                        // Extra spacing to ensure URL is visible above keyboard
+                        SizedBox(height: MediaQuery.of(context).viewInsets.bottom > 0 ? 200 : 0),
                       ],
                     );
                   },

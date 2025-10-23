@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -19,11 +20,17 @@ class FriendsScreen extends StatefulWidget {
 class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _showSearch = false;
+  bool _isSearching = false;
+  List<UserSearchResult> _searchResults = [];
+  Timer? _searchDebouncer;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(_onTabChanged);
     // Load data through the service when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<FriendsService>().loadAllData();
@@ -32,18 +39,136 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
 
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     _searchController.dispose();
+    _searchFocusNode.dispose();
+    _searchDebouncer?.cancel();
     super.dispose();
+  }
+
+  void _onTabChanged() {
+    // Hide search when switching away from Friends tab
+    if (_tabController.index != 0 && _showSearch) {
+      setState(() {
+        _showSearch = false;
+        _searchController.clear();
+        _searchResults.clear();
+        _isSearching = false;
+      });
+      _searchFocusNode.unfocus();
+    }
+  }
+
+  void _activateSearch() {
+    setState(() {
+      _showSearch = true;
+    });
+    // Delay focus to ensure the search field is built
+    Future.delayed(const Duration(milliseconds: 100), () {
+      _searchFocusNode.requestFocus();
+    });
+  }
+
+  void _onSearchChanged(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _isSearching = false;
+        _searchResults.clear();
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+    });
+
+    if (query.length >= 2) {
+      _searchDebouncer?.cancel();
+      _searchDebouncer = Timer(const Duration(milliseconds: 500), () {
+        _searchUsers(query);
+      });
+    } else {
+      setState(() {
+        _searchResults.clear();
+      });
+    }
+  }
+
+  Future<void> _searchUsers(String query) async {
+    if (query.length < 2) return;
+
+    try {
+      final results = await context.read<FriendsService>().searchUsers(query);
+      if (mounted && _searchController.text == query) {
+        setState(() {
+          _searchResults = results;
+          _isSearching = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('search.error_searching'.tr(namedArgs: {'error': e.toString()})),
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendFriendRequest(UserSearchResult user) async {
+    try {
+      await context.read<FriendsService>().sendFriendRequest(user.id);
+
+      if (!mounted) return;
+
+      // Update the search results to reflect the new status
+      setState(() {
+        final index = _searchResults.indexWhere((u) => u.id == user.id);
+        if (index != -1) {
+          _searchResults[index] = UserSearchResult(
+            id: user.id,
+            username: user.username,
+            fullName: user.fullName,
+            avatarUrl: user.avatarUrl,
+            bio: user.bio,
+            friendshipStatus: 'pending',
+            requestDirection: 'sent',
+          );
+        }
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('friends.request_sent'.tr()),
+          backgroundColor: Colors.green.shade600,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('friends.request_error'.tr(namedArgs: {'error': e.toString()})),
+          backgroundColor: Colors.red.shade600,
+        ),
+      );
+    }
   }
 
   Future<void> _respondToRequest(FriendRequest request, String action) async {
     try {
-      await context.read<FriendsService>().respondToFriendRequest(request.id, action);
-      
+      final friendsService = context.read<FriendsService>();
+      await friendsService.respondToFriendRequest(request.id, action);
+
       // Reload data to get fresh state
       if (action == 'accept') {
-        await context.read<FriendsService>().loadAllData();
+        await friendsService.loadAllData();
       }
 
       if (mounted) {
@@ -75,14 +200,20 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
           appBar: AppBar(
             title: Text('friends.title'.tr()),
             actions: [
-              IconButton(
-                onPressed: () {
-                  widget.onNavigateToSearch?.call();
-                },
-                icon: Icon(Icons.person_add_outlined),
-              ),
+              // Show search icon only on Friends tab
+              if (_tabController.index == 0)
+                IconButton(
+                  onPressed: _activateSearch,
+                  icon: Icon(Icons.search),
+                ),
             ],
-            bottom: TabBar(
+            bottom: PreferredSize(
+              preferredSize: Size.fromHeight(
+                _showSearch && _tabController.index == 0 ? 104 : 48,
+              ),
+              child: Column(
+                children: [
+                  TabBar(
               controller: _tabController,
               isScrollable: true,
               tabAlignment: TabAlignment.start,
@@ -171,9 +302,53 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                     ],
                   ),
                 ),
+              ],
+            ),
+            // Search field - only visible on Friends tab
+            if (_showSearch && _tabController.index == 0)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                child: TextField(
+                  controller: _searchController,
+                  focusNode: _searchFocusNode,
+                  onChanged: _onSearchChanged,
+                  decoration: InputDecoration(
+                    hintText: 'search.hint_users'.tr(),
+                    prefixIcon: Icon(Icons.search),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              _onSearchChanged('');
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
+    ),
           body: TabBarView(
             controller: _tabController,
             children: [
@@ -188,6 +363,11 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   }
 
   Widget _buildFriendsTab(FriendsService friendsService) {
+    // Show search results if searching
+    if (_showSearch && _searchController.text.isNotEmpty) {
+      return _buildSearchResults();
+    }
+
     if (friendsService.isLoadingFriends) {
       return Center(child: CircularProgressIndicator());
     }
@@ -218,10 +398,8 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
             ),
             SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () {
-                widget.onNavigateToSearch?.call();
-              },
-              icon: Icon(Icons.person_add),
+              onPressed: _activateSearch,
+              icon: Icon(Icons.search),
               label: Text('friends.find_friends'.tr()),
             ),
           ],
@@ -238,6 +416,160 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
           final friend = friendsService.friends[index];
           return _buildFriendCard(friend);
         },
+      ),
+    );
+  }
+
+  Widget _buildSearchResults() {
+    if (_isSearching) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('search.searching'.tr()),
+          ],
+        ),
+      );
+    }
+
+    if (_searchController.text.length < 2) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search,
+              size: 64,
+              color: Colors.grey.shade400,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'search.min_chars'.tr(),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Colors.grey.shade600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_searchResults.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.person_search,
+              size: 64,
+              color: Colors.grey.shade400,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'search.no_results'.tr(),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            SizedBox(height: 8),
+            Text(
+              'search.try_different'.tr(),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey.shade600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.all(16),
+      itemCount: _searchResults.length,
+      itemBuilder: (context, index) {
+        final user = _searchResults[index];
+        return _buildSearchResultCard(user);
+      },
+    );
+  }
+
+  Widget _buildSearchResultCard(UserSearchResult user) {
+    return Card(
+      margin: EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding: EdgeInsets.all(16),
+        leading: CachedAvatarImage(
+          imageUrl: user.avatarUrl,
+          radius: 24,
+        ),
+        title: Text(
+          user.displayName,
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('@${user.username}'),
+            if (user.bio != null && user.bio!.isNotEmpty) ...[
+              SizedBox(height: 4),
+              Text(
+                user.bio!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ],
+        ),
+        trailing: _buildFriendshipButton(user),
+      ),
+    );
+  }
+
+  Widget _buildFriendshipButton(UserSearchResult user) {
+    if (user.friendshipStatus == 'accepted') {
+      return Chip(
+        label: Text('friends.status_friends'.tr()),
+        backgroundColor: Colors.green.shade100,
+        labelStyle: TextStyle(
+          color: Colors.green.shade700,
+          fontSize: 12,
+        ),
+      );
+    }
+
+    if (user.friendshipStatus == 'pending') {
+      if (user.requestDirection == 'sent') {
+        return Chip(
+          label: Text('friends.status_pending'.tr()),
+          backgroundColor: Colors.orange.shade100,
+          labelStyle: TextStyle(
+            color: Colors.orange.shade700,
+            fontSize: 12,
+          ),
+        );
+      } else {
+        return TextButton(
+          onPressed: () {
+            // Navigate to requests tab to respond
+            _tabController.animateTo(1);
+          },
+          child: Text('friends.respond'.tr()),
+        );
+      }
+    }
+
+    return ElevatedButton.icon(
+      onPressed: () => _sendFriendRequest(user),
+      icon: Icon(Icons.person_add, size: 16),
+      label: Text('friends.add'.tr()),
+      style: ElevatedButton.styleFrom(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
   }

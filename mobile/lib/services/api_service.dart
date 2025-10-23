@@ -6,6 +6,7 @@ import 'dart:io';
 class ApiService {
   late final Dio _dio;
   String? _authToken;
+  Function? _tokenRefreshCallback;
 
   static final ApiService _instance = ApiService._internal();
 
@@ -63,7 +64,7 @@ class ApiService {
           }
           handler.next(response);
         },
-        onError: (error, handler) {
+        onError: (error, handler) async {
           if (kDebugMode) {
             debugPrint(
               '❌ API ERROR[${error.response?.statusCode}] => ${error.requestOptions.path}',
@@ -74,6 +75,35 @@ class ApiService {
               debugPrint('❌ Error Response Data: ${error.response?.data}');
             }
           }
+
+          // Handle 401 errors by attempting to refresh the token
+          if (error.response?.statusCode == 401 && _tokenRefreshCallback != null) {
+            debugPrint('🔄 API: 401 error detected, attempting token refresh...');
+
+            try {
+              // Call the token refresh callback
+              final newToken = await _tokenRefreshCallback!();
+
+              if (newToken != null && newToken is String) {
+                debugPrint('✅ API: Token refreshed successfully, retrying request...');
+
+                // Update the auth token
+                _authToken = newToken;
+
+                // Update the failed request with new token
+                error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
+
+                // Retry the request
+                final response = await _dio.fetch(error.requestOptions);
+                return handler.resolve(response);
+              } else {
+                debugPrint('❌ API: Token refresh returned null, cannot retry');
+              }
+            } catch (e) {
+              debugPrint('❌ API: Token refresh failed: $e');
+            }
+          }
+
           handler.next(error);
         },
       ),
@@ -86,6 +116,13 @@ class ApiService {
 
   void clearAuthToken() {
     _authToken = null;
+  }
+
+  /// Set a callback function to refresh the auth token when it expires
+  /// The callback should return a Future with the new token string or null
+  void setTokenRefreshCallback(Function callback) {
+    _tokenRefreshCallback = callback;
+    debugPrint('🔄 API: Token refresh callback registered');
   }
 
   bool get hasAuthToken => _authToken != null;

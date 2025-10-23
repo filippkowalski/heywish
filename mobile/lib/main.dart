@@ -281,7 +281,7 @@ class _JinnieAppState extends State<JinnieApp> {
       child: Screenshot(
         controller: _screenshotController,
         child: MaterialApp.router(
-          title: 'app.title'.tr(), // Hot reload trigger
+          title: 'Jinnie',
           theme: AppTheme.lightTheme(),
           themeMode: ThemeMode.light,
           debugShowCheckedModeBanner: false,
