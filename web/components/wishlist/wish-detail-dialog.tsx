@@ -200,9 +200,11 @@ export function WishDetailDialog({
       handleClose();
       window.location.reload();
     } catch (err: unknown) {
-      const axiosError = err as { response?: { status?: number; data?: { error?: { message?: string } } } };
-      const message = axiosError.response?.data?.error?.message ?? "Failed to cancel reservation. Please try again.";
-      alert(message);
+      console.error('Cancel reservation error:', err);
+      const axiosError = err as { response?: { status?: number; data?: { error?: { message?: string }; message?: string } } };
+      const errorData = axiosError.response?.data;
+      const message = errorData?.error?.message || errorData?.message || "Failed to cancel reservation. Please try again.";
+      alert(`Error: ${message}\n\nStatus: ${axiosError.response?.status || 'unknown'}`);
     } finally {
       setSubmitting(false);
     }
