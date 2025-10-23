@@ -436,6 +436,20 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
   const verifiedEmail = authUser?.emailVerified ? authUser.email ?? null : null;
   const viewerUid = authUser?.uid ?? null;
 
+  // Helper function to check if the current user owns a reservation
+  const isMyReservation = (wish: Wish) => {
+    if (!wish.reservedBy) return false;
+    // Primary check: compare emails (case-insensitive)
+    if (verifiedEmail && wish.reservedBy.toLowerCase() === verifiedEmail.toLowerCase()) {
+      return true;
+    }
+    // Fallback check: compare UIDs if available
+    if (viewerUid && wish.reservedByUid === viewerUid) {
+      return true;
+    }
+    return false;
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-muted-foreground">
@@ -578,10 +592,10 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
                   setDetailDialogOpen(true);
                 }}
                 onReserve={() => startReservation(wish)}
-                onCancel={viewerUid != null && wish.reservedByUid === viewerUid ? () => handleCancelReservation(wish) : undefined}
+                onCancel={isMyReservation(wish) ? () => handleCancelReservation(wish) : undefined}
                 reserving={submitting && activeWish?.id === wish.id}
                 cancelling={cancellingIds.has(wish.id)}
-                isMine={viewerUid != null && wish.reservedByUid === viewerUid}
+                isMine={isMyReservation(wish)}
               />
             ))}
           </div>
@@ -610,11 +624,11 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
           setDetailDialogOpen(false);
           startReservation(activeWish!);
         }}
-        onCancel={viewerUid != null && activeWish?.reservedByUid === viewerUid ? () => {
+        onCancel={activeWish && isMyReservation(activeWish) ? () => {
           setDetailDialogOpen(false);
           handleCancelReservation(activeWish!);
         } : undefined}
-        isMine={viewerUid != null && activeWish?.reservedByUid === viewerUid}
+        isMine={activeWish ? isMyReservation(activeWish) : false}
       />
     </main>
   );

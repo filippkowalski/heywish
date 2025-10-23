@@ -59,15 +59,16 @@ function WishPreviewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
       tabIndex={0}
       onClick={onSelect}
       onKeyDown={handleKeyDown}
-      className="group/card h-full gap-0 overflow-hidden border border-border/40 bg-card p-0 shadow-sm transition-all hover:border-border hover:shadow-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      className="group/card break-inside-avoid-column mb-4 gap-0 overflow-hidden border border-border/40 bg-card p-0 shadow-sm transition-all hover:border-border hover:shadow-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
     >
         {showImage ? (
-          <div className="relative w-full aspect-[4/3] bg-muted">
+          <div className="relative w-full bg-muted">
             <Image
               src={coverImage!}
               alt={wish.title}
-              fill
-              className="object-cover"
+              width={400}
+              height={400}
+              className="w-full h-auto object-cover"
               sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 40vw, 90vw"
               onError={() => setImageFailed(true)}
             />
@@ -216,7 +217,7 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
             className="flex-shrink-0"
           />
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+        <div className="columns-1 gap-4 space-y-4 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5">
           {filteredWishes.map(({ wish, wishlist }) => (
             <WishPreviewCard
               key={wish.id}

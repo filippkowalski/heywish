@@ -1,8 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Apple, PlaySquare, Heart, Users, Gift } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Sparkles, Apple, PlaySquare, Heart, Users, Gift, Loader2 } from "lucide-react";
 
 // Wish images - stored locally for reliability
 const wishImages = [
@@ -38,6 +42,53 @@ const wishImages = [
 ];
 
 export default function HomePage() {
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleWaitlistSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email || !email.includes("@")) {
+      setErrorMessage("Please enter a valid email address");
+      setSubmitStatus("error");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus("idle");
+    setErrorMessage("");
+
+    try {
+      const message = `🎉 New Waitlist Signup!\n\nEmail: ${email}\nSource: Landing Page\nTimestamp: ${new Date().toISOString()}`;
+
+      const response = await fetch("https://openai-rewrite.onrender.com/telegram/send-message", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message,
+          channel: "general",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit");
+      }
+
+      setSubmitStatus("success");
+      setEmail("");
+    } catch (error) {
+      console.error("Error submitting to waitlist:", error);
+      setSubmitStatus("error");
+      setErrorMessage("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -171,29 +222,69 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col items-center gap-3 md:gap-4 pt-2 md:pt-4 animate-fade-in-up animation-delay-200 sm:flex-row sm:justify-center">
-              <Button
-                asChild
-                size="lg"
-                className="group h-12 gap-2 px-8 text-base font-medium shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30"
-              >
-                <Link href="https://apps.apple.com/app/id6504302007" target="_blank" rel="noreferrer">
-                  <Apple className="h-5 w-5 transition-transform group-hover:scale-110" />
+            {/* CTA Buttons - Disabled with Coming Soon */}
+            <div className="flex flex-col items-center gap-3 md:gap-4 pt-2 md:pt-4 animate-fade-in-up animation-delay-200">
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                <Button
+                  disabled
+                  size="lg"
+                  className="h-12 gap-2 px-8 text-base font-medium opacity-50 cursor-not-allowed relative"
+                >
+                  <Apple className="h-5 w-5" />
                   Download on App Store
-                </Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="group h-12 gap-2 border-primary/20 px-8 text-base font-medium backdrop-blur-sm transition-all hover:border-primary/40 hover:bg-primary/5"
-              >
-                <Link href="https://play.google.com/store/apps/details?id=app.jinnie" target="_blank" rel="noreferrer">
-                  <PlaySquare className="h-5 w-5 transition-transform group-hover:scale-110" />
+                  <Badge className="absolute -top-2 -right-2 text-[10px] bg-primary text-primary-foreground">Coming Soon</Badge>
+                </Button>
+                <Button
+                  disabled
+                  size="lg"
+                  variant="outline"
+                  className="h-12 gap-2 px-8 text-base font-medium opacity-50 cursor-not-allowed relative"
+                >
+                  <PlaySquare className="h-5 w-5" />
                   Get it on Google Play
-                </Link>
-              </Button>
+                  <Badge className="absolute -top-2 -right-2 text-[10px] bg-primary text-primary-foreground">Coming Soon</Badge>
+                </Button>
+              </div>
+
+              {/* Waitlist Form */}
+              <div className="w-full max-w-md pt-6 space-y-3">
+                <p className="text-sm font-medium text-foreground">Join the waitlist to be notified when we launch:</p>
+                <form onSubmit={handleWaitlistSubmit} className="flex flex-col gap-2 sm:flex-row">
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isSubmitting}
+                    className="flex-1 h-11"
+                    required
+                  />
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="h-11 px-6"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Joining...
+                      </>
+                    ) : (
+                      "Join Waitlist"
+                    )}
+                  </Button>
+                </form>
+                {submitStatus === "success" && (
+                  <p className="text-sm text-emerald-600 font-medium">
+                    ✓ Thanks! We'll notify you when we launch.
+                  </p>
+                )}
+                {submitStatus === "error" && (
+                  <p className="text-sm text-destructive font-medium">
+                    {errorMessage || "Something went wrong. Please try again."}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
