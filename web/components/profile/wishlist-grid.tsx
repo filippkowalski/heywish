@@ -11,6 +11,7 @@ import { WishDetailDialog } from "@/components/wishlist/wish-detail-dialog";
 import { WishlistFilter } from "./wishlist-filter";
 import { ShareButton } from "./share-button";
 import { getWishlistSlug, matchesWishlistSlug } from "@/lib/slug";
+import { LayoutGrid, List } from "lucide-react";
 
 interface WishlistGridProps {
   wishlists: Wishlist[];
@@ -59,22 +60,21 @@ function WishPreviewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
       tabIndex={0}
       onClick={onSelect}
       onKeyDown={handleKeyDown}
-      className="group/card break-inside-avoid-column mb-4 gap-0 overflow-hidden border border-border/40 bg-card p-0 shadow-sm transition-all hover:border-border hover:shadow-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      className="group/card h-full flex flex-col gap-0 overflow-hidden border border-border/40 bg-card p-0 shadow-sm transition-all hover:border-border hover:shadow-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
     >
         {showImage ? (
-          <div className="relative w-full bg-muted">
+          <div className="relative w-full aspect-square bg-muted">
             <Image
               src={coverImage!}
               alt={wish.title}
-              width={400}
-              height={400}
-              className="w-full h-auto object-cover"
-              sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 40vw, 90vw"
+              fill
+              className="object-cover"
+              sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
               onError={() => setImageFailed(true)}
             />
             {isReserved && (
-              <div className="absolute top-3 right-3">
-                <Badge variant="secondary" className="bg-black/70 text-white border-0 backdrop-blur-sm text-xs px-3 py-1">
+              <div className="absolute top-2 right-2">
+                <Badge variant="secondary" className="bg-black/70 text-white border-0 backdrop-blur-sm text-[10px] px-2 py-0.5">
                   Reserved
                 </Badge>
               </div>
@@ -82,29 +82,29 @@ function WishPreviewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
           </div>
         ) : null}
 
-        <CardContent className={`flex flex-1 flex-col gap-3 px-4 ${showImage ? 'pb-4 pt-3' : 'py-4'}`}>
-          <div className="space-y-1.5">
-            <div className="flex items-start justify-between gap-2">
+        <CardContent className={`flex flex-1 flex-col gap-2 px-3 ${showImage ? 'pb-3 pt-2' : 'py-3'}`}>
+          <div className="space-y-1">
+            <div className="flex items-start justify-between gap-1.5">
               <h3 className="text-sm font-semibold leading-tight line-clamp-2 group-hover/card:underline">
                 {wish.title}
               </h3>
               {!showImage && isReserved ? (
-                <Badge variant="secondary" className="bg-black/70 text-white border-0 px-2 py-0.5 text-[10px] uppercase flex-shrink-0">
+                <Badge variant="secondary" className="bg-black/70 text-white border-0 px-1.5 py-0.5 text-[9px] uppercase flex-shrink-0">
                   Reserved
                 </Badge>
               ) : null}
             </div>
             {wish.description && (
-              <p className="text-xs text-muted-foreground line-clamp-2">
+              <p className="text-xs text-muted-foreground line-clamp-1">
                 {wish.description}
               </p>
             )}
           </div>
-          <div className="mt-auto flex items-end justify-between gap-2">
-            <span className="flex min-h-[1.25rem] items-end text-sm font-semibold text-foreground">
+          <div className="mt-auto flex items-end justify-between gap-1.5">
+            <span className="text-sm font-semibold text-foreground">
               {price ?? ""}
             </span>
-            <span className="text-xs font-medium text-muted-foreground text-right truncate">
+            <span className="text-[10px] font-medium text-muted-foreground text-right truncate">
               {wishlist.name}
             </span>
           </div>
@@ -113,11 +113,82 @@ function WishPreviewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
   );
 }
 
+function WishListViewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
+  const coverImage = wish.images?.[0];
+  const [imageFailed, setImageFailed] = useState(false);
+  useEffect(() => {
+    setImageFailed(false);
+  }, [coverImage]);
+  const price = formatPrice(wish.price, wish.currency);
+  const isReserved = wish.status === "reserved";
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect();
+    }
+  };
+  const showImage = Boolean(coverImage && !imageFailed);
+
+  return (
+    <Card
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={handleKeyDown}
+      className="group/card mb-3 gap-0 overflow-hidden border border-border/40 bg-card p-0 shadow-sm transition-all hover:border-border hover:shadow-md cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+    >
+      <div className="flex gap-4 p-4">
+        {showImage ? (
+          <div className="relative w-24 h-24 flex-shrink-0 bg-muted rounded-md overflow-hidden">
+            <Image
+              src={coverImage!}
+              alt={wish.title}
+              fill
+              className="object-cover"
+              sizes="96px"
+              onError={() => setImageFailed(true)}
+            />
+          </div>
+        ) : null}
+
+        <div className="flex-1 flex flex-col gap-2 min-w-0">
+          <div className="space-y-1">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="text-base font-semibold leading-tight line-clamp-2 group-hover/card:underline">
+                {wish.title}
+              </h3>
+              {isReserved && (
+                <Badge variant="secondary" className="bg-black/70 text-white border-0 px-2 py-0.5 text-[10px] uppercase flex-shrink-0">
+                  Reserved
+                </Badge>
+              )}
+            </div>
+            {wish.description && (
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {wish.description}
+              </p>
+            )}
+          </div>
+          <div className="mt-auto flex items-end justify-between gap-2">
+            <span className="text-base font-semibold text-foreground">
+              {price ?? ""}
+            </span>
+            <span className="text-xs font-medium text-muted-foreground text-right truncate">
+              {wishlist.name}
+            </span>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function WishlistGrid({ wishlists, username, initialWishlistId }: WishlistGridProps) {
   const searchParams = useSearchParams();
   const [selectedFilter, setSelectedFilter] = useState<string | null>(initialWishlistId ?? null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [activePreview, setActivePreview] = useState<{ wish: Wish; wishlist: Wishlist } | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Sync URL parameter with filter state
   useEffect(() => {
@@ -210,26 +281,68 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
 
       <div className="container mx-auto px-4 py-6 md:px-6">
         <div className="flex items-center justify-between gap-3 mb-4">
-          <div className="flex-1" />
+          {/* View Toggle */}
+          <div className="flex items-center gap-1 border border-border rounded-lg p-1">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-2 rounded transition-colors ${
+                viewMode === "grid"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              }`}
+              aria-label="Grid view"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-2 rounded transition-colors ${
+                viewMode === "list"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              }`}
+              aria-label="List view"
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
+
           <ShareButton
             path={sharePath}
             label={selectedFilter ? "Copy wishlist link" : "Copy profile link"}
             className="flex-shrink-0"
           />
         </div>
-        <div className="columns-1 gap-4 space-y-4 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5">
-          {filteredWishes.map(({ wish, wishlist }) => (
-            <WishPreviewCard
-              key={wish.id}
-              wish={wish}
-              wishlist={wishlist}
-              onSelect={() => {
-                setActivePreview({ wish, wishlist });
-                setDetailOpen(true);
-              }}
-            />
-          ))}
-        </div>
+
+        {viewMode === "grid" ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {filteredWishes.map(({ wish, wishlist }) => (
+              <WishPreviewCard
+                key={wish.id}
+                wish={wish}
+                wishlist={wishlist}
+                onSelect={() => {
+                  setActivePreview({ wish, wishlist });
+                  setDetailOpen(true);
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="max-w-4xl mx-auto">
+            {filteredWishes.map(({ wish, wishlist }) => (
+              <WishListViewCard
+                key={wish.id}
+                wish={wish}
+                wishlist={wishlist}
+                onSelect={() => {
+                  setActivePreview({ wish, wishlist });
+                  setDetailOpen(true);
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
       <WishDetailDialog
         open={detailOpen}
