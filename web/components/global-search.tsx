@@ -104,13 +104,13 @@ export function GlobalSearch() {
         inputRef.current &&
         !inputRef.current.contains(e.target as Node)
       ) {
-        setIsOpen(false);
+        handleClose();
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [handleClose]);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
