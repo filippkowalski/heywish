@@ -38,6 +38,7 @@ export default function DeleteAccountPage() {
 
 Username: ${username}
 Email: ${email}
+Source: Web
 Timestamp: ${new Date().toISOString()}
 
 Please process this account deletion request according to our data retention policy.`;
