@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Gift, X, ExternalLink, Loader2, Mail } from "lucide-react";
+import { X, ExternalLink, Loader2, Mail } from "lucide-react";
 import {
   onAuthStateChanged,
   sendSignInLinkToEmail,
@@ -114,16 +114,16 @@ export function WishDetailDialog({
         if (user) {
           try {
             await user.reload();
-          } catch (reloadError) {
-            console.warn("Failed to reload Firebase user", reloadError);
+          } catch {
+            // Silently handle reload errors
           }
         }
 
         setAuthUser(user);
         setAuthInitialized(true);
       });
-    } catch (authError) {
-      console.error("Firebase Auth is not configured:", authError);
+    } catch {
+      // Firebase Auth not configured
       setAuthInitialized(true);
     }
 
@@ -147,23 +147,6 @@ export function WishDetailDialog({
   const currentUserEmail = verifiedEmail || savedEmail;
   const isMyReservation = isReserved && currentUserEmail && wish?.reservedBy &&
     currentUserEmail.toLowerCase() === wish.reservedBy.toLowerCase();
-
-  // Debug logging
-  useEffect(() => {
-    if (wish && isReserved) {
-      console.log('[WishDetailDialog] Debug reservation:', {
-        isReserved,
-        verifiedEmail,
-        savedEmail,
-        currentUserEmail,
-        wishReservedBy: wish.reservedBy,
-        isMyReservation,
-        shareToken,
-        isMine,
-        onCancel: !!onCancel,
-      });
-    }
-  }, [wish, isReserved, verifiedEmail, savedEmail, currentUserEmail, isMyReservation, shareToken, isMine, onCancel]);
 
   if (!wish) return null;
 
@@ -206,7 +189,6 @@ export function WishDetailDialog({
       handleClose();
       window.location.reload();
     } catch (err: unknown) {
-      console.error("Error canceling reservation:", err);
       const axiosError = err as { response?: { status?: number; data?: { error?: { message?: string } } } };
       const message = axiosError.response?.data?.error?.message ?? "Failed to cancel reservation. Please try again.";
       alert(message);
@@ -234,8 +216,7 @@ export function WishDetailDialog({
     let auth;
     try {
       auth = getFirebaseAuth();
-    } catch (authError) {
-      console.error("Firebase Auth is unavailable:", authError);
+    } catch {
       setFormError("Reservations are temporarily unavailable. Please try again later.");
       return;
     }
@@ -273,8 +254,7 @@ export function WishDetailDialog({
         }
 
         setFormNotice("Check your email for a link to confirm your reservation.");
-      } catch (err: unknown) {
-        console.error("Error sending reservation verification link:", err);
+      } catch {
         setFormError("We couldn't send the confirmation link. Please double-check your email and try again.");
       } finally {
         setSubmitting(false);
@@ -301,7 +281,6 @@ export function WishDetailDialog({
         window.location.reload();
       }, 1500);
     } catch (err: unknown) {
-      console.error("Error reserving wish:", err);
       const axiosError = err as { response?: { status?: number; data?: { error?: { message?: string } } } };
       const message =
         axiosError.response?.data?.error?.message ??
@@ -475,7 +454,13 @@ export function WishDetailDialog({
         className="max-h-[90vh] p-0 overflow-hidden"
         containerClassName="max-w-3xl overflow-hidden rounded-3xl border border-border/60 bg-card shadow-2xl flex flex-col"
         hideClose
+        aria-describedby="wish-description"
       >
+        <DialogTitle className="sr-only">{wish.title}</DialogTitle>
+        <DialogDescription id="wish-description" className="sr-only">
+          {wish.description || `View details for ${wish.title}`}
+        </DialogDescription>
+
         {/* Close Button - Top Right */}
         <button
           onClick={handleClose}
@@ -512,18 +497,7 @@ export function WishDetailDialog({
               </div>
             )}
           </div>
-        ) : (
-          <div className="relative w-full bg-muted/30 flex items-center justify-center" style={{ aspectRatio: "4/3", maxHeight: "50vh" }}>
-            <Gift className="h-20 w-20 text-muted-foreground/30" />
-            {isReserved && (
-              <div className="absolute top-4 left-4">
-                <Badge variant="secondary" className="bg-black/80 text-white border-0 backdrop-blur-sm px-3 py-1.5 text-xs sm:text-sm">
-                  {isMine ? "Reserved by you" : "Reserved"}
-                </Badge>
-              </div>
-            )}
-          </div>
-        )}
+        ) : null}
 
         {images.length > 1 && (
           <div className="flex gap-2 overflow-x-auto px-4 py-3 border-b bg-background scrollbar-thin">
