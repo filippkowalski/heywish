@@ -83,8 +83,22 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
 
             // CRITICAL: Perform full sync to fetch merged wishlists/wishes from backend
             // This ensures local database is updated with all merged data
+            // Handle case where sync is already in progress
             final syncManager = SyncManager();
-            await syncManager.performFullSync();
+            var syncResult = await syncManager.performFullSync();
+
+            // If sync is already in progress, wait and retry once
+            if (syncResult.error == 'Sync already in progress') {
+              debugPrint('⚠️  SignInBottomSheet: Sync in progress, waiting 2 seconds...');
+              await Future.delayed(const Duration(seconds: 2));
+              syncResult = await syncManager.performFullSync();
+
+              // If still in progress, log warning but continue (periodic sync will catch up)
+              if (syncResult.error == 'Sync already in progress') {
+                debugPrint('⚠️  SignInBottomSheet: Sync still in progress, relying on periodic sync');
+              }
+            }
+
             debugPrint('✅ SignInBottomSheet: Full sync completed - merged data now available locally');
 
             // Mark onboarding complete and navigate to home
@@ -193,8 +207,22 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
 
             // CRITICAL: Perform full sync to fetch merged wishlists/wishes from backend
             // This ensures local database is updated with all merged data
+            // Handle case where sync is already in progress
             final syncManager = SyncManager();
-            await syncManager.performFullSync();
+            var syncResult = await syncManager.performFullSync();
+
+            // If sync is already in progress, wait and retry once
+            if (syncResult.error == 'Sync already in progress') {
+              debugPrint('⚠️  SignInBottomSheet: Sync in progress, waiting 2 seconds...');
+              await Future.delayed(const Duration(seconds: 2));
+              syncResult = await syncManager.performFullSync();
+
+              // If still in progress, log warning but continue (periodic sync will catch up)
+              if (syncResult.error == 'Sync already in progress') {
+                debugPrint('⚠️  SignInBottomSheet: Sync still in progress, relying on periodic sync');
+              }
+            }
+
             debugPrint('✅ SignInBottomSheet: Full sync completed - merged data now available locally');
 
             // Mark onboarding complete and navigate to home

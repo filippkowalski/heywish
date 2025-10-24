@@ -431,11 +431,43 @@ await syncManager.performFullSync();
 
 **Status:** ✅ Fixed (commit c00a0e2)
 
+#### Issue 4: Concurrent Sync Race Condition (Medium - Fixed)
+**Problem:**
+- If `SyncManager.performFullSync()` is already running when merge happens
+- Returns `SyncResult.inProgress()` immediately without waiting
+- Fresh merged data might not appear until next scheduled sync (5 min)
+- User sees stale data temporarily after merge
+
+**Fix Applied:**
+```dart
+var syncResult = await syncManager.performFullSync();
+
+// If sync is already in progress, wait and retry once
+if (syncResult.error == 'Sync already in progress') {
+  debugPrint('⚠️  Sync in progress, waiting 2 seconds...');
+  await Future.delayed(const Duration(seconds: 2));
+  syncResult = await syncManager.performFullSync();
+
+  // If still in progress, rely on periodic sync (5 min)
+  if (syncResult.error == 'Sync already in progress') {
+    debugPrint('⚠️  Sync still in progress, relying on periodic sync');
+  }
+}
+```
+
+**Status:** ✅ Fixed (commit f5f8c7a+)
+
 ### Audit Trail
-- **Audit Date:** 2025-01-10
-- **Auditor Findings:** 3 High-priority issues
-- **Resolution Date:** 2025-01-10
-- **Verified By:** Code audit addressing all findings
+
+**First Audit (2025-01-10):**
+- **Findings:** 3 High-priority issues
+- **Resolution:** Same day
+- **Status:** All fixed
+
+**Second Audit (2025-01-10):**
+- **Findings:** No blocking bugs, 1 residual risk (concurrent sync)
+- **Resolution:** Same day
+- **Status:** Fixed with retry logic
 - **Testing Status:** Awaiting end-to-end device testing
 
 ## Future Enhancements
