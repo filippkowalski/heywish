@@ -7,6 +7,7 @@ import '../../../services/auth_service.dart';
 import '../../../services/onboarding_service.dart';
 import '../../../theme/app_theme.dart';
 import '../../../common/theme/app_colors.dart';
+import '../../../common/widgets/merge_accounts_bottom_sheet.dart';
 
 class SignInBottomSheet {
   static Future<void> show(BuildContext context) async {
@@ -44,36 +45,81 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
       final wasAnonymous = authService.firebaseUser?.isAnonymous ?? false;
 
       // Sign in with Google and check if user exists in DB
-      final userExists = await authService.signInWithGoogleCheckExisting();
+      final result = await authService.signInWithGoogleCheckExisting();
+      final userExists = result['userExists'] as bool;
+      final requiresMerge = result['requiresMerge'] as bool;
+      final anonymousUserId = result['anonymousUserId'] as String?;
 
       if (!mounted) return;
 
-      // After sign-in, check if user is still anonymous or now authenticated
-      final isNowAuthenticated = authService.firebaseUser != null &&
-                                 !authService.firebaseUser!.isAnonymous;
-
-      if (userExists || (wasAnonymous && isNowAuthenticated)) {
-        // Existing user OR successfully upgraded anonymous user - mark onboarding complete and close
-        await authService.markOnboardingCompleted();
-        if (!mounted) return;
-        Navigator.of(context).pop();
-        // User will be navigated to home screen automatically by router
-      } else {
-        // New user - show dialog and continue to onboarding
+      // Check if we need to merge accounts
+      if (requiresMerge && anonymousUserId != null) {
         setState(() {
           _isLoading = false;
         });
 
-        await _showNoAccountDialog();
+        // Show merge confirmation dialog
+        final shouldMerge = await MergeAccountsBottomSheet.show(context);
 
         if (!mounted) return;
-        Navigator.of(context).pop(); // Close bottom sheet
 
-        // Mark that user already signed in so we skip account creation step
-        onboardingService.setHasAlreadySignedIn(true);
+        if (shouldMerge == true) {
+          setState(() {
+            _isLoading = true;
+          });
 
-        // Continue to profile details (skipping account creation since they already signed in)
-        onboardingService.goToStep(OnboardingStep.profileDetails);
+          try {
+            // Call backend to merge accounts
+            final apiService = authService.apiService;
+            await apiService.mergeAccounts(anonymousUserId);
+
+            // Sync user data from backend to get updated username
+            await authService.syncUserWithBackend(retries: 1);
+
+            // Mark onboarding complete and navigate to home
+            await authService.markOnboardingCompleted();
+
+            if (!mounted) return;
+            Navigator.of(context).pop();
+          } catch (e) {
+            if (!mounted) return;
+            setState(() {
+              _isLoading = false;
+              _errorMessage = 'Failed to merge accounts. Please try again.';
+            });
+          }
+        } else {
+          // User cancelled merge - stay on current screen
+          return;
+        }
+      } else {
+        // After sign-in, check if user is still anonymous or now authenticated
+        final isNowAuthenticated = authService.firebaseUser != null &&
+                                   !authService.firebaseUser!.isAnonymous;
+
+        if (userExists || (wasAnonymous && isNowAuthenticated)) {
+          // Existing user OR successfully upgraded anonymous user - mark onboarding complete and close
+          await authService.markOnboardingCompleted();
+          if (!mounted) return;
+          Navigator.of(context).pop();
+          // User will be navigated to home screen automatically by router
+        } else {
+          // New user - show dialog and continue to onboarding
+          setState(() {
+            _isLoading = false;
+          });
+
+          await _showNoAccountDialog();
+
+          if (!mounted) return;
+          Navigator.of(context).pop(); // Close bottom sheet
+
+          // Mark that user already signed in so we skip account creation step
+          onboardingService.setHasAlreadySignedIn(true);
+
+          // Continue to profile details (skipping account creation since they already signed in)
+          onboardingService.goToStep(OnboardingStep.profileDetails);
+        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -98,36 +144,81 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
       final wasAnonymous = authService.firebaseUser?.isAnonymous ?? false;
 
       // Sign in with Apple and check if user exists in DB
-      final userExists = await authService.signInWithAppleCheckExisting();
+      final result = await authService.signInWithAppleCheckExisting();
+      final userExists = result['userExists'] as bool;
+      final requiresMerge = result['requiresMerge'] as bool;
+      final anonymousUserId = result['anonymousUserId'] as String?;
 
       if (!mounted) return;
 
-      // After sign-in, check if user is still anonymous or now authenticated
-      final isNowAuthenticated = authService.firebaseUser != null &&
-                                 !authService.firebaseUser!.isAnonymous;
-
-      if (userExists || (wasAnonymous && isNowAuthenticated)) {
-        // Existing user OR successfully upgraded anonymous user - mark onboarding complete and close
-        await authService.markOnboardingCompleted();
-        if (!mounted) return;
-        Navigator.of(context).pop();
-        // User will be navigated to home screen automatically by router
-      } else {
-        // New user - show dialog and continue to onboarding
+      // Check if we need to merge accounts
+      if (requiresMerge && anonymousUserId != null) {
         setState(() {
           _isLoading = false;
         });
 
-        await _showNoAccountDialog();
+        // Show merge confirmation dialog
+        final shouldMerge = await MergeAccountsBottomSheet.show(context);
 
         if (!mounted) return;
-        Navigator.of(context).pop(); // Close bottom sheet
 
-        // Mark that user already signed in so we skip account creation step
-        onboardingService.setHasAlreadySignedIn(true);
+        if (shouldMerge == true) {
+          setState(() {
+            _isLoading = true;
+          });
 
-        // Continue to profile details (skipping account creation since they already signed in)
-        onboardingService.goToStep(OnboardingStep.profileDetails);
+          try {
+            // Call backend to merge accounts
+            final apiService = authService.apiService;
+            await apiService.mergeAccounts(anonymousUserId);
+
+            // Sync user data from backend to get updated username
+            await authService.syncUserWithBackend(retries: 1);
+
+            // Mark onboarding complete and navigate to home
+            await authService.markOnboardingCompleted();
+
+            if (!mounted) return;
+            Navigator.of(context).pop();
+          } catch (e) {
+            if (!mounted) return;
+            setState(() {
+              _isLoading = false;
+              _errorMessage = 'Failed to merge accounts. Please try again.';
+            });
+          }
+        } else {
+          // User cancelled merge - stay on current screen
+          return;
+        }
+      } else {
+        // After sign-in, check if user is still anonymous or now authenticated
+        final isNowAuthenticated = authService.firebaseUser != null &&
+                                   !authService.firebaseUser!.isAnonymous;
+
+        if (userExists || (wasAnonymous && isNowAuthenticated)) {
+          // Existing user OR successfully upgraded anonymous user - mark onboarding complete and close
+          await authService.markOnboardingCompleted();
+          if (!mounted) return;
+          Navigator.of(context).pop();
+          // User will be navigated to home screen automatically by router
+        } else {
+          // New user - show dialog and continue to onboarding
+          setState(() {
+            _isLoading = false;
+          });
+
+          await _showNoAccountDialog();
+
+          if (!mounted) return;
+          Navigator.of(context).pop(); // Close bottom sheet
+
+          // Mark that user already signed in so we skip account creation step
+          onboardingService.setHasAlreadySignedIn(true);
+
+          // Continue to profile details (skipping account creation since they already signed in)
+          onboardingService.goToStep(OnboardingStep.profileDetails);
+        }
       }
     } catch (e) {
       if (!mounted) return;

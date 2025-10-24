@@ -27,6 +27,7 @@ class AuthService extends ChangeNotifier {
   firebase.User? get firebaseUser => _firebaseUser;
   bool get isAuthenticated => _firebaseUser != null;
   bool get isOnboardingCompleted => _isOnboardingCompleted;
+  ApiService get apiService => _apiService;
 
   AuthService() {
     _authStateSubscription = _firebaseAuth.authStateChanges().listen(
@@ -465,8 +466,8 @@ class AuthService extends ChangeNotifier {
   }
 
   /// Sign in with Google for "Already have account" flow
-  /// Returns true if user exists in DB, false if new user
-  Future<bool> signInWithGoogleCheckExisting() async {
+  /// Returns a map with: {userExists: bool, needsMerge: bool, oldUserId: String?}
+  Future<Map<String, dynamic>> signInWithGoogleCheckExisting() async {
     try {
       debugPrint('🔍 AuthService: Starting Google Sign-In (check existing)...');
 
@@ -502,6 +503,8 @@ class AuthService extends ChangeNotifier {
       );
 
       firebase.UserCredential userCredential;
+      String? anonymousUserId;
+      bool requiresMerge = false;
 
       if (isAnonymous && _firebaseUser != null) {
         try {
@@ -523,8 +526,45 @@ class AuthService extends ChangeNotifier {
             userCredential = await _firebaseAuth.signInWithCredential(credential);
           } else if (e.code == 'credential-already-in-use') {
             // This credential is already associated with a different Firebase account
-            // Sign in with that account instead (and optionally merge data later)
-            debugPrint('⚠️  AuthService: Credential already in use, signing into existing account...');
+            // Check if the anonymous user has data that needs to be merged
+            final anonymousUid = _firebaseUser!.uid;
+            debugPrint('⚠️  AuthService: Credential already in use. Checking anonymous user data...');
+            debugPrint('🔍 AuthService: Anonymous UID: $anonymousUid');
+
+            // Check if anonymous user has data in local database
+            final localDb = LocalDatabase();
+            final anonymousUser = await localDb.getEntity('users', anonymousUid);
+
+            if (anonymousUser != null) {
+              final username = anonymousUser['username'];
+              debugPrint('🔍 AuthService: Anonymous user has username: $username');
+
+              // Check if user has wishlists
+              final wishlists = await localDb.getEntities(
+                'wishlists',
+                where: 'user_id = ?',
+                whereArgs: [anonymousUid],
+              );
+              debugPrint('🔍 AuthService: Anonymous user has ${wishlists.length} wishlists');
+
+              // Check if user has wishes
+              final wishes = await localDb.getEntities(
+                'wishes',
+                where: 'created_by = ?',
+                whereArgs: [anonymousUid],
+              );
+              debugPrint('🔍 AuthService: Anonymous user has ${wishes.length} wishes');
+
+              // If user has username or any wishlists/wishes, require merge
+              if (username != null && username.isNotEmpty || wishlists.isNotEmpty || wishes.isNotEmpty) {
+                requiresMerge = true;
+                anonymousUserId = anonymousUid;
+                debugPrint('✅ AuthService: Merge required! Anonymous user has data.');
+              }
+            }
+
+            // Sign in with the existing account
+            debugPrint('⚠️  AuthService: Signing into existing account...');
             userCredential = await _firebaseAuth.signInWithCredential(credential);
           } else {
             rethrow;
@@ -561,7 +601,11 @@ class AuthService extends ChangeNotifier {
 
       _scheduleTokenRefresh();
 
-      return userExists;
+      return {
+        'userExists': userExists,
+        'requiresMerge': requiresMerge,
+        'anonymousUserId': anonymousUserId,
+      };
     } catch (e) {
       debugPrint('❌ AuthService: Error signing in with Google: $e');
       rethrow;
@@ -569,8 +613,8 @@ class AuthService extends ChangeNotifier {
   }
 
   /// Sign in with Apple for "Already have account" flow
-  /// Returns true if user exists in DB, false if new user
-  Future<bool> signInWithAppleCheckExisting() async {
+  /// Returns map with userExists, requiresMerge, and anonymousUserId
+  Future<Map<String, dynamic>> signInWithAppleCheckExisting() async {
     try {
       debugPrint('🍎 AuthService: Starting Apple Sign-In (check existing)...');
 
@@ -612,6 +656,8 @@ class AuthService extends ChangeNotifier {
       );
 
       firebase.UserCredential userCredential;
+      String? anonymousUserId;
+      bool requiresMerge = false;
 
       if (isAnonymous && _firebaseUser != null) {
         try {
@@ -633,8 +679,45 @@ class AuthService extends ChangeNotifier {
             userCredential = await _firebaseAuth.signInWithCredential(oauthCredential);
           } else if (e.code == 'credential-already-in-use') {
             // This credential is already associated with a different Firebase account
-            // Sign in with that account instead (and optionally merge data later)
-            debugPrint('⚠️  AuthService: Credential already in use, signing into existing account...');
+            // Check if the anonymous user has data that needs to be merged
+            final anonymousUid = _firebaseUser!.uid;
+            debugPrint('⚠️  AuthService: Credential already in use. Checking anonymous user data...');
+            debugPrint('🔍 AuthService: Anonymous UID: $anonymousUid');
+
+            // Check if anonymous user has data in local database
+            final localDb = LocalDatabase();
+            final anonymousUser = await localDb.getEntity('users', anonymousUid);
+
+            if (anonymousUser != null) {
+              final username = anonymousUser['username'];
+              debugPrint('🔍 AuthService: Anonymous user has username: $username');
+
+              // Check if user has wishlists
+              final wishlists = await localDb.getEntities(
+                'wishlists',
+                where: 'user_id = ?',
+                whereArgs: [anonymousUid],
+              );
+              debugPrint('🔍 AuthService: Anonymous user has ${wishlists.length} wishlists');
+
+              // Check if user has wishes
+              final wishes = await localDb.getEntities(
+                'wishes',
+                where: 'created_by = ?',
+                whereArgs: [anonymousUid],
+              );
+              debugPrint('🔍 AuthService: Anonymous user has ${wishes.length} wishes');
+
+              // If user has username or any wishlists/wishes, require merge
+              if (username != null && username.isNotEmpty || wishlists.isNotEmpty || wishes.isNotEmpty) {
+                requiresMerge = true;
+                anonymousUserId = anonymousUid;
+                debugPrint('✅ AuthService: Merge required! Anonymous user has data.');
+              }
+            }
+
+            // Sign in with the existing account
+            debugPrint('⚠️  AuthService: Signing into existing account...');
             userCredential = await _firebaseAuth.signInWithCredential(oauthCredential);
           } else {
             rethrow;
@@ -682,7 +765,11 @@ class AuthService extends ChangeNotifier {
 
       _scheduleTokenRefresh();
 
-      return userExists;
+      return {
+        'userExists': userExists,
+        'requiresMerge': requiresMerge,
+        'anonymousUserId': anonymousUserId,
+      };
     } catch (e) {
       debugPrint('❌ AuthService: Error signing in with Apple: $e');
       rethrow;

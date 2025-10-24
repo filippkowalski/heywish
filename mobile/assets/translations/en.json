@@ -62,7 +62,12 @@
     "no_account_title": "Account Not Found",
     "no_account_message": "Looks like you don't have an account yet. Let's create one for you!",
     "no_account_continue": "Continue to Sign Up",
-    "signing_in": "Signing you in..."
+    "signing_in": "Signing you in...",
+    "merge_accounts_title": "Merge Your Accounts?",
+    "merge_accounts_message": "You have an existing account with this email. Would you like to merge your current wishlists and data with that account?",
+    "merge_accounts_confirm": "Merge Accounts",
+    "merge_accounts_cancel": "Cancel",
+    "merging_accounts": "Merging your accounts..."
   },
   "onboarding": {
     "get_started": "Get Started",
@@ -82,8 +87,8 @@
     "username_placeholder": "username",
     "your_personal_page": "Your Personal Page",
     "your_username": "Your Username",
-    "copy_link": "Copy Link to Share Later",
-    "link_copied": "Link Copied!",
+    "copy_link": "Copy Link",
+    "link_copied": "Copied!",
     "complete_title": "Your Profile is Ready! 🎉",
     "complete_subtitle": "You now have a unique username and your own wishlist page to share with friends.",
     "anonymous_username_hint": "Sign in later to claim a custom username.",
@@ -140,6 +145,7 @@
   },
   "home": {
     "title": "Home",
+    "subtitle": "View your profile page",
     "empty_title": "No wishes yet",
     "empty_subtitle": "Add your first wish to get started",
     "create_first_wish": "Add Your First Wish"
@@ -312,6 +318,9 @@
     "add_to_wishlist": "Add to Wishlist",
     "add_to_my_wishlist": "Add to My Wishlist",
     "edit_item": "Edit Item",
+    "add_item_tip_title": "Add items instantly",
+    "add_item_tip_description": "Next time, click the share icon and select Jinnie to add a wish from anywhere",
+    "add_item_tip_button": "Got it",
     "item_not_found": "Item not found",
     "view_product": "View Product",
     "could_not_open_url": "Could not open URL",

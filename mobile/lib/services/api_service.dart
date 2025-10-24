@@ -514,6 +514,27 @@ class ApiService {
     }
   }
 
+  /// Merge anonymous user data into authenticated account
+  Future<Map<String, dynamic>?> mergeAccounts(String anonymousUserId) async {
+    try {
+      debugPrint('🔗 API: Merging anonymous user: $anonymousUserId');
+
+      final response = await post('/auth/merge', {
+        'anonymousUserId': anonymousUserId,
+      });
+
+      debugPrint('✅ API: Merge successful');
+      if (kDebugMode) {
+        debugPrint('✅ API: Merge response: $response');
+      }
+
+      return response as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('❌ API: Error merging accounts: $e');
+      rethrow;
+    }
+  }
+
   /// Update user profile with onboarding data
   Future<Map<String, dynamic>?> updateUserProfile({
     String? username,
