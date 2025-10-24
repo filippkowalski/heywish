@@ -522,10 +522,10 @@ class AuthService extends ChangeNotifier {
             debugPrint('ℹ️  AuthService: Provider already linked, signing in...');
             userCredential = await _firebaseAuth.signInWithCredential(credential);
           } else if (e.code == 'credential-already-in-use') {
-            // This email is already associated with a different account
-            // We'll need to handle account merging
-            debugPrint('⚠️  AuthService: Credential already in use by another account');
-            rethrow;
+            // This credential is already associated with a different Firebase account
+            // Sign in with that account instead (and optionally merge data later)
+            debugPrint('⚠️  AuthService: Credential already in use, signing into existing account...');
+            userCredential = await _firebaseAuth.signInWithCredential(credential);
           } else {
             rethrow;
           }
@@ -632,10 +632,10 @@ class AuthService extends ChangeNotifier {
             debugPrint('ℹ️  AuthService: Provider already linked, signing in...');
             userCredential = await _firebaseAuth.signInWithCredential(oauthCredential);
           } else if (e.code == 'credential-already-in-use') {
-            // This email is already associated with a different account
-            // We'll need to handle account merging
-            debugPrint('⚠️  AuthService: Credential already in use by another account');
-            rethrow;
+            // This credential is already associated with a different Firebase account
+            // Sign in with that account instead (and optionally merge data later)
+            debugPrint('⚠️  AuthService: Credential already in use, signing into existing account...');
+            userCredential = await _firebaseAuth.signInWithCredential(oauthCredential);
           } else {
             rethrow;
           }
