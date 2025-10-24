@@ -364,6 +364,80 @@ Anonymous User (UID: ABC123): DELETED
 - Wishes preserve original creator relationship
 - No cross-user data leakage possible
 
+## Known Issues & Fixes
+
+### Initial Implementation Issues (Fixed in v1.1)
+
+#### Issue 1: Merge Detection Broken (CRITICAL - Fixed)
+**Problem:**
+- Local database uses backend UUID as primary key (`users.id`)
+- Original code queried `getEntity('users', firebaseUid)` treating Firebase UID as primary key
+- This always returned `null` because Firebase UID is in `users.firebase_uid` column
+- Result: Merge dialog never appeared, anonymous users silently lost all data
+
+**Fix Applied:**
+```dart
+// Query by firebase_uid column, not primary key
+final anonymousUserRows = await localDb.getEntities(
+  'users',
+  where: 'firebase_uid = ?',
+  whereArgs: [anonymousFirebaseUid],
+  limit: 1,
+);
+
+// Extract backend UUID for related queries
+final anonymousBackendId = anonymousUserRows.first['id'];
+
+// Use backend UUID for wishlists/wishes
+final wishlists = await localDb.getEntities(
+  'wishlists',
+  where: 'user_id = ?',
+  whereArgs: [anonymousBackendId], // Not Firebase UID!
+);
+```
+
+**Status:** ✅ Fixed (commit c00a0e2)
+
+#### Issue 2: No Data Sync After Merge (CRITICAL - Fixed)
+**Problem:**
+- Backend successfully merged wishlists/wishes to new user_id
+- Local SQLite still had orphaned rows with old user_id
+- Only synced user profile, not full data
+- User didn't see merged wishlists/wishes until app restart
+
+**Fix Applied:**
+```dart
+// After merge, perform full sync to fetch merged data
+await apiService.mergeAccounts(anonymousUserId);
+await authService.syncUserWithBackend(retries: 1);
+
+// CRITICAL: Full sync to reconcile local DB
+final syncManager = SyncManager();
+await syncManager.performFullSync();
+```
+
+**Status:** ✅ Fixed (commit c00a0e2)
+
+#### Issue 3: Silent Data Loss (CRITICAL - Fixed)
+**Problem:**
+- Consequence of issues 1 & 2 combined
+- Anonymous users upgrading to Google/Apple with existing account lost all data
+- No warning, no merge prompt, data disappeared
+
+**Fix Applied:**
+- Issues 1 & 2 resolved the root causes
+- Merge detection now works correctly
+- Full sync ensures data visibility
+
+**Status:** ✅ Fixed (commit c00a0e2)
+
+### Audit Trail
+- **Audit Date:** 2025-01-10
+- **Auditor Findings:** 3 High-priority issues
+- **Resolution Date:** 2025-01-10
+- **Verified By:** Code audit addressing all findings
+- **Testing Status:** Awaiting end-to-end device testing
+
 ## Future Enhancements
 
 ### Conflict Resolution
@@ -388,3 +462,9 @@ Handle merge when offline:
 - Queue merge request locally
 - Execute when connection restored
 - Show pending merge status to user
+
+### Local Database Schema Improvement
+Add `firebase_uid` columns to wishlists/wishes tables:
+- Would simplify merge detection queries
+- Faster lookups without JOIN to users table
+- More resilient to future schema changes
