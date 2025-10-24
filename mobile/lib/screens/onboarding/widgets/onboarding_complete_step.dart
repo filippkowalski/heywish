@@ -21,6 +21,7 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   bool _linkCopied = false;
+  bool _isNavigating = false;
 
   @override
   void initState() {
@@ -74,9 +75,25 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
   }
 
   Future<void> _completeOnboardingAndNavigate() async {
+    // Prevent multiple simultaneous calls
+    if (_isNavigating) {
+      debugPrint('⚠️  OnboardingCompleteStep: Already navigating, ignoring duplicate call');
+      return;
+    }
+
     final authService = context.read<AuthService>();
     final onboardingService = context.read<OnboardingService>();
     final router = GoRouter.of(context);
+
+    // Also check if service is already processing
+    if (onboardingService.isLoading) {
+      debugPrint('⚠️  OnboardingCompleteStep: Service is loading, ignoring duplicate call');
+      return;
+    }
+
+    setState(() {
+      _isNavigating = true;
+    });
 
     try {
       // If user skipped username step (anonymous), save profile now
@@ -85,8 +102,17 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
         final success = await onboardingService.completeOnboarding();
         if (!success) {
           debugPrint('❌ OnboardingCompleteStep: Failed to save anonymous profile');
+          if (mounted) {
+            setState(() {
+              _isNavigating = false;
+            });
+          }
           return;
         }
+
+        // Sync user data from backend to ensure AuthService has the updated username
+        await authService.syncUserWithBackend(retries: 1);
+        debugPrint('✅ OnboardingCompleteStep: Anonymous user data synced with backend');
       }
 
       // Profile has already been saved when user completed username step (for non-anonymous)
@@ -101,14 +127,16 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
       router.go('/home');
     } catch (e) {
       debugPrint('❌ OnboardingCompleteStep: Error navigating to home: $e');
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() {
+          _isNavigating = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Something went wrong. Please try again.'),
+          ),
+        );
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Something went wrong. Please try again.'),
-        ),
-      );
     }
   }
 
@@ -146,37 +174,6 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
                     ),
                     child: Column(
                       children: [
-                        // Celebration icon
-                        SlideTransition(
-                          position: _slideAnimation,
-                          child: FadeTransition(
-                            opacity: _fadeAnimation,
-                            child: Container(
-                              width: 96,
-                              height: 96,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.primary.withValues(alpha: 0.15),
-                                    blurRadius: 24,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '🎉',
-                                  style: const TextStyle(fontSize: 48),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 32),
-
                         // Title
                         SlideTransition(
                           position: _slideAnimation,
@@ -379,16 +376,19 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
                                                 : AppColors.textSecondary,
                                           ),
                                           const SizedBox(width: 8),
-                                          Text(
-                                            _linkCopied
-                                                ? 'onboarding.link_copied'.tr()
-                                                : 'onboarding.copy_link'.tr(),
-                                            style: TextStyle(
-                                              color: _linkCopied
-                                                  ? AppColors.success
-                                                  : AppColors.textPrimary,
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 15,
+                                          Flexible(
+                                            child: Text(
+                                              _linkCopied
+                                                  ? 'onboarding.link_copied'.tr()
+                                                  : 'onboarding.copy_link'.tr(),
+                                              style: TextStyle(
+                                                color: _linkCopied
+                                                    ? AppColors.success
+                                                    : AppColors.textPrimary,
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 15,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
                                         ],
@@ -453,9 +453,12 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
                           ),
                         ),
                       PrimaryButton(
-                        onPressed: _completeOnboardingAndNavigate,
+                        onPressed: (_isNavigating || onboardingService.isLoading)
+                            ? null
+                            : _completeOnboardingAndNavigate,
                         text: 'onboarding.start_wishing'.tr(),
                         icon: Icons.arrow_forward_rounded,
+                        isLoading: _isNavigating || onboardingService.isLoading,
                       ),
                     ],
                   ),
