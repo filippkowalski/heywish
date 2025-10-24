@@ -527,40 +527,50 @@ class AuthService extends ChangeNotifier {
           } else if (e.code == 'credential-already-in-use') {
             // This credential is already associated with a different Firebase account
             // Check if the anonymous user has data that needs to be merged
-            final anonymousUid = _firebaseUser!.uid;
+            final anonymousFirebaseUid = _firebaseUser!.uid;
             debugPrint('⚠️  AuthService: Credential already in use. Checking anonymous user data...');
-            debugPrint('🔍 AuthService: Anonymous UID: $anonymousUid');
+            debugPrint('🔍 AuthService: Anonymous Firebase UID: $anonymousFirebaseUid');
 
             // Check if anonymous user has data in local database
+            // IMPORTANT: Query by firebase_uid column, not by primary key (backend UUID)
             final localDb = LocalDatabase();
-            final anonymousUser = await localDb.getEntity('users', anonymousUid);
+            final anonymousUserRows = await localDb.getEntities(
+              'users',
+              where: 'firebase_uid = ?',
+              whereArgs: [anonymousFirebaseUid],
+              limit: 1,
+            );
 
-            if (anonymousUser != null) {
+            if (anonymousUserRows.isNotEmpty) {
+              final anonymousUser = anonymousUserRows.first;
+              final anonymousBackendId = anonymousUser['id']; // Backend UUID
               final username = anonymousUser['username'];
-              debugPrint('🔍 AuthService: Anonymous user has username: $username');
+              debugPrint('🔍 AuthService: Anonymous user found - backend ID: $anonymousBackendId, username: $username');
 
-              // Check if user has wishlists
+              // Check if user has wishlists (using backend UUID)
               final wishlists = await localDb.getEntities(
                 'wishlists',
                 where: 'user_id = ?',
-                whereArgs: [anonymousUid],
+                whereArgs: [anonymousBackendId],
               );
               debugPrint('🔍 AuthService: Anonymous user has ${wishlists.length} wishlists');
 
-              // Check if user has wishes
+              // Check if user has wishes (using backend UUID)
               final wishes = await localDb.getEntities(
                 'wishes',
                 where: 'created_by = ?',
-                whereArgs: [anonymousUid],
+                whereArgs: [anonymousBackendId],
               );
               debugPrint('🔍 AuthService: Anonymous user has ${wishes.length} wishes');
 
               // If user has username or any wishlists/wishes, require merge
               if (username != null && username.isNotEmpty || wishlists.isNotEmpty || wishes.isNotEmpty) {
                 requiresMerge = true;
-                anonymousUserId = anonymousUid;
+                anonymousUserId = anonymousFirebaseUid; // Store Firebase UID for backend merge
                 debugPrint('✅ AuthService: Merge required! Anonymous user has data.');
               }
+            } else {
+              debugPrint('🔍 AuthService: No anonymous user found in local database');
             }
 
             // Sign in with the existing account
@@ -680,40 +690,50 @@ class AuthService extends ChangeNotifier {
           } else if (e.code == 'credential-already-in-use') {
             // This credential is already associated with a different Firebase account
             // Check if the anonymous user has data that needs to be merged
-            final anonymousUid = _firebaseUser!.uid;
+            final anonymousFirebaseUid = _firebaseUser!.uid;
             debugPrint('⚠️  AuthService: Credential already in use. Checking anonymous user data...');
-            debugPrint('🔍 AuthService: Anonymous UID: $anonymousUid');
+            debugPrint('🔍 AuthService: Anonymous Firebase UID: $anonymousFirebaseUid');
 
             // Check if anonymous user has data in local database
+            // IMPORTANT: Query by firebase_uid column, not by primary key (backend UUID)
             final localDb = LocalDatabase();
-            final anonymousUser = await localDb.getEntity('users', anonymousUid);
+            final anonymousUserRows = await localDb.getEntities(
+              'users',
+              where: 'firebase_uid = ?',
+              whereArgs: [anonymousFirebaseUid],
+              limit: 1,
+            );
 
-            if (anonymousUser != null) {
+            if (anonymousUserRows.isNotEmpty) {
+              final anonymousUser = anonymousUserRows.first;
+              final anonymousBackendId = anonymousUser['id']; // Backend UUID
               final username = anonymousUser['username'];
-              debugPrint('🔍 AuthService: Anonymous user has username: $username');
+              debugPrint('🔍 AuthService: Anonymous user found - backend ID: $anonymousBackendId, username: $username');
 
-              // Check if user has wishlists
+              // Check if user has wishlists (using backend UUID)
               final wishlists = await localDb.getEntities(
                 'wishlists',
                 where: 'user_id = ?',
-                whereArgs: [anonymousUid],
+                whereArgs: [anonymousBackendId],
               );
               debugPrint('🔍 AuthService: Anonymous user has ${wishlists.length} wishlists');
 
-              // Check if user has wishes
+              // Check if user has wishes (using backend UUID)
               final wishes = await localDb.getEntities(
                 'wishes',
                 where: 'created_by = ?',
-                whereArgs: [anonymousUid],
+                whereArgs: [anonymousBackendId],
               );
               debugPrint('🔍 AuthService: Anonymous user has ${wishes.length} wishes');
 
               // If user has username or any wishlists/wishes, require merge
               if (username != null && username.isNotEmpty || wishlists.isNotEmpty || wishes.isNotEmpty) {
                 requiresMerge = true;
-                anonymousUserId = anonymousUid;
+                anonymousUserId = anonymousFirebaseUid; // Store Firebase UID for backend merge
                 debugPrint('✅ AuthService: Merge required! Anonymous user has data.');
               }
+            } else {
+              debugPrint('🔍 AuthService: No anonymous user found in local database');
             }
 
             // Sign in with the existing account

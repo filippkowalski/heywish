@@ -131,30 +131,40 @@ All authentication methods sync user data to a PostgreSQL database via the `/aut
 ```dart
 // In AuthService.signInWithGoogleCheckExisting()
 if (e.code == 'credential-already-in-use') {
-  final anonymousUid = _firebaseUser!.uid;
+  final anonymousFirebaseUid = _firebaseUser!.uid;
 
-  // Check local database for anonymous user data
+  // IMPORTANT: Query by firebase_uid column, not by primary key (backend UUID)
   final localDb = LocalDatabase();
-  final anonymousUser = await localDb.getEntity('users', anonymousUid);
+  final anonymousUserRows = await localDb.getEntities(
+    'users',
+    where: 'firebase_uid = ?',
+    whereArgs: [anonymousFirebaseUid],
+    limit: 1,
+  );
 
-  if (anonymousUser != null) {
-    // Check for wishlists and wishes
+  if (anonymousUserRows.isNotEmpty) {
+    final anonymousUser = anonymousUserRows.first;
+    final anonymousBackendId = anonymousUser['id']; // Backend UUID
+    final username = anonymousUser['username'];
+
+    // Check if user has wishlists (using backend UUID)
     final wishlists = await localDb.getEntities(
       'wishlists',
       where: 'user_id = ?',
-      whereArgs: [anonymousUid],
+      whereArgs: [anonymousBackendId], // Use backend UUID, not Firebase UID
     );
 
+    // Check if user has wishes (using backend UUID)
     final wishes = await localDb.getEntities(
       'wishes',
       where: 'created_by = ?',
-      whereArgs: [anonymousUid],
+      whereArgs: [anonymousBackendId], // Use backend UUID, not Firebase UID
     );
 
-    // If user has data, require merge
-    if (username != null || wishlists.isNotEmpty || wishes.isNotEmpty) {
+    // If user has username or any wishlists/wishes, require merge
+    if (username != null && username.isNotEmpty || wishlists.isNotEmpty || wishes.isNotEmpty) {
       requiresMerge = true;
-      anonymousUserId = anonymousUid;
+      anonymousUserId = anonymousFirebaseUid; // Store Firebase UID for backend merge
     }
   }
 
@@ -162,6 +172,13 @@ if (e.code == 'credential-already-in-use') {
   userCredential = await _firebaseAuth.signInWithCredential(credential);
 }
 ```
+
+**Key Implementation Details:**
+- Local database uses **backend UUID** as primary key, not Firebase UID
+- Must query `users` table by `firebase_uid` column: `WHERE firebase_uid = ?`
+- After getting user, extract backend UUID from `id` column
+- Use backend UUID to query `wishlists` (via `user_id`) and `wishes` (via `created_by`)
+- Pass **Firebase UID** to backend merge endpoint (backend expects this)
 
 ### Backend Merge Endpoint
 ```javascript
@@ -230,11 +247,29 @@ The merge endpoint uses database transactions to ensure:
 - Clean deletion of anonymous user
 
 ### Local Database Cleanup
-After merge, the mobile app:
-1. Calls backend merge endpoint
-2. Syncs user data from backend (`syncUserWithBackend()`)
-3. Local SQLite data will be updated on next sync
-4. Anonymous user data can be safely deleted from local DB
+After merge, the mobile app performs these steps in sequence:
+
+```dart
+// 1. Call backend to merge accounts
+await apiService.mergeAccounts(anonymousUserId);
+
+// 2. Sync user profile from backend to get updated username
+await authService.syncUserWithBackend(retries: 1);
+
+// 3. CRITICAL: Perform full sync to fetch merged wishlists/wishes from backend
+final syncManager = SyncManager();
+await syncManager.performFullSync();
+
+// 4. Mark onboarding complete and navigate to home
+await authService.markOnboardingCompleted();
+```
+
+**Why Full Sync is Required:**
+- Backend has merged wishlists/wishes to new user_id
+- Local database still has old rows with anonymous user_id
+- `performFullSync()` fetches all wishlists/wishes from backend
+- Local database is updated with correct user_id references
+- User immediately sees merged data without orphaned rows
 
 ## Diagrams
 

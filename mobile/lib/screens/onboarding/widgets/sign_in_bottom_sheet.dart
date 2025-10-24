@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'dart:io';
 import '../../../services/auth_service.dart';
 import '../../../services/onboarding_service.dart';
+import '../../../services/sync_manager.dart';
 import '../../../theme/app_theme.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/widgets/merge_accounts_bottom_sheet.dart';
@@ -69,12 +70,22 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
           });
 
           try {
+            debugPrint('🔗 SignInBottomSheet: Starting account merge...');
+
             // Call backend to merge accounts
             final apiService = authService.apiService;
             await apiService.mergeAccounts(anonymousUserId);
+            debugPrint('✅ SignInBottomSheet: Backend merge completed');
 
             // Sync user data from backend to get updated username
             await authService.syncUserWithBackend(retries: 1);
+            debugPrint('✅ SignInBottomSheet: User profile synced');
+
+            // CRITICAL: Perform full sync to fetch merged wishlists/wishes from backend
+            // This ensures local database is updated with all merged data
+            final syncManager = SyncManager();
+            await syncManager.performFullSync();
+            debugPrint('✅ SignInBottomSheet: Full sync completed - merged data now available locally');
 
             // Mark onboarding complete and navigate to home
             await authService.markOnboardingCompleted();
@@ -82,6 +93,7 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
             if (!mounted) return;
             Navigator.of(context).pop();
           } catch (e) {
+            debugPrint('❌ SignInBottomSheet: Merge failed: $e');
             if (!mounted) return;
             setState(() {
               _isLoading = false;
@@ -168,12 +180,22 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
           });
 
           try {
+            debugPrint('🔗 SignInBottomSheet: Starting account merge...');
+
             // Call backend to merge accounts
             final apiService = authService.apiService;
             await apiService.mergeAccounts(anonymousUserId);
+            debugPrint('✅ SignInBottomSheet: Backend merge completed');
 
             // Sync user data from backend to get updated username
             await authService.syncUserWithBackend(retries: 1);
+            debugPrint('✅ SignInBottomSheet: User profile synced');
+
+            // CRITICAL: Perform full sync to fetch merged wishlists/wishes from backend
+            // This ensures local database is updated with all merged data
+            final syncManager = SyncManager();
+            await syncManager.performFullSync();
+            debugPrint('✅ SignInBottomSheet: Full sync completed - merged data now available locally');
 
             // Mark onboarding complete and navigate to home
             await authService.markOnboardingCompleted();
@@ -181,6 +203,7 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
             if (!mounted) return;
             Navigator.of(context).pop();
           } catch (e) {
+            debugPrint('❌ SignInBottomSheet: Merge failed: $e');
             if (!mounted) return;
             setState(() {
               _isLoading = false;
