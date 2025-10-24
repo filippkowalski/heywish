@@ -48,8 +48,12 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
 
       if (!mounted) return;
 
-      if (userExists || wasAnonymous) {
-        // Existing user OR upgraded anonymous user - mark onboarding complete and close
+      // After sign-in, check if user is still anonymous or now authenticated
+      final isNowAuthenticated = authService.firebaseUser != null &&
+                                 !authService.firebaseUser!.isAnonymous;
+
+      if (userExists || (wasAnonymous && isNowAuthenticated)) {
+        // Existing user OR successfully upgraded anonymous user - mark onboarding complete and close
         await authService.markOnboardingCompleted();
         if (!mounted) return;
         Navigator.of(context).pop();
@@ -98,8 +102,12 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
 
       if (!mounted) return;
 
-      if (userExists || wasAnonymous) {
-        // Existing user OR upgraded anonymous user - mark onboarding complete and close
+      // After sign-in, check if user is still anonymous or now authenticated
+      final isNowAuthenticated = authService.firebaseUser != null &&
+                                 !authService.firebaseUser!.isAnonymous;
+
+      if (userExists || (wasAnonymous && isNowAuthenticated)) {
+        // Existing user OR successfully upgraded anonymous user - mark onboarding complete and close
         await authService.markOnboardingCompleted();
         if (!mounted) return;
         Navigator.of(context).pop();

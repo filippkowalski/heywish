@@ -504,17 +504,32 @@ class AuthService extends ChangeNotifier {
       firebase.UserCredential userCredential;
 
       if (isAnonymous && _firebaseUser != null) {
-        // Link the Google credential to the existing anonymous account
-        final oldUid = _firebaseUser!.uid;
-        debugPrint('🔗 AuthService: Linking Google account to anonymous user...');
-        debugPrint('🔗 AuthService: Anonymous UID before linking: $oldUid');
+        try {
+          // Link the Google credential to the existing anonymous account
+          final oldUid = _firebaseUser!.uid;
+          debugPrint('🔗 AuthService: Linking Google account to anonymous user...');
+          debugPrint('🔗 AuthService: Anonymous UID before linking: $oldUid');
 
-        userCredential = await _firebaseUser!.linkWithCredential(credential);
+          userCredential = await _firebaseUser!.linkWithCredential(credential);
 
-        final newUid = userCredential.user?.uid;
-        debugPrint('✅ AuthService: Successfully linked Google account');
-        debugPrint('✅ AuthService: UID after linking: $newUid');
-        debugPrint('✅ AuthService: UID preserved: ${oldUid == newUid}');
+          final newUid = userCredential.user?.uid;
+          debugPrint('✅ AuthService: Successfully linked Google account');
+          debugPrint('✅ AuthService: UID after linking: $newUid');
+          debugPrint('✅ AuthService: UID preserved: ${oldUid == newUid}');
+        } on firebase.FirebaseAuthException catch (e) {
+          if (e.code == 'provider-already-linked') {
+            // Already linked, just sign in instead
+            debugPrint('ℹ️  AuthService: Provider already linked, signing in...');
+            userCredential = await _firebaseAuth.signInWithCredential(credential);
+          } else if (e.code == 'credential-already-in-use') {
+            // This email is already associated with a different account
+            // We'll need to handle account merging
+            debugPrint('⚠️  AuthService: Credential already in use by another account');
+            rethrow;
+          } else {
+            rethrow;
+          }
+        }
       } else {
         // Sign in to Firebase with the Google credential
         debugPrint('🔑 AuthService: Signing in with Google credential...');
@@ -599,17 +614,32 @@ class AuthService extends ChangeNotifier {
       firebase.UserCredential userCredential;
 
       if (isAnonymous && _firebaseUser != null) {
-        // Link the Apple credential to the existing anonymous account
-        final oldUid = _firebaseUser!.uid;
-        debugPrint('🔗 AuthService: Linking Apple account to anonymous user...');
-        debugPrint('🔗 AuthService: Anonymous UID before linking: $oldUid');
+        try {
+          // Link the Apple credential to the existing anonymous account
+          final oldUid = _firebaseUser!.uid;
+          debugPrint('🔗 AuthService: Linking Apple account to anonymous user...');
+          debugPrint('🔗 AuthService: Anonymous UID before linking: $oldUid');
 
-        userCredential = await _firebaseUser!.linkWithCredential(oauthCredential);
+          userCredential = await _firebaseUser!.linkWithCredential(oauthCredential);
 
-        final newUid = userCredential.user?.uid;
-        debugPrint('✅ AuthService: Successfully linked Apple account');
-        debugPrint('✅ AuthService: UID after linking: $newUid');
-        debugPrint('✅ AuthService: UID preserved: ${oldUid == newUid}');
+          final newUid = userCredential.user?.uid;
+          debugPrint('✅ AuthService: Successfully linked Apple account');
+          debugPrint('✅ AuthService: UID after linking: $newUid');
+          debugPrint('✅ AuthService: UID preserved: ${oldUid == newUid}');
+        } on firebase.FirebaseAuthException catch (e) {
+          if (e.code == 'provider-already-linked') {
+            // Already linked, just sign in instead
+            debugPrint('ℹ️  AuthService: Provider already linked, signing in...');
+            userCredential = await _firebaseAuth.signInWithCredential(oauthCredential);
+          } else if (e.code == 'credential-already-in-use') {
+            // This email is already associated with a different account
+            // We'll need to handle account merging
+            debugPrint('⚠️  AuthService: Credential already in use by another account');
+            rethrow;
+          } else {
+            rethrow;
+          }
+        }
       } else {
         // Sign in to Firebase with the Apple credential
         debugPrint('🔑 AuthService: Signing in with Apple credential...');
