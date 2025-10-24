@@ -40,15 +40,20 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
       final authService = context.read<AuthService>();
       final onboardingService = context.read<OnboardingService>();
 
+      // Check if upgrading from anonymous
+      final wasAnonymous = authService.firebaseUser?.isAnonymous ?? false;
+
       // Sign in with Google and check if user exists in DB
       final userExists = await authService.signInWithGoogleCheckExisting();
 
       if (!mounted) return;
 
-      if (userExists) {
-        // Existing user - skip onboarding
+      if (userExists || wasAnonymous) {
+        // Existing user OR upgraded anonymous user - mark onboarding complete and close
+        await authService.markOnboardingCompleted();
+        if (!mounted) return;
         Navigator.of(context).pop();
-        onboardingService.goToStep(OnboardingStep.complete);
+        // User will be navigated to home screen automatically by router
       } else {
         // New user - show dialog and continue to onboarding
         setState(() {
@@ -85,15 +90,20 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
       final authService = context.read<AuthService>();
       final onboardingService = context.read<OnboardingService>();
 
+      // Check if upgrading from anonymous
+      final wasAnonymous = authService.firebaseUser?.isAnonymous ?? false;
+
       // Sign in with Apple and check if user exists in DB
       final userExists = await authService.signInWithAppleCheckExisting();
 
       if (!mounted) return;
 
-      if (userExists) {
-        // Existing user - skip onboarding
+      if (userExists || wasAnonymous) {
+        // Existing user OR upgraded anonymous user - mark onboarding complete and close
+        await authService.markOnboardingCompleted();
+        if (!mounted) return;
         Navigator.of(context).pop();
-        onboardingService.goToStep(OnboardingStep.complete);
+        // User will be navigated to home screen automatically by router
       } else {
         // New user - show dialog and continue to onboarding
         setState(() {

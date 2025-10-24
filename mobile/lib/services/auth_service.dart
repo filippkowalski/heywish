@@ -470,6 +470,10 @@ class AuthService extends ChangeNotifier {
     try {
       debugPrint('🔍 AuthService: Starting Google Sign-In (check existing)...');
 
+      // Check if current user is anonymous
+      final isAnonymous = _firebaseUser?.isAnonymous ?? false;
+      debugPrint('🔍 AuthService: Current user is anonymous: $isAnonymous');
+
       // Trigger the authentication flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
@@ -497,10 +501,18 @@ class AuthService extends ChangeNotifier {
         idToken: googleAuth.idToken,
       );
 
-      // Sign in to Firebase with the Google credential
-      final userCredential = await _firebaseAuth.signInWithCredential(
-        credential,
-      );
+      firebase.UserCredential userCredential;
+
+      if (isAnonymous && _firebaseUser != null) {
+        // Link the Google credential to the existing anonymous account
+        debugPrint('🔗 AuthService: Linking Google account to anonymous user...');
+        userCredential = await _firebaseUser!.linkWithCredential(credential);
+        debugPrint('✅ AuthService: Successfully linked Google account to anonymous user');
+      } else {
+        // Sign in to Firebase with the Google credential
+        debugPrint('🔑 AuthService: Signing in with Google credential...');
+        userCredential = await _firebaseAuth.signInWithCredential(credential);
+      }
 
       debugPrint(
         '✅ AuthService: Firebase auth successful for: ${userCredential.user?.email}',
@@ -509,17 +521,21 @@ class AuthService extends ChangeNotifier {
       // Get auth token to check database
       await _refreshAuthToken(force: true);
 
-      // Check if user exists in database
+      // Check if user exists in database (they should if they upgraded from anonymous)
       final emailCheckResponse = await _apiService.checkEmailExists();
       final userExists = emailCheckResponse?['exists'] ?? false;
 
       debugPrint('📧 AuthService: User exists in DB: $userExists');
 
-      if (userExists) {
-        // User exists - sync to get their data
-        await syncUserWithBackend(retries: 3);
+      if (userExists || isAnonymous) {
+        // User exists OR was anonymous (now linked) - sync to update their data
+        await syncUserWithBackend(
+          retries: 3,
+          signUpMethod: 'google',
+          sendFullName: !isAnonymous, // Only send full name for new Google users
+        );
       }
-      // If user doesn't exist, don't sync yet - let onboarding handle it
+      // If user doesn't exist and wasn't anonymous, don't sync yet - let onboarding handle it
 
       _scheduleTokenRefresh();
 
@@ -535,6 +551,10 @@ class AuthService extends ChangeNotifier {
   Future<bool> signInWithAppleCheckExisting() async {
     try {
       debugPrint('🍎 AuthService: Starting Apple Sign-In (check existing)...');
+
+      // Check if current user is anonymous
+      final isAnonymous = _firebaseUser?.isAnonymous ?? false;
+      debugPrint('🔍 AuthService: Current user is anonymous: $isAnonymous');
 
       // Check if Apple Sign-In is available
       final isAvailable = await SignInWithApple.isAvailable();
@@ -569,10 +589,18 @@ class AuthService extends ChangeNotifier {
         accessToken: appleCredential.authorizationCode,
       );
 
-      // Sign in to Firebase with Apple credential
-      final userCredential = await _firebaseAuth.signInWithCredential(
-        oauthCredential,
-      );
+      firebase.UserCredential userCredential;
+
+      if (isAnonymous && _firebaseUser != null) {
+        // Link the Apple credential to the existing anonymous account
+        debugPrint('🔗 AuthService: Linking Apple account to anonymous user...');
+        userCredential = await _firebaseUser!.linkWithCredential(oauthCredential);
+        debugPrint('✅ AuthService: Successfully linked Apple account to anonymous user');
+      } else {
+        // Sign in to Firebase with the Apple credential
+        debugPrint('🔑 AuthService: Signing in with Apple credential...');
+        userCredential = await _firebaseAuth.signInWithCredential(oauthCredential);
+      }
 
       debugPrint('✅ AuthService: Firebase auth successful for Apple user');
 
@@ -592,17 +620,21 @@ class AuthService extends ChangeNotifier {
       // Get auth token to check database
       await _refreshAuthToken(force: true);
 
-      // Check if user exists in database
+      // Check if user exists in database (they should if they upgraded from anonymous)
       final emailCheckResponse = await _apiService.checkEmailExists();
       final userExists = emailCheckResponse?['exists'] ?? false;
 
       debugPrint('📧 AuthService: User exists in DB: $userExists');
 
-      if (userExists) {
-        // User exists - sync to get their data
-        await syncUserWithBackend(retries: 3);
+      if (userExists || isAnonymous) {
+        // User exists OR was anonymous (now linked) - sync to update their data
+        await syncUserWithBackend(
+          retries: 3,
+          signUpMethod: 'apple',
+          sendFullName: !isAnonymous, // Only send full name for new Apple users
+        );
       }
-      // If user doesn't exist, don't sync yet - let onboarding handle it
+      // If user doesn't exist and wasn't anonymous, don't sync yet - let onboarding handle it
 
       _scheduleTokenRefresh();
 
