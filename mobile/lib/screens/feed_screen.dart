@@ -123,6 +123,8 @@ class _FeedScreenState extends State<FeedScreen> {
               action: 'added to wishlist',
               wishId: activity.data['wish_id'],
               wishlistId: activity.data['wishlist_id'],
+              wishUrl: activity.data['wish_url'],
+              wishDescription: activity.data['wish_description'],
             ));
           }
         }
@@ -201,6 +203,8 @@ class _FeedScreenState extends State<FeedScreen> {
             action: 'added to wishlist',
             wishId: wish['id'],
             wishlistId: wishlistId,
+            wishUrl: wish['url'],
+            wishDescription: wish['description'],
           ));
         }
       }
@@ -219,6 +223,8 @@ class _FeedScreenState extends State<FeedScreen> {
         'price': item.wishPrice,
         'currency': item.wishCurrency,
         'image': item.wishImage,
+        'url': item.wishUrl,
+        'description': item.wishDescription,
       },
     );
   }
@@ -1118,6 +1124,8 @@ class FeedItem {
   final String action;
   final String? wishId;
   final String? wishlistId;
+  final String? wishUrl;
+  final String? wishDescription;
 
   FeedItem({
     required this.id,
@@ -1132,5 +1140,7 @@ class FeedItem {
     required this.action,
     this.wishId,
     this.wishlistId,
+    this.wishUrl,
+    this.wishDescription,
   });
 }

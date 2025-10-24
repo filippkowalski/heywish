@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../services/auth_service.dart';
 import '../../services/wishlist_service.dart';
 import '../../models/wishlist.dart';
@@ -54,7 +55,24 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
       _isShareBannerDismissed = true;
     });
   }
-  
+
+  Future<void> _openUserProfilePage(String username) async {
+    final url = Uri.parse('https://jinnie.co/$username');
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open profile page'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -180,30 +198,42 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
   Widget _buildHeader(BuildContext context, AuthService authService) {
     final wishlistService = context.watch<WishlistService>();
     final hasAnyWishes = wishlistService.allWishes.isNotEmpty;
+    final username = authService.currentUser?.username;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Row(
         children: [
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'home.title'.tr(),
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.primary,
+            child: GestureDetector(
+              onTap: username != null ? () => _openUserProfilePage(username) : null,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    username != null ? '@$username' : 'home.title'.tr(),
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.primary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Create & share your wish lists',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.primary.withValues(alpha: 0.7),
-                  ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  if (username != null)
+                    Text(
+                      'home.subtitle'.tr(),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.primary.withValues(alpha: 0.7),
+                      ),
+                    )
+                  else
+                    Text(
+                      'Create & share your wish lists',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.primary.withValues(alpha: 0.7),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
           // Share button - only show when user has at least one wish

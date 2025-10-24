@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
@@ -111,6 +112,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Future<void> _sendFriendRequest() async {
     if (_userData == null || _userData!['id'] == null) return;
 
+    // Check if user is anonymous
+    final authService = context.read<AuthService>();
+    if (authService.firebaseUser?.isAnonymous == true) {
+      _showCreateAccountPrompt();
+      return;
+    }
+
     setState(() {
       _isSendingRequest = true;
     });
@@ -146,6 +154,229 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           _isSendingRequest = false;
         });
       }
+    }
+  }
+
+  Future<void> _showCreateAccountPrompt() async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: EdgeInsets.fromLTRB(
+          24,
+          12,
+          24,
+          MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Icon
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryAccent.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.person_add,
+                size: 40,
+                color: AppTheme.primaryAccent,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Title
+            Text(
+              'Create an Account',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.primary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+
+            // Description
+            Text(
+              'To add friends and unlock all features, you need to create an account. It only takes a moment!',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+
+            // Google Sign In Button
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: OutlinedButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await _linkWithGoogle();
+                },
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: Colors.grey[300]!),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/google_logo.png',
+                      height: 24,
+                      width: 24,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Icon(Icons.g_mobiledata, size: 24, color: Colors.grey[700]),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Continue with Google',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Apple Sign In Button (iOS only)
+            if (Platform.isIOS) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: OutlinedButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await _linkWithApple();
+                  },
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    side: const BorderSide(color: Colors.black),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.apple, size: 24, color: Colors.white),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Continue with Apple',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 16),
+
+            // Maybe Later Button
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Maybe Later',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _linkWithGoogle() async {
+    try {
+      final authService = context.read<AuthService>();
+      await authService.linkWithGoogle();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Account created successfully! You can now add friends.'),
+          backgroundColor: Colors.green.shade600,
+        ),
+      );
+
+      // Refresh the profile to update friendship status
+      await _loadProfile();
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error creating account: ${error.toString()}'),
+          backgroundColor: Colors.red.shade600,
+        ),
+      );
+    }
+  }
+
+  Future<void> _linkWithApple() async {
+    try {
+      final authService = context.read<AuthService>();
+      await authService.linkWithApple();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Account created successfully! You can now add friends.'),
+          backgroundColor: Colors.green.shade600,
+        ),
+      );
+
+      // Refresh the profile to update friendship status
+      await _loadProfile();
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error creating account: ${error.toString()}'),
+          backgroundColor: Colors.red.shade600,
+        ),
+      );
     }
   }
 

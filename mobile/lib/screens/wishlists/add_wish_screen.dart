@@ -8,9 +8,11 @@ import 'dart:io';
 import '../../services/wishlist_service.dart';
 import '../../services/image_cache_service.dart';
 import '../../services/api_service.dart';
+import '../../services/preferences_service.dart';
 import '../../theme/app_theme.dart';
 import '../../models/wishlist.dart';
 import '../../common/navigation/native_page_route.dart';
+import '../../common/widgets/add_item_tip_bottom_sheet.dart';
 import 'wishlist_new_screen.dart';
 
 class AddWishScreen extends StatefulWidget {
@@ -25,13 +27,28 @@ class AddWishScreen extends StatefulWidget {
     this.prefilledData,
   });
 
-  /// Show as bottom sheet
+  /// Show as bottom sheet (with optional first-time tip)
   static Future<bool?> show(
     BuildContext context, {
     String? wishlistId,
     String? initialUrl,
     Map<String, dynamic>? prefilledData,
-  }) {
+  }) async {
+    // Check if we should show the tip first
+    final preferencesService = PreferencesService();
+
+    if (!preferencesService.hasSeenAddItemTip) {
+      // Mark as seen first
+      await preferencesService.setHasSeenAddItemTip(true);
+
+      // Show the tip and wait for it to be dismissed
+      await AddItemTipBottomSheet.show(context);
+
+      // Check if context is still valid after tip dismissal
+      if (!context.mounted) return null;
+    }
+
+    // Now show the add item screen
     return NativeTransitions.showNativeModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -106,24 +123,40 @@ class _AddWishScreenState extends State<AddWishScreen> {
     // Pre-fill data if provided (from feed copy)
     if (widget.prefilledData != null) {
       final data = widget.prefilledData!;
-      _titleController.text = data['title'] ?? '';
-      _descriptionController.text = data['description'] ?? '';
-      _priceController.text = data['price']?.toString() ?? '';
-      _urlController.text = data['url'] ?? '';
-      _currency = data['currency'] ?? 'USD';
-      _scrapedImageUrl = data['image'];
 
-      // Auto-show fields with data
-      if (data['description'] != null && data['description'].toString().isNotEmpty) {
+      // Title - always required
+      _titleController.text = data['title'] ?? '';
+
+      // Description - check if not empty
+      final descriptionValue = data['description'];
+      if (descriptionValue != null && descriptionValue.toString().trim().isNotEmpty) {
+        _descriptionController.text = descriptionValue.toString().trim();
         _visibleFields.add('description');
       }
-      if (data['url'] != null && data['url'].toString().isNotEmpty) {
-        _visibleFields.add('url');
-      }
-      if (data['price'] != null) {
+
+      // Price - check if not null and show field
+      final priceValue = data['price'];
+      if (priceValue != null) {
+        _priceController.text = priceValue.toString();
         _visibleFields.add('price');
       }
-      if (data['image'] != null) {
+
+      // Currency - set if provided
+      _currency = data['currency'] ?? 'USD';
+
+      // URL - ensure it's properly set and visible
+      final urlValue = data['url'];
+      if (urlValue != null && urlValue.toString().trim().isNotEmpty) {
+        _urlController.text = urlValue.toString().trim();
+        _visibleFields.add('url');
+        // Mark as last scraped to prevent auto-scraping
+        _lastScrapedUrl = urlValue.toString().trim();
+      }
+
+      // Image - validate before setting
+      final imageValue = data['image'];
+      if (imageValue != null && imageValue.toString().trim().isNotEmpty) {
+        _scrapedImageUrl = imageValue.toString().trim();
         _visibleFields.add('image');
       }
     }
@@ -623,6 +656,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final bottomPadding = mediaQuery.viewInsets.bottom;
+    final safeAreaBottom = mediaQuery.padding.bottom;
 
     return Material(
       color: Colors.transparent,
@@ -885,7 +919,12 @@ class _AddWishScreenState extends State<AddWishScreen> {
 
           // Bottom buttons
           Container(
-            padding: EdgeInsets.fromLTRB(24, 12, 24, bottomPadding + 12),
+            padding: EdgeInsets.fromLTRB(
+              24,
+              12,
+              24,
+              bottomPadding > 0 ? bottomPadding + 12 : safeAreaBottom + 12,
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border(

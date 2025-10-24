@@ -7,6 +7,7 @@ import 'package:crypto/crypto.dart';
 import '../models/sync_entity.dart';
 import 'local_database.dart';
 import 'api_service.dart';
+import 'fcm_service.dart';
 
 class SyncManager extends ChangeNotifier {
   static final SyncManager _instance = SyncManager._internal();
@@ -118,6 +119,11 @@ class SyncManager extends ChangeNotifier {
       
       _lastSuccessfulSync = DateTime.now();
       await _updateStatistics();
+
+      if (!result.hasErrors) {
+        debugPrint('🔔 SyncManager: Triggering FCM token retry after successful sync');
+        FCMService().retryTokenRegistration();
+      }
       
       debugPrint('✅ SyncManager: Full sync completed');
       debugPrint('📊 Sync result: ${result.toString()}');

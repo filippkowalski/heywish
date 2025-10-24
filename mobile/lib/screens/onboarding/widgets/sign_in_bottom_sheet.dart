@@ -1,8 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'dart:io';
 import '../../../services/auth_service.dart';
 import '../../../services/onboarding_service.dart';
 import '../../../services/sync_manager.dart';
@@ -29,6 +28,8 @@ class _SignInBottomSheetContent extends StatefulWidget {
 }
 
 class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
+  static const _mergeSyncErrorMessage =
+      'Unable to sync merged data. Please check your connection and try again.';
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -99,6 +100,19 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
               }
             }
 
+            if (syncResult.hasErrors && syncResult.error != 'Sync already in progress') {
+              debugPrint(
+                '❌ SignInBottomSheet: Full sync failed after merge '
+                '(pushErrors: ${syncResult.pushErrors}, pullErrors: ${syncResult.pullErrors}, error: ${syncResult.error})',
+              );
+              if (!mounted) return;
+              setState(() {
+                _isLoading = false;
+                _errorMessage = _mergeSyncErrorMessage;
+              });
+              return;
+            }
+
             debugPrint('✅ SignInBottomSheet: Full sync completed - merged data now available locally');
 
             // Mark onboarding complete and navigate to home
@@ -130,12 +144,13 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
           Navigator.of(context).pop();
           // User will be navigated to home screen automatically by router
         } else {
-          // New user - show dialog and continue to onboarding
-          setState(() {
-            _isLoading = false;
-          });
-
-          await _showNoAccountDialog();
+          // New user - automatically create account and continue to onboarding
+          // Sync with backend to create the account (if not already created)
+          await authService.syncUserWithBackend(
+            retries: 3,
+            signUpMethod: 'google',
+            sendFullName: true,
+          );
 
           if (!mounted) return;
           Navigator.of(context).pop(); // Close bottom sheet
@@ -223,6 +238,19 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
               }
             }
 
+            if (syncResult.hasErrors && syncResult.error != 'Sync already in progress') {
+              debugPrint(
+                '❌ SignInBottomSheet: Full sync failed after merge '
+                '(pushErrors: ${syncResult.pushErrors}, pullErrors: ${syncResult.pullErrors}, error: ${syncResult.error})',
+              );
+              if (!mounted) return;
+              setState(() {
+                _isLoading = false;
+                _errorMessage = _mergeSyncErrorMessage;
+              });
+              return;
+            }
+
             debugPrint('✅ SignInBottomSheet: Full sync completed - merged data now available locally');
 
             // Mark onboarding complete and navigate to home
@@ -254,12 +282,13 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
           Navigator.of(context).pop();
           // User will be navigated to home screen automatically by router
         } else {
-          // New user - show dialog and continue to onboarding
-          setState(() {
-            _isLoading = false;
-          });
-
-          await _showNoAccountDialog();
+          // New user - automatically create account and continue to onboarding
+          // Sync with backend to create the account (if not already created)
+          await authService.syncUserWithBackend(
+            retries: 3,
+            signUpMethod: 'apple',
+            sendFullName: true,
+          );
 
           if (!mounted) return;
           Navigator.of(context).pop(); // Close bottom sheet
@@ -277,41 +306,6 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
         _isLoading = false;
         _errorMessage = 'auth.error_apple_signin'.tr();
       });
-    }
-  }
-
-  Future<void> _showNoAccountDialog() async {
-    if (Platform.isIOS) {
-      await showCupertinoDialog(
-        context: context,
-        builder: (context) => CupertinoAlertDialog(
-          title: Text('auth.no_account_title'.tr()),
-          content: Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text('auth.no_account_message'.tr()),
-          ),
-          actions: [
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('auth.no_account_continue'.tr()),
-            ),
-          ],
-        ),
-      );
-    } else {
-      await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('auth.no_account_title'.tr()),
-          content: Text('auth.no_account_message'.tr()),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('auth.no_account_continue'.tr()),
-            ),
-          ],
-        ),
-      );
     }
   }
 

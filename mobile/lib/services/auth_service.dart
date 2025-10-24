@@ -519,6 +519,11 @@ class AuthService extends ChangeNotifier {
           debugPrint('✅ AuthService: Successfully linked Google account');
           debugPrint('✅ AuthService: UID after linking: $newUid');
           debugPrint('✅ AuthService: UID preserved: ${oldUid == newUid}');
+
+          // Reload user to get fresh data and update isAnonymous flag
+          await userCredential.user!.reload();
+          _firebaseUser = _firebaseAuth.currentUser;
+          debugPrint('🔄 AuthService: User reloaded, isAnonymous: ${_firebaseUser?.isAnonymous}');
         } on firebase.FirebaseAuthException catch (e) {
           if (e.code == 'provider-already-linked') {
             // Already linked, just sign in instead
@@ -682,6 +687,11 @@ class AuthService extends ChangeNotifier {
           debugPrint('✅ AuthService: Successfully linked Apple account');
           debugPrint('✅ AuthService: UID after linking: $newUid');
           debugPrint('✅ AuthService: UID preserved: ${oldUid == newUid}');
+
+          // Reload user to get fresh data and update isAnonymous flag
+          await userCredential.user!.reload();
+          _firebaseUser = _firebaseAuth.currentUser;
+          debugPrint('🔄 AuthService: User reloaded, isAnonymous: ${_firebaseUser?.isAnonymous}');
         } on firebase.FirebaseAuthException catch (e) {
           if (e.code == 'provider-already-linked') {
             // Already linked, just sign in instead
