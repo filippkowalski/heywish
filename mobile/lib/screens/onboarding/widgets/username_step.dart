@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'dart:async';
 import '../../../services/onboarding_service.dart';
+import '../../../services/auth_service.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/widgets/primary_button.dart';
 import '../../../common/widgets/platform_loader.dart';
@@ -157,6 +158,9 @@ class _UsernameStepState extends State<UsernameStep> {
   }
 
   Future<void> _handleContinue(OnboardingService onboardingService) async {
+    // Get AuthService before any async calls to avoid using BuildContext across async gap
+    final authService = context.read<AuthService>();
+
     try {
       debugPrint('🎯 UsernameStep: Saving profile to backend...');
 
@@ -165,6 +169,11 @@ class _UsernameStepState extends State<UsernameStep> {
 
       if (success) {
         debugPrint('✅ UsernameStep: Profile saved successfully');
+
+        // Sync user data from backend to ensure AuthService has the updated username
+        await authService.syncUserWithBackend(retries: 1);
+        debugPrint('✅ UsernameStep: User data synced with backend');
+
         // Move to complete step
         onboardingService.nextStep();
       } else {
