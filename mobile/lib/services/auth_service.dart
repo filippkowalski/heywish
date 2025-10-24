@@ -505,9 +505,16 @@ class AuthService extends ChangeNotifier {
 
       if (isAnonymous && _firebaseUser != null) {
         // Link the Google credential to the existing anonymous account
+        final oldUid = _firebaseUser!.uid;
         debugPrint('🔗 AuthService: Linking Google account to anonymous user...');
+        debugPrint('🔗 AuthService: Anonymous UID before linking: $oldUid');
+
         userCredential = await _firebaseUser!.linkWithCredential(credential);
-        debugPrint('✅ AuthService: Successfully linked Google account to anonymous user');
+
+        final newUid = userCredential.user?.uid;
+        debugPrint('✅ AuthService: Successfully linked Google account');
+        debugPrint('✅ AuthService: UID after linking: $newUid');
+        debugPrint('✅ AuthService: UID preserved: ${oldUid == newUid}');
       } else {
         // Sign in to Firebase with the Google credential
         debugPrint('🔑 AuthService: Signing in with Google credential...');
@@ -593,9 +600,16 @@ class AuthService extends ChangeNotifier {
 
       if (isAnonymous && _firebaseUser != null) {
         // Link the Apple credential to the existing anonymous account
+        final oldUid = _firebaseUser!.uid;
         debugPrint('🔗 AuthService: Linking Apple account to anonymous user...');
+        debugPrint('🔗 AuthService: Anonymous UID before linking: $oldUid');
+
         userCredential = await _firebaseUser!.linkWithCredential(oauthCredential);
-        debugPrint('✅ AuthService: Successfully linked Apple account to anonymous user');
+
+        final newUid = userCredential.user?.uid;
+        debugPrint('✅ AuthService: Successfully linked Apple account');
+        debugPrint('✅ AuthService: UID after linking: $newUid');
+        debugPrint('✅ AuthService: UID preserved: ${oldUid == newUid}');
       } else {
         // Sign in to Firebase with the Apple credential
         debugPrint('🔑 AuthService: Signing in with Apple credential...');
