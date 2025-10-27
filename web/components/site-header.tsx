@@ -9,7 +9,7 @@ export function SiteHeader() {
       <div className="container mx-auto flex h-14 items-center gap-4 px-4 md:px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-xl font-semibold font-poppins">Jinnie</span>
+          <span className="text-xl font-semibold font-poppins">Jinnie.co</span>
         </Link>
 
         {/* Search */}
