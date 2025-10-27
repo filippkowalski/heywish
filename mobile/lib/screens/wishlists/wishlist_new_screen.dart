@@ -203,7 +203,7 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
                         child: _buildBorderlessTextField(
                           controller: _nameController,
                           focusNode: _nameFocusNode,
-                          hintText: 'List Name',
+                          hintText: 'wishlist.name_hint'.tr(),
                           fontSize: 28,
                           fontWeight: FontWeight.w600,
                           maxLines: 2,
@@ -223,9 +223,9 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
                           child: _buildBorderlessTextField(
                             controller: _descriptionController,
                             focusNode: _descriptionFocusNode,
-                            hintText: 'Description',
+                            hintText: 'wishlist.description_hint'.tr(),
                             fontSize: 20,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                             maxLines: 3,
                             textCapitalization: TextCapitalization.sentences,
                           ),
@@ -292,7 +292,7 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
                   // Privacy/Visibility Selector - Always visible at bottom
                   const SizedBox(height: 16),
                   Text(
-                    'List visibility',
+                    'wishlist.list_visibility'.tr(),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -338,7 +338,7 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
                         ),
                       )
                     : Text(
-                        'Create List',
+                        'wishlist.create_list'.tr(),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -602,14 +602,14 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
                       color: AppTheme.primaryAccent,
                     ),
                   ),
-                  title: const Text(
-                    'Take Photo',
-                    style: TextStyle(
+                  title: Text(
+                    'ui.photo_picker_take_photo'.tr(),
+                    style: const TextStyle(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   subtitle: Text(
-                    'Use camera',
+                    'ui.photo_picker_use_camera'.tr(),
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.grey[600],
@@ -631,14 +631,14 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
                       color: AppTheme.primaryAccent,
                     ),
                   ),
-                  title: const Text(
-                    'Choose from Gallery',
-                    style: TextStyle(
+                  title: Text(
+                    'ui.photo_picker_choose_gallery'.tr(),
+                    style: const TextStyle(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   subtitle: Text(
-                    'Select from photos',
+                    'ui.photo_picker_select_photos'.tr(),
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.grey[600],
@@ -701,9 +701,9 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Camera/Photo Access Required'),
-        content: const Text(
-          'Jinnie needs access to your camera and photo library to add cover images for your lists.',
+        title: Text('permissions.camera_photo_required'.tr()),
+        content: Text(
+          'permissions.camera_photo_message_wishlist'.tr(),
         ),
         actions: [
           TextButton(
@@ -715,7 +715,7 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
               Navigator.pop(context);
               openAppSettings();
             },
-            child: const Text('Open Settings'),
+            child: Text('permissions.open_settings'.tr()),
           ),
         ],
       ),

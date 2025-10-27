@@ -227,7 +227,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
                     )
                   else
                     Text(
-                      'Create & share your wish lists',
+                      'home.subtitle_create_share'.tr(),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppTheme.primary.withValues(alpha: 0.7),
                       ),
@@ -285,7 +285,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
               ),
               const SizedBox(height: 16),
               Text(
-                'Something went wrong',
+                'errors.something_went_wrong'.tr(),
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
@@ -297,8 +297,8 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
               const SizedBox(height: 24),
               FilledButton.icon(
                 onPressed: _loadWishlists,
-                icon: Icon(Icons.refresh),
-                label: const Text('Try Again'),
+                icon: const Icon(Icons.refresh),
+                label: Text('wish.try_again'.tr()),
               ),
             ],
           ),
@@ -411,7 +411,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
         children: [
           // "All" tab (includes unsorted wishes)
           _buildTabChip(
-            label: 'All',
+            label: 'home.all_wishlists'.tr(),
             isSelected: _selectedWishlistFilter == null,
             onTap: () {
               setState(() {
@@ -536,7 +536,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
             ),
             const SizedBox(height: 24),
             Text(
-              'No items yet',
+              'home.no_items_yet'.tr(),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w600,
@@ -545,8 +545,8 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
             const SizedBox(height: 8),
             Text(
               _selectedWishlistFilter == null
-                  ? 'Add your first item to get started'
-                  : 'No items in this wishlist yet',
+                  ? 'home.add_first_item'.tr()
+                  : 'home.no_items_in_wishlist'.tr(),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
@@ -560,7 +560,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
                 }
               },
               icon: const Icon(Icons.add),
-              label: const Text('Add Item'),
+              label: Text('wish.add_item'.tr()),
             ),
           ],
         ),

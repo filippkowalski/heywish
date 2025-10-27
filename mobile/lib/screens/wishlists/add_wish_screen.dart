@@ -463,14 +463,14 @@ class _AddWishScreenState extends State<AddWishScreen> {
                       color: AppTheme.primaryAccent,
                     ),
                   ),
-                  title: const Text(
-                    'Take Photo',
-                    style: TextStyle(
+                  title: Text(
+                    'ui.photo_picker_take_photo'.tr(),
+                    style: const TextStyle(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   subtitle: Text(
-                    'Use camera',
+                    'ui.photo_picker_use_camera'.tr(),
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.grey[600],
@@ -492,14 +492,14 @@ class _AddWishScreenState extends State<AddWishScreen> {
                       color: AppTheme.primaryAccent,
                     ),
                   ),
-                  title: const Text(
-                    'Choose from Gallery',
-                    style: TextStyle(
+                  title: Text(
+                    'ui.photo_picker_choose_gallery'.tr(),
+                    style: const TextStyle(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   subtitle: Text(
-                    'Select from photos',
+                    'ui.photo_picker_select_photos'.tr(),
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.grey[600],
@@ -562,9 +562,9 @@ class _AddWishScreenState extends State<AddWishScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Camera/Photo Access Required'),
-        content: const Text(
-          'Jinnie needs access to your camera and photo library to add images to your items.',
+        title: Text('permissions.camera_photo_required'.tr()),
+        content: Text(
+          'permissions.camera_photo_message_wish'.tr(),
         ),
         actions: [
           TextButton(
@@ -576,7 +576,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
               Navigator.pop(context);
               openAppSettings();
             },
-            child: const Text('Open Settings'),
+            child: Text('permissions.open_settings'.tr()),
           ),
         ],
       ),

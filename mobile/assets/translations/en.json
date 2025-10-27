@@ -148,9 +148,14 @@
   "home": {
     "title": "Home",
     "subtitle": "View your profile page",
+    "subtitle_create_share": "Create & share your wish lists",
     "empty_title": "No wishes yet",
     "empty_subtitle": "Add your first wish to get started",
-    "create_first_wish": "Add Your First Wish"
+    "create_first_wish": "Add Your First Wish",
+    "no_items_yet": "No items yet",
+    "add_first_item": "Add your first item to get started",
+    "no_items_in_wishlist": "No items in this wishlist yet",
+    "all_wishlists": "All"
   },
   "feed": {
     "title": "Friends Activity",
@@ -223,6 +228,8 @@
     "photo_library_message": "We need access to your photo library to let you add images.",
     "camera_photo_required": "Camera/Photo Access Required",
     "camera_photo_message": "We need access to your camera and photos to let you add images.",
+    "camera_photo_message_wishlist": "Jinnie needs access to your camera and photo library to add cover images for your lists.",
+    "camera_photo_message_wish": "Jinnie needs access to your camera and photo library to add images to your items.",
     "open_settings": "Open Settings"
   },
   "wishlist": {
@@ -244,10 +251,14 @@
     "failed_remove_cover": "Failed to remove cover image",
     "error_occurred": "Error: {error}",
     "create": "Create Wishlist",
+    "create_list": "Create List",
     "name": "Name",
+    "name_hint": "List Name",
     "name_required": "Please enter a wishlist name",
     "name_placeholder": "My Birthday Wishlist",
+    "list_visibility": "List visibility",
     "description": "Description",
+    "description_hint": "Description",
     "description_placeholder": "Add a description for your wishlist",
     "basic_information": "Basic Information",
     "basic_information_desc": "Give your wishlist a name and description",
@@ -523,6 +534,14 @@
   },
   "common": {
     "optional": "(Optional)"
+  },
+  "ui": {
+    "photo_picker_take_photo": "Take Photo",
+    "photo_picker_use_camera": "Use camera",
+    "photo_picker_choose_gallery": "Choose from Gallery",
+    "photo_picker_select_photos": "Select from photos",
+    "tap_to_add_cover": "Tap to add cover image",
+    "cover_image": "Cover Image"
   },
   "errors": {
     "network_error": "Network error. Please check your connection.",

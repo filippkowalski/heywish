@@ -534,8 +534,8 @@ class SettingsScreen extends StatelessWidget {
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not open email app. Please email us at bobbyfisher77+jinnie@icloud.com'),
+            SnackBar(
+              content: Text('profile.email_support_error'.tr()),
               backgroundColor: AppTheme.error,
             ),
           );
