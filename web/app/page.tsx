@@ -178,27 +178,27 @@ export default function HomePage() {
                 <a
                   href="https://apps.apple.com/app/id6754384455"
                   className="block transition-transform hover:scale-105"
-                  style={{ height: '60px', display: 'flex', alignItems: 'center' }}
+                  style={{ height: '80px', display: 'flex', alignItems: 'center' }}
                 >
                   <Image
                     src="/badges/app-store-badge.svg"
                     alt="Download on the App Store"
-                    width={180}
-                    height={60}
-                    className="h-[40px] w-auto"
+                    width={240}
+                    height={80}
+                    className="h-[54px] w-auto"
                   />
                 </a>
                 <a
                   href="https://play.google.com/store/apps/details?id=com.wishlists.gifts"
                   className="block transition-transform hover:scale-105"
-                  style={{ height: '60px', display: 'flex', alignItems: 'center' }}
+                  style={{ height: '80px', display: 'flex', alignItems: 'center' }}
                 >
                   <Image
                     src="/badges/google-play-badge.png"
                     alt="Get it on Google Play"
-                    width={180}
-                    height={60}
-                    className="h-[60px] w-auto"
+                    width={240}
+                    height={80}
+                    className="h-[80px] w-auto"
                   />
                 </a>
               </div>
