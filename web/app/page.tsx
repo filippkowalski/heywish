@@ -224,26 +224,39 @@ export default function HomePage() {
 
             {/* CTA Buttons - Launching End of October */}
             <div className="flex flex-col items-center gap-3 md:gap-4 pt-2 md:pt-4 animate-fade-in-up animation-delay-200">
-              <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                <Button
-                  disabled
-                  size="lg"
-                  className="h-12 gap-2 px-8 text-base font-medium opacity-50 cursor-not-allowed relative"
-                >
-                  <Apple className="h-5 w-5" />
-                  Download on App Store
+              <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+                <div className="relative">
+                  <a
+                    href="https://apps.apple.com/app/id6754384455"
+                    className="block opacity-50 pointer-events-none"
+                    aria-disabled="true"
+                  >
+                    <Image
+                      src="/badges/app-store-badge.svg"
+                      alt="Download on the App Store"
+                      width={160}
+                      height={53}
+                      className="h-[53px] w-auto"
+                    />
+                  </a>
                   <Badge className="absolute -top-2 -right-2 text-[10px] bg-primary text-primary-foreground whitespace-nowrap">End of Oct</Badge>
-                </Button>
-                <Button
-                  disabled
-                  size="lg"
-                  variant="outline"
-                  className="h-12 gap-2 px-8 text-base font-medium opacity-50 cursor-not-allowed relative"
-                >
-                  <PlaySquare className="h-5 w-5" />
-                  Get it on Google Play
+                </div>
+                <div className="relative">
+                  <a
+                    href="https://play.google.com/store/apps/details?id=com.wishlists.gifts"
+                    className="block opacity-50 pointer-events-none"
+                    aria-disabled="true"
+                  >
+                    <Image
+                      src="/badges/google-play-badge.png"
+                      alt="Get it on Google Play"
+                      width={180}
+                      height={53}
+                      className="h-[53px] w-auto"
+                    />
+                  </a>
                   <Badge className="absolute -top-2 -right-2 text-[10px] bg-primary text-primary-foreground whitespace-nowrap">End of Oct</Badge>
-                </Button>
+                </div>
               </div>
 
               {/* Waitlist Form */}
