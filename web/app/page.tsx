@@ -174,29 +174,32 @@ export default function HomePage() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col items-center gap-3 md:gap-4 pt-2 md:pt-4 animate-fade-in-up animation-delay-200">
-              <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+              <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center sm:items-center">
                 <a
                   href="https://apps.apple.com/app/id6754384455"
                   className="block transition-transform hover:scale-105"
+                  style={{ width: '160px' }}
                 >
                   <Image
                     src="/badges/app-store-badge.svg"
                     alt="Download on the App Store"
                     width={160}
                     height={53}
-                    className="h-[53px] w-[160px]"
+                    className="h-auto"
+                    style={{ margin: '6% 0', width: '88%', marginLeft: 'auto', marginRight: 'auto' }}
                   />
                 </a>
                 <a
                   href="https://play.google.com/store/apps/details?id=com.wishlists.gifts"
                   className="block transition-transform hover:scale-105"
+                  style={{ width: '160px' }}
                 >
                   <Image
                     src="/badges/google-play-badge.png"
                     alt="Get it on Google Play"
                     width={160}
                     height={53}
-                    className="h-[53px] w-[160px]"
+                    className="h-auto w-full"
                   />
                 </a>
               </div>
