@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const runtime = 'edge';
 import { notFound } from "next/navigation";
-import { Heart, MapPin, Users, Gift, BookmarkCheck } from "lucide-react";
+import { Heart, MapPin, Gift } from "lucide-react";
 import { api, PublicProfileResponse } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -40,31 +40,31 @@ export async function generateMetadata({
 
   if (!profile) {
     return {
-      title: "Profile not found · Jinnie",
-      description: "The profile you are looking for does not exist or is not public on Jinnie.",
+      title: "Profile not found · Jinnie.co",
+      description: "The profile you are looking for does not exist or is not public on Jinnie.co.",
     };
   }
 
   const displayName = `@${profile.user.username}`;
   const description = profile.user.bio
     ? profile.user.bio
-    : `Browse public wishlists shared by ${displayName} on Jinnie.`;
+    : `Browse public wishlists shared by ${displayName} on Jinnie.co.`;
   const canonicalPath = `/${profile.user.username}`;
 
   return {
-    title: `${displayName} • Jinnie`,
+    title: `${displayName} • Jinnie.co`,
     description,
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://jinnie.co"),
     openGraph: {
       url: canonicalPath,
-      title: `${displayName} • Jinnie`,
+      title: `${displayName} • Jinnie.co`,
       description,
       type: "profile",
-      siteName: "Jinnie",
+      siteName: "Jinnie.co",
     },
     twitter: {
       card: "summary_large_image",
-      title: `${displayName} • Jinnie`,
+      title: `${displayName} • Jinnie.co`,
       description,
     },
     alternates: {
@@ -139,7 +139,7 @@ export default async function PublicProfilePage({
                   </p>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Connect with @{user.username} on Jinnie to view their profile.
+                  Connect with @{user.username} on Jinnie.co to view their profile.
                 </p>
               </div>
             </CardContent>
@@ -154,17 +154,17 @@ export default async function PublicProfilePage({
       <header className="border-b bg-card/50">
         <div className="container mx-auto px-4 py-6 sm:py-8 md:py-10 md:px-6">
           {/* Profile Header */}
-          <div className="flex flex-col gap-4 sm:gap-5">
-            <div className="flex items-start gap-3 sm:gap-4">
-              <Avatar className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl border border-border flex-shrink-0">
-                {user.avatarUrl ? (
-                  <AvatarImage src={user.avatarUrl} alt={`@${user.username}`} />
-                ) : null}
-                <AvatarFallback className="rounded-xl text-base sm:text-lg font-semibold">
-                  {user.username.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1 space-y-1.5 sm:space-y-2">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <Avatar className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl border border-border flex-shrink-0">
+              {user.avatarUrl ? (
+                <AvatarImage src={user.avatarUrl} alt={`@${user.username}`} />
+              ) : null}
+              <AvatarFallback className="rounded-xl text-base sm:text-lg font-semibold">
+                {user.username.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1 space-y-2.5 sm:space-y-3">
+              <div className="space-y-1.5 sm:space-y-2">
                 <h1 className="truncate text-xl font-semibold sm:text-2xl md:text-3xl">
                   @{user.username}
                 </h1>
@@ -175,33 +175,25 @@ export default async function PublicProfilePage({
                   </p>
                 ) : null}
               </div>
-            </div>
 
-            {/* Bio */}
-            {user.bio ? (
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                {user.bio}
-              </p>
-            ) : null}
+              {/* Bio */}
+              {user.bio ? (
+                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                  {user.bio}
+                </p>
+              ) : null}
 
-            {/* Stats */}
-            <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs sm:text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5 sm:gap-2">
-                <Gift className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-                <span className="font-medium text-foreground">{wishlists.length}</span> wishlists
-              </span>
-              <span className="inline-flex items-center gap-1.5 sm:gap-2">
-                <Heart className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-rose-500 flex-shrink-0" />
-                <span className="font-medium text-foreground">{formatNumber(totals.wishCount)}</span> wishes
-              </span>
-              <span className="inline-flex items-center gap-1.5 sm:gap-2">
-                <BookmarkCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-500 flex-shrink-0" />
-                <span className="font-medium text-foreground">{formatNumber(totals.reservedCount)}</span> reserved
-              </span>
-              <span className="inline-flex items-center gap-1.5 sm:gap-2">
-                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-sky-500 flex-shrink-0" />
-                <span className="font-medium text-foreground">{formatNumber(user.friendCount)}</span> friends
-              </span>
+              {/* Stats */}
+              <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs sm:text-sm text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5 sm:gap-2">
+                  <Gift className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                  <span className="font-medium text-foreground">{wishlists.length}</span> wishlists
+                </span>
+                <span className="inline-flex items-center gap-1.5 sm:gap-2">
+                  <Heart className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-rose-500 flex-shrink-0" />
+                  <span className="font-medium text-foreground">{formatNumber(totals.wishCount)}</span> wishes
+                </span>
+              </div>
             </div>
           </div>
         </div>
