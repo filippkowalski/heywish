@@ -143,7 +143,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         cleanedValue.isNotEmpty &&
         cleanedValue != _originalUsername) {
       setState(() {
-        _usernameCheckResult = 'Checking...';
+        _usernameCheckResult = 'username_validation.checking'.tr();
         _isCheckingUsername = true;
       });
 
@@ -153,7 +153,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } else if (cleanedValue == _originalUsername) {
       // If it's the original username, mark as available
       setState(() {
-        _usernameCheckResult = 'Available';
+        _usernameCheckResult = 'username_validation.available'.tr();
         _isCheckingUsername = false;
       });
     }
@@ -167,14 +167,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (response != null && mounted) {
         final isAvailable = response['available'] as bool;
         setState(() {
-          _usernameCheckResult = isAvailable ? 'Available' : 'Username taken';
+          _usernameCheckResult = isAvailable ? 'username_validation.available'.tr() : 'username_validation.taken'.tr();
           _isCheckingUsername = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _usernameCheckResult = 'Unable to check availability';
+          _usernameCheckResult = 'username_validation.check_error'.tr();
           _isCheckingUsername = false;
         });
       }
@@ -259,7 +259,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Failed to upload avatar image'),
+                content: Text('profile.failed_to_upload_avatar'.tr()),
                 backgroundColor: Colors.red,
               ),
             );

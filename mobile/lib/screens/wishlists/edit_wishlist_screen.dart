@@ -89,7 +89,7 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
         );
 
         if (coverImageUrl == null && mounted) {
-          _showErrorMessage('Failed to upload cover image');
+          _showErrorMessage('wishlist.failed_upload_cover'.tr());
           setState(() {
             _isLoading = false;
           });

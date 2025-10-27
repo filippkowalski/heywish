@@ -207,7 +207,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
             // Title
             Text(
-              'Create an Account',
+              'auth.create_account_title'.tr(),
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
@@ -219,7 +219,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
             // Description
             Text(
-              'To add friends and unlock all features, you need to create an account. It only takes a moment!',
+              'auth.create_account_subtitle'.tr(),
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
@@ -256,7 +256,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Continue with Google',
+                      'auth.sign_in_google'.tr(),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -291,9 +291,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     children: [
                       Icon(Icons.apple, size: 24, color: Colors.white),
                       const SizedBox(width: 12),
-                      const Text(
-                        'Continue with Apple',
-                        style: TextStyle(
+                      Text(
+                        'auth.sign_in_apple'.tr(),
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -311,7 +311,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(
-                'Maybe Later',
+                'app.maybe_later'.tr(),
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey[600],
@@ -333,7 +333,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Account created successfully! You can now add friends.'),
+          content: Text('auth.account_created_success'.tr()),
           backgroundColor: Colors.green.shade600,
         ),
       );
@@ -345,7 +345,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error creating account: ${error.toString()}'),
+          content: Text('${'auth.error_creating_account'.tr()}: ${error.toString()}'),
           backgroundColor: Colors.red.shade600,
         ),
       );
@@ -361,7 +361,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Account created successfully! You can now add friends.'),
+          content: Text('auth.account_created_success'.tr()),
           backgroundColor: Colors.green.shade600,
         ),
       );
@@ -373,7 +373,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error creating account: ${error.toString()}'),
+          content: Text('${'auth.error_creating_account'.tr()}: ${error.toString()}'),
           backgroundColor: Colors.red.shade600,
         ),
       );
@@ -659,7 +659,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Friends',
+              'friends.status_friends'.tr(),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: AppTheme.primary,
@@ -684,7 +684,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 ),
               )
             : const Icon(Icons.close, size: 18),
-        label: Text(_isSendingRequest ? 'Cancelling...' : 'friends.cancel_request'.tr()),
+        label: Text(_isSendingRequest ? 'app.cancelling'.tr() : 'friends.cancel_request'.tr()),
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.orange.shade700,
           side: BorderSide(color: Colors.orange.shade300),
@@ -702,13 +702,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         onPressed: () {
           // Navigate to friends screen where they can accept/decline
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Check your friend requests in the Friends tab'),
+            SnackBar(
+              content: Text('profile.check_friend_requests'.tr()),
             ),
           );
         },
         icon: const Icon(Icons.person_add, size: 18),
-        label: const Text('Respond to Request'),
+        label: Text('profile.respond_to_request'.tr()),
         style: FilledButton.styleFrom(
           backgroundColor: AppTheme.primaryAccent,
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
@@ -732,7 +732,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               ),
             )
           : const Icon(Icons.person_add, size: 18),
-      label: Text(_isSendingRequest ? 'Sending...' : 'friends.add_friend'.tr()),
+      label: Text(_isSendingRequest ? 'app.sending'.tr() : 'friends.add_friend'.tr()),
       style: FilledButton.styleFrom(
         backgroundColor: AppTheme.primaryAccent,
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),

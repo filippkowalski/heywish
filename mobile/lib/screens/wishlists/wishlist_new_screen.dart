@@ -98,7 +98,7 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
         );
 
         if (coverImageUrl == null && mounted) {
-          _showErrorMessage('Failed to upload cover image');
+          _showErrorMessage('wishlist.failed_upload_cover'.tr());
           setState(() {
             _isLoading = false;
           });
@@ -120,7 +120,7 @@ class _WishlistNewScreenState extends State<WishlistNewScreen> {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('List created successfully!'),
+            content: Text('wishlist.list_created'.tr()),
             backgroundColor: AppTheme.primaryAccent,
             duration: const Duration(seconds: 2),
           ),

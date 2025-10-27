@@ -16,7 +16,10 @@
     "next": "Next",
     "skip": "Skip",
     "done": "Done",
-    "retry": "Retry"
+    "retry": "Retry",
+    "maybe_later": "Maybe Later",
+    "cancelling": "Cancelling...",
+    "sending": "Sending..."
   },
   "about": {
     "app_version": "App Version",
@@ -27,11 +30,6 @@
     "support": "Support",
     "contact_us": "Contact Us",
     "website": "Website"
-  },
-  "errors": {
-    "not_found": "Resource not found",
-    "network_error": "Network error",
-    "unknown_error": "An unknown error occurred"
   },
   "auth": {
     "sign_in": "Sign In",
@@ -67,7 +65,11 @@
     "merge_accounts_message": "You have an existing account with this email. Would you like to merge your current wishlists and data with that account?",
     "merge_accounts_confirm": "Merge Accounts",
     "merge_accounts_cancel": "Cancel",
-    "merging_accounts": "Merging your accounts..."
+    "merging_accounts": "Merging your accounts...",
+    "create_account_title": "Create an Account",
+    "create_account_subtitle": "To add friends and unlock all features, you need to create an account. It only takes a moment!",
+    "account_created_success": "Account created successfully! You can now add friends.",
+    "error_creating_account": "Error creating account"
   },
   "onboarding": {
     "get_started": "Get Started",
@@ -212,7 +214,6 @@
     "view_wishlists": "View Wishlists",
     "respond": "Respond",
     "add": "Add",
-    "request_sent": "Friend request sent",
     "request_error": "Error sending friend request: {error}",
     "status_friends": "Friends",
     "status_pending": "Pending"
@@ -532,11 +533,14 @@
     "timeout": "Connection timeout. Please check your internet connection.",
     "cancelled": "Request cancelled.",
     "unknown": "An unexpected error occurred.",
+    "unknown_error": "An unknown error occurred",
     "validation_required": "This field is required",
     "validation_email": "Please enter a valid email address",
     "validation_password_min": "Password must be at least 6 characters",
     "validation_url": "Please enter a valid URL",
-    "validation_price": "Please enter a valid price"
+    "validation_price": "Please enter a valid price",
+    "error_prefix": "Error",
+    "something_went_wrong": "Something went wrong. Please try again."
   },
   "username_validation": {
     "min_length": "Username must be at least 3 characters",
@@ -546,7 +550,9 @@
     "no_period_edges": "Username cannot start or end with a period",
     "no_consecutive_periods": "Username cannot have consecutive periods",
     "available": "✓ Username is available",
-    "checking": "Checking availability..."
+    "checking": "Checking availability...",
+    "taken": "Username taken",
+    "check_error": "Unable to check availability"
   },
   "success": {
     "copied_to_clipboard": "Copied to clipboard",

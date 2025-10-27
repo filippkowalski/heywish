@@ -128,8 +128,8 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
           _isNavigating = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Something went wrong. Please try again.'),
+          SnackBar(
+            content: Text('errors.something_went_wrong'.tr()),
           ),
         );
       }

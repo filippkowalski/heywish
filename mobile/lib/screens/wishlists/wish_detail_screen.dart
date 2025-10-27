@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../models/wish.dart';
 import '../../services/wishlist_service.dart';
 import '../../theme/app_theme.dart';
@@ -97,8 +98,8 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          child: const Center(
-            child: Text('Item not found'),
+          child: Center(
+            child: Text('wish.item_not_found'.tr()),
           ),
         ),
       );
@@ -154,13 +155,13 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                       }
                     },
                     itemBuilder: (context) => [
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'edit',
                         child: Row(
                           children: [
-                            Icon(Icons.edit_outlined, size: 20),
-                            SizedBox(width: 12),
-                            Text('Edit'),
+                            const Icon(Icons.edit_outlined, size: 20),
+                            const SizedBox(width: 12),
+                            Text('app.edit'.tr()),
                           ],
                         ),
                       ),
@@ -422,7 +423,7 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Could not open URL: $e')),
+            SnackBar(content: Text('wish.could_not_open_url'.tr())),
           );
         }
       }
@@ -465,8 +466,8 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
       if (!success && mounted) {
         // Show error if deletion failed (the wish will be restored by the service)
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to delete item'),
+          SnackBar(
+            content: Text('wish.failed_to_delete'.tr()),
             backgroundColor: Colors.red,
           ),
         );

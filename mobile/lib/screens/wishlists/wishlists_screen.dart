@@ -64,7 +64,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not open profile page'),
+            content: Text('wish.could_not_open_url'.tr()),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -722,11 +722,11 @@ class _WishCardState extends State<_WishCard> {
                 // Show success message
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Item deleted successfully'),
+                    SnackBar(
+                      content: Text('wish.item_deleted'.tr()),
                       backgroundColor: Colors.green,
                       behavior: SnackBarBehavior.floating,
-                      duration: Duration(seconds: 2),
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                 }

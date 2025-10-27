@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../theme/app_theme.dart';
 import '../navigation/native_page_route.dart';
 
@@ -73,7 +74,7 @@ class _ConfirmationBottomSheetState extends State<ConfirmationBottomSheet> {
           // Show error message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error: ${e.toString()}'),
+              content: Text('${'errors.error_prefix'.tr()}: ${e.toString()}'),
               backgroundColor: AppTheme.error,
             ),
           );
