@@ -1,18 +1,19 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../services/auth_service.dart';
 import '../../services/wishlist_service.dart';
+import '../../services/screenshot_detection_service.dart';
 import '../../models/wishlist.dart';
 import '../../models/wish.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/cached_image.dart';
-import '../../common/widgets/skeleton_loading.dart';
 import '../../common/widgets/native_refresh_indicator.dart';
 import '../../common/utils/wish_category_detector.dart';
 import 'add_wish_screen.dart';
@@ -32,13 +33,43 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
   bool _isShareBannerDismissed = false;
   static const String _shareBannerDismissedKey = 'share_banner_dismissed';
 
+  // Screenshot detection
+  bool _showUrlInHeader = false;
+  StreamSubscription<void>? _screenshotSubscription;
+
   @override
   void initState() {
     super.initState();
     _loadShareBannerState();
+    _setupScreenshotDetection();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadWishlists();
     });
+  }
+
+  void _setupScreenshotDetection() {
+    // Listen to screenshot events - works better on iOS
+    _screenshotSubscription = ScreenshotDetectionService.instance.screenshotStream.listen(
+      (_) {
+        // Show URL immediately (synchronous setState)
+        if (!mounted) return;
+        setState(() => _showUrlInHeader = true);
+
+        // Revert back after 400ms
+        Future.delayed(const Duration(milliseconds: 400), () {
+          if (!mounted) return;
+          setState(() => _showUrlInHeader = false);
+        });
+      },
+      onError: (_) {}, // Ignore errors
+      cancelOnError: false,
+    );
+  }
+
+  @override
+  void dispose() {
+    _screenshotSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadShareBannerState() async {
@@ -84,33 +115,6 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
         _loadWishlists();
       });
     }
-  }
-
-  Future<void> _onReorder(int oldIndex, int newIndex, List<Wish> filteredWishes) async {
-    if (oldIndex == newIndex || _selectedWishlistFilter == null) return;
-
-    // Adjust newIndex if moving down the list
-    if (newIndex > oldIndex) {
-      newIndex -= 1;
-    }
-
-    // Get the wishes list
-    final wishes = List<Wish>.from(filteredWishes);
-
-    // Reorder locally for immediate feedback
-    final movedWish = wishes.removeAt(oldIndex);
-    wishes.insert(newIndex, movedWish);
-
-    // Update positions based on new order
-    final positions = wishes.asMap().entries.map((entry) {
-      return {'id': entry.value.id, 'position': entry.key};
-    }).toList();
-
-    // Update on backend
-    await context.read<WishlistService>().updateWishPositions(
-      _selectedWishlistFilter!,
-      positions,
-    );
   }
 
   Future<void> _loadWishlists() async {
@@ -220,7 +224,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
                   const SizedBox(height: 4),
                   if (username != null)
                     Text(
-                      'home.subtitle'.tr(),
+                      _showUrlInHeader ? 'jinnie.co/$username' : 'home.subtitle'.tr(),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppTheme.primary.withValues(alpha: 0.7),
                       ),
@@ -260,12 +264,58 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
 
 
   Widget _buildLoadingShimmer() {
-    return ListView.separated(
-      padding: const EdgeInsets.all(20),
-      itemCount: 4,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
+    return MasonryGridView.count(
+      padding: const EdgeInsets.all(16.0),
+      crossAxisCount: 2,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      itemCount: 6,
       itemBuilder: (context, index) {
-        return const SkeletonWishlistCard();
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image skeleton
+              Container(
+                height: index.isEven ? 180 : 220,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+              ),
+              // Content skeleton
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 16,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      height: 16,
+                      width: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
       },
     );
   }
@@ -349,51 +399,29 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
         if (wishlists.isNotEmpty || unsortedWishes.isNotEmpty)
           _buildWishlistTabs(wishlists, unsortedWishes.length),
 
-        // Wishes list
+        // Wishes masonry grid
         Expanded(
           child: filteredWishes.isEmpty
               ? _buildEmptyWishesState()
-              : _selectedWishlistFilter != null
-                  // Reorderable list for specific wishlists
-                  ? ReorderableListView.builder(
-                      padding: const EdgeInsets.all(20.0),
-                      itemCount: filteredWishes.length,
-                      onReorder: (oldIndex, newIndex) => _onReorder(oldIndex, newIndex, filteredWishes),
-                      itemBuilder: (context, index) {
-                        final wish = filteredWishes[index];
-                        Wishlist? wishlist;
-                        if (wish.wishlistId != null) {
-                          try {
-                            wishlist = wishlists.firstWhere((w) => w.id == wish.wishlistId);
-                          } catch (e) {
-                            wishlist = null;
-                          }
-                        }
-                        return Padding(
-                          key: ValueKey(wish.id),
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _WishCard(wish: wish, wishlist: wishlist),
-                        );
-                      },
-                    )
-                  // Regular list for "All" view
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(20.0),
-                      itemCount: filteredWishes.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final wish = filteredWishes[index];
-                        Wishlist? wishlist;
-                        if (wish.wishlistId != null) {
-                          try {
-                            wishlist = wishlists.firstWhere((w) => w.id == wish.wishlistId);
-                          } catch (e) {
-                            wishlist = null;
-                          }
-                        }
-                        return _WishCard(wish: wish, wishlist: wishlist);
-                      },
-                    ),
+              : MasonryGridView.count(
+                  padding: const EdgeInsets.all(16.0),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  itemCount: filteredWishes.length,
+                  itemBuilder: (context, index) {
+                    final wish = filteredWishes[index];
+                    Wishlist? wishlist;
+                    if (wish.wishlistId != null) {
+                      try {
+                        wishlist = wishlists.firstWhere((w) => w.id == wish.wishlistId);
+                      } catch (e) {
+                        wishlist = null;
+                      }
+                    }
+                    return _MasonryWishCard(wish: wish, wishlist: wishlist);
+                  },
+                ),
         ),
       ],
     );
@@ -460,21 +488,21 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primary : Colors.white,
+          color: isSelected ? Colors.grey.shade100 : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppTheme.primary : Colors.grey.shade200,
-            width: isSelected ? 2 : 1,
+            color: isSelected
+                ? Colors.black.withValues(alpha: 0.2)
+                : Colors.black.withValues(alpha: 0.12),
+            width: 1,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppTheme.primary.withValues(alpha: 0.15),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ] : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -482,7 +510,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : AppTheme.primary,
+                color: isSelected ? AppTheme.primary : Colors.grey.shade600,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 fontSize: 14,
                 letterSpacing: -0.1,
@@ -494,14 +522,14 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? Colors.white.withValues(alpha: 0.25)
-                      : AppTheme.primary.withValues(alpha: 0.1),
+                      ? AppTheme.primary.withValues(alpha: 0.15)
+                      : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   count.toString(),
                   style: TextStyle(
-                    color: isSelected ? Colors.white : AppTheme.primary,
+                    color: isSelected ? AppTheme.primary : Colors.grey.shade700,
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                   ),
@@ -661,187 +689,193 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
 
 }
 
-class _WishCard extends StatefulWidget {
+// Masonry Grid Card Widget
+class _MasonryWishCard extends StatelessWidget {
   final Wish wish;
   final Wishlist? wishlist;
 
-  const _WishCard({required this.wish, this.wishlist});
+  const _MasonryWishCard({required this.wish, this.wishlist});
 
-  @override
-  State<_WishCard> createState() => _WishCardState();
-}
+  String _formatPrice(double price, String? currency) {
+    // Currency symbol mapping
+    final currencySymbols = {
+      'USD': '\$',
+      'EUR': '€',
+      'GBP': '£',
+      'JPY': '¥',
+      'PLN': 'zł',
+      'CAD': 'CA\$',
+      'AUD': 'A\$',
+    };
 
-class _WishCardState extends State<_WishCard> {
-  bool _isPressed = false;
+    final symbol = currencySymbols[currency] ?? currency ?? '\$';
+    final formattedPrice = price.toStringAsFixed(0);
+
+    // For currencies without symbols, show currency code
+    if (!currencySymbols.containsKey(currency)) {
+      return '$currency $formattedPrice';
+    }
+
+    return '$symbol$formattedPrice';
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      height: 120,
-      decoration: BoxDecoration(
-        color: _isPressed ? Colors.grey.shade50 : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _isPressed ? AppTheme.cardBorderActive : AppTheme.cardBorder,
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.cardShadow,
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTapDown: (_) => setState(() => _isPressed = true),
-          onTapUp: (_) => setState(() => _isPressed = false),
-          onTapCancel: () => setState(() => _isPressed = false),
-          onTap: () async {
-            // Show wish detail bottom sheet
-            final wishlistId = widget.wishlist?.id ?? 'unsorted';
-            final result = await WishDetailScreen.show(
-              context,
-              wishId: widget.wish.id,
-              wishlistId: wishlistId,
-            );
+    return GestureDetector(
+      onTap: () async {
+        // Show wish detail bottom sheet
+        final wishlistId = wishlist?.id ?? 'unsorted';
+        final result = await WishDetailScreen.show(
+          context,
+          wishId: wish.id,
+          wishlistId: wishlistId,
+        );
 
-            // Refresh if item was deleted
-            if (result == true && mounted) {
-              // Small delay to ensure backend has processed the deletion
-              await Future.delayed(const Duration(milliseconds: 150));
+        // Refresh if item was deleted
+        if (result == true && context.mounted) {
+          // Small delay to ensure backend has processed the deletion
+          await Future.delayed(const Duration(milliseconds: 150));
 
-              if (mounted) {
-                // Trigger refresh via WishlistService
-                await context.read<WishlistService>().fetchWishlists();
+          if (context.mounted) {
+            // Trigger refresh via WishlistService
+            await context.read<WishlistService>().fetchWishlists();
 
-                // Show success message
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('wish.item_deleted'.tr()),
-                      backgroundColor: Colors.green,
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                }
-              }
+            // Show success message
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('wish.item_deleted'.tr()),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
             }
-          },
-          child: Row(
-            children: [
-              // Item image - larger and touching edges
-              SizedBox(
-                width: 120,
-                height: 120,
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    bottomLeft: Radius.circular(12),
-                  ),
-                  child: widget.wish.imageUrl != null
-                      ? AspectRatio(
-                          aspectRatio: 1.0,
-                          child: CachedImageWidget(
-                            imageUrl: widget.wish.imageUrl!,
+          }
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.black.withValues(alpha: 0.15),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Image section
+            Stack(
+              children: [
+                AspectRatio(
+                  aspectRatio: 1.0,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    child: wish.imageUrl != null
+                        ? CachedImageWidget(
+                            imageUrl: wish.imageUrl!,
                             fit: BoxFit.cover,
+                            width: double.infinity,
                             errorWidget: Container(
                               color: Colors.grey.shade100,
+                              child: Center(
+                                child: Icon(
+                                  WishCategoryDetector.getIconFromTitle(wish.title),
+                                  size: 48,
+                                  color: WishCategoryDetector.getColorFromTitle(wish.title),
+                                ),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                            ),
+                            child: Center(
                               child: Icon(
-                                WishCategoryDetector.getIconFromTitle(widget.wish.title),
-                                size: 40,
-                                color: WishCategoryDetector.getColorFromTitle(widget.wish.title),
+                                WishCategoryDetector.getIconFromTitle(wish.title),
+                                size: 48,
+                                color: WishCategoryDetector.getColorFromTitle(wish.title),
                               ),
                             ),
                           ),
-                        )
-                      : Container(
-                          color: Colors.grey.shade100,
-                          child: Icon(
-                            WishCategoryDetector.getIconFromTitle(widget.wish.title),
-                            size: 40,
-                            color: WishCategoryDetector.getColorFromTitle(widget.wish.title),
-                          ),
-                        ),
-                ),
-              ),
-
-              // Content
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        widget.wish.title,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        widget.wishlist?.name ?? 'Unsorted',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey.shade600,
-                            ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (widget.wish.price != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          '${widget.wish.currency ?? 'USD'} ${widget.wish.price!.toStringAsFixed(2)}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.primary,
-                              ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
                   ),
                 ),
-              ),
-
-              // Reserved indicator or arrow
-              Padding(
-                padding: const EdgeInsets.only(right: 12.0),
-                child: widget.wish.isReserved
-                    ? Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.success.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'Reserved',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: AppTheme.success,
-                                fontWeight: FontWeight.w500,
-                              ),
-                        ),
-                      )
-                    : Icon(
-                        Icons.arrow_forward_ios,
-                        size: 14,
-                        color: AppTheme.arrowIndicator,
+                // Reserved star indicator
+                if (wish.isReserved)
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
+                      child: Icon(
+                        Icons.star,
+                        color: AppTheme.primaryAccent,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+
+            // Content section
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Title (max 2 lines)
+                  Text(
+                    wish.title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      height: 1.3,
+                      color: Colors.black,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+
+                  // Price (only add spacing if price exists)
+                  if (wish.price != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      _formatPrice(wish.price!, wish.currency),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -864,11 +898,6 @@ class _ShareBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Construct share URL (without https://)
-    final shareUrl = wishlistName != null
-        ? 'jinnie.co/$username/${wishlistName!.toLowerCase().replaceAll(' ', '-')}'
-        : 'jinnie.co/$username';
-
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
       padding: const EdgeInsets.all(16),

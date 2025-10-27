@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_screenshot_detect/flutter_screenshot_detect.dart';
@@ -16,6 +17,12 @@ class ScreenshotDetectionService {
   ScreenshotController? _screenshotController;
   DateTime? _lastScreenshotTime;
 
+  // Stream controller for screenshot events
+  final StreamController<void> _screenshotStreamController = StreamController<void>.broadcast();
+
+  /// Stream of screenshot events
+  Stream<void> get screenshotStream => _screenshotStreamController.stream;
+
   /// Initialize screenshot detection
   Future<void> initialize({ScreenshotController? screenshotController}) async {
     if (_isListening) {
@@ -27,9 +34,15 @@ class ScreenshotDetectionService {
 
     try {
       print('🔄 Initializing screenshot detection...');
-      _detector.startListening((event) async {
+      _detector.startListening((event) {
         print('📸 SCREENSHOT DETECTED: ${event.toString()}');
-        await _handleScreenshot(event);
+
+        // Emit event IMMEDIATELY in the callback (synchronous, no async/await)
+        // This is the absolute fastest we can notify listeners
+        _screenshotStreamController.add(null);
+
+        // Process screenshot in background without blocking
+        _handleScreenshot(event);
       });
 
       _isListening = true;
@@ -102,6 +115,7 @@ class ScreenshotDetectionService {
   /// Stop screenshot detection
   void dispose() {
     _detector.dispose();
+    _screenshotStreamController.close();
     _isListening = false;
     print('Screenshot detection stopped');
   }
