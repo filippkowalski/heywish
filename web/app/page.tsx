@@ -2,11 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Sparkles, Apple, PlaySquare, Heart, Users, Gift, Loader2 } from "lucide-react";
+import { Sparkles, Heart, Users, Gift } from "lucide-react";
 
 // Wish images - stored locally for reliability
 const wishImages = [
@@ -42,53 +39,6 @@ const wishImages = [
 ];
 
 export default function HomePage() {
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
-  const [errorMessage, setErrorMessage] = useState("");
-
-  const handleWaitlistSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!email || !email.includes("@")) {
-      setErrorMessage("Please enter a valid email address");
-      setSubmitStatus("error");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setSubmitStatus("idle");
-    setErrorMessage("");
-
-    try {
-      const message = `🎉 New Waitlist Signup!\n\nEmail: ${email}\nSource: Landing Page\nTimestamp: ${new Date().toISOString()}`;
-
-      const response = await fetch("https://openai-rewrite.onrender.com/telegram/send-message", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message,
-          channel: "general",
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit");
-      }
-
-      setSubmitStatus("success");
-      setEmail("");
-    } catch (error) {
-      console.error("Error submitting to waitlist:", error);
-      setSubmitStatus("error");
-      setErrorMessage("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <main className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -222,81 +172,33 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* CTA Buttons - Launching End of October */}
+            {/* CTA Buttons */}
             <div className="flex flex-col items-center gap-3 md:gap-4 pt-2 md:pt-4 animate-fade-in-up animation-delay-200">
               <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-                <div className="relative">
-                  <a
-                    href="https://apps.apple.com/app/id6754384455"
-                    className="block opacity-50 pointer-events-none"
-                    aria-disabled="true"
-                  >
-                    <Image
-                      src="/badges/app-store-badge.svg"
-                      alt="Download on the App Store"
-                      width={160}
-                      height={53}
-                      className="h-[53px] w-auto"
-                    />
-                  </a>
-                  <Badge className="absolute -top-2 -right-2 text-[10px] bg-primary text-primary-foreground whitespace-nowrap">End of Oct</Badge>
-                </div>
-                <div className="relative">
-                  <a
-                    href="https://play.google.com/store/apps/details?id=com.wishlists.gifts"
-                    className="block opacity-50 pointer-events-none"
-                    aria-disabled="true"
-                  >
-                    <Image
-                      src="/badges/google-play-badge.png"
-                      alt="Get it on Google Play"
-                      width={180}
-                      height={53}
-                      className="h-[53px] w-auto"
-                    />
-                  </a>
-                  <Badge className="absolute -top-2 -right-2 text-[10px] bg-primary text-primary-foreground whitespace-nowrap">End of Oct</Badge>
-                </div>
-              </div>
-
-              {/* Waitlist Form */}
-              <div className="w-full max-w-md pt-6 space-y-3">
-                <p className="text-sm font-medium text-foreground">Launching end of October! Join the waitlist to be notified:</p>
-                <form onSubmit={handleWaitlistSubmit} className="flex flex-col gap-2 sm:flex-row">
-                  <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={isSubmitting}
-                    className="flex-1 h-11"
-                    required
+                <a
+                  href="https://apps.apple.com/app/id6754384455"
+                  className="block transition-transform hover:scale-105"
+                >
+                  <Image
+                    src="/badges/app-store-badge.svg"
+                    alt="Download on the App Store"
+                    width={160}
+                    height={53}
+                    className="h-[53px] w-[160px]"
                   />
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="h-11 px-6"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Joining...
-                      </>
-                    ) : (
-                      "Join Waitlist"
-                    )}
-                  </Button>
-                </form>
-                {submitStatus === "success" && (
-                  <p className="text-sm text-emerald-600 font-medium">
-                    ✓ Thanks! We&apos;ll notify you when we launch.
-                  </p>
-                )}
-                {submitStatus === "error" && (
-                  <p className="text-sm text-destructive font-medium">
-                    {errorMessage || "Something went wrong. Please try again."}
-                  </p>
-                )}
+                </a>
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.wishlists.gifts"
+                  className="block transition-transform hover:scale-105"
+                >
+                  <Image
+                    src="/badges/google-play-badge.png"
+                    alt="Get it on Google Play"
+                    width={160}
+                    height={53}
+                    className="h-[53px] w-[160px]"
+                  />
+                </a>
               </div>
             </div>
           </div>
