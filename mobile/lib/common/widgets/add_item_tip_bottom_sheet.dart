@@ -62,20 +62,14 @@ class AddItemTipBottomSheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 24),
 
-                      // Placeholder for future image/illustration
-                      Container(
-                        width: double.infinity,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryAccent.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            Icons.ios_share,
-                            size: 64,
-                            color: AppTheme.primaryAccent.withValues(alpha: 0.5),
-                          ),
+                      // Tip illustration
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.asset(
+                          'assets/images/tip.png',
+                          width: double.infinity,
+                          height: 200,
+                          fit: BoxFit.contain,
                         ),
                       ),
                       const SizedBox(height: 32),

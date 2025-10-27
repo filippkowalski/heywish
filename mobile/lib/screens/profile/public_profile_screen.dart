@@ -428,12 +428,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: AppTheme.primary,
-          ),
-          onPressed: () => context.pop(),
+        iconTheme: IconThemeData(
+          color: AppTheme.primary,
         ),
       ),
       body: _isLoading

@@ -6,7 +6,6 @@
 
     <!-- Photo/Media permissions for Android 13+ (API level 33+) -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
 
     <!-- Contact book permission for privacy-first friend discovery -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />

@@ -384,6 +384,11 @@ class AuthService extends ChangeNotifier {
       debugPrint('✅ AuthService: Account linked successfully with Google');
       debugPrint('✅ Firebase UID preserved: ${currentUser.uid}');
 
+      // Reload user to get fresh data and update isAnonymous flag
+      await currentUser.reload();
+      _firebaseUser = _firebaseAuth.currentUser;
+      debugPrint('🔄 AuthService: User reloaded, isAnonymous: ${_firebaseUser?.isAnonymous}');
+
       // Sync with backend to update sign_up_method and full_name
       await syncUserWithBackend(signUpMethod: 'google', sendFullName: true);
     } catch (e) {
@@ -438,6 +443,11 @@ class AuthService extends ChangeNotifier {
 
       debugPrint('✅ AuthService: Account linked successfully with Apple');
       debugPrint('✅ Firebase UID preserved: ${currentUser.uid}');
+
+      // Reload user to get fresh data and update isAnonymous flag
+      await currentUser.reload();
+      _firebaseUser = _firebaseAuth.currentUser;
+      debugPrint('🔄 AuthService: User reloaded, isAnonymous: ${_firebaseUser?.isAnonymous}');
 
       // Sync with backend to update sign_up_method and full_name
       await syncUserWithBackend(signUpMethod: 'apple', sendFullName: true);
