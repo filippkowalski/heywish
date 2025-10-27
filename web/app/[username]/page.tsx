@@ -45,27 +45,54 @@ export async function generateMetadata({
     };
   }
 
-  const displayName = `@${profile.user.username}`;
+  const displayName = profile.user.fullName || `@${profile.user.username}`;
+  const usernameDisplay = `@${profile.user.username}`;
+
+  // Enhanced SEO-friendly title and description
+  const title = `${usernameDisplay} • Jinnie - Wishlist`;
   const description = profile.user.bio
-    ? profile.user.bio
-    : `Browse public wishlists shared by ${displayName} on Jinnie.co.`;
-  const canonicalPath = `/${profile.user.username}`;
+    ? `${profile.user.bio} | Browse ${displayName}'s wishlists on Jinnie.co - a modern wishlist platform for sharing gift ideas and making gift-giving effortless.`
+    : `Browse ${displayName}'s wishlists on Jinnie.co - discover their favorite items, gift ideas, and more. Make gift-giving effortless with Jinnie's modern wishlist platform.`;
+
+  const canonicalPath = `/${username}`;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jinnie.co";
+
+  // Prepare OG image - use user avatar or fallback to default
+  const ogImages = profile.user.avatarUrl
+    ? [
+        {
+          url: profile.user.avatarUrl,
+          width: 400,
+          height: 400,
+          alt: `${displayName}'s profile picture`,
+        },
+      ]
+    : [
+        {
+          url: `${siteUrl}/og-image.png`,
+          width: 1200,
+          height: 630,
+          alt: "Jinnie - Your Modern Wishlist Platform",
+        },
+      ];
 
   return {
-    title: `${displayName} • Jinnie.co`,
+    title,
     description,
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://jinnie.co"),
+    metadataBase: new URL(siteUrl),
     openGraph: {
       url: canonicalPath,
-      title: `${displayName} • Jinnie.co`,
+      title,
       description,
       type: "profile",
       siteName: "Jinnie.co",
+      images: ogImages,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${displayName} • Jinnie.co`,
+      title,
       description,
+      images: ogImages.map(img => img.url),
     },
     alternates: {
       canonical: canonicalPath,
@@ -155,11 +182,11 @@ export default async function PublicProfilePage({
         <div className="container mx-auto px-4 py-6 sm:py-8 md:py-10 md:px-6">
           {/* Profile Header */}
           <div className="flex items-start gap-3 sm:gap-4">
-            <Avatar className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl border border-border flex-shrink-0">
+            <Avatar className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl border border-border flex-shrink-0">
               {user.avatarUrl ? (
                 <AvatarImage src={user.avatarUrl} alt={`@${user.username}`} />
               ) : null}
-              <AvatarFallback className="rounded-xl text-base sm:text-lg font-semibold">
+              <AvatarFallback className="rounded-xl text-lg sm:text-xl font-semibold">
                 {user.username.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>

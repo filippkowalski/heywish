@@ -60,7 +60,7 @@ function WishPreviewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
       tabIndex={0}
       onClick={onSelect}
       onKeyDown={handleKeyDown}
-      className="group/card h-full flex flex-col gap-0 overflow-hidden border border-border/40 bg-card p-0 shadow-sm transition-all hover:border-border hover:shadow-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      className="group/card flex flex-col gap-0 overflow-hidden border border-border/40 bg-card p-0 shadow-sm transition-all hover:border-border hover:shadow-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 mb-3 break-inside-avoid"
     >
         {showImage ? (
           <div className="relative w-full aspect-square bg-muted">
@@ -315,7 +315,7 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
         </div>
 
         {viewMode === "grid" ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="columns-2 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-3">
             {filteredWishes.map(({ wish, wishlist }) => (
               <WishPreviewCard
                 key={wish.id}
