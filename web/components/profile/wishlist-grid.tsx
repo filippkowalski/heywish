@@ -296,9 +296,9 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
       />
 
       <div className="container mx-auto px-4 py-6 md:px-6">
-        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <div className="flex items-center justify-between gap-2 mb-4">
           {/* View Toggle */}
-          <div className="flex items-center gap-1 border border-border rounded-lg p-1">
+          <div className="flex items-center gap-1 border border-border rounded-lg p-1 flex-shrink-0">
             <button
               onClick={() => setViewMode("grid")}
               className={`p-2 rounded transition-colors ${
@@ -323,25 +323,28 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
             </button>
           </div>
 
-          {/* Total Value Display */}
-          {Object.keys(totalValues).length > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg border border-black/5">
-              <span className="text-xs font-medium text-muted-foreground">Total:</span>
-              <div className="flex items-center gap-2">
-                {Object.entries(totalValues).map(([currency, total]) => (
-                  <span key={currency} className="text-sm font-semibold text-foreground">
-                    {formatPrice(total, currency)}
-                  </span>
-                ))}
+          {/* Right side: Total Value + Share Button */}
+          <div className="flex items-center gap-2 min-w-0 flex-shrink">
+            {/* Total Value Display */}
+            {Object.keys(totalValues).length > 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-lg border border-black/5 min-w-0">
+                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Total:</span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {Object.entries(totalValues).map(([currency, total]) => (
+                    <span key={currency} className="text-sm font-semibold text-foreground truncate">
+                      {formatPrice(total, currency)}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <ShareButton
-            path={sharePath}
-            label={selectedFilter ? "Copy wishlist link" : `jinnie.co/${username}`}
-            className="flex-shrink-0"
-          />
+            <ShareButton
+              path={sharePath}
+              label={selectedFilter ? "Copy wishlist link" : `jinnie.co/${username}`}
+              className="flex-shrink-0"
+            />
+          </div>
         </div>
 
         {viewMode === "grid" ? (
