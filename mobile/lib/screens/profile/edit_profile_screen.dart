@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'dart:io';
 import 'dart:async';
 import '../../services/auth_service.dart';
@@ -181,6 +182,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  Future<void> _cropImage(String imagePath) async {
+    final theme = Theme.of(context);
+    final croppedFile = await ImageCropper().cropImage(
+      sourcePath: imagePath,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'profile.crop_avatar'.tr(),
+          toolbarColor: theme.colorScheme.surface,
+          toolbarWidgetColor: theme.colorScheme.onSurface,
+          backgroundColor: theme.colorScheme.surface,
+          activeControlsWidgetColor: AppTheme.primaryAccent,
+          lockAspectRatio: true,
+          hideBottomControls: false,
+          showCropGrid: true,
+        ),
+        IOSUiSettings(
+          title: 'profile.crop_avatar'.tr(),
+          aspectRatioLockEnabled: true,
+          resetAspectRatioEnabled: false,
+          aspectRatioPickerButtonHidden: true,
+          rotateButtonsHidden: false,
+          rotateClockwiseButtonHidden: true,
+        ),
+      ],
+    );
+
+    if (croppedFile != null) {
+      setState(() {
+        _selectedImage = File(croppedFile.path);
+      });
+    }
+  }
+
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
 
@@ -202,14 +237,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Navigator.pop(context);
                   final XFile? image = await picker.pickImage(
                     source: ImageSource.camera,
-                    maxWidth: 512,
-                    maxHeight: 512,
                     imageQuality: 85,
                   );
                   if (image != null) {
-                    setState(() {
-                      _selectedImage = File(image.path);
-                    });
+                    await _cropImage(image.path);
                   }
                 },
               ),
@@ -220,14 +251,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Navigator.pop(context);
                   final XFile? image = await picker.pickImage(
                     source: ImageSource.gallery,
-                    maxWidth: 512,
-                    maxHeight: 512,
                     imageQuality: 85,
                   );
                   if (image != null) {
-                    setState(() {
-                      _selectedImage = File(image.path);
-                    });
+                    await _cropImage(image.path);
                   }
                 },
               ),

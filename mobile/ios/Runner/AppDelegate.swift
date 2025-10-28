@@ -9,8 +9,8 @@ import FirebaseMessaging
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Configure Firebase
-    FirebaseApp.configure()
+    // Firebase will be initialized by Flutter using firebase_options.dart
+    // DO NOT call FirebaseApp.configure() here to avoid double initialization
 
     // Register Flutter plugins
     GeneratedPluginRegistrant.register(with: self)

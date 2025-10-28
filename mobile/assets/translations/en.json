@@ -405,6 +405,7 @@
     "title": "Profile",
     "settings": "Settings",
     "account": "Account",
+    "crop_avatar": "Crop Avatar",
     "failed_to_upload_avatar": "Failed to upload avatar image",
     "failed_to_delete_wishlist": "Failed to delete wishlist",
     "check_friend_requests": "Check your friend requests in the Friends tab",

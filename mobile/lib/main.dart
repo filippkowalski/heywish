@@ -11,6 +11,7 @@ import 'package:quick_actions/quick_actions.dart';
 import 'dart:async';
 import 'dart:io';
 
+import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'services/auth_service.dart';
 import 'services/wishlist_service.dart';
@@ -59,8 +60,10 @@ void main() async {
     debugPrint('Warning: Could not load .env file: $e');
   }
 
-  // Initialize Firebase
-  await Firebase.initializeApp();
+  // Initialize Firebase with platform-specific options
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // Initialize FCM background handler
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
