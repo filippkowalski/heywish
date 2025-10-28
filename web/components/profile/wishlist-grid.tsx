@@ -63,7 +63,7 @@ function WishPreviewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
       className="group/card flex flex-col gap-0 overflow-hidden border border-black/10 bg-card p-0 transition-all hover:border-black/20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 mb-3 break-inside-avoid"
     >
         {showImage ? (
-          <div className="relative w-full bg-muted">
+          <div className="relative w-full bg-muted max-h-[400px] overflow-hidden">
             <Image
               src={coverImage!}
               alt={wish.title}
