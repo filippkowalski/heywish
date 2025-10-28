@@ -272,6 +272,21 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
     }
   }, [wishlists, selectedFilter]);
 
+  // Calculate total value by currency
+  const totalValues = useMemo(() => {
+    const totals: Record<string, number> = {};
+
+    filteredWishes.forEach(({ wish }) => {
+      if (wish.price != null && !isNaN(Number(wish.price))) {
+        const currency = wish.currency || 'USD';
+        const price = typeof wish.price === 'string' ? parseFloat(wish.price) : wish.price;
+        totals[currency] = (totals[currency] || 0) + price;
+      }
+    });
+
+    return totals;
+  }, [filteredWishes]);
+
   return (
     <>
       <WishlistFilter
@@ -281,7 +296,7 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
       />
 
       <div className="container mx-auto px-4 py-6 md:px-6">
-        <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
           {/* View Toggle */}
           <div className="flex items-center gap-1 border border-border rounded-lg p-1">
             <button
@@ -307,6 +322,20 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
               <List className="h-4 w-4" />
             </button>
           </div>
+
+          {/* Total Value Display */}
+          {Object.keys(totalValues).length > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg border border-black/5">
+              <span className="text-xs font-medium text-muted-foreground">Total:</span>
+              <div className="flex items-center gap-2">
+                {Object.entries(totalValues).map(([currency, total]) => (
+                  <span key={currency} className="text-sm font-semibold text-foreground">
+                    {formatPrice(total, currency)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <ShareButton
             path={sharePath}
