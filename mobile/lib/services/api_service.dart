@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'dart:io';
+import '../utils/user_agent.dart';
 
 class ApiService {
   late final Dio _dio;
@@ -28,15 +29,27 @@ class ApiService {
 
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
+        onRequest: (options, handler) async {
           if (_authToken != null) {
             options.headers['Authorization'] = 'Bearer $_authToken';
+          }
+
+          // Add User-Agent header with device info
+          try {
+            final userAgent = await UserAgentBuilder.getUserAgent();
+            options.headers['User-Agent'] = userAgent;
+          } catch (e) {
+            if (kDebugMode) {
+              debugPrint('⚠️ Failed to set User-Agent: $e');
+            }
+            // Fallback to basic User-Agent
+            options.headers['User-Agent'] = 'Jinnie/1.0.0';
           }
 
           // Only log in debug mode to prevent data leakage in production
           if (kDebugMode) {
             debugPrint(
-              '🚀 API REQUEST[${options.method}] => ${baseUrl}${options.path}',
+              '🚀 API REQUEST[${options.method}] => $baseUrl${options.path}',
             );
 
             // Log headers but mask sensitive data
