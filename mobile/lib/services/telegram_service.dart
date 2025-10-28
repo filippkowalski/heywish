@@ -44,7 +44,7 @@ $timestamp''';
         '$_baseUrl/telegram/send-message',
         data: {
           'message': message,
-          'channel': 'general',
+          'channel': 'jinnie',
         },
       );
 
@@ -87,7 +87,7 @@ ${deviceInfo['osVersion']}
         data: {
           'image': base64Image,
           'caption': caption,
-          'channel': 'general',
+          'channel': 'jinnie',
           'filename': 'jinnie_screenshot_${DateTime.now().millisecondsSinceEpoch}.png',
           'fallback': true,
         },
@@ -143,7 +143,7 @@ $timestamp''';
         '$_baseUrl/telegram/send-message',
         data: {
           'message': feedbackMessage,
-          'channel': 'general',
+          'channel': 'jinnie',
         },
       );
 
