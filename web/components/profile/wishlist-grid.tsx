@@ -60,7 +60,7 @@ function WishPreviewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
       tabIndex={0}
       onClick={onSelect}
       onKeyDown={handleKeyDown}
-      className="group/card flex flex-col gap-0 overflow-hidden border border-border/40 bg-card p-0 shadow-sm transition-all hover:border-border hover:shadow-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 mb-3 break-inside-avoid"
+      className="group/card flex flex-col gap-0 overflow-hidden border border-black/10 bg-card p-0 transition-all hover:border-black/20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 mb-3 break-inside-avoid"
     >
         {showImage ? (
           <div className="relative w-full bg-muted">
@@ -136,7 +136,7 @@ function WishListViewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
       tabIndex={0}
       onClick={onSelect}
       onKeyDown={handleKeyDown}
-      className="group/card mb-3 gap-0 overflow-hidden border border-border/40 bg-card p-0 shadow-sm transition-all hover:border-border hover:shadow-md cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      className="group/card mb-3 gap-0 overflow-hidden border border-black/10 bg-card p-0 transition-all hover:border-black/20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
     >
       <div className="flex gap-4 p-4">
         {showImage ? (
