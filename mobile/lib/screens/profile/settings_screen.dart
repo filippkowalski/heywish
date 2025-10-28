@@ -12,6 +12,7 @@ import '../../common/navigation/native_page_route.dart';
 import '../feedback/feedback_sheet_page.dart';
 import 'privacy_settings_screen.dart';
 import 'notifications_settings_screen.dart';
+import 'personalization_settings_screen.dart';
 import 'about_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -47,6 +48,14 @@ class SettingsScreen extends StatelessWidget {
                 'profile.settings'.tr().toUpperCase(),
                 [
                   _buildLanguageMenuItem(context),
+                  _buildMenuDivider(),
+                  _buildMenuItem(
+                    context,
+                    Icons.tune_outlined,
+                    'settings.personalization'.tr(),
+                    'settings.personalization_subtitle'.tr(),
+                    () => _navigateToPersonalizationSettings(context),
+                  ),
                   _buildMenuDivider(),
                   _buildMenuItem(
                     context,
@@ -493,6 +502,14 @@ class SettingsScreen extends StatelessWidget {
         child: const FeedbackSheetPage(
           clickSource: 'settings',
         ),
+      ),
+    );
+  }
+
+  void _navigateToPersonalizationSettings(BuildContext context) {
+    Navigator.of(context).push(
+      NativePageRoute(
+        child: const PersonalizationSettingsScreen(),
       ),
     );
   }

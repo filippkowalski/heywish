@@ -4,13 +4,7 @@
     <domain-config cleartextTrafficPermitted="false">
         <!-- Only allow HTTPS for API endpoints -->
         <domain includeSubdomains="true">openai-rewrite.onrender.com</domain>
-        
-        <!-- Certificate pinning for enhanced security -->
-        <pin-set expiration="2025-12-31">
-            <!-- Add actual certificate pins when available -->
-            <!-- <pin digest="SHA-256">AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</pin> -->
-        </pin-set>
-        
+
         <!-- Trust only system certificate authorities -->
         <trust-anchors>
             <certificates src="system"/>

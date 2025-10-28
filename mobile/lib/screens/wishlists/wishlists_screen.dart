@@ -7,9 +7,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:intl/intl.dart' as intl;
 import '../../services/auth_service.dart';
 import '../../services/wishlist_service.dart';
 import '../../services/screenshot_detection_service.dart';
+import '../../services/preferences_service.dart';
 import '../../models/wishlist.dart';
 import '../../models/wish.dart';
 import '../../theme/app_theme.dart';
@@ -121,14 +123,14 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     print('🔄 WishlistsScreen: Loading wishlists...');
     final wishlistService = context.read<WishlistService>();
     final authService = context.read<AuthService>();
-    
+
     try {
       // Wait for authentication and user sync to complete first
       if (!authService.isAuthenticated || authService.currentUser == null) {
         print('⏳ WishlistsScreen: Waiting for authentication and user sync...');
         return;
       }
-      
+
       await wishlistService.fetchWishlists();
       print('✅ WishlistsScreen: Wishlists loaded successfully');
     } catch (e) {
@@ -139,6 +141,70 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
           _hasCompletedInitialLoad = true;
         });
       }
+    }
+  }
+
+  /// Calculate total valuation for a list of wishes
+  Map<String, dynamic> _calculateTotalValuation(List<Wish> wishes) {
+    if (wishes.isEmpty) {
+      return {'total': 0.0, 'currency': 'USD', 'hasAnyPrices': false};
+    }
+
+    // Group wishes by currency and calculate totals
+    final Map<String, double> currencyTotals = {};
+    bool hasAnyPrices = false;
+
+    for (final wish in wishes) {
+      if (wish.price != null && wish.price! > 0) {
+        hasAnyPrices = true;
+        final currency = wish.currency ?? 'USD';
+        final totalPrice = wish.price! * wish.quantity;
+        currencyTotals[currency] = (currencyTotals[currency] ?? 0.0) + totalPrice;
+      }
+    }
+
+    if (!hasAnyPrices) {
+      return {'total': 0.0, 'currency': 'USD', 'hasAnyPrices': false};
+    }
+
+    // For now, use the most common currency or USD as default
+    final primaryCurrency = currencyTotals.keys.first;
+    final total = currencyTotals[primaryCurrency] ?? 0.0;
+
+    return {
+      'total': total,
+      'currency': primaryCurrency,
+      'hasAnyPrices': true,
+      'currencyTotals': currencyTotals,
+    };
+  }
+
+  /// Format currency value
+  String _formatCurrency(double value, String currency) {
+    final formatter = intl.NumberFormat.currency(
+      symbol: _getCurrencySymbol(currency),
+      decimalDigits: value % 1 == 0 ? 0 : 2,
+    );
+    return formatter.format(value);
+  }
+
+  /// Get currency symbol
+  String _getCurrencySymbol(String currency) {
+    switch (currency.toUpperCase()) {
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      case 'JPY':
+        return '¥';
+      case 'CAD':
+        return 'C\$';
+      case 'AUD':
+        return 'A\$';
+      default:
+        return currency;
     }
   }
 
@@ -399,28 +465,43 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
         if (wishlists.isNotEmpty || unsortedWishes.isNotEmpty)
           _buildWishlistTabs(wishlists, unsortedWishes.length),
 
-        // Wishes masonry grid
+        // Wishes masonry grid with valuation at bottom
         Expanded(
           child: filteredWishes.isEmpty
               ? _buildEmptyWishesState()
-              : MasonryGridView.count(
-                  padding: const EdgeInsets.all(16.0),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  itemCount: filteredWishes.length,
-                  itemBuilder: (context, index) {
-                    final wish = filteredWishes[index];
-                    Wishlist? wishlist;
-                    if (wish.wishlistId != null) {
-                      try {
-                        wishlist = wishlists.firstWhere((w) => w.id == wish.wishlistId);
-                      } catch (e) {
-                        wishlist = null;
-                      }
-                    }
-                    return _MasonryWishCard(wish: wish, wishlist: wishlist);
-                  },
+              : CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.all(16.0),
+                      sliver: SliverMasonryGrid.count(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childCount: filteredWishes.length,
+                        itemBuilder: (context, index) {
+                          final wish = filteredWishes[index];
+                          Wishlist? wishlist;
+                          if (wish.wishlistId != null) {
+                            try {
+                              wishlist = wishlists.firstWhere((w) => w.id == wish.wishlistId);
+                            } catch (e) {
+                              wishlist = null;
+                            }
+                          }
+                          return _MasonryWishCard(wish: wish, wishlist: wishlist);
+                        },
+                      ),
+                    ),
+                    // Wishlist valuation at bottom of scrollable list
+                    if ((wishlists.isNotEmpty || unsortedWishes.isNotEmpty) && filteredWishes.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: _buildWishlistValuation(filteredWishes),
+                      ),
+                    // Extra padding at the bottom for better UX
+                    const SliverPadding(
+                      padding: EdgeInsets.only(bottom: 16),
+                    ),
+                  ],
                 ),
         ),
       ],
@@ -537,6 +618,40 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWishlistValuation(List<Wish> wishes) {
+    final preferencesService = context.watch<PreferencesService>();
+
+    // Don't show if preference is disabled
+    if (!preferencesService.showWishlistValuation) {
+      return const SizedBox.shrink();
+    }
+
+    final valuation = _calculateTotalValuation(wishes);
+    final hasAnyPrices = valuation['hasAnyPrices'] as bool;
+
+    if (!hasAnyPrices) {
+      return const SizedBox.shrink();
+    }
+
+    final total = valuation['total'] as double;
+    final currency = valuation['currency'] as String;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Center(
+        child: Text(
+          '${'wishlist_valuation.total_value'.tr()}: ${_formatCurrency(total, currency)}',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade600,
+            letterSpacing: -0.1,
+          ),
         ),
       ),
     );

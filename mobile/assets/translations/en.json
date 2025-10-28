@@ -616,6 +616,14 @@
     "notifications_permission_message": "Notifications were previously denied. To enable them:\n\n1. Open Settings\n2. Find \"Jinnie\" in the app list\n3. Tap \"Notifications\"\n4. Turn on \"Allow Notifications\"\n\nYou can continue without notifications for now.",
     "open_settings": "Open Settings",
     "language": "Language",
-    "select_language": "Select Language"
+    "select_language": "Select Language",
+    "personalization": "Personalization",
+    "personalization_subtitle": "Customize your experience",
+    "show_wishlist_valuation": "Show Wishlist Valuation",
+    "show_wishlist_valuation_desc": "Display total value of items in your wishlists"
+  },
+  "wishlist_valuation": {
+    "total_value": "Total Value",
+    "no_prices": "No prices set"
   }
 }
