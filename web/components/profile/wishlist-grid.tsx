@@ -63,12 +63,13 @@ function WishPreviewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
       className="group/card flex flex-col gap-0 overflow-hidden border border-border/40 bg-card p-0 shadow-sm transition-all hover:border-border hover:shadow-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 mb-3 break-inside-avoid"
     >
         {showImage ? (
-          <div className="relative w-full aspect-square bg-muted">
+          <div className="relative w-full bg-muted">
             <Image
               src={coverImage!}
               alt={wish.title}
-              fill
-              className="object-cover"
+              width={600}
+              height={600}
+              className="w-full h-auto object-cover"
               sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
               onError={() => setImageFailed(true)}
             />
