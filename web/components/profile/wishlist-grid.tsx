@@ -309,7 +309,7 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
 
           <ShareButton
             path={sharePath}
-            label={selectedFilter ? "Copy wishlist link" : "Copy profile link"}
+            label={selectedFilter ? "Copy wishlist link" : `jinnie.co/${username}`}
             className="flex-shrink-0"
           />
         </div>

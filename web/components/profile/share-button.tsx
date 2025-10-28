@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { Link2, Check } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -48,7 +48,7 @@ export function ShareButton({ path, label = 'Copy link', className }: ShareButto
       className={cn('gap-2', className)}
       disabled={!shareUrl}
     >
-      {copied ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
+      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
       <span>{copied ? 'Link copied' : label}</span>
     </Button>
   );

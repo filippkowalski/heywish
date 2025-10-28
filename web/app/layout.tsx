@@ -129,9 +129,6 @@ export default function RootLayout({
         {/* iOS Smart App Banner */}
         <meta name="apple-itunes-app" content="app-id=6754384455" />
 
-        {/* Impact.com Site Verification */}
-        <meta name="impact-site-verification" content="a1e4de8e-060d-40fb-b99d-8f7729f60d79" />
-
         {/* Structured Data for SEO */}
         <script
           type="application/ld+json"
