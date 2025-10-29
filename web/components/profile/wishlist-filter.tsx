@@ -91,21 +91,6 @@ export function WishlistFilter({
             ref={scrollContainerRef}
             className="flex items-center gap-3 py-3 overflow-x-auto scrollbar-hide"
           >
-            {/* All filter */}
-            <button
-              onClick={() => onFilterChange(null)}
-              className={`
-                flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-all sm:px-4 sm:py-2 sm:text-sm
-                ${
-                  selectedWishlistId === null
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted/50 border border-border/50 text-foreground hover:bg-muted active:scale-95"
-                }
-              `}
-            >
-              All
-            </button>
-
             {/* Wishlist filters */}
             {wishlists.map((wishlist) => {
               const wishCount =

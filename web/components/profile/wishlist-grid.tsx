@@ -186,7 +186,9 @@ function WishListViewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
 
 export function WishlistGrid({ wishlists, username, initialWishlistId }: WishlistGridProps) {
   const searchParams = useSearchParams();
-  const [selectedFilter, setSelectedFilter] = useState<string | null>(initialWishlistId ?? null);
+  // Auto-select first wishlist if no initial selection
+  const defaultSelection = initialWishlistId ?? (wishlists.length > 0 ? wishlists[0].id : null);
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(defaultSelection);
   const [detailOpen, setDetailOpen] = useState(false);
   const [activePreview, setActivePreview] = useState<{ wish: Wish; wishlist: Wishlist } | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -238,7 +240,7 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
 
   const sharePath = useMemo(() => {
     if (!selectedWishlist) {
-      // Share profile page when "All" is selected
+      // Fallback to profile page if no wishlist selected
       return `/${username}`;
     }
     // Share profile page with wishlist filter using slug
