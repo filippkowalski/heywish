@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { CookieConsent } from "@/components/cookie-consent";
+import { AppDownloadBannerWrapper } from "@/components/app-download-banner-wrapper";
 
 const GA_MEASUREMENT_ID = "G-BRDJHGM96Y";
 
@@ -129,6 +130,9 @@ export default function RootLayout({
         {/* iOS Smart App Banner */}
         <meta name="apple-itunes-app" content="app-id=6754384455" />
 
+        {/* Android App Intent - Opens app or redirects to Play Store */}
+        <meta name="google-play-app" content="app-id=com.wishlists.gifts" />
+
         {/* Structured Data for SEO */}
         <script
           type="application/ld+json"
@@ -177,6 +181,7 @@ export default function RootLayout({
           }}
         />
 
+        <AppDownloadBannerWrapper />
         <SiteHeader />
         {children}
         <CookieConsent />
