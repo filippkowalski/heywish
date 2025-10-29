@@ -21,7 +21,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.wishlists.gifts"
-    compileSdk = 35  // Updated for Android 15 compatibility
+    compileSdk = 36  // Android 16
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -39,7 +39,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 23  // Increased for Firebase Auth compatibility
-        targetSdk = 35  // Updated for Android 15 compatibility
+        targetSdk = 36  // Android 16
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
