@@ -38,7 +38,7 @@ android {
         applicationId = "com.wishlists.gifts"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 23  // Android 6.0+ for wide device support
+        minSdk = flutter.minSdkVersion  // Android 6.0+ for wide device support
         targetSdk = 36  // Android 16
         versionCode = 8
         versionName = "1.0.4"
