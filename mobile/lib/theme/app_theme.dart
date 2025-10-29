@@ -226,7 +226,7 @@ class AppTheme {
         ),
       ),
       
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 0,
         shadowColor: cardShadow,
         shape: RoundedRectangleBorder(
