@@ -186,8 +186,8 @@ function WishListViewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
 
 export function WishlistGrid({ wishlists, username, initialWishlistId }: WishlistGridProps) {
   const searchParams = useSearchParams();
-  // Auto-select first wishlist if no initial selection
-  const defaultSelection = initialWishlistId ?? (wishlists.length > 0 ? wishlists[0].id : null);
+  // Auto-select first wishlist if only one exists, otherwise default to "All" (null)
+  const defaultSelection = initialWishlistId ?? (wishlists.length === 1 ? wishlists[0].id : null);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(defaultSelection);
   const [detailOpen, setDetailOpen] = useState(false);
   const [activePreview, setActivePreview] = useState<{ wish: Wish; wishlist: Wishlist } | null>(null);
