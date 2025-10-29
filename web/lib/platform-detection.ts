@@ -119,3 +119,39 @@ export function dismissBanner(): void {
     console.warn('Failed to save banner dismissal state');
   }
 }
+
+/**
+ * Bottom sheet dismissal management using localStorage
+ * Shows once per week on website entry
+ */
+const BOTTOM_SHEET_DISMISSED_KEY = 'jinnie_app_bottom_sheet_dismissed';
+const BOTTOM_SHEET_DISMISSED_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+
+export function isBottomSheetDismissed(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    const dismissedAt = localStorage.getItem(BOTTOM_SHEET_DISMISSED_KEY);
+    if (!dismissedAt) return false;
+
+    const dismissedTime = parseInt(dismissedAt, 10);
+    const now = Date.now();
+
+    // Check if 7 days have passed since dismissal
+    return (now - dismissedTime) < BOTTOM_SHEET_DISMISSED_DURATION;
+  } catch {
+    // localStorage might be disabled
+    return false;
+  }
+}
+
+export function dismissBottomSheet(): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    localStorage.setItem(BOTTOM_SHEET_DISMISSED_KEY, Date.now().toString());
+  } catch {
+    // localStorage might be disabled
+    console.warn('Failed to save bottom sheet dismissal state');
+  }
+}

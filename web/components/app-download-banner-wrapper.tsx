@@ -1,24 +1,18 @@
 'use client';
 
-import { useState } from 'react';
 import { SmartAppBanner } from './smart-app-banner';
-import { AppDownloadModal } from './app-download-modal';
+import { AppDownloadBottomSheet } from './app-download-bottom-sheet';
 
 /**
- * Wrapper component that coordinates the smart app banner and modal
- * This handles the flow: Banner -> Modal -> App Store
+ * Wrapper component that coordinates the smart app banner and bottom sheet
+ * - Banner: Persistent at top (dismissible for 7 days)
+ * - Bottom sheet: Shows once per week on site entry (Reddit-style)
  */
 export function AppDownloadBannerWrapper() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
-  };
-
   return (
     <>
-      <SmartAppBanner onOpenModal={handleOpenModal} />
-      <AppDownloadModal open={isModalOpen} onOpenChange={setIsModalOpen} />
+      <SmartAppBanner />
+      <AppDownloadBottomSheet />
     </>
   );
 }
