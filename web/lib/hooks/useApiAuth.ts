@@ -195,12 +195,12 @@ export function useApiAuth() {
   // Scrape URL for metadata
   const scrapeUrl = useCallback(
     async (url: string): Promise<UrlMetadata> => {
-      const response = await authRequest<{ success: boolean; metadata: UrlMetadata }>('/wishes/scrape-url', {
+      const response = await authRequest<{ success: boolean; metadata: Omit<UrlMetadata, 'success'> }>('/wishes/scrape-url', {
         method: 'POST',
         body: JSON.stringify({ url }),
       });
       // Backend returns { success: true, metadata: {...} }
-      // We need to return the nested metadata with success flag
+      // Combine the outer success with the metadata fields
       return {
         success: response.success,
         ...response.metadata
