@@ -23,7 +23,6 @@ export function SiteHeader() {
   const { user, backendUser, loading, signOut } = useAuth();
   const [showSignIn, setShowSignIn] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [showManageWishlists, setShowManageWishlists] = useState(false);
   const pathname = usePathname();
 
   const handleSignOut = async () => {

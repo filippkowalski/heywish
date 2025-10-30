@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth/AuthContext.client';
 import {
@@ -95,13 +96,13 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
 
           <p className="text-xs text-center text-muted-foreground leading-relaxed px-8 pb-2">
             By signing in, you agree to our{' '}
-            <a href="/terms-of-service" className="underline underline-offset-2 hover:text-foreground transition-colors">
+            <Link href="/terms-of-service" className="underline underline-offset-2 hover:text-foreground transition-colors">
               Terms of Service
-            </a>
+            </Link>
             {' '}and{' '}
-            <a href="/privacy-policy" className="underline underline-offset-2 hover:text-foreground transition-colors">
+            <Link href="/privacy-policy" className="underline underline-offset-2 hover:text-foreground transition-colors">
               Privacy Policy
-            </a>
+            </Link>
           </p>
         </div>
       </DialogContent>

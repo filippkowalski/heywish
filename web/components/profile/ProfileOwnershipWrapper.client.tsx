@@ -40,7 +40,7 @@ export function ProfileOwnershipWrapper({
   wishlists,
   children,
 }: ProfileOwnershipWrapperProps) {
-  const { user, backendUser } = useAuth();
+  const { backendUser } = useAuth();
   const [showNewWishlist, setShowNewWishlist] = useState(false);
   const [showNewWish, setShowNewWish] = useState(false);
   const [newWishWishlistId, setNewWishWishlistId] = useState<string | null>(null);
