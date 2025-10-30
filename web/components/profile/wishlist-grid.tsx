@@ -7,11 +7,13 @@ import { useSearchParams } from "next/navigation";
 import type { Wishlist, Wish } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { WishDetailDialog } from "@/components/wishlist/wish-detail-dialog";
 import { WishlistFilter } from "./wishlist-filter";
 import { ShareButton } from "./share-button";
+import { useOwnership } from "./ProfileOwnershipWrapper.client";
 import { getWishlistSlug, matchesWishlistSlug } from "@/lib/slug";
-import { LayoutGrid, List } from "lucide-react";
+import { LayoutGrid, List, Pencil, Trash2 } from "lucide-react";
 
 interface WishlistGridProps {
   wishlists: Wishlist[];
@@ -186,6 +188,7 @@ function WishListViewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
 
 export function WishlistGrid({ wishlists, username, initialWishlistId }: WishlistGridProps) {
   const searchParams = useSearchParams();
+  const ownership = useOwnership();
   // Auto-select first wishlist if only one exists, otherwise default to "All" (null)
   const defaultSelection = initialWishlistId ?? (wishlists.length === 1 ? wishlists[0].id : null);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(defaultSelection);
@@ -389,6 +392,43 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
         }}
         wish={activePreview?.wish ?? null}
         shareToken={activePreview?.wishlist.shareToken}
+        footer={ownership?.isOwner && activePreview ? ({ close }) => (
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                ownership.openEditWish(activePreview.wish, activePreview.wishlist.id);
+                close();
+              }}
+              className="flex-1 h-11 sm:h-12 text-base font-medium gap-2"
+            >
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                ownership.openDeleteWish(activePreview.wish);
+                close();
+              }}
+              className="flex-1 h-11 sm:h-12 text-base font-medium gap-2 text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+            {activePreview.wish.url && (
+              <Button
+                asChild
+                variant="default"
+                className="flex-1 h-11 sm:h-12 text-base font-medium gap-2"
+              >
+                <a href={activePreview.wish.url} target="_blank" rel="noopener noreferrer">
+                  View details
+                </a>
+              </Button>
+            )}
+          </div>
+        ) : undefined}
       />
     </>
   );

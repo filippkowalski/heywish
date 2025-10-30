@@ -5,6 +5,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { CookieConsent } from "@/components/cookie-consent";
 import { AppDownloadBannerWrapper } from "@/components/app-download-banner-wrapper";
+import { Providers } from "@/components/providers.client";
 
 const GA_MEASUREMENT_ID = "G-BRDJHGM96Y";
 
@@ -181,10 +182,12 @@ export default function RootLayout({
           }}
         />
 
-        <AppDownloadBannerWrapper />
-        <SiteHeader />
-        {children}
-        <CookieConsent />
+        <Providers>
+          <AppDownloadBannerWrapper />
+          <SiteHeader />
+          {children}
+          <CookieConsent />
+        </Providers>
       </body>
     </html>
   );

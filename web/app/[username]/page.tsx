@@ -3,29 +3,30 @@ import type { Metadata } from "next";
 
 export const runtime = 'edge';
 import { notFound } from "next/navigation";
-import { Heart, MapPin, Gift } from "lucide-react";
+import { cookies } from "next/headers";
+import { Gift } from "lucide-react";
 import { api, PublicProfileResponse } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WishlistGrid } from "@/components/profile/wishlist-grid";
+import { ProfileOwnershipWrapper } from "@/components/profile/ProfileOwnershipWrapper.client";
+import { ProfileHeader } from "@/components/profile/profile-header.client";
 import { matchesWishlistSlug } from "@/lib/slug";
 
 const getProfile = cache(async (username: string): Promise<PublicProfileResponse | null> => {
   try {
-    console.log('[Server] Fetching profile for username:', username);
-    console.log('[Server] API Base URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
-    const result = await api.getPublicProfile(username);
-    console.log('[Server] Profile fetched successfully for:', username);
+    // Try to get Firebase ID token from cookies for authenticated requests
+    const cookieStore = await cookies();
+    const firebaseToken = cookieStore.get('firebaseIdToken')?.value;
+
+    const result = await api.getPublicProfile(username, firebaseToken);
     return result;
   } catch (error: unknown) {
-    console.error('[Server] Error fetching profile for:', username, error);
     const err = error as { response?: { status?: number } };
     if (err?.response?.status === 404) {
-      console.log('[Server] Profile not found (404) for:', username);
       return null;
     }
-    console.error('[Server] Throwing error for username:', username);
     throw error;
   }
 });
@@ -100,12 +101,6 @@ export async function generateMetadata({
   };
 }
 
-const formatNumber = (value: number) =>
-  new Intl.NumberFormat("en-US", {
-    notation: value >= 1000 ? "compact" : "standard",
-    maximumFractionDigits: value >= 1000 ? 1 : 0,
-  }).format(value);
-
 export default async function PublicProfilePage({
   params,
   searchParams,
@@ -177,76 +172,43 @@ export default async function PublicProfilePage({
   }
 
   return (
-    <main className="min-h-screen bg-background">
-      <header className="border-b bg-card/50">
-        <div className="container mx-auto px-4 py-6 sm:py-8 md:py-10 md:px-6">
-          {/* Profile Header */}
-          <div className="flex items-start gap-3 sm:gap-4">
-            <Avatar className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl border border-border flex-shrink-0">
-              {user.avatarUrl ? (
-                <AvatarImage src={user.avatarUrl} alt={`@${user.username}`} />
-              ) : null}
-              <AvatarFallback className="rounded-xl text-lg sm:text-xl font-semibold">
-                {user.username.slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1 space-y-2.5 sm:space-y-3">
-              <div className="space-y-1.5 sm:space-y-2">
-                <h1 className="truncate text-xl font-semibold sm:text-2xl md:text-3xl">
-                  @{user.username}
-                </h1>
-                {user.location ? (
-                  <p className="flex items-center gap-1 text-xs text-muted-foreground sm:text-sm">
-                    <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                    <span className="truncate">{user.location}</span>
-                  </p>
-                ) : null}
-              </div>
-
-              {/* Bio */}
-              {user.bio ? (
-                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                  {user.bio}
-                </p>
-              ) : null}
-
-              {/* Stats */}
-              <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs sm:text-sm text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5 sm:gap-2">
-                  <Gift className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
-                  <span className="font-medium text-foreground">{wishlists.length}</span> wishlists
-                </span>
-                <span className="inline-flex items-center gap-1.5 sm:gap-2">
-                  <Heart className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-rose-500 flex-shrink-0" />
-                  <span className="font-medium text-foreground">{formatNumber(totals.wishCount)}</span> wishes
-                </span>
-              </div>
-            </div>
+    <ProfileOwnershipWrapper userId={user.id} username={user.username} wishlists={wishlists}>
+      <main className="min-h-screen bg-background">
+        <header className="border-b bg-card/50">
+          <div className="container mx-auto px-4 py-6 sm:py-8 md:py-10 md:px-6">
+            <ProfileHeader
+              username={user.username}
+              avatarUrl={user.avatarUrl}
+              bio={user.bio}
+              location={user.location}
+              wishlistCount={wishlists.length}
+              wishCount={totals.wishCount}
+            />
           </div>
-        </div>
-      </header>
+        </header>
 
-      {wishlists.length === 0 ? (
-        <section className="container mx-auto px-4 py-12 md:px-6">
-          <Card className="bg-muted/40">
-            <CardContent className="flex flex-col items-center gap-4 p-10 text-center">
-              <Gift className="h-10 w-10 text-muted-foreground" />
-              <div>
-                <h2 className="text-lg font-semibold">No public wishlists yet</h2>
-                <p className="text-sm text-muted-foreground">
-                  Ask @{user.username} to share a list from the mobile app.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-      ) : (
-        <WishlistGrid
-          wishlists={wishlists}
-          username={user.username}
-          initialWishlistId={initialWishlistId}
-        />
-      )}
-    </main>
+        {wishlists.length === 0 ? (
+          <section className="container mx-auto px-4 py-12 md:px-6">
+            <Card className="bg-muted/40">
+              <CardContent className="flex flex-col items-center gap-4 p-10 text-center">
+                <Gift className="h-10 w-10 text-muted-foreground" />
+                <div>
+                  <h2 className="text-lg font-semibold">No public wishlists yet</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Ask @{user.username} to share a list from the mobile app.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        ) : (
+          <WishlistGrid
+            wishlists={wishlists}
+            username={user.username}
+            initialWishlistId={initialWishlistId}
+          />
+        )}
+      </main>
+    </ProfileOwnershipWrapper>
   );
 }

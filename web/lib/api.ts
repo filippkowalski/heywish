@@ -246,7 +246,6 @@ export const api = {
 
       return { wishlist: normalized };
     } catch (error) {
-      console.error('Error fetching public wishlist:', error);
       throw error;
     }
   },
@@ -272,7 +271,6 @@ export const api = {
           : undefined,
       });
     } catch (error) {
-      console.error('Error reserving wish:', error);
       throw error;
     }
   },
@@ -287,21 +285,19 @@ export const api = {
           : undefined,
       });
     } catch (error) {
-      console.error('Error canceling reservation:', error);
       throw error;
     }
   },
 
-  async getPublicProfile(username: string): Promise<PublicProfileResponse> {
+  async getPublicProfile(username: string, idToken?: string): Promise<PublicProfileResponse> {
     try {
-      console.log('[API] Fetching profile for username:', username);
-      console.log('[API] Request URL:', `${API_BASE_URL}/public/users/${username}`);
       const data = await apiRequest<{
         user: RawPublicProfileUser;
         wishlists?: RawWishlist[];
         totals?: RawProfileTotals;
-      }>(`/public/users/${username}`);
-      console.log('[API] Profile data received for:', username);
+      }>(`/public/users/${username}`, {
+        headers: idToken ? { Authorization: `Bearer ${idToken}` } : undefined,
+      });
       const payload = data;
 
       const rawWishlists = payload.wishlists ?? [];
@@ -370,14 +366,6 @@ export const api = {
         },
       };
     } catch (error: unknown) {
-      console.error('[API] Error fetching public profile for:', username);
-      const err = error as { message?: string; response?: { status?: number; statusText?: string; data?: unknown } };
-      console.error('[API] Error details:', {
-        message: err?.message,
-        status: err?.response?.status,
-        statusText: err?.response?.statusText,
-        data: err?.response?.data,
-      });
       throw error;
     }
   }
