@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Heart, Users, Gift } from "lucide-react";
+import { UseWebVersionButton } from "@/components/landing/UseWebVersionButton.client";
 
 // Wish images - stored locally for reliability
 const wishImages = [
@@ -202,6 +203,19 @@ export default function HomePage() {
                   />
                 </a>
               </div>
+
+              {/* Divider */}
+              <div className="relative w-full max-w-xs">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t" style={{ borderColor: 'rgba(0,0,0,0.1)' }}></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white/90 px-3" style={{ color: 'rgba(0,0,0,0.4)' }}>or</span>
+                </div>
+              </div>
+
+              {/* Use Web Version Button */}
+              <UseWebVersionButton />
             </div>
           </div>
         </div>

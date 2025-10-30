@@ -160,9 +160,39 @@ export default async function PublicProfilePage({
                     This profile is private. Only friends can see their wishlists and profile details.
                   </p>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Connect with @{user.username} on Jinnie.co to view their profile.
-                </p>
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Download the Jinnie app to connect with @{user.username} and view their profile.
+                  </p>
+                  <div className="flex flex-col items-center gap-2 pt-2">
+                    <a
+                      href="https://apps.apple.com/app/id6754384455"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block transition-transform hover:scale-105"
+                      style={{ height: '80px', display: 'flex', alignItems: 'center' }}
+                    >
+                      <img
+                        src="/badges/app-store-badge.svg"
+                        alt="Download on the App Store"
+                        className="h-[54px] w-auto"
+                      />
+                    </a>
+                    <a
+                      href="https://play.google.com/store/apps/details?id=com.wishlists.gifts"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block transition-transform hover:scale-105"
+                      style={{ height: '80px', display: 'flex', alignItems: 'center' }}
+                    >
+                      <img
+                        src="/badges/google-play-badge.png"
+                        alt="Get it on Google Play"
+                        className="h-[80px] w-auto"
+                      />
+                    </a>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
