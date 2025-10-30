@@ -72,17 +72,25 @@ export function detectPlatform(): PlatformInfo {
 }
 
 /**
- * Gets the appropriate app store URL based on platform
+ * Gets the appropriate app store URL based on platform with optional ref parameter
+ * @param platform - The platform (ios, android, or other)
+ * @param ref - Optional referral parameter to track download source (e.g., 'landing', 'private_profile', 'banner')
  */
-export function getAppStoreUrl(platform: Platform): string {
-  switch (platform) {
-    case 'ios':
-      return 'https://apps.apple.com/app/id6754384455';
-    case 'android':
-      return 'https://play.google.com/store/apps/details?id=com.wishlists.gifts';
-    default:
-      return 'https://apps.apple.com/app/id6754384455'; // Default to iOS
+export function getAppStoreUrl(platform: Platform, ref?: string): string {
+  const baseUrls = {
+    ios: 'https://apps.apple.com/app/id6754384455',
+    android: 'https://play.google.com/store/apps/details?id=com.wishlists.gifts',
+  };
+
+  let url = platform === 'android' ? baseUrls.android : baseUrls.ios;
+
+  // Add ref parameter if provided
+  if (ref) {
+    const separator = url.includes('?') ? '&' : '?';
+    url += `${separator}ref=${encodeURIComponent(ref)}`;
   }
+
+  return url;
 }
 
 /**

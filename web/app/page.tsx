@@ -177,7 +177,7 @@ export default function HomePage() {
             <div className="flex flex-col items-center gap-3 md:gap-4 pt-2 md:pt-4 animate-fade-in-up animation-delay-200">
               <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
                 <a
-                  href="https://apps.apple.com/app/id6754384455"
+                  href="https://apps.apple.com/app/id6754384455?ref=jinnie-landingpage"
                   className="block transition-transform hover:scale-105"
                   style={{ height: '80px', display: 'flex', alignItems: 'center' }}
                 >
@@ -190,7 +190,7 @@ export default function HomePage() {
                   />
                 </a>
                 <a
-                  href="https://play.google.com/store/apps/details?id=com.wishlists.gifts"
+                  href="https://play.google.com/store/apps/details?id=com.wishlists.gifts&ref=jinnie-landingpage"
                   className="block transition-transform hover:scale-105"
                   style={{ height: '80px', display: 'flex', alignItems: 'center' }}
                 >

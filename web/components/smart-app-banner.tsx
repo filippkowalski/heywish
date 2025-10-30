@@ -32,7 +32,7 @@ export function SmartAppBanner() {
 
   const handleGetApp = () => {
     if (platformInfo) {
-      window.location.href = getAppStoreUrl(platformInfo.platform);
+      window.location.href = getAppStoreUrl(platformInfo.platform, 'jinnie-smartbanner');
     }
   };
 

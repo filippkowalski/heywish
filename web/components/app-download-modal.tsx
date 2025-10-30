@@ -48,7 +48,7 @@ export function AppDownloadModal({ open, onOpenChange }: AppDownloadModalProps) 
   }, []);
 
   const handleDownload = () => {
-    const url = getAppStoreUrl(platform);
+    const url = getAppStoreUrl(platform, 'jinnie-modal');
     window.location.href = url;
     onOpenChange(false);
   };

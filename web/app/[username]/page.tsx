@@ -166,7 +166,7 @@ export default async function PublicProfilePage({
                   </p>
                   <div className="flex flex-col items-center gap-2 pt-2">
                     <a
-                      href="https://apps.apple.com/app/id6754384455"
+                      href="https://apps.apple.com/app/id6754384455?ref=jinnie-privateprofile"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block transition-transform hover:scale-105"
@@ -179,7 +179,7 @@ export default async function PublicProfilePage({
                       />
                     </a>
                     <a
-                      href="https://play.google.com/store/apps/details?id=com.wishlists.gifts"
+                      href="https://play.google.com/store/apps/details?id=com.wishlists.gifts&ref=jinnie-privateprofile"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block transition-transform hover:scale-105"

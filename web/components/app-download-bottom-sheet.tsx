@@ -44,7 +44,7 @@ export function AppDownloadBottomSheet() {
   };
 
   const handleGetApp = () => {
-    const url = getAppStoreUrl(platform);
+    const url = getAppStoreUrl(platform, 'jinnie-bottomsheet');
     window.location.href = url;
     dismissBottomSheet();
   };
