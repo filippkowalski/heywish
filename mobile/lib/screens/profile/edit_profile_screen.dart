@@ -11,6 +11,13 @@ import '../../services/api_service.dart';
 import '../../widgets/cached_image.dart';
 import '../../theme/app_theme.dart';
 
+enum UsernameCheckStatus {
+  available,
+  taken,
+  checking,
+  error,
+}
+
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -31,7 +38,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   // Username validation
   Timer? _debounceTimer;
   String? _usernameValidationError;
-  String? _usernameCheckResult;
+  UsernameCheckStatus? _usernameCheckResult;
   bool _isCheckingUsername = false;
   String? _originalUsername;
   bool _hasLoadedInitialData = false;
@@ -119,16 +126,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   /// Get translated helper text based on username check result
   String? _getHelperText() {
     switch (_usernameCheckResult) {
-      case 'available':
+      case UsernameCheckStatus.available:
         return 'username_validation.available'.tr();
-      case 'taken':
+      case UsernameCheckStatus.taken:
         return 'username_validation.taken'.tr();
-      case 'checking':
+      case UsernameCheckStatus.checking:
         return 'username_validation.checking'.tr();
-      case 'error':
+      case UsernameCheckStatus.error:
         return 'username_validation.check_error'.tr();
-      default:
-        return _usernameCheckResult;
+      case null:
+        return null;
     }
   }
 
@@ -160,7 +167,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         cleanedValue.isNotEmpty &&
         cleanedValue != _originalUsername) {
       setState(() {
-        _usernameCheckResult = 'checking';
+        _usernameCheckResult = UsernameCheckStatus.checking;
         _isCheckingUsername = true;
       });
 
@@ -170,7 +177,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } else if (cleanedValue == _originalUsername) {
       // If it's the original username, mark as available
       setState(() {
-        _usernameCheckResult = 'available';
+        _usernameCheckResult = UsernameCheckStatus.available;
         _isCheckingUsername = false;
       });
     }
@@ -184,14 +191,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (response != null && mounted) {
         final isAvailable = response['available'] as bool;
         setState(() {
-          _usernameCheckResult = isAvailable ? 'available' : 'taken';
+          _usernameCheckResult = isAvailable
+              ? UsernameCheckStatus.available
+              : UsernameCheckStatus.taken;
           _isCheckingUsername = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _usernameCheckResult = 'error';
+          _usernameCheckResult = UsernameCheckStatus.error;
           _isCheckingUsername = false;
         });
       }
@@ -372,7 +381,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     // If username changed, it must be available
     if (_usernameController.text.trim() != _originalUsername) {
-      if (_usernameCheckResult != 'available') return false;
+      if (_usernameCheckResult != UsernameCheckStatus.available) return false;
     }
 
     // Full name is required
@@ -540,7 +549,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             color: AppTheme.primaryAccent.withValues(alpha: 0.6),
                           ),
                         )
-                      : _usernameCheckResult == 'available'
+                      : _usernameCheckResult == UsernameCheckStatus.available
                           ? Icon(Icons.check_circle, color: Colors.green.shade600, size: 20)
                           : null,
                   errorText: _usernameValidationError,
@@ -550,7 +559,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ? _getHelperText()
                       : null,
                   helperStyle: TextStyle(
-                    color: _usernameCheckResult == 'available'
+                    color: _usernameCheckResult == UsernameCheckStatus.available
                         ? Colors.green.shade600
                         : Colors.red.shade600,
                     fontSize: 12,
