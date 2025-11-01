@@ -286,6 +286,85 @@ Scaffold(
 - Any form with save/submit button
 - Settings screens with apply button
 
+### App Lifecycle & Data Refresh
+
+**IMPORTANT**: The app automatically refreshes friends data when resumed from background to keep notification badges up-to-date.
+
+**Implementation** (`lib/main.dart`):
+- Uses `WidgetsBindingObserver` to listen for app lifecycle changes
+- On `AppLifecycleState.resumed`, calls `FriendsService.loadAllData()`
+- This ensures the profile tab notification badge shows the latest friend request count
+
+**Notification Badge** (`lib/screens/home_screen.dart`):
+- Profile tab displays a red badge when there are pending friend requests
+- Badge count is reactive: `context.watch<FriendsService>().pendingRequestsCount`
+- Badge shows "9+" for 10 or more requests
+- Badge automatically updates when friends data changes
+
+**When Friends Data Refreshes:**
+1. ✅ App resumes from background (main.dart lifecycle observer)
+2. ✅ User navigates to a public profile (public_profile_screen.dart)
+3. ✅ User accepts/declines a friend request (friends_screen.dart)
+4. ✅ User sends a friend request (friends_screen.dart, public_profile_screen.dart)
+5. ✅ App first loads (home_screen.dart initState)
+
+### Type Safety: Use Enums Instead of Hardcoded Strings
+
+**CRITICAL**: Never use hardcoded strings for status values, types, or enums. Always use type-safe enums defined in the models.
+
+**Friendship Status Example:**
+
+**❌ WRONG (Hardcoded strings):**
+```dart
+if (user.friendshipStatus == 'accepted') { ... }
+if (request.status == 'pending') { ... }
+getFriendRequests(type: 'sent')
+_respondToRequest(request, 'decline')
+```
+
+**✅ CORRECT (Using enums and model getters):**
+```dart
+// Use model getters for boolean checks
+if (user.isFriend) { ... }
+if (request.isPending) { ... }
+
+// Use enums when creating instances or calling APIs
+getFriendRequests(type: FriendRequestType.sent.toJson())
+_respondToRequest(request, FriendRequestAction.decline.toJson())
+
+// Use enums for creating model instances
+UserSearchResult(
+  friendshipStatus: FriendshipStatus.pending.toJson(),
+  requestDirection: RequestDirection.sent.toJson(),
+)
+```
+
+**Available Friendship Enums** (defined in `lib/models/friendship_enums.dart`):
+- `FriendshipStatus` - none, pending, accepted, declined
+- `RequestDirection` - none, sent, received
+- `FriendRequestType` - sent, received (for API filter parameters)
+- `FriendRequestAction` - accept, decline (for responding to requests)
+
+**Model Getters Available:**
+- `UserSearchResult`: `isFriend`, `hasPendingRequest`, `requestSentByMe`, `requestSentToMe`, `status`, `direction`
+- `UserProfile`: `isFriend`, `hasPendingRequest`, `requestSentByMe`, `requestSentToMe`, `status`, `direction`
+- `FriendRequest`: `isPending`, `isAccepted`, `isDeclined`, `requestStatus`
+- `Friend`: `friendshipStatus`, `isActive`
+
+**Benefits:**
+1. **Type Safety**: Catch errors at compile-time instead of runtime
+2. **IDE Support**: Autocomplete and refactoring work correctly
+3. **Consistency**: Single source of truth for all status values
+4. **Maintainability**: Easy to add/rename statuses across the entire codebase
+5. **Self-Documenting**: Enum names are clear and descriptive
+
+**When Adding New Status Types:**
+1. Create enum in appropriate models file (or create new enums file)
+2. Add `toJson()` method for API communication
+3. Add `fromJson()` static method for parsing API responses
+4. Add boolean helper getters to relevant models
+5. Update all hardcoded strings throughout the codebase
+
 ## TODO Before Release
 
 ### Backend Setup

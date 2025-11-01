@@ -3,13 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:go_router/go_router.dart';
 import '../../services/friends_service.dart';
 import '../../services/auth_service.dart';
 import '../../models/friend.dart';
+import '../../models/friendship_enums.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/cached_image.dart';
 import '../../common/widgets/native_refresh_indicator.dart';
-import '../../common/navigation/native_page_route.dart';
 
 class FriendsScreen extends StatefulWidget {
   final VoidCallback? onNavigateToSearch;
@@ -157,8 +158,8 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
             fullName: user.fullName,
             avatarUrl: user.avatarUrl,
             bio: user.bio,
-            friendshipStatus: 'pending',
-            requestDirection: 'sent',
+            friendshipStatus: FriendshipStatus.pending.toJson(),
+            requestDirection: RequestDirection.sent.toJson(),
           );
         }
       });
@@ -521,8 +522,6 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                 children: [
                   TabBar(
                     controller: _tabController,
-                    isScrollable: true,
-                    tabAlignment: TabAlignment.start,
                     tabs: [
                 Tab(
                   child: Row(
@@ -833,12 +832,15 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
           ],
         ),
         trailing: _buildFriendshipButton(user),
+        onTap: user.isFriend
+          ? () => context.push('/profile/${user.username}')
+          : null,
       ),
     );
   }
 
   Widget _buildFriendshipButton(UserSearchResult user) {
-    if (user.friendshipStatus == 'accepted') {
+    if (user.isFriend) {
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
@@ -871,8 +873,8 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       );
     }
 
-    if (user.friendshipStatus == 'pending') {
-      if (user.requestDirection == 'sent') {
+    if (user.hasPendingRequest) {
+      if (user.requestSentByMe) {
         return InkWell(
           onTap: () => _cancelFriendRequest(user),
           borderRadius: BorderRadius.circular(20),
@@ -969,7 +971,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     }
 
     return NativeRefreshIndicator(
-      onRefresh: () => friendsService.getFriendRequests(type: 'received'),
+      onRefresh: () => friendsService.getFriendRequests(type: FriendRequestType.received.toJson()),
       child: ListView.builder(
         padding: EdgeInsets.all(16),
         itemCount: friendsService.friendRequests.length,
@@ -1012,7 +1014,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     }
 
     return NativeRefreshIndicator(
-      onRefresh: () => friendsService.getFriendRequests(type: 'sent'),
+      onRefresh: () => friendsService.getFriendRequests(type: FriendRequestType.sent.toJson()),
       child: ListView.builder(
         padding: EdgeInsets.all(16),
         itemCount: friendsService.sentRequests.length,
@@ -1053,8 +1055,8 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
         ),
         trailing: Icon(Icons.chevron_right),
         onTap: () {
-          // Navigate to friend's profile/wishlists
-          _showFriendProfile(friend);
+          // Navigate to friend's profile page
+          context.push('/profile/${friend.username}');
         },
       ),
     );
@@ -1081,7 +1083,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              onPressed: () => _respondToRequest(request, 'decline'),
+              onPressed: () => _respondToRequest(request, FriendRequestAction.decline.toJson()),
               icon: Icon(Icons.close, color: Colors.red.shade600),
               style: IconButton.styleFrom(
                 backgroundColor: Colors.red.shade50,
@@ -1089,7 +1091,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
             ),
             SizedBox(width: 8),
             IconButton(
-              onPressed: () => _respondToRequest(request, 'accept'),
+              onPressed: () => _respondToRequest(request, FriendRequestAction.accept.toJson()),
               icon: Icon(Icons.check, color: Colors.green.shade600),
               style: IconButton.styleFrom(
                 backgroundColor: Colors.green.shade50,
@@ -1097,6 +1099,9 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
             ),
           ],
         ),
+        onTap: request.requesterUsername != null
+            ? () => context.push('/profile/${request.requesterUsername}')
+            : null,
       ),
     );
   }
@@ -1165,96 +1170,9 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showFriendProfile(Friend friend) {
-    NativeTransitions.showNativeModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      child: DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        maxChildSize: 0.9,
-        minChildSize: 0.5,
-        builder: (context, scrollController) {
-          return Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  margin: EdgeInsets.symmetric(vertical: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: scrollController,
-                    padding: EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        CachedAvatarImage(
-                          imageUrl: friend.avatarUrl,
-                          radius: 40,
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          friend.displayName,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          '@${friend.username}',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 16,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Friends since ${DateFormat('MMMM d, y').format(friend.friendsSince)}',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 14,
-                          ),
-                        ),
-                        if (friend.bio != null && friend.bio!.isNotEmpty) ...[
-                          SizedBox(height: 16),
-                          Text(
-                            friend.bio!,
-                            style: TextStyle(fontSize: 16),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                        SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              // Navigate to friend's wishlists
-                            },
-                            icon: Icon(Icons.card_giftcard),
-                            label: Text('View Wishlists'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+        onTap: request.addresseeUsername != null
+            ? () => context.push('/profile/${request.addresseeUsername}')
+            : null,
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../services/friends_service.dart';
 import '../services/auth_service.dart';
 import '../models/friend.dart';
+import '../models/friendship_enums.dart';
 import '../theme/app_theme.dart';
 import '../widgets/cached_image.dart';
 import '../common/navigation/native_page_route.dart';
@@ -121,8 +122,8 @@ class _SearchScreenState extends State<SearchScreen> {
             fullName: user.fullName,
             avatarUrl: user.avatarUrl,
             bio: user.bio,
-            friendshipStatus: 'pending',
-            requestDirection: 'sent',
+            friendshipStatus: FriendshipStatus.pending.toJson(),
+            requestDirection: RequestDirection.sent.toJson(),
           );
         }
       });

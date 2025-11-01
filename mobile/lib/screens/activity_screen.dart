@@ -7,6 +7,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../services/friends_service.dart';
 import '../services/auth_service.dart';
 import '../models/friend.dart';
+import '../models/friendship_enums.dart';
 import '../theme/app_theme.dart';
 import '../widgets/cached_image.dart';
 import '../common/widgets/native_refresh_indicator.dart';
@@ -148,8 +149,8 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
             fullName: user.fullName,
             avatarUrl: user.avatarUrl,
             bio: user.bio,
-            friendshipStatus: 'pending',
-            requestDirection: 'sent',
+            friendshipStatus: FriendshipStatus.pending.toJson(),
+            requestDirection: RequestDirection.sent.toJson(),
           );
         }
       });
@@ -634,7 +635,7 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
   }
 
   Widget _buildFriendshipButton(UserSearchResult user) {
-    if (user.friendshipStatus == 'accepted') {
+    if (user.isFriend) {
       return Chip(
         label: Text('friends.status_friends'.tr()),
         backgroundColor: Colors.green.shade100,
@@ -645,8 +646,8 @@ class _ActivityScreenState extends State<ActivityScreen> with TickerProviderStat
       );
     }
 
-    if (user.friendshipStatus == 'pending') {
-      if (user.requestDirection == 'sent') {
+    if (user.hasPendingRequest) {
+      if (user.requestSentByMe) {
         return Chip(
           label: Text('friends.status_pending'.tr()),
           backgroundColor: Colors.orange.shade100,

@@ -1,3 +1,5 @@
+import 'friendship_enums.dart';
+
 class Friend {
   final String id;
   final String friendshipId;
@@ -46,6 +48,10 @@ class Friend {
   }
 
   String get displayName => fullName ?? username;
+
+  // Enum-based getter for type-safe status checking
+  FriendshipStatus get friendshipStatus => FriendshipStatus.fromJson(status);
+  bool get isActive => friendshipStatus == FriendshipStatus.accepted;
 }
 
 class FriendRequest {
@@ -93,6 +99,12 @@ class FriendRequest {
 
   String get requesterDisplayName => requesterFullName ?? requesterUsername ?? 'Unknown';
   String get addresseeDisplayName => addresseeFullName ?? addresseeUsername ?? 'Unknown';
+
+  // Enum-based getter for type-safe status checking
+  FriendshipStatus get requestStatus => FriendshipStatus.fromJson(status);
+  bool get isPending => requestStatus == FriendshipStatus.pending;
+  bool get isAccepted => requestStatus == FriendshipStatus.accepted;
+  bool get isDeclined => requestStatus == FriendshipStatus.declined;
 }
 
 class UserSearchResult {
@@ -127,11 +139,16 @@ class UserSearchResult {
   }
 
   String get displayName => fullName ?? username;
-  
-  bool get isFriend => friendshipStatus == 'accepted';
-  bool get hasPendingRequest => friendshipStatus == 'pending';
-  bool get requestSentByMe => requestDirection == 'sent';
-  bool get requestSentToMe => requestDirection == 'received';
+
+  // Enum-based getters for type-safe status checking
+  FriendshipStatus get status => FriendshipStatus.fromJson(friendshipStatus);
+  RequestDirection get direction => RequestDirection.fromJson(requestDirection);
+
+  // Boolean helpers using enums
+  bool get isFriend => status == FriendshipStatus.accepted;
+  bool get hasPendingRequest => status == FriendshipStatus.pending;
+  bool get requestSentByMe => direction == RequestDirection.sent;
+  bool get requestSentToMe => direction == RequestDirection.received;
 }
 
 class UserProfile {
@@ -178,10 +195,16 @@ class UserProfile {
   }
 
   String get displayName => fullName ?? username;
-  bool get isFriend => friendshipStatus == 'accepted';
-  bool get hasPendingRequest => friendshipStatus == 'pending';
-  bool get requestSentByMe => requestDirection == 'sent';
-  bool get requestSentToMe => requestDirection == 'received';
+
+  // Enum-based getters for type-safe status checking
+  FriendshipStatus get status => FriendshipStatus.fromJson(friendshipStatus);
+  RequestDirection get direction => RequestDirection.fromJson(requestDirection);
+
+  // Boolean helpers using enums
+  bool get isFriend => status == FriendshipStatus.accepted;
+  bool get hasPendingRequest => status == FriendshipStatus.pending;
+  bool get requestSentByMe => direction == RequestDirection.sent;
+  bool get requestSentToMe => direction == RequestDirection.received;
 }
 
 class Activity {

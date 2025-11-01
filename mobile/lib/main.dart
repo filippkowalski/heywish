@@ -101,7 +101,7 @@ class JinnieApp extends StatefulWidget {
   State<JinnieApp> createState() => _JinnieAppState();
 }
 
-class _JinnieAppState extends State<JinnieApp> {
+class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
   final ScreenshotController _screenshotController = ScreenshotController();
   final QuickActions _quickActions = const QuickActions();
   static const platform = MethodChannel('com.wishlists.gifts/share');
@@ -110,6 +110,9 @@ class _JinnieAppState extends State<JinnieApp> {
   @override
   void initState() {
     super.initState();
+    // Add app lifecycle observer to handle app resume
+    WidgetsBinding.instance.addObserver(this);
+
     // Initialize screenshot detection after a short delay
     Future.delayed(const Duration(milliseconds: 500), () {
       ScreenshotDetectionService.instance.initialize(
@@ -157,14 +160,21 @@ class _JinnieAppState extends State<JinnieApp> {
     }
   }
 
-  void _handleNotificationTap(RemoteMessage message) {
+  Future<void> _handleNotificationTap(RemoteMessage message) async {
     final data = message.data;
     final type = data['type'] as String?;
     if (type == null) {
       return;
     }
 
-    int _tabIndexFor(String? tabKey) {
+    final rootContext = _router.routerDelegate.navigatorKey.currentContext;
+    if (rootContext == null) {
+      return;
+    }
+
+    final navigator = Navigator.of(rootContext);
+
+    int tabIndexFor(String? tabKey) {
       switch (tabKey) {
         case 'requests':
           return 1;
@@ -175,41 +185,15 @@ class _JinnieAppState extends State<JinnieApp> {
       }
     }
 
-    void _ensureHomeThenExecute(
-      Future<void> Function(BuildContext navigatorContext) action,
-    ) {
-      Future<void> runAction() async {
-        final navigatorContext =
-            _router.routerDelegate.navigatorKey.currentContext;
-        if (navigatorContext == null) return;
-        await action(navigatorContext);
-      }
-
-      final routeInfo = _router.routeInformationProvider.value;
-      final currentPath = routeInfo.uri.path;
-      final isOnHome = currentPath == '/home' || currentPath == '/';
-
-      if (!isOnHome) {
-        _router.go('/home');
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          runAction();
-        });
-      } else {
-        runAction();
-      }
-    }
-
     if (type == 'friend_request' || type == 'friend_accepted') {
       final tabKey = data['tab'] as String? ??
           (type == 'friend_request' ? 'requests' : 'friends');
-      final tabIndex = _tabIndexFor(tabKey);
-      _ensureHomeThenExecute((navigatorContext) async {
-        Navigator.of(navigatorContext).push(
-          NativePageRoute(
-            child: FriendsScreen(initialTabIndex: tabIndex),
-          ),
-        );
-      });
+      final tabIndex = tabIndexFor(tabKey);
+      navigator.push(
+        NativePageRoute(
+          child: FriendsScreen(initialTabIndex: tabIndex),
+        ),
+      );
       return;
     }
 
@@ -230,22 +214,22 @@ class _JinnieAppState extends State<JinnieApp> {
           ? 'unsorted'
           : wishlistIdRaw;
 
-      _ensureHomeThenExecute((navigatorContext) async {
-        final wishlistService =
-            Provider.of<WishlistService>(navigatorContext, listen: false);
+      final wishlistService =
+          Provider.of<WishlistService>(rootContext, listen: false);
 
-        if (wishlistService.findWishById(wishId) == null) {
-          await wishlistService.fetchWishlists();
-        }
+      if (wishlistService.findWishById(wishId) == null) {
+        await wishlistService.fetchWishlists();
+      }
 
-        if (!navigatorContext.mounted) return;
+      if (!navigator.mounted) {
+        return;
+      }
 
-        await WishDetailScreen.show(
-          navigatorContext,
-          wishId: wishId,
-          wishlistId: wishlistId,
-        );
-      });
+      await WishDetailScreen.show(
+        navigator.context,
+        wishId: wishId,
+        wishlistId: wishlistId,
+      );
       return;
     }
   }
@@ -342,7 +326,35 @@ class _JinnieAppState extends State<JinnieApp> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.resumed) {
+      // App came to foreground - refresh friends data to update notification badge
+      debugPrint('🔄 App resumed - refreshing friends data for notification badge');
+      _refreshFriendsDataOnResume();
+    }
+  }
+
+  Future<void> _refreshFriendsDataOnResume() async {
+    try {
+      // We need to use a delay to ensure the widget tree is built
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      if (!mounted) return;
+
+      final friendsService = context.read<FriendsService>();
+      // Refresh all friends data (friends, sent requests, received requests)
+      await friendsService.loadAllData();
+      debugPrint('✅ Friends data refreshed successfully');
+    } catch (e) {
+      debugPrint('❌ Error refreshing friends data on resume: $e');
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _fcmTapSubscription?.cancel();
     ScreenshotDetectionService.instance.dispose();
     super.dispose();

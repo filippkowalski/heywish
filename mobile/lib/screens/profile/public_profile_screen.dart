@@ -3,13 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../theme/app_theme.dart';
 import '../../services/api_service.dart';
 import '../../services/friends_service.dart';
 import '../../services/auth_service.dart';
+import '../../models/friendship_enums.dart';
 import '../../common/widgets/skeleton_loading.dart';
 import '../../common/widgets/native_refresh_indicator.dart';
 import '../../widgets/cached_image.dart' show CachedAvatarImage, CachedImageWidget;
+import '../../common/utils/wish_category_detector.dart';
 
 class PublicProfileScreen extends StatefulWidget {
   final String username;
@@ -52,6 +55,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
       final response = await _api.get('/public/users/${widget.username}');
 
+      if (!mounted) return;
+
       if (response == null) {
         setState(() {
           _error = 'errors.not_found'.tr();
@@ -66,9 +71,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         _isLoading = false;
       });
 
-      // Check friendship status after profile is loaded
-      await _checkFriendshipStatus();
+      // Check friendship status in background (non-blocking)
+      // This allows the profile to render immediately while friends data loads
+      _checkFriendshipStatus();
     } catch (error) {
+      if (!mounted) return;
+
       setState(() {
         _error = error.toString();
         _isLoading = false;
@@ -82,9 +90,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
     // Check if viewing own profile
     if (authService.currentUser?.username == widget.username) {
-      setState(() {
-        _isOwnProfile = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isOwnProfile = true;
+        });
+      }
       return;
     }
 
@@ -92,17 +102,23 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     if (_userData != null && _userData!['id'] != null) {
       final userId = _userData!['id'];
 
+      // IMPORTANT: Reload friends data from server to get latest status
+      // This ensures we have up-to-date friendship information
+      await friendsService.loadAllData();
+
+      if (!mounted) return;
+
       // Check if already friends
       _isAlreadyFriend = friendsService.friends.any((friend) => friend.id == userId);
 
       // Check if there's a sent request
       _hasSentRequest = friendsService.sentRequests.any(
-        (request) => request.addresseeId == userId && request.status == 'pending',
+        (request) => request.addresseeId == userId && request.isPending,
       );
 
       // Check if there's a received request
       _hasReceivedRequest = friendsService.friendRequests.any(
-        (request) => request.requesterId == userId && request.status == 'pending',
+        (request) => request.requesterId == userId && request.isPending,
       );
 
       setState(() {});
@@ -119,6 +135,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       return;
     }
 
+    if (!mounted) return;
+
     setState(() {
       _isSendingRequest = true;
     });
@@ -128,7 +146,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       await friendsService.sendFriendRequest(_userData!['id']);
 
       // Refresh friendship status
-      await friendsService.getFriendRequests(type: 'sent');
+      await friendsService.getFriendRequests(type: FriendRequestType.sent.toJson());
       await _checkFriendshipStatus();
 
       if (mounted) {
@@ -383,6 +401,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Future<void> _cancelFriendRequest() async {
     if (_userData == null || _userData!['id'] == null) return;
 
+    if (!mounted) return;
+
     setState(() {
       _isSendingRequest = true;
     });
@@ -392,7 +412,6 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       await friendsService.cancelFriendRequest(_userData!['id']);
 
       // Refresh friendship status
-      await friendsService.getFriendRequests(type: 'sent');
       await _checkFriendshipStatus();
 
       if (mounted) {
@@ -404,13 +423,22 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         );
       }
     } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('friends.error_cancelling_request'.tr()),
-            backgroundColor: Colors.red.shade600,
-          ),
-        );
+      // If the request doesn't exist or was already processed,
+      // just refresh the status instead of showing an error
+      final errorMessage = error.toString().toLowerCase();
+      if (errorMessage.contains('not found') || errorMessage.contains('already processed')) {
+        // Silently refresh the friendship status
+        await _checkFriendshipStatus();
+      } else {
+        // Show error for other types of failures
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('friends.error_cancelling_request'.tr()),
+              backgroundColor: Colors.red.shade600,
+            ),
+          );
+        }
       }
     } finally {
       if (mounted) {
@@ -424,12 +452,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(
-          color: AppTheme.primary,
+        surfaceTintColor: Colors.white,
+        iconTheme: const IconThemeData(
+          color: Colors.black,
         ),
       ),
       body: _isLoading
@@ -513,6 +542,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     final avatarUrl = _userData!['avatar_url'];
     final bio = _userData!['bio'];
 
+    // Calculate total wishes count
+    int totalWishesCount = 0;
+    for (final wishlist in _wishlists) {
+      final items = wishlist['items'] as List?;
+      totalWishesCount += items?.length ?? 0;
+    }
+
     return NativeRefreshIndicator(
       onRefresh: _loadProfile,
       child: CustomScrollView(
@@ -520,66 +556,136 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           // Profile header
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Avatar
-                  CachedAvatarImage(
-                    imageUrl: avatarUrl,
-                    radius: 40,
-                  ),
-                  const SizedBox(height: 16),
-                  // Name
-                  if (fullName != null)
-                    Text(
-                      fullName,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.primary,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-                  const SizedBox(height: 4),
-                  // Username
-                  Text(
-                    '@${widget.username}',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  // Avatar and user info section
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Avatar
+                      CachedAvatarImage(
+                        imageUrl: avatarUrl,
+                        radius: 48,
+                        backgroundColor: AppTheme.primaryAccent.withValues(alpha: 0.1),
+                      ),
+                      const SizedBox(width: 20),
+                      // Name, username, bio, and stats
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 8),
+                            // Name
+                            if (fullName != null)
+                              Text(
+                                fullName,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black,
+                                  letterSpacing: -0.3,
+                                  height: 1.2,
+                                ),
+                              ),
+                            const SizedBox(height: 6),
+                            // Username
+                            Text(
+                              '@${widget.username}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF8E8E93),
+                                height: 1.3,
+                              ),
+                            ),
+                            // Bio
+                            if (bio != null && bio.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                bio,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.black,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
+                            // Stats section
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                // Wishlists count
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.card_giftcard_outlined,
+                                      size: 18,
+                                      color: AppTheme.primaryAccent,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '${_wishlists.length}',
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _wishlists.length == 1 ? 'wishlist' : 'wishlists',
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        color: Color(0xFF8E8E93),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(width: 20),
+                                // Wishes count
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.favorite_outline,
+                                      size: 18,
+                                      color: Colors.pinkAccent.shade100,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '$totalWishesCount',
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      totalWishesCount == 1 ? 'wish' : 'wishes',
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        color: Color(0xFF8E8E93),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                    textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                  // Bio
-                  if (bio != null && bio.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      bio,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.primary,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
 
                   // Friend request button
                   if (!_isOwnProfile) ...[
                     const SizedBox(height: 24),
                     _buildFriendButton(),
                   ],
-                ],
-              ),
-            ),
-          ),
 
-          // Wishlists section header
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-              child: Text(
-                'wishlist.wishlists'.tr(),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.primary,
-                    ),
+                  const SizedBox(height: 32),
+                ],
               ),
             ),
           ),
@@ -590,25 +696,35 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               hasScrollBody: false,
               child: Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(32),
+                  padding: const EdgeInsets.all(40),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.card_giftcard_outlined,
-                        size: 64,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurfaceVariant
-                            .withValues(alpha: 0.5),
+                      Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Icon(
+                          Icons.card_giftcard_outlined,
+                          size: 48,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
                       Text(
-                        'home.empty_title'.tr(),
+                        'No public wishlists yet',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: AppTheme.primary,
                             ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Ask @${widget.username} to share a list',
+                        style: Theme.of(context).textTheme.bodyMedium,
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -618,18 +734,16 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final wishlist = _wishlists[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _buildWishlistCard(wishlist),
-                    );
-                  },
-                  childCount: _wishlists.length,
-                ),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+              sliver: SliverMasonryGrid.count(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childCount: _wishlists.length,
+                itemBuilder: (context, index) {
+                  final wishlist = _wishlists[index];
+                  return _buildWishlistCard(wishlist);
+                },
               ),
             ),
         ],
@@ -640,105 +754,165 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Widget _buildFriendButton() {
     if (_isAlreadyFriend) {
       // Already friends
-      return Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+      return SizedBox(
+        width: double.infinity,
+        height: 50,
+        child: ElevatedButton(
+          onPressed: null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.grey.shade100,
+            foregroundColor: Colors.black,
+            disabledBackgroundColor: Colors.grey.shade100,
+            disabledForegroundColor: Colors.black,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.check_circle,
-              size: 18,
-              color: Colors.green.shade600,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'friends.status_friends'.tr(),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.primary,
-                  ),
-            ),
-          ],
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.check_circle,
+                size: 18,
+                color: Colors.green.shade600,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'friends.status_friends'.tr(),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     if (_hasSentRequest) {
       // We sent them a request - show cancel button
-      return OutlinedButton.icon(
-        onPressed: _isSendingRequest ? null : _cancelFriendRequest,
-        icon: _isSendingRequest
-            ? SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.orange.shade700,
-                ),
-              )
-            : const Icon(Icons.close, size: 18),
-        label: Text(_isSendingRequest ? 'app.cancelling'.tr() : 'friends.cancel_request'.tr()),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.orange.shade700,
-          side: BorderSide(color: Colors.orange.shade300),
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+      return SizedBox(
+        width: double.infinity,
+        height: 50,
+        child: OutlinedButton(
+          onPressed: _isSendingRequest ? null : _cancelFriendRequest,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.orange.shade700,
+            side: BorderSide(color: Colors.orange.shade300, width: 1.5),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
           ),
+          child: _isSendingRequest
+              ? SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.orange.shade700,
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.close, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      'friends.cancel_request'.tr(),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
         ),
       );
     }
 
     if (_hasReceivedRequest) {
       // They sent us a request - show button to accept
-      return FilledButton.icon(
-        onPressed: () {
-          // Navigate to friends screen where they can accept/decline
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('profile.check_friend_requests'.tr()),
+      return SizedBox(
+        width: double.infinity,
+        height: 50,
+        child: ElevatedButton(
+          onPressed: () {
+            // Navigate to friends screen where they can accept/decline
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('profile.check_friend_requests'.tr()),
+                backgroundColor: AppTheme.primaryAccent,
+              ),
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryAccent,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
             ),
-          );
-        },
-        icon: const Icon(Icons.person_add, size: 18),
-        label: Text('profile.respond_to_request'.tr()),
-        style: FilledButton.styleFrom(
-          backgroundColor: AppTheme.primaryAccent,
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.person_add, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'profile.respond_to_request'.tr(),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ),
       );
     }
 
     // Can send friend request
-    return FilledButton.icon(
-      onPressed: _isSendingRequest ? null : _sendFriendRequest,
-      icon: _isSendingRequest
-          ? SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
-          : const Icon(Icons.person_add, size: 18),
-      label: Text(_isSendingRequest ? 'app.sending'.tr() : 'friends.add_friend'.tr()),
-      style: FilledButton.styleFrom(
-        backgroundColor: AppTheme.primaryAccent,
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        onPressed: _isSendingRequest ? null : _sendFriendRequest,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primaryAccent,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: const Color(0xFFE5E5EA),
+          disabledForegroundColor: const Color(0xFF8E8E93),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
+        child: _isSendingRequest
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.person_add, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    'friends.add_friend'.tr(),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -749,102 +923,123 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     final items = wishlist['items'] as List?;
     final itemCount = items?.length ?? 0;
 
-    // Get first 3 item images for preview
-    final imageUrls = <String>[];
-    if (items != null) {
-      for (final item in items.take(3)) {
-        final images = item['images'];
-        if (images != null) {
-          if (images is List && images.isNotEmpty) {
-            imageUrls.add(images[0]);
-          } else if (images is String && images.isNotEmpty) {
-            imageUrls.add(images);
-          }
+    // Get first item's image for preview (or use icon if no image)
+    String? firstImageUrl;
+    String? firstItemTitle;
+    if (items != null && items.isNotEmpty) {
+      final firstItem = items[0];
+      firstItemTitle = firstItem['title'] ?? '';
+      final images = firstItem['images'];
+      if (images != null) {
+        if (images is List && images.isNotEmpty) {
+          firstImageUrl = images[0];
+        } else if (images is String && images.isNotEmpty) {
+          firstImageUrl = images;
         }
       }
     }
 
-    return Material(
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: () {
-          // Navigate to wishlist detail
-          if (wishlistId != null) {
-            context.push('/profile/${widget.username}/wishlist/$wishlistId');
-          }
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 4,
-                offset: const Offset(0, 1),
-              ),
-            ],
+    return GestureDetector(
+      onTap: () {
+        // Navigate to wishlist detail
+        if (wishlistId != null) {
+          context.push('/profile/${widget.username}/wishlist/$wishlistId');
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.black.withValues(alpha: 0.15),
+            width: 1,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Image/Icon section
+            AspectRatio(
+              aspectRatio: 1.0,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                child: firstImageUrl != null
+                    ? CachedImageWidget(
+                        imageUrl: firstImageUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorWidget: Container(
+                          color: Colors.grey.shade100,
+                          child: Center(
+                            child: Icon(
+                              Icons.card_giftcard_outlined,
+                              size: 48,
+                              color: AppTheme.primaryAccent,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            firstItemTitle != null
+                                ? WishCategoryDetector.getIconFromTitle(firstItemTitle)
+                                : Icons.card_giftcard_outlined,
+                            size: 48,
+                            color: firstItemTitle != null
+                                ? WishCategoryDetector.getColorFromTitle(firstItemTitle)
+                                : AppTheme.primaryAccent,
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+
+            // Content section
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.primary,
-                              ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '$itemCount ${itemCount == 1 ? 'item' : 'items'}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                      ],
+                  // Wishlist name
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      height: 1.3,
+                      color: Colors.black,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  // Item count
+                  Text(
+                    '$itemCount ${itemCount == 1 ? 'item' : 'items'}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey.shade700,
                     ),
                   ),
                 ],
               ),
-              if (imageUrls.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 60,
-                  child: Row(
-                    children: imageUrls
-                        .take(3)
-                        .map(
-                          (url) => Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: CachedImageWidget(
-                              imageUrl: url,
-                              width: 60,
-                              height: 60,
-                              fit: BoxFit.cover,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              ],
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
