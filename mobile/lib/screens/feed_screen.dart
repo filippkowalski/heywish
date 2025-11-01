@@ -109,7 +109,8 @@ class _FeedScreenState extends State<FeedScreen> {
 
       if (feedResponse != null && feedResponse.activities.isNotEmpty) {
         for (final activity in feedResponse.activities) {
-          if (activity.activityType == 'wish_added') {
+          if (activity.activityType == 'item_added' ||
+              activity.activityType == 'wish_added') {
             feedItems.add(FeedItem(
               id: activity.id,
               friendName: activity.fullName ?? activity.username,
