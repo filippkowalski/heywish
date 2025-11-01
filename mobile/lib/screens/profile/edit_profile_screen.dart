@@ -116,6 +116,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return input.replaceAll(' ', '').toLowerCase();
   }
 
+  /// Get translated helper text based on username check result
+  String? _getHelperText() {
+    switch (_usernameCheckResult) {
+      case 'available':
+        return 'username_validation.available'.tr();
+      case 'taken':
+        return 'username_validation.taken'.tr();
+      case 'checking':
+        return 'username_validation.checking'.tr();
+      case 'error':
+        return 'username_validation.check_error'.tr();
+      default:
+        return _usernameCheckResult;
+    }
+  }
+
   void _onUsernameChanged(String value) {
     final cleanedValue = _cleanUsername(value);
 
@@ -144,7 +160,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         cleanedValue.isNotEmpty &&
         cleanedValue != _originalUsername) {
       setState(() {
-        _usernameCheckResult = 'username_validation.checking'.tr();
+        _usernameCheckResult = 'checking';
         _isCheckingUsername = true;
       });
 
@@ -154,7 +170,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } else if (cleanedValue == _originalUsername) {
       // If it's the original username, mark as available
       setState(() {
-        _usernameCheckResult = 'username_validation.available'.tr();
+        _usernameCheckResult = 'available';
         _isCheckingUsername = false;
       });
     }
@@ -168,14 +184,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (response != null && mounted) {
         final isAvailable = response['available'] as bool;
         setState(() {
-          _usernameCheckResult = isAvailable ? 'username_validation.available'.tr() : 'username_validation.taken'.tr();
+          _usernameCheckResult = isAvailable ? 'available' : 'taken';
           _isCheckingUsername = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _usernameCheckResult = 'username_validation.check_error'.tr();
+          _usernameCheckResult = 'error';
           _isCheckingUsername = false;
         });
       }
@@ -356,7 +372,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     // If username changed, it must be available
     if (_usernameController.text.trim() != _originalUsername) {
-      if (_usernameCheckResult != 'Available') return false;
+      if (_usernameCheckResult != 'available') return false;
     }
 
     // Full name is required
@@ -524,19 +540,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             color: AppTheme.primaryAccent.withValues(alpha: 0.6),
                           ),
                         )
-                      : _usernameCheckResult == 'Available'
+                      : _usernameCheckResult == 'available'
                           ? Icon(Icons.check_circle, color: Colors.green.shade600, size: 20)
                           : null,
                   errorText: _usernameValidationError,
                   helperText: _usernameCheckResult != null &&
                              _usernameValidationError == null &&
                              _usernameController.text != _originalUsername
-                      ? _usernameCheckResult == 'Available'
-                          ? 'username_validation.available'.tr()
-                          : _usernameCheckResult
+                      ? _getHelperText()
                       : null,
                   helperStyle: TextStyle(
-                    color: _usernameCheckResult == 'Available'
+                    color: _usernameCheckResult == 'available'
                         ? Colors.green.shade600
                         : Colors.red.shade600,
                     fontSize: 12,
