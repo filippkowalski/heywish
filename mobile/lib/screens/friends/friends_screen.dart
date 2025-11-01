@@ -13,8 +13,13 @@ import '../../common/navigation/native_page_route.dart';
 
 class FriendsScreen extends StatefulWidget {
   final VoidCallback? onNavigateToSearch;
+  final int initialTabIndex;
 
-  const FriendsScreen({super.key, this.onNavigateToSearch});
+  const FriendsScreen({
+    super.key,
+    this.onNavigateToSearch,
+    this.initialTabIndex = 0,
+  });
 
   @override
   State<FriendsScreen> createState() => _FriendsScreenState();
@@ -32,7 +37,12 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    final initialIndex = widget.initialTabIndex.clamp(0, 2).toInt();
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: initialIndex,
+    );
     _tabController.addListener(_onTabChanged);
     // Load data through the service when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -155,7 +165,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('friends.request_sent'.tr()),
+          content: Text('friends.request_sent'.tr(namedArgs: {'name': user.displayName})),
           backgroundColor: Colors.green.shade600,
         ),
       );
@@ -416,6 +426,77 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     }
   }
 
+  Future<void> _cancelFriendRequest(UserSearchResult user) async {
+    try {
+      final friendsService = context.read<FriendsService>();
+      await friendsService.cancelFriendRequest(user.id);
+
+      if (!mounted) return;
+
+      // Update the search results to reflect the cancelled status
+      setState(() {
+        final index = _searchResults.indexWhere((u) => u.id == user.id);
+        if (index != -1) {
+          _searchResults[index] = UserSearchResult(
+            id: user.id,
+            username: user.username,
+            fullName: user.fullName,
+            avatarUrl: user.avatarUrl,
+            bio: user.bio,
+            friendshipStatus: null,
+            requestDirection: null,
+          );
+        }
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('friends.request_cancelled'.tr()),
+          backgroundColor: Colors.grey.shade700,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('friends.error_cancelling_request'.tr()),
+          backgroundColor: Colors.red.shade600,
+        ),
+      );
+    }
+  }
+
+  Future<void> _cancelSentRequest(FriendRequest request) async {
+    if (request.addresseeId == null) return;
+
+    try {
+      final friendsService = context.read<FriendsService>();
+      await friendsService.cancelFriendRequest(request.addresseeId!);
+
+      // Reload data after cancelling
+      await friendsService.loadAllData();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('friends.request_cancelled'.tr()),
+            backgroundColor: Colors.grey.shade700,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('friends.error_cancelling_request'.tr()),
+            backgroundColor: Colors.red.shade600,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<FriendsService>(
@@ -439,10 +520,10 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
               child: Column(
                 children: [
                   TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              tabs: [
+                    controller: _tabController,
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
+                    tabs: [
                 Tab(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -758,24 +839,78 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
 
   Widget _buildFriendshipButton(UserSearchResult user) {
     if (user.friendshipStatus == 'accepted') {
-      return Chip(
-        label: Text('friends.status_friends'.tr()),
-        backgroundColor: Colors.green.shade100,
-        labelStyle: TextStyle(
-          color: Colors.green.shade700,
-          fontSize: 12,
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.green.shade50,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.green.shade300,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.check_circle,
+              size: 14,
+              color: Colors.green.shade700,
+            ),
+            SizedBox(width: 4),
+            Text(
+              'friends.status_friends'.tr(),
+              style: TextStyle(
+                color: Colors.green.shade700,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       );
     }
 
     if (user.friendshipStatus == 'pending') {
       if (user.requestDirection == 'sent') {
-        return Chip(
-          label: Text('friends.status_pending'.tr()),
-          backgroundColor: Colors.orange.shade100,
-          labelStyle: TextStyle(
-            color: Colors.orange.shade700,
-            fontSize: 12,
+        return InkWell(
+          onTap: () => _cancelFriendRequest(user),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.orange.shade300,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.access_time,
+                  size: 14,
+                  color: Colors.orange.shade700,
+                ),
+                SizedBox(width: 4),
+                Text(
+                  'friends.status_pending'.tr(),
+                  style: TextStyle(
+                    color: Colors.orange.shade700,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(width: 4),
+                Icon(
+                  Icons.close,
+                  size: 14,
+                  color: Colors.orange.shade700,
+                ),
+              ],
+            ),
           ),
         );
       } else {
@@ -983,13 +1118,52 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
           'Sent ${DateFormat('MMM d').format(request.createdAt)}',
           style: TextStyle(color: Colors.grey.shade600),
         ),
-        trailing: Chip(
-          label: Text('Pending'),
-          backgroundColor: Colors.orange.shade100,
-          labelStyle: TextStyle(
-            color: Colors.orange.shade700,
-            fontSize: 12,
-          ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.orange.shade300,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    size: 14,
+                    color: Colors.orange.shade700,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    'Pending',
+                    style: TextStyle(
+                      color: Colors.orange.shade700,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 8),
+            IconButton(
+              onPressed: () => _cancelSentRequest(request),
+              icon: Icon(Icons.close, size: 18),
+              color: Colors.red.shade600,
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.red.shade50,
+                padding: EdgeInsets.all(8),
+                minimumSize: Size(32, 32),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          ],
         ),
       ),
     );

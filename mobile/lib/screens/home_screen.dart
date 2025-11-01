@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:provider/provider.dart';
 import 'wishlists/wishlists_screen.dart';
 import 'wishlists/add_wish_screen.dart';
 import 'feed_screen.dart';
 import 'profile/profile_screen.dart';
 import '../services/share_handler_service.dart';
+import '../services/auth_service.dart';
+import '../services/friends_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _selectedIndex = 0;
   final ShareHandlerService _shareHandler = ShareHandlerService();
   StreamSubscription<SharedContent>? _shareSubscription;
+  bool _friendsDataLoaded = false;
 
   @override
   void initState() {
@@ -28,6 +32,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     // Listen for shared content
     _shareSubscription = _shareHandler.sharedContentStream.listen((content) {
       _handleSharedContent(content);
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authService = context.read<AuthService>();
+      if (authService.isAuthenticated) {
+        _friendsDataLoaded = true;
+        context.read<FriendsService>().loadAllData();
+      }
     });
   }
 
@@ -81,8 +93,65 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
   }
 
+  Widget _buildProfileIcon({
+    required bool selected,
+    required int badgeCount,
+  }) {
+    final baseIcon = Icon(selected ? Icons.person : Icons.person_outline);
+
+    if (badgeCount <= 0) {
+      return baseIcon;
+    }
+
+    final displayText = badgeCount > 9 ? '9+' : badgeCount.toString();
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        baseIcon,
+        Positioned(
+          right: -8,
+          top: -4,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.redAccent,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white, width: 1.5),
+            ),
+            constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+            child: Center(
+              child: Text(
+                displayText,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isAuthenticated = context.watch<AuthService>().isAuthenticated;
+    if (!isAuthenticated && _friendsDataLoaded) {
+      _friendsDataLoaded = false;
+    } else if (isAuthenticated && !_friendsDataLoaded) {
+      _friendsDataLoaded = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.read<FriendsService>().loadAllData();
+      });
+    }
+
+    final pendingRequestsCount =
+        context.watch<FriendsService>().pendingRequestsCount;
+
     final screens = [
       const WishlistsScreen(),
       const FeedScreen(),
@@ -129,8 +198,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               label: 'Feed',
             ),
             NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person),
+              icon: _buildProfileIcon(
+                selected: false,
+                badgeCount: pendingRequestsCount,
+              ),
+              selectedIcon: _buildProfileIcon(
+                selected: true,
+                badgeCount: pendingRequestsCount,
+              ),
               label: 'Profile',
             ),
           ],

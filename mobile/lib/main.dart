@@ -32,6 +32,7 @@ import 'screens/wishlists/wish_detail_screen.dart';
 import 'screens/wishlists/edit_wishlist_screen.dart';
 import 'screens/wishlists/edit_wish_screen.dart';
 import 'screens/feedback/feedback_sheet_page.dart';
+import 'screens/friends/friends_screen.dart';
 import 'screens/profile/public_profile_screen.dart';
 import 'screens/profile/public_wishlist_detail_screen.dart';
 import 'common/navigation/native_page_route.dart';
@@ -104,6 +105,7 @@ class _JinnieAppState extends State<JinnieApp> {
   final ScreenshotController _screenshotController = ScreenshotController();
   final QuickActions _quickActions = const QuickActions();
   static const platform = MethodChannel('com.wishlists.gifts/share');
+  StreamSubscription<RemoteMessage>? _fcmTapSubscription;
 
   @override
   void initState() {
@@ -126,6 +128,9 @@ class _JinnieAppState extends State<JinnieApp> {
       // Check for shared content on startup
       _checkForSharedContent();
     }
+
+    _fcmTapSubscription =
+        FCMService().notificationTapStream.listen(_handleNotificationTap);
   }
 
   void _initializeShareHandler() {
@@ -149,6 +154,99 @@ class _JinnieAppState extends State<JinnieApp> {
       }
     } catch (e) {
       debugPrint('Error checking for shared content: $e');
+    }
+  }
+
+  void _handleNotificationTap(RemoteMessage message) {
+    final data = message.data;
+    final type = data['type'] as String?;
+    if (type == null) {
+      return;
+    }
+
+    int _tabIndexFor(String? tabKey) {
+      switch (tabKey) {
+        case 'requests':
+          return 1;
+        case 'sent':
+          return 2;
+        default:
+          return 0;
+      }
+    }
+
+    void _ensureHomeThenExecute(
+      Future<void> Function(BuildContext navigatorContext) action,
+    ) {
+      Future<void> runAction() async {
+        final navigatorContext =
+            _router.routerDelegate.navigatorKey.currentContext;
+        if (navigatorContext == null) return;
+        await action(navigatorContext);
+      }
+
+      final routeInfo = _router.routeInformationProvider.value;
+      final currentPath = routeInfo.uri.path;
+      final isOnHome = currentPath == '/home' || currentPath == '/';
+
+      if (!isOnHome) {
+        _router.go('/home');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          runAction();
+        });
+      } else {
+        runAction();
+      }
+    }
+
+    if (type == 'friend_request' || type == 'friend_accepted') {
+      final tabKey = data['tab'] as String? ??
+          (type == 'friend_request' ? 'requests' : 'friends');
+      final tabIndex = _tabIndexFor(tabKey);
+      _ensureHomeThenExecute((navigatorContext) async {
+        Navigator.of(navigatorContext).push(
+          NativePageRoute(
+            child: FriendsScreen(initialTabIndex: tabIndex),
+          ),
+        );
+      });
+      return;
+    }
+
+    if (type == 'wish_reserved' || type == 'wish_purchased') {
+      final wishId =
+          data['wishId'] as String? ?? data['wish_id'] as String?;
+      final wishlistIdRaw =
+          data['wishlistId'] as String? ?? data['wishlist_id'] as String?;
+
+      if (wishId == null) {
+        debugPrint('FCM: Missing wishId for wish notification');
+        return;
+      }
+
+      final wishlistId = (wishlistIdRaw == null ||
+              wishlistIdRaw.isEmpty ||
+              wishlistIdRaw == 'null')
+          ? 'unsorted'
+          : wishlistIdRaw;
+
+      _ensureHomeThenExecute((navigatorContext) async {
+        final wishlistService =
+            Provider.of<WishlistService>(navigatorContext, listen: false);
+
+        if (wishlistService.findWishById(wishId) == null) {
+          await wishlistService.fetchWishlists();
+        }
+
+        if (!navigatorContext.mounted) return;
+
+        await WishDetailScreen.show(
+          navigatorContext,
+          wishId: wishId,
+          wishlistId: wishlistId,
+        );
+      });
+      return;
     }
   }
 
@@ -245,6 +343,7 @@ class _JinnieAppState extends State<JinnieApp> {
 
   @override
   void dispose() {
+    _fcmTapSubscription?.cancel();
     ScreenshotDetectionService.instance.dispose();
     super.dispose();
   }

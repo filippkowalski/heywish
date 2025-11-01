@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'api_service.dart';
@@ -10,6 +11,11 @@ class FCMService {
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   String? _currentToken;
+  final StreamController<RemoteMessage> _notificationTapController =
+      StreamController<RemoteMessage>.broadcast();
+
+  Stream<RemoteMessage> get notificationTapStream =>
+      _notificationTapController.stream;
 
   /// Initialize FCM (setup handlers only, don't request permissions)
   Future<void> initialize() async {
@@ -135,6 +141,7 @@ class FCMService {
 
     // Navigation will be handled by the app's router
     // You can use a stream or callback to notify the app
+    _notificationTapController.add(message);
   }
 
   /// Get current FCM token
