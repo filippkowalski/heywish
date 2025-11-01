@@ -131,7 +131,13 @@ class OnboardingService extends ChangeNotifier {
         // This will be handled by checkUserProfileStatus method
         break;
       case OnboardingStep.username:
-        _currentStep = OnboardingStep.complete;
+        // CRITICAL: Only proceed to complete if username is set
+        if (_data.username != null && _data.username!.isNotEmpty) {
+          _currentStep = OnboardingStep.complete;
+        } else {
+          debugPrint('❌ OnboardingService: Cannot proceed - username is required');
+          // Stay on username step until username is provided
+        }
         break;
       case OnboardingStep.complete:
         // Already at the end
@@ -177,6 +183,17 @@ class OnboardingService extends ChangeNotifier {
   }
 
   void goToStep(OnboardingStep step) {
+    // CRITICAL: Prevent going to complete step without username
+    if (step == OnboardingStep.complete) {
+      if (_data.username == null || _data.username!.isEmpty) {
+        debugPrint('❌ OnboardingService: Cannot go to complete step - username is required');
+        debugPrint('🔄 OnboardingService: Redirecting to username step');
+        _currentStep = OnboardingStep.username;
+        notifyListeners();
+        return;
+      }
+    }
+
     _currentStep = step;
     notifyListeners();
   }
@@ -457,6 +474,15 @@ class OnboardingService extends ChangeNotifier {
     const baseDelay = Duration(milliseconds: 1500);
 
     try {
+      // CRITICAL: Validate that username exists before proceeding
+      if (_data.username == null || _data.username!.isEmpty) {
+        debugPrint('❌ OnboardingService: Cannot complete onboarding - username is required');
+        _error = 'Username is required to complete onboarding';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
       debugPrint(
         '🎯 OnboardingService: Completing onboarding (attempt ${retryAttempt + 1})',
       );
