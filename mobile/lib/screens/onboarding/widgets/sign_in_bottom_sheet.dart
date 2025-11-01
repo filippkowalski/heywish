@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/onboarding_service.dart';
@@ -119,7 +120,8 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
             await authService.markOnboardingCompleted();
 
             if (!mounted) return;
-            Navigator.of(context).pop();
+            Navigator.of(context).pop(); // Close bottom sheet
+            context.go('/home'); // Navigate to home screen
           } catch (e) {
             debugPrint('❌ SignInBottomSheet: Merge failed: $e');
             if (!mounted) return;
@@ -138,11 +140,11 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
                                    !authService.firebaseUser!.isAnonymous;
 
         if (userExists || (wasAnonymous && isNowAuthenticated)) {
-          // Existing user OR successfully upgraded anonymous user - mark onboarding complete and close
+          // Existing user OR successfully upgraded anonymous user - mark onboarding complete and navigate
           await authService.markOnboardingCompleted();
           if (!mounted) return;
-          Navigator.of(context).pop();
-          // User will be navigated to home screen automatically by router
+          Navigator.of(context).pop(); // Close bottom sheet
+          context.go('/home'); // Navigate to home screen
         } else {
           // New user - automatically create account and continue to onboarding
           // Sync with backend to create the account (if not already created)
@@ -257,7 +259,8 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
             await authService.markOnboardingCompleted();
 
             if (!mounted) return;
-            Navigator.of(context).pop();
+            Navigator.of(context).pop(); // Close bottom sheet
+            context.go('/home'); // Navigate to home screen
           } catch (e) {
             debugPrint('❌ SignInBottomSheet: Merge failed: $e');
             if (!mounted) return;
@@ -276,11 +279,11 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
                                    !authService.firebaseUser!.isAnonymous;
 
         if (userExists || (wasAnonymous && isNowAuthenticated)) {
-          // Existing user OR successfully upgraded anonymous user - mark onboarding complete and close
+          // Existing user OR successfully upgraded anonymous user - mark onboarding complete and navigate
           await authService.markOnboardingCompleted();
           if (!mounted) return;
-          Navigator.of(context).pop();
-          // User will be navigated to home screen automatically by router
+          Navigator.of(context).pop(); // Close bottom sheet
+          context.go('/home'); // Navigate to home screen
         } else {
           // New user - automatically create account and continue to onboarding
           // Sync with backend to create the account (if not already created)
