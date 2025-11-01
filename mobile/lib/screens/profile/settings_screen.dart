@@ -34,7 +34,11 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppTheme.primaryAccent, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: AppTheme.primaryAccent,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -144,9 +148,7 @@ class SettingsScreen extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Column(
-            children: items,
-          ),
+          child: Column(children: items),
         ),
       ],
     );
@@ -175,11 +177,7 @@ class SettingsScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: AppTheme.primaryAccent,
-                size: 24,
-              ),
+              Icon(icon, color: AppTheme.primaryAccent, size: 24),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -187,10 +185,7 @@ class SettingsScreen extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        color: Colors.black,
-                      ),
+                      style: const TextStyle(fontSize: 17, color: Colors.black),
                     ),
                     Text(
                       subtitle,
@@ -241,7 +236,10 @@ class SettingsScreen extends StatelessWidget {
             child: InkWell(
               onTap: () => _showDeleteAccountDialog(context),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 11,
+                ),
                 child: Row(
                   children: [
                     const Icon(
@@ -326,10 +324,7 @@ class SettingsScreen extends StatelessWidget {
                   children: [
                     Text(
                       'settings.language'.tr(),
-                      style: const TextStyle(
-                        fontSize: 17,
-                        color: Colors.black,
-                      ),
+                      style: const TextStyle(fontSize: 17, color: Colors.black),
                     ),
                     Text(
                       getCurrentLanguageName(),
@@ -355,11 +350,36 @@ class SettingsScreen extends StatelessWidget {
 
   void _showLanguageSelector(BuildContext context) {
     final languages = [
-      {'code': 'en', 'country': null, 'name': 'English', 'nativeName': 'English'},
-      {'code': 'de', 'country': null, 'name': 'German', 'nativeName': 'Deutsch'},
-      {'code': 'es', 'country': null, 'name': 'Spanish', 'nativeName': 'Español'},
-      {'code': 'fr', 'country': null, 'name': 'French', 'nativeName': 'Français'},
-      {'code': 'pt', 'country': 'BR', 'name': 'Portuguese', 'nativeName': 'Português (Brasil)'},
+      {
+        'code': 'en',
+        'country': null,
+        'name': 'English',
+        'nativeName': 'English',
+      },
+      {
+        'code': 'de',
+        'country': null,
+        'name': 'German',
+        'nativeName': 'Deutsch',
+      },
+      {
+        'code': 'es',
+        'country': null,
+        'name': 'Spanish',
+        'nativeName': 'Español',
+      },
+      {
+        'code': 'fr',
+        'country': null,
+        'name': 'French',
+        'nativeName': 'Français',
+      },
+      {
+        'code': 'pt',
+        'country': 'BR',
+        'name': 'Portuguese',
+        'nativeName': 'Português (Brasil)',
+      },
     ];
 
     NativeTransitions.showNativeModalBottomSheet(
@@ -409,84 +429,100 @@ class SettingsScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: languages.map((lang) {
-              final locale = lang['country'] != null
-                  ? Locale(lang['code'] as String, lang['country'] as String)
-                  : Locale(lang['code'] as String);
-              final isSelected = context.locale == locale;
+                  children:
+                      languages.map((lang) {
+                        final locale =
+                            lang['country'] != null
+                                ? Locale(
+                                  lang['code'] as String,
+                                  lang['country'] as String,
+                                )
+                                : Locale(lang['code'] as String);
+                        final isSelected = context.locale == locale;
 
-              return Column(
-                children: [
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () async {
-                        await context.setLocale(locale);
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                        }
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppTheme.primaryAccent.withValues(alpha: 0.08)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppTheme.primaryAccent.withValues(alpha: 0.3)
-                                : Colors.grey.withValues(alpha: 0.2),
-                            width: isSelected ? 1.5 : 1,
-                          ),
-                        ),
-                        child: Row(
+                        return Column(
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    lang['nativeName'] as String,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: isSelected
-                                          ? FontWeight.w600
-                                          : FontWeight.w500,
-                                      color: isSelected
-                                          ? AppTheme.primaryAccent
-                                          : AppTheme.primary,
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () async {
+                                  await context.setLocale(locale);
+                                  if (context.mounted) {
+                                    Navigator.pop(context);
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        isSelected
+                                            ? AppTheme.primaryAccent.withValues(
+                                              alpha: 0.08,
+                                            )
+                                            : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color:
+                                          isSelected
+                                              ? AppTheme.primaryAccent
+                                                  .withValues(alpha: 0.3)
+                                              : Colors.grey.withValues(
+                                                alpha: 0.2,
+                                              ),
+                                      width: isSelected ? 1.5 : 1,
                                     ),
                                   ),
-                                  Text(
-                                    lang['name'] as String,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.grey[600],
-                                    ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              lang['nativeName'] as String,
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight:
+                                                    isSelected
+                                                        ? FontWeight.w600
+                                                        : FontWeight.w500,
+                                                color:
+                                                    isSelected
+                                                        ? AppTheme.primaryAccent
+                                                        : AppTheme.primary,
+                                              ),
+                                            ),
+                                            Text(
+                                              lang['name'] as String,
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (isSelected)
+                                        const Icon(
+                                          Icons.check_circle,
+                                          color: AppTheme.primaryAccent,
+                                          size: 24,
+                                        ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             ),
-                            if (isSelected)
-                              const Icon(
-                                Icons.check_circle,
-                                color: AppTheme.primaryAccent,
-                                size: 24,
-                              ),
+                            if (lang != languages.last)
+                              const SizedBox(height: 12),
                           ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (lang != languages.last) const SizedBox(height: 12),
-                ],
-              );
-                  }).toList(),
+                        );
+                      }).toList(),
                 ),
               ),
             ),
@@ -498,50 +534,36 @@ class SettingsScreen extends StatelessWidget {
 
   void _showFeedbackSheet(BuildContext context) {
     Navigator.of(context).push(
-      NativePageRoute(
-        child: const FeedbackSheetPage(
-          clickSource: 'settings',
-        ),
-      ),
+      NativePageRoute(child: const FeedbackSheetPage(clickSource: 'settings')),
     );
   }
 
   void _navigateToPersonalizationSettings(BuildContext context) {
-    Navigator.of(context).push(
-      NativePageRoute(
-        child: const PersonalizationSettingsScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(NativePageRoute(child: const PersonalizationSettingsScreen()));
   }
 
   void _navigateToPrivacySettings(BuildContext context) {
-    Navigator.of(context).push(
-      NativePageRoute(
-        child: const PrivacySettingsScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(NativePageRoute(child: const PrivacySettingsScreen()));
   }
 
   void _navigateToNotificationsSettings(BuildContext context) {
-    Navigator.of(context).push(
-      NativePageRoute(
-        child: const NotificationsSettingsScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(NativePageRoute(child: const NotificationsSettingsScreen()));
   }
 
   void _navigateToAbout(BuildContext context) {
-    Navigator.of(context).push(
-      NativePageRoute(
-        child: const AboutScreen(),
-      ),
-    );
+    Navigator.of(context).push(NativePageRoute(child: const AboutScreen()));
   }
 
   Future<void> _openHelpSupport(BuildContext context) async {
     final Uri emailUri = Uri(
       scheme: 'mailto',
-      path: 'bobbyfisher77+jinnie@icloud.com',
+      path: 'bobbyfischer77+jinnie@icloud.com',
       query: 'subject=Jinnie Support Request',
     );
 
@@ -562,7 +584,9 @@ class SettingsScreen extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not open email app. Please email us at bobbyfisher77+jinnie@icloud.com'),
+            content: Text(
+              'Could not open email app. Please email us at bobbyfischer77+jinnie@icloud.com',
+            ),
             backgroundColor: AppTheme.error,
           ),
         );
@@ -643,10 +667,14 @@ class SettingsScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.5),
                     width: 1,
                   ),
                 ),
@@ -816,16 +844,10 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
     final theme = Theme.of(context);
 
     return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Row(
         children: [
-          Icon(
-            Icons.warning_rounded,
-            color: AppTheme.error,
-            size: 28,
-          ),
+          Icon(Icons.warning_rounded, color: AppTheme.error, size: 28),
           const SizedBox(width: 12),
           Text(
             'profile.delete_account_title'.tr(),
@@ -842,9 +864,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
         children: [
           Text(
             'profile.delete_account_warning'.tr(),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              height: 1.4,
-            ),
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
           ),
           const SizedBox(height: 16),
           Column(
@@ -862,17 +882,11 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
             decoration: BoxDecoration(
               color: AppTheme.error.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppTheme.error.withValues(alpha: 0.3),
-              ),
+              border: Border.all(color: AppTheme.error.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.info_outline,
-                  color: AppTheme.error,
-                  size: 20,
-                ),
+                Icon(Icons.info_outline, color: AppTheme.error, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -895,23 +909,24 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
         ),
         FilledButton(
           onPressed: _countdown > 0 || _isDeleting ? null : _deleteAccount,
-          style: FilledButton.styleFrom(
-            backgroundColor: AppTheme.error,
-          ),
-          child: _isDeleting
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          style: FilledButton.styleFrom(backgroundColor: AppTheme.error),
+          child:
+              _isDeleting
+                  ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                  : Text(
+                    _countdown > 0
+                        ? 'profile.delete_in_countdown'.tr(
+                          namedArgs: {'seconds': _countdown.toString()},
+                        )
+                        : 'profile.delete_forever'.tr(),
                   ),
-                )
-              : Text(
-                  _countdown > 0
-                      ? 'profile.delete_in_countdown'.tr(namedArgs: {'seconds': _countdown.toString()})
-                      : 'profile.delete_forever'.tr(),
-                ),
         ),
       ],
     );

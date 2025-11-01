@@ -371,6 +371,7 @@ class WishlistService extends ChangeNotifier {
     int? priority,
     int? quantity,
     String? notes,
+    String? wishlistId,
   }) async {
     try {
       final data = <String, dynamic>{};
@@ -383,6 +384,7 @@ class WishlistService extends ChangeNotifier {
       if (priority != null) data['priority'] = priority;
       if (quantity != null) data['quantity'] = quantity;
       if (notes != null) data['notes'] = notes;
+      if (wishlistId != null) data['wishlistId'] = wishlistId;
 
       final response = await _apiService.patch('/wishes/$wishId', data);
 

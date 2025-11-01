@@ -266,6 +266,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
                 ? null
                 : _urlController.text.trim(),
             images: images,
+            wishlistId: _selectedWishlistId,
           );
 
       if (mounted) {
@@ -553,6 +554,19 @@ class _EditWishScreenState extends State<EditWishScreen> {
                     // Add More Details buttons
                     const SizedBox(height: 20),
                     _buildAddFieldButtons(),
+
+                    // Wishlist Selector - Always visible at bottom
+                    const SizedBox(height: 16),
+                    Text(
+                      'List',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildWishlistSelector(),
                   ],
                 ),
               ),
@@ -790,5 +804,98 @@ class _EditWishScreenState extends State<EditWishScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildWishlistSelector() {
+    final wishlistService = context.watch<WishlistService>();
+    final wishlists = wishlistService.wishlists;
+
+    return SizedBox(
+      height: 32,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: wishlists.length + 1, // +1 for "New List" button
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          // Last item is "New List" button
+          if (index == wishlists.length) {
+            return GestureDetector(
+              onTap: _createNewWishlist,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.add,
+                        size: 16,
+                        color: AppTheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'New List',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          final wishlist = wishlists[index];
+          final isSelected = _selectedWishlistId == wishlist.id;
+
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedWishlistId = wishlist.id;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: isSelected ? AppTheme.primaryAccent : Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  wishlist.name,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected ? Colors.white : AppTheme.primary,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _createNewWishlist() async {
+    // Show create new wishlist bottom sheet
+    final newWishlistId = await WishlistNewScreen.show(context);
+
+    if (newWishlistId != null && mounted) {
+      // Refresh wishlists
+      await context.read<WishlistService>().fetchWishlists();
+
+      // Select the newly created wishlist
+      setState(() {
+        _selectedWishlistId = newWishlistId as String;
+      });
+    }
   }
 }
