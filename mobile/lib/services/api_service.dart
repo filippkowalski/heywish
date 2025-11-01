@@ -592,27 +592,6 @@ class ApiService {
     }
   }
 
-  /// Privacy-first friend discovery: Send only phone numbers, no contact names
-  Future<Map<String, dynamic>?> findFriendsByPhoneNumbers(
-    List<String> phoneNumbers,
-  ) async {
-    try {
-      debugPrint(
-        '🔍 API: Finding friends by ${phoneNumbers.length} phone numbers (privacy-first)',
-      );
-
-      final response = await post('/friends/find-by-phone-numbers', {
-        'phone_numbers': phoneNumbers,
-      });
-
-      debugPrint('✅ API: Friend suggestions retrieved');
-      return response as Map<String, dynamic>?;
-    } catch (e) {
-      debugPrint('❌ API: Error finding friends: $e');
-      return null;
-    }
-  }
-
   String _handleError(DioException error) {
     switch (error.type) {
       case DioExceptionType.connectionTimeout:

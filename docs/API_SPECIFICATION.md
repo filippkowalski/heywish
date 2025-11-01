@@ -364,6 +364,8 @@ Mark item as purchased.
 
 ### Social Endpoints
 
+> Note: Contact-book based friend discovery is currently not supported; all friend actions require explicit search or user IDs.
+
 #### GET /friends
 Get friends list.
 
@@ -389,7 +391,7 @@ Send friend request.
 **Request:**
 ```json
 {
-  "username": "janedoe"
+  "user_id": "f1d2d2f9-9c3c-4567-8abc-ef0123456789"
 }
 ```
 
