@@ -458,11 +458,12 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
 final _router = GoRouter(
   initialLocation: '/',
   redirect: (context, state) {
-    // If the location is a deep link URL (contains "://"), store it and redirect to splash
-    // The deep link service will handle the actual navigation after initialization
-    if (state.matchedLocation.contains('://')) {
-      debugPrint('🔗 Intercepted deep link, storing for later: ${state.matchedLocation}');
-      _JinnieAppState._pendingDeepLink = state.matchedLocation;
+    // Check if this is a deep link by examining state.uri
+    // For cold-start deep links, state.matchedLocation is '/' but state.uri contains the full URL
+    final uriString = state.uri.toString();
+    if (state.uri.scheme.isNotEmpty && state.uri.scheme != 'http' && state.uri.scheme != 'https') {
+      debugPrint('🔗 Intercepted deep link, storing for later: $uriString');
+      _JinnieAppState._pendingDeepLink = uriString;
       return '/';
     }
     return null; // No redirect needed
