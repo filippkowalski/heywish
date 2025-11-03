@@ -12,15 +12,16 @@ export function UsernameStep() {
   const [username, setUsername] = useState(data.username || '');
   const [localError, setLocalError] = useState<string | null>(null);
 
-  // Pre-fill from email if available
+  // Pre-fill from email if available (only on initial mount)
   useEffect(() => {
-    if (!username && user?.email) {
+    if (!username && !data.username && user?.email) {
       const emailPrefix = user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9._]/g, '');
       if (emailPrefix.length >= 3) {
         setUsername(emailPrefix);
       }
     }
-  }, [user, username]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Check availability when username changes
   useEffect(() => {
@@ -155,6 +156,13 @@ export function UsernameStep() {
             <div className="min-h-[24px]">
               {getStatusIndicator()}
             </div>
+
+            {/* Profile URL preview */}
+            {username && !localError && (
+              <div className="text-sm text-gray-500">
+                jinnie.co/<span className="font-medium text-gray-700">{username}</span>
+              </div>
+            )}
           </div>
 
           {/* Guidelines */}

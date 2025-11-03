@@ -22,11 +22,9 @@ export function ProfileDetailsStep() {
     setStep('interests');
   };
 
-  // Calculate max date (13 years ago for age restriction)
+  // Calculate date range
   const today = new Date();
-  const maxDate = new Date(today.getFullYear() - 13, today.getMonth(), today.getDate())
-    .toISOString()
-    .split('T')[0];
+  const maxDate = today.toISOString().split('T')[0]; // Today's date
 
   // Calculate min date (120 years ago)
   const minDate = new Date(today.getFullYear() - 120, today.getMonth(), today.getDate())
@@ -60,9 +58,6 @@ export function ProfileDetailsStep() {
               max={maxDate}
               className="w-full h-14 px-4 text-base border-2 border-gray-200 rounded-xl focus:border-black focus:outline-none transition-colors"
             />
-            <p className="text-xs text-gray-500">
-              You must be at least 13 years old to use Jinnie
-            </p>
           </div>
 
           {/* Gender */}

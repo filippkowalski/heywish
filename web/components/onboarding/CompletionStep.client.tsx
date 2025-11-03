@@ -24,9 +24,8 @@ export function CompletionStep() {
   };
 
   const handleContinue = () => {
-    // Force full page reload to ensure auth state is refreshed
-    // This prevents the infinite redirect loop by re-syncing with backend
-    window.location.href = '/';
+    // Redirect to user's profile page to start building wishlists
+    window.location.href = `/${data.username}`;
   };
 
   return (
@@ -121,7 +120,7 @@ export function CompletionStep() {
             onClick={handleContinue}
             className="w-full h-14 text-base bg-black hover:bg-gray-800"
           >
-            Go to Home
+            Start building wishlist
           </Button>
         </div>
 
