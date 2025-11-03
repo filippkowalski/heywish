@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -68,6 +70,16 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Initialize Firebase Crashlytics
+  // Pass all uncaught "fatal" errors from the Flutter framework to Crashlytics
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+  // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
   // Initialize FCM background handler
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
@@ -83,20 +95,26 @@ void main() async {
   // Initialize FCM service (will register token after auth)
   FCMService().initialize();
 
-  runApp(
-    EasyLocalization(
-      supportedLocales: const [
-        Locale('en'), // English
-        Locale('de'), // German
-        Locale('es'), // Spanish
-        Locale('fr'), // French
-        Locale('pt', 'BR'), // Portuguese (Brazilian)
-      ],
-      path: 'assets/translations',
-      fallbackLocale: const Locale('en'),
-      child: const JinnieApp(),
-    ),
-  );
+  // Wrap runApp in runZonedGuarded to catch all errors
+  runZonedGuarded<Future<void>>(() async {
+    runApp(
+      EasyLocalization(
+        supportedLocales: const [
+          Locale('en'), // English
+          Locale('de'), // German
+          Locale('es'), // Spanish
+          Locale('fr'), // French
+          Locale('pt', 'BR'), // Portuguese (Brazilian)
+        ],
+        path: 'assets/translations',
+        fallbackLocale: const Locale('en'),
+        child: const JinnieApp(),
+      ),
+    );
+  }, (error, stack) {
+    // Catch errors that occur outside of Flutter's error handling
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+  });
 }
 
 class JinnieApp extends StatefulWidget {

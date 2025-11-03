@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'dart:io';
 import '../utils/user_agent.dart';
+import '../utils/crashlytics_logger.dart';
 
 class ApiService {
   late final Dio _dio;
@@ -593,6 +594,26 @@ class ApiService {
   }
 
   String _handleError(DioException error) {
+    // Log API errors to Crashlytics for non-4xx errors (excluding 401/403 which are expected)
+    final statusCode = error.response?.statusCode;
+    final shouldLogToCrashlytics = error.type != DioExceptionType.cancel &&
+        !(statusCode != null && statusCode >= 400 && statusCode < 500 && statusCode != 500);
+
+    if (shouldLogToCrashlytics) {
+      CrashlyticsLogger.logError(
+        error,
+        error.stackTrace,
+        reason: 'API Error: ${error.requestOptions.method} ${error.requestOptions.path}',
+        context: {
+          'error_type': error.type.toString(),
+          'status_code': statusCode?.toString() ?? 'null',
+          'path': error.requestOptions.path,
+          'method': error.requestOptions.method,
+        },
+        fatal: false,
+      );
+    }
+
     switch (error.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
@@ -600,7 +621,6 @@ class ApiService {
         return 'errors.timeout'.tr();
 
       case DioExceptionType.badResponse:
-        final statusCode = error.response?.statusCode;
         final message = error.response?.data?['message'] ?? 'An error occurred';
 
         switch (statusCode) {

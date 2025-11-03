@@ -11,6 +11,7 @@ import 'api_service.dart';
 import 'local_database.dart';
 import 'fcm_service.dart';
 import '../models/user.dart';
+import '../utils/crashlytics_logger.dart';
 
 class AuthService extends ChangeNotifier {
   final firebase.FirebaseAuth _firebaseAuth = firebase.FirebaseAuth.instance;
@@ -46,10 +47,17 @@ class AuthService extends ChangeNotifier {
     _firebaseUser = firebaseUser;
 
     if (firebaseUser != null) {
+      // Set user ID in Crashlytics for crash reports
+      await CrashlyticsLogger.setUserId(firebaseUser.uid);
+      await CrashlyticsLogger.log('User authenticated: ${firebaseUser.uid}');
+
       // Sync with backend with retries (no signup method for existing sessions)
       await syncUserWithBackend(retries: 3);
       _scheduleTokenRefresh();
     } else {
+      // Clear user data on sign out
+      await CrashlyticsLogger.clearUserData();
+      await CrashlyticsLogger.log('User signed out');
       _currentUser = null;
       _apiService.clearAuthToken();
       _tokenRefreshTimer?.cancel();
@@ -151,10 +159,25 @@ class AuthService extends ChangeNotifier {
         }
         notifyListeners();
         return; // Success, exit retry loop
-      } catch (e) {
+      } catch (e, stackTrace) {
         debugPrint(
           '❌ AuthService: Error syncing user (attempt $attempt/$retries): $e',
         );
+
+        // Log to Crashlytics on final attempt
+        if (attempt >= retries) {
+          await CrashlyticsLogger.logError(
+            e,
+            stackTrace,
+            reason: 'Failed to sync user with backend after $retries attempts',
+            context: {
+              'firebase_uid': _firebaseUser?.uid ?? 'unknown',
+              'signup_method': signUpMethod ?? 'unknown',
+              'attempts': retries,
+            },
+          );
+        }
+
         if (attempt < retries) {
           await Future.delayed(
             Duration(seconds: attempt * 2),
@@ -223,10 +246,18 @@ class AuthService extends ChangeNotifier {
       // If this is a new user, sync with signup method
       if (isNewUser) {
         await syncUserWithBackend(signUpMethod: 'google', sendFullName: true);
+        await CrashlyticsLogger.log('New user signed up with Google');
+      } else {
+        await CrashlyticsLogger.log('Existing user signed in with Google');
       }
       _scheduleTokenRefresh();
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('❌ AuthService: Error signing in with Google: $e');
+      await CrashlyticsLogger.logError(
+        e,
+        stackTrace,
+        reason: 'Google Sign-In failed',
+      );
       rethrow;
     }
   }
