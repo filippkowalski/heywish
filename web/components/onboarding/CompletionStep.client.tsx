@@ -2,13 +2,11 @@
 
 import { Button } from '@/components/ui/button';
 import { useOnboarding } from '@/lib/onboarding/OnboardingContext.client';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 export function CompletionStep() {
   const { data } = useOnboarding();
-  const router = useRouter();
   const [copying, setCopying] = useState(false);
 
   const profileUrl = `${window.location.origin}/${data.username}`;
@@ -18,7 +16,7 @@ export function CompletionStep() {
     try {
       await navigator.clipboard.writeText(profileUrl);
       toast.success('Profile link copied!');
-    } catch (err) {
+    } catch {
       toast.error('Failed to copy link');
     } finally {
       setCopying(false);

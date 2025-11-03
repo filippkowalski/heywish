@@ -21,7 +21,7 @@ interface OnboardingContextType {
 
   // Actions
   setStep: (step: OnboardingStep) => void;
-  updateData: (key: keyof OnboardingData, value: any) => void;
+  updateData: (key: keyof OnboardingData, value: string | string[] | undefined) => void;
   checkUsernameAvailability: (username: string) => Promise<void>;
   completeOnboarding: () => Promise<boolean>;
   resetOnboarding: () => void;
@@ -51,7 +51,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     };
   }, []);
 
-  const updateData = useCallback((key: keyof OnboardingData, value: any) => {
+  const updateData = useCallback((key: keyof OnboardingData, value: string | string[] | undefined) => {
     setData((prev) => ({ ...prev, [key]: value }));
   }, []);
 
@@ -93,7 +93,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
             error: result.error?.message || 'Failed to check username',
           });
         }
-      } catch (err) {
+      } catch {
         setUsernameCheck({
           available: false,
           checking: false,
