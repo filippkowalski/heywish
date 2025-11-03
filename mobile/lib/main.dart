@@ -134,6 +134,9 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
   // Store initial deep link that was intercepted by GoRouter redirect
   static String? _pendingDeepLink;
 
+  // Track if DeepLinkService has initialized (to prevent double-handling)
+  static bool _deepLinkServiceInitialized = false;
+
   @override
   void initState() {
     super.initState();
@@ -150,6 +153,7 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
     // Initialize deep link service immediately to handle cold-start deep links
     debugPrint('🔗 Initializing DeepLinkService...');
     _deepLinkService.initialize(_router);
+    _deepLinkServiceInitialized = true; // Mark as initialized
     debugPrint('🔗 DeepLinkService initialized');
 
     // Handle any pending deep link that was intercepted by GoRouter
@@ -476,11 +480,19 @@ final _router = GoRouter(
     debugPrint('   - state.uri.scheme: ${state.uri.scheme}');
     debugPrint('   - state.matchedLocation: ${state.matchedLocation}');
     debugPrint('   - state.path: ${state.path}');
+    debugPrint('   - DeepLinkService initialized: ${_JinnieAppState._deepLinkServiceInitialized}');
 
     if (state.uri.scheme.isNotEmpty && state.uri.scheme != 'http' && state.uri.scheme != 'https') {
-      debugPrint('🔗 ✅ Detected deep link! Storing for later: $uriString');
-      _JinnieAppState._pendingDeepLink = uriString;
-      return '/';
+      // Only store pending deep links for cold start (before DeepLinkService initialized)
+      // Warm-start deep links are handled by the stream listener
+      if (!_JinnieAppState._deepLinkServiceInitialized) {
+        debugPrint('🔗 ✅ Cold-start deep link detected! Storing for later: $uriString');
+        _JinnieAppState._pendingDeepLink = uriString;
+        return '/';
+      } else {
+        debugPrint('🔗 🔄 Warm-start deep link detected - already handled by stream, ignoring');
+        return null; // Let the stream handler deal with it
+      }
     }
     debugPrint('🔗 ❌ Not a deep link, continuing normally');
     return null; // No redirect needed
