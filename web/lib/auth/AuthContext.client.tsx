@@ -16,9 +16,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://openai-rew
 interface BackendUser {
   id: string;
   username: string;
-  fullName?: string | null;
+  full_name?: string | null;
   email: string;
-  avatarUrl?: string | null;
+  avatar_url?: string | null;
+  bio?: string | null;
 }
 
 interface AuthContextType {
@@ -29,6 +30,8 @@ interface AuthContextType {
   signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshIdToken: () => Promise<string>;
+  getIdToken: () => Promise<string | null>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -91,9 +94,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const backendUserData = {
               id: data.user.id,
               username: data.user.username,
-              fullName: data.user.full_name || data.user.fullName,
+              full_name: data.user.full_name,
               email: data.user.email,
-              avatarUrl: data.user.avatar_url || data.user.avatarUrl,
+              avatar_url: data.user.avatar_url,
+              bio: data.user.bio,
             };
             setBackendUser(backendUserData);
           }
@@ -227,6 +231,71 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return promise;
   }, [user]);
 
+  // Get current ID token without forcing refresh
+  const getIdToken = useCallback(async (): Promise<string | null> => {
+    if (!user) {
+      return null;
+    }
+    try {
+      return await user.getIdToken();
+    } catch (error) {
+      console.error('Failed to get ID token:', error);
+      return null;
+    }
+  }, [user]);
+
+  // Refresh user data from backend
+  const refreshUser = useCallback(async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      const token = await user.getIdToken();
+
+      // Determine sign-up method from provider data
+      const providerData = user.providerData;
+      let signUpMethod = 'google'; // default
+      if (providerData.length > 0) {
+        const providerId = providerData[0].providerId;
+        if (providerId === 'apple.com') {
+          signUpMethod = 'apple';
+        } else if (providerId === 'google.com') {
+          signUpMethod = 'google';
+        }
+      }
+
+      const response = await fetch(`${API_BASE_URL}/auth/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'X-API-Version': '1.0',
+        },
+        body: JSON.stringify({
+          signUpMethod,
+          fullName: user.displayName,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.user) {
+        const backendUserData = {
+          id: data.user.id,
+          username: data.user.username,
+          full_name: data.user.full_name,
+          email: data.user.email,
+          avatar_url: data.user.avatar_url,
+          bio: data.user.bio,
+        };
+        setBackendUser(backendUserData);
+      }
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+    }
+  }, [user]);
+
   const value: AuthContextType = {
     user,
     backendUser,
@@ -235,6 +304,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signInWithApple,
     signOut,
     refreshIdToken,
+    getIdToken,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

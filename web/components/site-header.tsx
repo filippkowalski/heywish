@@ -132,6 +132,14 @@ export function SiteHeader() {
                         Manage Wishlists
                       </DropdownMenuItem>
                     )}
+                    {hasUsername && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/settings" className="cursor-pointer">
+                          <Settings className="mr-2 h-4 w-4" />
+                          Settings
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut} disabled={isSigningOut} className="cursor-pointer">
                       {isSigningOut ? (
