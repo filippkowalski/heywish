@@ -364,6 +364,14 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
                     : ownership?.isOwner ? 'Start adding wishes to your wishlists!' : 'No wishes to display yet.'}
                 </p>
               </div>
+              {ownership?.isOwner && selectedWishlist && (
+                <Button
+                  onClick={() => ownership.openAddWish(selectedWishlist.id)}
+                  className="mt-2"
+                >
+                  Add Item
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : viewMode === "grid" ? (
