@@ -86,17 +86,30 @@ export function FollowDialog({
       // If app installed: iOS opens app via Associated Domains
       // If not installed: Loads /@username/follow page which redirects to App Store
     } else if (platform === 'android') {
-      // Android: Use Intent URL pattern with Play Store fallback
-      // This is the official Android approach that handles "no app" gracefully
-      const intentUrl = `intent://profile/${username}?action=follow#Intent;` +
-        `scheme=com.wishlists.gifts;` +
-        `package=com.wishlists.gifts;` +
-        `S.browser_fallback_url=${encodeURIComponent(appStoreUrl)};` +
-        `end;`;
+      // Android: Try custom scheme first, with manual fallback handling
+      const customSchemeUrl = `com.wishlists.gifts://profile/${username}?action=follow`;
 
-      // Intent URLs automatically redirect to fallback if app not installed
-      window.location.href = intentUrl;
-      // No timeout needed - Intent handles fallback automatically
+      let appOpened = false;
+
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          appOpened = true;
+        }
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      // Attempt to open the app
+      window.location.href = customSchemeUrl;
+
+      // If app doesn't open within 2 seconds, redirect to Play Store
+      setTimeout(() => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        if (!appOpened) {
+          setIsRedirecting(true);
+          window.location.href = appStoreUrl;
+        }
+      }, 2000);
     }
   };
 
