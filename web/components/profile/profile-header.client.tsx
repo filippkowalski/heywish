@@ -47,28 +47,16 @@ export function ProfileHeader({
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1 space-y-2.5 sm:space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="space-y-1.5 sm:space-y-2 min-w-0 flex-1">
-              <h1 className="truncate text-xl font-semibold sm:text-2xl md:text-3xl">
-                @{username}
-              </h1>
-              {location ? (
-                <p className="flex items-center gap-1 text-xs text-muted-foreground sm:text-sm">
-                  <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                  <span className="truncate">{location}</span>
-                </p>
-              ) : null}
-            </div>
-
-            {/* Follow Button - only show if not own profile */}
-            <div className="flex-shrink-0">
-              <FollowButton
-                username={username}
-                userId={userId}
-                isOwnProfile={isOwnProfile}
-                onFollowClick={() => setShowFollowDialog(true)}
-              />
-            </div>
+          <div className="space-y-1.5 sm:space-y-2">
+            <h1 className="truncate text-xl font-semibold sm:text-2xl md:text-3xl">
+              @{username}
+            </h1>
+            {location ? (
+              <p className="flex items-center gap-1 text-xs text-muted-foreground sm:text-sm">
+                <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span className="truncate">{location}</span>
+              </p>
+            ) : null}
           </div>
 
           {/* Bio */}
@@ -76,6 +64,18 @@ export function ProfileHeader({
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
               {bio}
             </p>
+          ) : null}
+
+          {/* Follow Button - only show if not own profile */}
+          {!isOwnProfile ? (
+            <div className="pt-1">
+              <FollowButton
+                username={username}
+                userId={userId}
+                isOwnProfile={isOwnProfile}
+                onFollowClick={() => setShowFollowDialog(true)}
+              />
+            </div>
           ) : null}
 
           {/* Stats */}
