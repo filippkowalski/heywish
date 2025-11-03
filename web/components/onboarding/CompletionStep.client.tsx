@@ -26,9 +26,9 @@ export function CompletionStep() {
   };
 
   const handleContinue = () => {
-    // Redirect to home page
-    router.push('/');
-    router.refresh(); // Refresh to update auth state
+    // Force full page reload to ensure auth state is refreshed
+    // This prevents the infinite redirect loop by re-syncing with backend
+    window.location.href = '/';
   };
 
   return (

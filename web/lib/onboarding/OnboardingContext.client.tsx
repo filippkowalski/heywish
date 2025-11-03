@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import type { OnboardingData, OnboardingStep } from './constants';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://openai-rewrite.onrender.com/jinnie/v1';
@@ -39,8 +39,17 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string>();
 
-  // Debounced username check
-  let usernameCheckTimeout: NodeJS.Timeout;
+  // Use ref for debounce timeout to prevent leaks
+  const usernameCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (usernameCheckTimeoutRef.current) {
+        clearTimeout(usernameCheckTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const updateData = useCallback((key: keyof OnboardingData, value: any) => {
     setData((prev) => ({ ...prev, [key]: value }));
@@ -53,14 +62,14 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     }
 
     // Clear previous timeout
-    if (usernameCheckTimeout) {
-      clearTimeout(usernameCheckTimeout);
+    if (usernameCheckTimeoutRef.current) {
+      clearTimeout(usernameCheckTimeoutRef.current);
     }
 
     setUsernameCheck({ available: false, checking: true });
 
     // Debounce for 500ms
-    usernameCheckTimeout = setTimeout(async () => {
+    usernameCheckTimeoutRef.current = setTimeout(async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/auth/check-username/${username.toLowerCase()}`, {
           method: 'GET',
@@ -99,10 +108,9 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     setError(undefined);
 
     try {
-      // Get Firebase ID token from auth context
-      const auth = await import('firebase/auth');
+      // Get Firebase ID token - firebaseAuth is already an Auth instance
       const { auth: firebaseAuth } = await import('../firebase.client');
-      const user = auth.getAuth(firebaseAuth).currentUser;
+      const user = firebaseAuth.currentUser;
 
       if (!user) {
         throw new Error('No authenticated user');
