@@ -8,7 +8,7 @@ import {
   onIdTokenChanged,
   type AuthError,
 } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase.client';
+import { auth, googleProvider, appleProvider } from '../firebase.client';
 import { useRouter } from 'next/navigation';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://openai-rewrite.onrender.com/jinnie/v1';
@@ -26,6 +26,7 @@ interface AuthContextType {
   backendUser: BackendUser | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshIdToken: () => Promise<string>;
 }
@@ -57,6 +58,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const secure = window.location.protocol === 'https:' ? '; Secure' : '';
           document.cookie = `firebaseIdToken=${token}; path=/; max-age=3600; SameSite=Lax${secure}`;
 
+          // Determine sign-up method from provider data
+          const providerData = firebaseUser.providerData;
+          let signUpMethod = 'google'; // default
+          if (providerData.length > 0) {
+            const providerId = providerData[0].providerId;
+            if (providerId === 'apple.com') {
+              signUpMethod = 'apple';
+            } else if (providerId === 'google.com') {
+              signUpMethod = 'google';
+            }
+          }
+
           const response = await fetch(`${API_BASE_URL}/auth/sync`, {
             method: 'POST',
             headers: {
@@ -65,7 +78,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               'X-API-Version': '1.0',
             },
             body: JSON.stringify({
-              signUpMethod: 'google',
+              signUpMethod,
+              fullName: firebaseUser.displayName,
             }),
           });
 
@@ -140,6 +154,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Sign in with Apple
+  const signInWithApple = useCallback(async () => {
+    try {
+      await signInWithPopup(auth, appleProvider);
+      // User will be set by onIdTokenChanged listener
+    } catch (error) {
+      const authError = error as AuthError;
+
+      // Handle specific error codes
+      if (authError.code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign-in was cancelled. Please try again.');
+      } else if (authError.code === 'auth/popup-blocked') {
+        throw new Error('Pop-up was blocked by your browser. Please allow pop-ups and try again.');
+      } else if (authError.code === 'auth/account-exists-with-different-credential') {
+        throw new Error('An account already exists with the same email. Please sign in with the original provider.');
+      } else {
+        throw new Error('Failed to sign in with Apple. Please try again.');
+      }
+    }
+  }, []);
+
   // Sign out
   const signOut = useCallback(async () => {
     try {
@@ -182,6 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     backendUser,
     loading,
     signInWithGoogle,
+    signInWithApple,
     signOut,
     refreshIdToken,
   };

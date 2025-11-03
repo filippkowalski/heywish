@@ -1,7 +1,7 @@
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
-import { getAuth, type Auth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, type Auth, GoogleAuthProvider, OAuthProvider } from 'firebase/auth';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -18,17 +18,27 @@ const firebaseConfig = {
 let app: FirebaseApp;
 let auth: Auth;
 let googleProvider: GoogleAuthProvider;
+let appleProvider: OAuthProvider;
 
 if (typeof window !== 'undefined') {
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   auth = getAuth(app);
-  googleProvider = new GoogleAuthProvider();
 
   // Configure Google provider
+  googleProvider = new GoogleAuthProvider();
   googleProvider.setCustomParameters({
     prompt: 'select_account',
   });
+
+  // Configure Apple provider
+  appleProvider = new OAuthProvider('apple.com');
+  appleProvider.addScope('email');
+  appleProvider.addScope('name');
+  appleProvider.setCustomParameters({
+    // Localize the Apple authentication screen in the user's preferred language
+    locale: 'en',
+  });
 }
 
-export { auth, googleProvider };
+export { auth, googleProvider, appleProvider };
 export type { Auth };
