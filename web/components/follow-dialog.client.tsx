@@ -130,7 +130,7 @@ export function FollowDialog({
             Follow @{username} in Jinnie
           </DialogTitle>
           <DialogDescription className="text-center text-base">
-            Following works best in the Jinnie app. Connect with friends, see their wishlists, and never miss a birthday again.
+            Following is only available in the Jinnie mobile app. Connect with friends, see their wishlists, and never miss a birthday again. Web support coming soon!
           </DialogDescription>
         </DialogHeader>
 
