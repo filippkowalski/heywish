@@ -109,6 +109,9 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
   static const platform = MethodChannel('com.wishlists.gifts/share');
   StreamSubscription<RemoteMessage>? _fcmTapSubscription;
 
+  // Store initial deep link that was intercepted by GoRouter redirect
+  static String? _pendingDeepLink;
+
   @override
   void initState() {
     super.initState();
@@ -124,6 +127,20 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
 
     // Initialize deep link service immediately to handle cold-start deep links
     _deepLinkService.initialize(_router);
+
+    // Handle any pending deep link that was intercepted by GoRouter
+    if (_pendingDeepLink != null) {
+      final link = _pendingDeepLink!;
+      _pendingDeepLink = null; // Clear it
+      debugPrint('🔗 Processing pending deep link: $link');
+      // Parse and handle the stored deep link
+      try {
+        final uri = Uri.parse(link);
+        _deepLinkService.handleDeepLinkUri(uri);
+      } catch (e) {
+        debugPrint('❌ Error parsing pending deep link: $e');
+      }
+    }
 
     // Initialize quick actions (iOS and Android only)
     if (Platform.isIOS || Platform.isAndroid) {
@@ -418,10 +435,11 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
 final _router = GoRouter(
   initialLocation: '/',
   redirect: (context, state) {
-    // If the location is a deep link URL (contains "://"), redirect to splash
-    // The deep link service will handle the actual navigation
+    // If the location is a deep link URL (contains "://"), store it and redirect to splash
+    // The deep link service will handle the actual navigation after initialization
     if (state.matchedLocation.contains('://')) {
-      debugPrint('🔗 Redirecting deep link to splash: ${state.matchedLocation}');
+      debugPrint('🔗 Intercepted deep link, storing for later: ${state.matchedLocation}');
+      _JinnieAppState._pendingDeepLink = state.matchedLocation;
       return '/';
     }
     return null; // No redirect needed

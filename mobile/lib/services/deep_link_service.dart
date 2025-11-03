@@ -52,6 +52,11 @@ class DeepLinkService {
     );
   }
 
+  /// Public method to handle a deep link URI (for external use)
+  void handleDeepLinkUri(Uri uri) {
+    _handleDeepLink(uri);
+  }
+
   /// Handle incoming deep link
   void _handleDeepLink(Uri uri) {
     debugPrint('🔗 Handling deep link: $uri');
