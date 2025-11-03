@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 export const runtime = 'edge';
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import { Gift } from "lucide-react";
 import { api, PublicProfileResponse } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WishlistGrid } from "@/components/profile/wishlist-grid";
 import { ProfileOwnershipWrapper } from "@/components/profile/ProfileOwnershipWrapper.client";
 import { ProfileHeader } from "@/components/profile/profile-header.client";
+import { EmptyWishlistsState } from "@/components/profile/empty-wishlists-state.client";
 import { matchesWishlistSlug } from "@/lib/slug";
 
 const getProfile = cache(async (username: string): Promise<PublicProfileResponse | null> => {
@@ -218,19 +218,7 @@ export default async function PublicProfilePage({
         </header>
 
         {wishlists.length === 0 ? (
-          <section className="container mx-auto px-4 py-12 md:px-6">
-            <Card className="bg-muted/40">
-              <CardContent className="flex flex-col items-center gap-4 p-10 text-center">
-                <Gift className="h-10 w-10 text-muted-foreground" />
-                <div>
-                  <h2 className="text-lg font-semibold">No public wishlists yet</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Ask @{user.username} to share a list from the mobile app.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
+          <EmptyWishlistsState username={user.username} />
         ) : (
           <WishlistGrid
             wishlists={wishlists}
