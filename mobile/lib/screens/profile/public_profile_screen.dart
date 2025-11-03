@@ -460,6 +460,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         iconTheme: const IconThemeData(
           color: Colors.black,
         ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => context.pop(),
+        ),
       ),
       body: _isLoading
           ? _buildLoadingState()

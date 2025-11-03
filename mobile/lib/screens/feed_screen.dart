@@ -12,6 +12,7 @@ import '../services/friends_service.dart';
 import '../models/friend.dart';
 import '../widgets/cached_image.dart';
 import 'wishlists/add_wish_screen.dart';
+import 'wishlists/wish_detail_screen.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class FeedScreen extends StatefulWidget {
@@ -111,21 +112,43 @@ class _FeedScreenState extends State<FeedScreen> {
         for (final activity in feedResponse.activities) {
           if (activity.activityType == 'item_added' ||
               activity.activityType == 'wish_added') {
+            // Extract image from images array
+            String? wishImage;
+            final images = activity.data['images'];
+            if (images != null) {
+              if (images is List && images.isNotEmpty) {
+                wishImage = images[0];
+              } else if (images is String) {
+                wishImage = images;
+              }
+            }
+
+            // Extract price - can be number or string
+            double? wishPrice;
+            final priceValue = activity.data['price'];
+            if (priceValue != null) {
+              if (priceValue is num) {
+                wishPrice = priceValue.toDouble();
+              } else if (priceValue is String) {
+                wishPrice = double.tryParse(priceValue);
+              }
+            }
+
             feedItems.add(FeedItem(
               id: activity.id,
               friendName: activity.fullName ?? activity.username,
               friendUsername: activity.username,
               friendAvatar: activity.avatarUrl,
               wishTitle: activity.data['wish_title'] ?? 'Unknown Item',
-              wishImage: activity.data['wish_image'],
-              wishPrice: activity.data['wish_price']?.toDouble(),
-              wishCurrency: activity.data['wish_currency'] ?? 'USD',
+              wishImage: wishImage,
+              wishPrice: wishPrice,
+              wishCurrency: activity.data['currency'] ?? 'USD',
               timeAgo: timeago.format(activity.createdAt),
               action: 'added to wishlist',
               wishId: activity.data['wish_id'],
               wishlistId: activity.data['wishlist_id'],
-              wishUrl: activity.data['wish_url'],
-              wishDescription: activity.data['wish_description'],
+              wishUrl: activity.data['wish_url'] ?? activity.data['url'],
+              wishDescription: activity.data['wish_description'] ?? activity.data['description'],
             ));
           }
         }
@@ -907,69 +930,89 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
           ),
 
-          // Wish item
-          if (item.wishImage != null && item.wishImage!.isNotEmpty)
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-              child: Image.network(
-                item.wishImage!,
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  width: double.infinity,
-                  height: 200,
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: Icon(
-                    Icons.image_not_supported,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    size: 40,
-                  ),
-                ),
-              ),
-            ),
-
-          Padding(
-            padding: const EdgeInsets.all(16),
+          // Wish item - Clickable
+          GestureDetector(
+            onTap: () async {
+              // Show wish detail as bottom sheet
+              if (item.wishlistId != null && item.wishId != null) {
+                await WishDetailScreen.show(
+                  context,
+                  wishId: item.wishId!,
+                  wishlistId: item.wishlistId!,
+                );
+              }
+            },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.wishTitle,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.primary,
-                      ),
-                ),
-                if (item.wishPrice != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    '${item.wishCurrency ?? '\$'}${item.wishPrice!.toStringAsFixed(2)}',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: AppTheme.primaryAccent,
-                          fontWeight: FontWeight.w600,
+                if (item.wishImage != null && item.wishImage!.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+                    child: Image.network(
+                      item.wishImage!,
+                      width: double.infinity,
+                      height: 200,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        width: double.infinity,
+                        height: 200,
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        child: Icon(
+                          Icons.image_not_supported,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          size: 40,
                         ),
-                  ),
-                ],
-                const SizedBox(height: 12),
-                // Copy to wishlist button
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _copyWishToMyWishlist(item),
-                    icon: const Icon(Icons.add_circle_outline, size: 18),
-                    label: Text('feed.add_to_wishlist'.tr()),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.primaryAccent,
-                      side: BorderSide(color: AppTheme.primaryAccent),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
+
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.wishTitle,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.primary,
+                            ),
+                      ),
+                      if (item.wishPrice != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '${item.wishCurrency ?? '\$'}${item.wishPrice!.toStringAsFixed(2)}',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                color: AppTheme.primaryAccent,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ],
+            ),
+          ),
+
+          // Add to wishlist button
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _copyWishToMyWishlist(item),
+                icon: const Icon(Icons.add_circle_outline, size: 18),
+                label: Text('feed.add_to_wishlist'.tr()),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.primaryAccent,
+                  side: BorderSide(color: AppTheme.primaryAccent),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
