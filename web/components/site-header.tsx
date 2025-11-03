@@ -58,6 +58,9 @@ export function SiteHeader() {
   // Check if user is viewing their own profile
   const isOnOwnProfile = backendUser?.username && pathname === `/${backendUser.username}`;
 
+  // Check if user has completed onboarding
+  const hasUsername = !!backendUser?.username;
+
   const handleManageWishlists = () => {
     // Dispatch custom event that ProfileOwnershipWrapper will listen to
     window.dispatchEvent(new CustomEvent('openManageWishlists'));
@@ -86,12 +89,14 @@ export function SiteHeader() {
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             ) : user ? (
               <>
-                <Button asChild variant="ghost" size="sm" className="hidden md:flex">
-                  <Link href={profileUrl}>
-                    <ListPlus className="mr-2 h-4 w-4" />
-                    My Wishlists
-                  </Link>
-                </Button>
+                {hasUsername && (
+                  <Button asChild variant="ghost" size="sm" className="hidden md:flex">
+                    <Link href={profileUrl}>
+                      <ListPlus className="mr-2 h-4 w-4" />
+                      My Wishlists
+                    </Link>
+                  </Button>
+                )}
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -113,12 +118,14 @@ export function SiteHeader() {
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href={profileUrl} className="cursor-pointer">
-                        <ListPlus className="mr-2 h-4 w-4" />
-                        My Wishlists
-                      </Link>
-                    </DropdownMenuItem>
+                    {hasUsername && (
+                      <DropdownMenuItem asChild>
+                        <Link href={profileUrl} className="cursor-pointer">
+                          <ListPlus className="mr-2 h-4 w-4" />
+                          My Wishlists
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     {isOnOwnProfile && (
                       <DropdownMenuItem onClick={handleManageWishlists} className="cursor-pointer">
                         <Settings className="mr-2 h-4 w-4" />

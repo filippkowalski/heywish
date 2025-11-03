@@ -122,7 +122,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [loading, user]);
 
   // Refresh page when auth state changes (sign in/out) to update server-rendered content
-  // Also redirect new users to onboarding if they don't have a username
   useEffect(() => {
     if (loading) return; // Don't refresh during initial load
 
@@ -131,18 +130,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (userChanged) {
       router.refresh();
-
-      // If user just signed in and doesn't have a username, redirect to onboarding
-      if (user && backendUser && !backendUser.username) {
-        const currentPath = window.location.pathname;
-        // Don't redirect if already on onboarding page
-        if (currentPath !== '/onboarding') {
-          router.push('/onboarding');
-        }
-      }
     }
 
     prevUserRef.current = user;
+  }, [user, loading, router]);
+
+  // Redirect users without username to onboarding (continuous check)
+  useEffect(() => {
+    if (loading) return;
+    if (!user || !backendUser) return;
+
+    // If user is authenticated but doesn't have a username, redirect to onboarding
+    if (!backendUser.username) {
+      const currentPath = window.location.pathname;
+      // Don't redirect if already on onboarding page
+      if (currentPath !== '/onboarding') {
+        router.push('/onboarding');
+      }
+    }
   }, [user, backendUser, loading, router]);
 
   // Sign in with Google
