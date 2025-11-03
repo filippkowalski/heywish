@@ -1,0 +1,20 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "474TK9U3BP.com.wishlists.gifts",
+        "paths": [
+          "/@*",
+          "/@*/follow",
+          "/*/follow"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "474TK9U3BP.com.wishlists.gifts"
+    ]
+  }
+}

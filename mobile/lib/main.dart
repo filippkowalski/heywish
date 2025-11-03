@@ -23,6 +23,7 @@ import 'services/onboarding_service.dart';
 import 'services/api_service.dart';
 import 'services/fcm_service.dart';
 import 'services/screenshot_detection_service.dart';
+import 'services/deep_link_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding/onboarding_flow_screen.dart';
 import 'screens/home_screen.dart';
@@ -104,6 +105,7 @@ class JinnieApp extends StatefulWidget {
 class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
   final ScreenshotController _screenshotController = ScreenshotController();
   final QuickActions _quickActions = const QuickActions();
+  final DeepLinkService _deepLinkService = DeepLinkService();
   static const platform = MethodChannel('com.wishlists.gifts/share');
   StreamSubscription<RemoteMessage>? _fcmTapSubscription;
 
@@ -118,6 +120,11 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
       ScreenshotDetectionService.instance.initialize(
         screenshotController: _screenshotController,
       );
+    });
+
+    // Initialize deep link service
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _deepLinkService.initialize(_router);
     });
 
     // Initialize quick actions (iOS and Android only)
@@ -356,6 +363,7 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _fcmTapSubscription?.cancel();
+    _deepLinkService.dispose();
     ScreenshotDetectionService.instance.dispose();
     super.dispose();
   }

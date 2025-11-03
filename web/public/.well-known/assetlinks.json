@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.wishlists.gifts",
+      "sha256_cert_fingerprints": [
+        "51:48:7D:7F:1A:EF:E4:5E:B9:85:7C:72:8A:58:18:38:17:8A:8F:0E:55:EC:F0:5B:E6:C3:BF:DE:1F:E0:21:B6",
+        "AF:47:B2:DA:99:B6:8A:AE:60:00:C8:D2:D1:C4:83:F1:A1:51:22:3C:08:E2:9F:BC:E9:4E:F2:13:A4:47:91:A0"
+      ]
+    }
+  }
+]

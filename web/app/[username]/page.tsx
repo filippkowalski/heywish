@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WishlistGrid } from "@/components/profile/wishlist-grid";
 import { ProfileOwnershipWrapper } from "@/components/profile/ProfileOwnershipWrapper.client";
-import { ProfileHeader } from "@/components/profile/profile-header.client";
+import { ProfileHeaderWrapper } from "@/components/profile/profile-header-wrapper.client";
 import { EmptyWishlistsState } from "@/components/profile/empty-wishlists-state.client";
 import { matchesWishlistSlug } from "@/lib/slug";
 
@@ -201,22 +201,25 @@ export default async function PublicProfilePage({
     );
   }
 
+  // Get Firebase ID token to determine if user is viewing their own profile
+  const cookieStore = await cookies();
+  const firebaseToken = cookieStore.get('firebaseIdToken')?.value;
+
+  // For now, we'll determine ownership client-side via ProfileOwnershipWrapper
+  // The ProfileHeader will receive isOwnProfile through client-side logic
   return (
     <ProfileOwnershipWrapper userId={user.id} username={user.username} wishlists={wishlists}>
-      <main className="min-h-screen bg-background">
-        <header className="border-b bg-card/50">
-          <div className="container mx-auto px-4 py-6 sm:py-8 md:py-10 md:px-6">
-            <ProfileHeader
-              username={user.username}
-              avatarUrl={user.avatarUrl}
-              bio={user.bio}
-              location={user.location}
-              wishlistCount={wishlists.length}
-              wishCount={totals.wishCount}
-            />
-          </div>
-        </header>
+      <ProfileHeaderWrapper
+        userId={user.id}
+        username={user.username}
+        avatarUrl={user.avatarUrl}
+        bio={user.bio}
+        location={user.location}
+        wishlistCount={wishlists.length}
+        wishCount={totals.wishCount}
+      />
 
+      <main className="min-h-screen bg-background">
         {wishlists.length === 0 ? (
           <EmptyWishlistsState username={user.username} />
         ) : (

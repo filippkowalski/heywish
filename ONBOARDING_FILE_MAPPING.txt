@@ -1,0 +1,144 @@
+MOBILE APP ONBOARDING - FILE MAPPING & STRUCTURE
+================================================
+
+ONBOARDING SERVICE & MAIN ORCHESTRATOR
+─────────────────────────────────────────────────────────────────
+/Users/filip.zapper/Workspace/jinnie/mobile/lib/services/onboarding_service.dart
+  - OnboardingStep enum definition
+  - OnboardingData model (stores all user inputs)
+  - OnboardingService class (state management, API calls, validation)
+  - Error handling & retry logic
+  - Username availability checking
+  - Profile completion submission
+
+/Users/filip.zapper/Workspace/jinnie/mobile/lib/screens/onboarding/onboarding_flow_screen.dart
+  - Main screen orchestrator
+  - AnimatedSwitcher for step transitions
+  - Back button logic
+  - Native transitions handling
+
+
+ONBOARDING STEP WIDGETS
+─────────────────────────────────────────────────────────────────
+1. Welcome Step
+   /Users/filip.zapper/Workspace/jinnie/mobile/lib/screens/onboarding/widgets/welcome_step.dart
+   - Background image with gradient overlay
+   - Staggered animations for elements
+   - "Get Started" and "Already have account?" buttons
+
+2. Shopping Interests Step
+   /Users/filip.zapper/Workspace/jinnie/mobile/lib/screens/onboarding/widgets/shopping_interests_step.dart
+   - 12 animated category chips
+   - Multi-select functionality
+   - Skip button
+   - Selection counter
+
+3. Profile Details Step
+   /Users/filip.zapper/Workspace/jinnie/mobile/lib/screens/onboarding/widgets/profile_details_step.dart
+   - Birthday picker (CupertinoPicker bottom sheet)
+   - Gender selector (4 options)
+   - Skip button
+   - Both fields required to continue
+
+4. Notifications Step
+   /Users/filip.zapper/Workspace/jinnie/mobile/lib/screens/onboarding/widgets/notifications_step.dart
+   - Permission request via FCM
+   - 5 notification preference toggles
+   - Platform-specific permission handling
+   - Graceful handling of denied permissions
+
+5. Account Creation Step
+   /Users/filip.zapper/Workspace/jinnie/mobile/lib/screens/onboarding/widgets/account_creation_step.dart
+   - Benefits cards display
+   - Apple sign-in (iOS only)
+   - Google sign-in (both platforms)
+   - Skip for anonymous flow button
+   - Animated gradient background
+
+6. Username Step
+   /Users/filip.zapper/Workspace/jinnie/mobile/lib/screens/onboarding/widgets/username_step.dart
+   - Real-time validation with regex
+   - Debounced availability checking (500ms)
+   - Lowercase auto-conversion
+   - Status indicator (red/yellow/green)
+   - URL preview ("jinnie.co/username")
+   - Pre-fill from email
+
+7. Complete Step
+   /Users/filip.zapper/Workspace/jinnie/mobile/lib/screens/onboarding/widgets/onboarding_complete_step.dart
+   - Success celebration screen
+   - Username display card
+   - Copy profile link button
+   - Feature highlights
+   - Navigation to home
+
+
+AUTHENTICATION INTEGRATION
+─────────────────────────────────────────────────────────────────
+/Users/filip.zapper/Workspace/jinnie/mobile/lib/services/auth_service.dart
+  - isOnboardingCompleted flag
+  - needsOnboarding getter
+  - markOnboardingCompleted() method
+  - _persistOnboardingCompleted() for SharedPreferences
+  - _loadOnboardingStatus() on app startup
+  - resetOnboardingStatus() for testing
+
+
+SUPPORTING COMPONENTS
+─────────────────────────────────────────────────────────────────
+/Users/filip.zapper/Workspace/jinnie/mobile/lib/screens/onboarding/widgets/sign_in_bottom_sheet.dart
+  - Sign in form for existing users
+  - Triggered from welcome step
+
+/Users/filip.zapper/Workspace/jinnie/mobile/lib/common/navigation/native_page_route.dart
+  - NativeTransitions utilities
+  - Platform-specific page transitions
+  - Modal bottom sheet helpers
+
+/Users/filip.zapper/Workspace/jinnie/mobile/lib/common/theme/app_colors.dart
+  - Color definitions used in onboarding
+
+
+LOCALIZATION
+─────────────────────────────────────────────────────────────────
+/Users/filip.zapper/Workspace/jinnie/mobile/assets/translations/en.json
+  - All user-facing strings
+  - Keys organized by feature (shopping_interests, profile, onboarding, etc.)
+  - Includes validation messages and error states
+
+
+KEY DATA FLOW
+─────────────────────────────────────────────────────────────────
+User Input
+    ↓
+OnboardingStep widget (6 different step UIs)
+    ↓
+onboardingService.update*() [updateUsername, updateGender, etc.]
+    ↓
+OnboardingService._data (OnboardingData instance)
+    ↓
+API Calls [checkUsernameAvailability, updateUserProfile]
+    ↓
+Backend (/api/v1/users/profile endpoint)
+    ↓
+authService.markOnboardingCompleted() + SharedPreferences
+    ↓
+Navigate to Home Screen
+
+
+CRITICAL VALIDATION POINTS
+─────────────────────────────────────────────────────────────────
+1. Username step: Cannot proceed without "Available" status
+2. Profile details: Both birthday AND gender required
+3. Shopping interests: At least 1 selection shown as "Continue", skip allowed
+4. Notifications: Can skip, continues regardless of permission
+5. Account creation: Can skip for anonymous
+6. Complete: Cannot be reached without valid username
+
+BACKOFF & RETRY LOGIC
+─────────────────────────────────────────────────────────────────
+Username Check: 3 retries, exponential backoff (1s, 2s, 4s)
+Profile Save: 2 retries, exponential backoff (1.5s, 3s)
+
+Retries on: socket, timeout, connection, server errors (500+)
+No retry on: 400, 401, 403, 404, 409, 422

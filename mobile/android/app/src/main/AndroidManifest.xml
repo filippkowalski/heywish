@@ -62,6 +62,21 @@
                 <data android:scheme="com.wishlists.gifts" />
             </intent-filter>
 
+            <!-- App Links for universal links (jinnie.co) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="jinnie.co"
+                    android:pathPrefix="/" />
+                <data
+                    android:scheme="https"
+                    android:host="www.jinnie.co"
+                    android:pathPrefix="/" />
+            </intent-filter>
+
             <!-- Share extension for text/URLs -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />

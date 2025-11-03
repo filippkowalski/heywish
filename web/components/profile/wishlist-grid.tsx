@@ -13,7 +13,7 @@ import { WishlistFilter } from "./wishlist-filter";
 import { ShareButton } from "./share-button";
 import { useOwnership } from "./ProfileOwnershipWrapper.client";
 import { getWishlistSlug, matchesWishlistSlug } from "@/lib/slug";
-import { LayoutGrid, List, Pencil, Trash2 } from "lucide-react";
+import { Gift, LayoutGrid, List, Pencil, Trash2 } from "lucide-react";
 
 interface WishlistGridProps {
   wishlists: Wishlist[];
@@ -352,7 +352,21 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
           </div>
         </div>
 
-        {viewMode === "grid" ? (
+        {filteredWishes.length === 0 ? (
+          <Card className="bg-muted/40">
+            <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
+              <Gift className="h-10 w-10 text-muted-foreground" />
+              <div>
+                <h2 className="text-lg font-semibold">No wishes yet</h2>
+                <p className="text-sm text-muted-foreground">
+                  {selectedWishlist
+                    ? `"${selectedWishlist.name}" is empty. ${ownership?.isOwner ? 'Add your first wish!' : 'Check back soon!'}`
+                    : ownership?.isOwner ? 'Start adding wishes to your wishlists!' : 'No wishes to display yet.'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : viewMode === "grid" ? (
           <div className="columns-2 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-3">
             {filteredWishes.map(({ wish, wishlist }) => (
               <WishPreviewCard
