@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserPlus, Download } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
+import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -99,16 +100,6 @@ export function FollowDialog({
     }
   };
 
-  const handleGetApp = () => {
-    if (!platform) {
-      return;
-    }
-    const url = getAppStoreUrl(platform, 'profile-follow');
-    window.location.href = url;
-    onOpenChange(false);
-  };
-
-  const platformName = platform === 'android' ? 'Android' : platform === 'ios' ? 'iPhone' : 'Mobile';
   const isPlatformDetected = platform !== null;
 
   return (
@@ -145,15 +136,35 @@ export function FollowDialog({
             {!isPlatformDetected ? 'Loading...' : isRedirecting ? 'Redirecting...' : attemptedDeepLink ? 'Opening App...' : 'Open in Jinnie App'}
           </button>
 
-          {/* Secondary CTA - Get App */}
-          <button
-            onClick={handleGetApp}
-            disabled={!isPlatformDetected}
-            className="w-full px-6 py-3 bg-white text-black border-2 border-gray-200 text-base font-semibold rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            <Download className="w-5 h-5" />
-            {isPlatformDetected ? `Get Jinnie for ${platformName}` : 'Loading...'}
-          </button>
+          {/* App Store Badges */}
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center pt-2">
+            <a
+              href="https://apps.apple.com/app/id6754384455?ref=jinnie-follow"
+              className="block transition-transform hover:scale-105"
+              style={{ height: '80px', display: 'flex', alignItems: 'center' }}
+            >
+              <Image
+                src="/badges/app-store-badge.svg"
+                alt="Download on the App Store"
+                width={240}
+                height={80}
+                className="h-[54px] w-auto"
+              />
+            </a>
+            <a
+              href="https://play.google.com/store/apps/details?id=com.wishlists.gifts&ref=jinnie-follow"
+              className="block transition-transform hover:scale-105"
+              style={{ height: '80px', display: 'flex', alignItems: 'center' }}
+            >
+              <Image
+                src="/badges/google-play-badge.png"
+                alt="Get it on Google Play"
+                width={240}
+                height={80}
+                className="h-[80px] w-auto"
+              />
+            </a>
+          </div>
 
           {/* Features */}
           <div className="mt-6 pt-6 border-t border-gray-200">
