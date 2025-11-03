@@ -148,20 +148,30 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
     });
 
     // Initialize deep link service immediately to handle cold-start deep links
+    debugPrint('🔗 Initializing DeepLinkService...');
     _deepLinkService.initialize(_router);
+    debugPrint('🔗 DeepLinkService initialized');
 
     // Handle any pending deep link that was intercepted by GoRouter
+    debugPrint('🔗 Checking for pending deep link...');
+    debugPrint('🔗 _pendingDeepLink value: $_pendingDeepLink');
+
     if (_pendingDeepLink != null) {
       final link = _pendingDeepLink!;
       _pendingDeepLink = null; // Clear it
-      debugPrint('🔗 Processing pending deep link: $link');
+      debugPrint('🔗 ✅ Found pending deep link! Processing: $link');
       // Parse and handle the stored deep link
       try {
         final uri = Uri.parse(link);
+        debugPrint('🔗 Parsed URI: $uri');
+        debugPrint('🔗 Calling handleDeepLinkUri...');
         _deepLinkService.handleDeepLinkUri(uri);
+        debugPrint('🔗 handleDeepLinkUri completed');
       } catch (e) {
         debugPrint('❌ Error parsing pending deep link: $e');
       }
+    } else {
+      debugPrint('🔗 ❌ No pending deep link found');
     }
 
     // Initialize quick actions (iOS and Android only)
@@ -461,11 +471,18 @@ final _router = GoRouter(
     // Check if this is a deep link by examining state.uri
     // For cold-start deep links, state.matchedLocation is '/' but state.uri contains the full URL
     final uriString = state.uri.toString();
+    debugPrint('🔍 GoRouter redirect called:');
+    debugPrint('   - state.uri: $uriString');
+    debugPrint('   - state.uri.scheme: ${state.uri.scheme}');
+    debugPrint('   - state.matchedLocation: ${state.matchedLocation}');
+    debugPrint('   - state.path: ${state.path}');
+
     if (state.uri.scheme.isNotEmpty && state.uri.scheme != 'http' && state.uri.scheme != 'https') {
-      debugPrint('🔗 Intercepted deep link, storing for later: $uriString');
+      debugPrint('🔗 ✅ Detected deep link! Storing for later: $uriString');
       _JinnieAppState._pendingDeepLink = uriString;
       return '/';
     }
+    debugPrint('🔗 ❌ Not a deep link, continuing normally');
     return null; // No redirect needed
   },
   errorBuilder: (context, state) {

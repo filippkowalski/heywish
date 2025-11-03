@@ -54,7 +54,9 @@ class DeepLinkService {
 
   /// Public method to handle a deep link URI (for external use)
   void handleDeepLinkUri(Uri uri) {
+    debugPrint('🔗 [PUBLIC] handleDeepLinkUri called with: $uri');
     _handleDeepLink(uri);
+    debugPrint('🔗 [PUBLIC] handleDeepLinkUri finished');
   }
 
   /// Handle incoming deep link
@@ -122,17 +124,30 @@ class DeepLinkService {
     debugPrint('⚠️ Unhandled universal link path: $path');
   }
 
-  /// Handle custom scheme links (jinnie://...)
+  /// Handle custom scheme links (jinnie://... or com.wishlists.gifts://...)
   void _handleCustomScheme(Uri uri) {
-    final path = uri.path.replaceFirst('/', '');
+    debugPrint('🔗 _handleCustomScheme called');
+    debugPrint('   - uri.host: ${uri.host}');
+    debugPrint('   - uri.path: ${uri.path}');
+    debugPrint('   - uri.queryParameters: ${uri.queryParameters}');
 
-    // Pattern: jinnie://profile/username
+    final path = uri.path.replaceFirst('/', '');
+    debugPrint('   - path (after removing /): $path');
+
+    // Pattern: jinnie://profile/username or com.wishlists.gifts://profile/username
     if (uri.host == 'profile' || path.startsWith('profile/')) {
+      debugPrint('🔗 Detected profile pattern');
       final username = uri.host == 'profile' ? path : path.replaceFirst('profile/', '');
+      debugPrint('🔗 Extracted username: $username');
+      debugPrint('🔗 action query param: ${uri.queryParameters['action']}');
+
       if (username.isNotEmpty) {
-        debugPrint('✅ Deep link: View profile $username (custom scheme)');
-        _navigateToProfile(username, highlightFollow: uri.queryParameters['action'] == 'follow');
+        final highlightFollow = uri.queryParameters['action'] == 'follow';
+        debugPrint('✅ Deep link: View profile $username (custom scheme, highlightFollow: $highlightFollow)');
+        _navigateToProfile(username, highlightFollow: highlightFollow);
         return;
+      } else {
+        debugPrint('⚠️ Username is empty!');
       }
     }
 
@@ -141,6 +156,11 @@ class DeepLinkService {
 
   /// Navigate to public profile screen
   void _navigateToProfile(String username, {bool highlightFollow = false}) {
+    debugPrint('🔗 _navigateToProfile called');
+    debugPrint('   - username: $username');
+    debugPrint('   - highlightFollow: $highlightFollow');
+    debugPrint('   - _router is null: ${_router == null}');
+
     if (_router == null) {
       debugPrint('❌ Router not initialized');
       return;
@@ -148,10 +168,15 @@ class DeepLinkService {
 
     // Navigate to public profile with optional follow highlight
     final route = '/profile/$username${highlightFollow ? '?highlight=follow' : ''}';
-    debugPrint('📱 Navigating to: $route');
+    debugPrint('📱 Navigating to route: $route');
 
     // Use go() to navigate, which will replace current route if already on a profile
-    _router!.go(route);
+    try {
+      _router!.go(route);
+      debugPrint('📱 ✅ Navigation completed');
+    } catch (e) {
+      debugPrint('❌ Navigation error: $e');
+    }
   }
 
   /// Dispose and clean up subscriptions
