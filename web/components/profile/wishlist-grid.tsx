@@ -366,7 +366,7 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
               </div>
               {ownership?.isOwner && selectedWishlist && (
                 <Button
-                  onClick={() => ownership.openAddWish(selectedWishlist.id)}
+                  onClick={() => ownership.openNewWish(selectedWishlist.id)}
                   className="mt-2"
                 >
                   Add Item
