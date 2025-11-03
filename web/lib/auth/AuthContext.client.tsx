@@ -10,6 +10,11 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider, appleProvider } from '../firebase.client';
 import { useRouter } from 'next/navigation';
+import {
+  getReservationSession,
+  isReservationSessionExpired,
+  clearReservationSession,
+} from '../firebase-client';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://openai-rewrite.onrender.com/jinnie/v1';
 
@@ -26,6 +31,7 @@ interface AuthContextType {
   user: User | null;
   backendUser: BackendUser | null;
   loading: boolean;
+  isReservationSession: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -40,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [backendUser, setBackendUser] = useState<BackendUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isReservationSession, setIsReservationSession] = useState(false);
   const router = useRouter();
 
   // Cache refresh promise to prevent concurrent refreshes
@@ -53,63 +60,97 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onIdTokenChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          // Sync user with backend
-          const token = await firebaseUser.getIdToken();
+          // Detect if this is a reservation session (email link auth without provider)
+          const providerData = firebaseUser.providerData;
+          const hasProvider = providerData.length > 0 &&
+            (providerData[0].providerId === 'google.com' || providerData[0].providerId === 'apple.com');
+
+          // Check reservation session status
+          const reservationSession = getReservationSession();
+          const isExpired = isReservationSessionExpired();
+
+          // If user signed in with Google/Apple, clear any stale reservation session
+          if (hasProvider && reservationSession !== null) {
+            clearReservationSession();
+          }
+
+          // ONLY enforce expiry for reservation-only sessions (not Google/Apple)
+          if (!hasProvider && isExpired) {
+            clearReservationSession();
+            await firebaseSignOut(auth);
+            setUser(null);
+            setBackendUser(null);
+            setIsReservationSession(false);
+            setLoading(false);
+            return;
+          }
+
+          const isReservationOnly = !hasProvider && reservationSession !== null;
 
           // Store Firebase ID token in cookie for server-side access
-          // Set secure flag in production, httpOnly cannot be set via document.cookie
+          const token = await firebaseUser.getIdToken();
           const secure = window.location.protocol === 'https:' ? '; Secure' : '';
           document.cookie = `firebaseIdToken=${token}; path=/; max-age=3600; SameSite=Lax${secure}`;
 
-          // Determine sign-up method from provider data
-          const providerData = firebaseUser.providerData;
-          let signUpMethod = 'google'; // default
-          if (providerData.length > 0) {
-            const providerId = providerData[0].providerId;
-            if (providerId === 'apple.com') {
-              signUpMethod = 'apple';
-            } else if (providerId === 'google.com') {
-              signUpMethod = 'google';
-            }
-          }
-
-          const response = await fetch(`${API_BASE_URL}/auth/sync`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-              'X-API-Version': '1.0',
-            },
-            body: JSON.stringify({
-              signUpMethod,
-              fullName: firebaseUser.displayName,
-            }),
-          });
-
-          const data = await response.json();
-
-          // Store both Firebase user and backend user data
           setUser(firebaseUser);
-          if (data.user) {
-            const backendUserData = {
-              id: data.user.id,
-              username: data.user.username,
-              full_name: data.user.full_name,
-              email: data.user.email,
-              avatar_url: data.user.avatar_url,
-              bio: data.user.bio,
-            };
-            setBackendUser(backendUserData);
+          setIsReservationSession(isReservationOnly);
+
+          // Only sync with backend if NOT a reservation-only session
+          if (!isReservationOnly) {
+            // Determine sign-up method from provider data
+            let signUpMethod = 'google'; // default
+            if (providerData.length > 0) {
+              const providerId = providerData[0].providerId;
+              if (providerId === 'apple.com') {
+                signUpMethod = 'apple';
+              } else if (providerId === 'google.com') {
+                signUpMethod = 'google';
+              }
+            }
+
+            const response = await fetch(`${API_BASE_URL}/auth/sync`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'X-API-Version': '1.0',
+              },
+              body: JSON.stringify({
+                signUpMethod,
+                fullName: firebaseUser.displayName,
+              }),
+            });
+
+            const data = await response.json();
+
+            // Store backend user data
+            if (data.user) {
+              const backendUserData = {
+                id: data.user.id,
+                username: data.user.username,
+                full_name: data.user.full_name,
+                email: data.user.email,
+                avatar_url: data.user.avatar_url,
+                bio: data.user.bio,
+              };
+              setBackendUser(backendUserData);
+            }
+          } else {
+            // For reservation sessions, don't set backend user
+            setBackendUser(null);
           }
         } catch (error) {
           // Still set user even if backend sync fails
           setUser(firebaseUser);
+          setIsReservationSession(false);
         }
       } else {
         // Clear cookie on sign out
         document.cookie = 'firebaseIdToken=; path=/; max-age=0';
+        clearReservationSession();
         setUser(null);
         setBackendUser(null);
+        setIsReservationSession(false);
       }
       setLoading(false);
     });
@@ -197,9 +238,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Sign out
   const signOut = useCallback(async () => {
     try {
+      clearReservationSession();
       await firebaseSignOut(auth);
       setUser(null);
       setBackendUser(null);
+      setIsReservationSession(false);
     } catch (error) {
       throw new Error('Failed to sign out. Please try again.');
     }
@@ -300,6 +343,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     backendUser,
     loading,
+    isReservationSession,
     signInWithGoogle,
     signInWithApple,
     signOut,

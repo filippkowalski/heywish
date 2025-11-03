@@ -20,6 +20,7 @@ import {
 import {
   onAuthStateChanged,
   sendSignInLinkToEmail,
+  signOut as firebaseSignOut,
   type ActionCodeSettings,
   type User as FirebaseUser,
 } from "firebase/auth";
@@ -44,6 +45,8 @@ import {
   getFirebaseAuth,
   RESERVATION_EMAIL_STORAGE_KEY,
   RESERVATION_PENDING_STORAGE_KEY,
+  isReservationSessionExpired,
+  clearReservationSession,
 } from "@/lib/firebase-client";
 import { emailPattern } from "@/lib/validators";
 import { buildWishlistPath, getWishlistSlug } from "@/lib/slug";
@@ -266,6 +269,21 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
     await auth.currentUser?.reload();
     const verifiedUser = auth.currentUser && auth.currentUser.emailVerified ? auth.currentUser : null;
 
+    // Check if this is an expired reservation session
+    // ONLY check expiry for reservation-only sessions (not Google/Apple users)
+    const hasAuthProvider = auth.currentUser?.providerData?.some(
+      (p) => p.providerId === 'google.com' || p.providerId === 'apple.com'
+    );
+
+    if (verifiedUser && !hasAuthProvider && isReservationSessionExpired()) {
+      clearReservationSession();
+      await firebaseSignOut(auth);
+      setFormError(
+        "Your session expired (48 hours). Please verify your email again to make a reservation."
+      );
+      return;
+    }
+
     if (!verifiedUser) {
       try {
         setSubmitting(true);
@@ -372,6 +390,21 @@ export function PublicWishlistView({ shareToken, sharePath }: PublicWishlistView
 
       if (!current) {
         setFormError("Open the confirmation link from your email to manage your reservations.");
+        return;
+      }
+
+      // Check if reservation session has expired
+      // ONLY check expiry for reservation-only sessions (not Google/Apple users)
+      const hasAuthProvider = current.providerData?.some(
+        (p) => p.providerId === 'google.com' || p.providerId === 'apple.com'
+      );
+
+      if (!hasAuthProvider && isReservationSessionExpired()) {
+        clearReservationSession();
+        await firebaseSignOut(auth);
+        setFormError(
+          "Your session expired (48 hours). Please verify your email again to cancel this reservation."
+        );
         return;
       }
 

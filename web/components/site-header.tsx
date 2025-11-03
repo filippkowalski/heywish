@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { usePathname } from "next/navigation";
 
 export function SiteHeader() {
-  const { user, backendUser, loading, signOut } = useAuth();
+  const { user, backendUser, loading, signOut, isReservationSession } = useAuth();
   const [showSignIn, setShowSignIn] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const pathname = usePathname();
@@ -87,7 +87,7 @@ export function SiteHeader() {
           <div className="flex items-center gap-1 flex-shrink-0 md:gap-2">
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            ) : user ? (
+            ) : user && !isReservationSession ? (
               <>
                 {hasUsername && (
                   <Button asChild variant="ghost" size="sm" className="hidden md:flex">
@@ -102,19 +102,28 @@ export function SiteHeader() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ""} />
-                        <AvatarFallback>{getUserInitials(user.displayName, user.email)}</AvatarFallback>
+                        <AvatarImage
+                          src={backendUser?.avatar_url || user?.photoURL || undefined}
+                          alt={backendUser?.full_name || user?.displayName || ""}
+                        />
+                        <AvatarFallback>
+                          {getUserInitials(backendUser?.full_name || user?.displayName, backendUser?.email || user?.email)}
+                        </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{user.displayName || "User"}</p>
+                        <p className="text-sm font-medium leading-none">
+                          {backendUser?.full_name || user?.displayName || "User"}
+                        </p>
                         {backendUser?.username && (
                           <p className="text-xs leading-none text-muted-foreground">@{backendUser.username}</p>
                         )}
-                        <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {backendUser?.email || user?.email}
+                        </p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />

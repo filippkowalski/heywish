@@ -27,8 +27,12 @@ import {
   getFirebaseAuth,
   RESERVATION_EMAIL_STORAGE_KEY,
   RESERVATION_PENDING_STORAGE_KEY,
+  isReservationSessionExpired,
+  clearReservationSession,
 } from "@/lib/firebase-client";
 import { emailPattern } from "@/lib/validators";
+import { useAuth } from "@/lib/auth/AuthContext.client";
+import { signOut as firebaseSignOut } from "firebase/auth";
 
 function formatPrice(amount?: number, currency: string = "USD") {
   if (amount == null) return null;
@@ -79,6 +83,7 @@ export function WishDetailDialog({
   reserveLabel,
   shareToken,
 }: WishDetailDialogProps) {
+  const { backendUser } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showReservationForm, setShowReservationForm] = useState(false);
   const [formValues, setFormValues] = useState({ name: "", email: "", message: "" });
@@ -187,15 +192,32 @@ export function WishDetailDialog({
       const auth = getFirebaseAuth();
       const currentUser = auth.currentUser;
 
-      if (currentUser) {
-        // Try to get ID token from current user (verified or not)
-        await currentUser.reload();
-        const idToken = await currentUser.getIdToken(true);
-        await api.cancelReservation(wish.id, idToken);
-      } else {
-        // No Firebase user - try without auth (shouldn't happen normally)
-        await api.cancelReservation(wish.id);
+      if (!currentUser) {
+        alert("Please verify your email to manage reservations.");
+        setSubmitting(false);
+        return;
       }
+
+      // Check if reservation session has expired
+      // ONLY check expiry for reservation-only sessions (not Google/Apple users)
+      const hasAuthProvider = currentUser.providerData?.some(
+        (p) => p.providerId === 'google.com' || p.providerId === 'apple.com'
+      );
+
+      if (!hasAuthProvider && isReservationSessionExpired()) {
+        clearReservationSession();
+        await firebaseSignOut(auth);
+        alert(
+          "Your session expired (48 hours). Please verify your email again to cancel this reservation."
+        );
+        setSubmitting(false);
+        return;
+      }
+
+      // Get ID token and cancel reservation
+      await currentUser.reload();
+      const idToken = await currentUser.getIdToken(true);
+      await api.cancelReservation(wish.id, idToken);
 
       handleClose();
       window.location.reload();
@@ -204,7 +226,6 @@ export function WishDetailDialog({
       const errorData = axiosError.response?.data;
       const message = errorData?.error?.message || errorData?.message || "Failed to cancel reservation. Please try again.";
       alert(message);
-    } finally {
       setSubmitting(false);
     }
   };
@@ -241,9 +262,28 @@ export function WishDetailDialog({
     }
 
     await auth.currentUser?.reload();
-    const verifiedUser = auth.currentUser && auth.currentUser.emailVerified ? auth.currentUser : null;
+    const currentUser = auth.currentUser;
+    const verifiedUser = currentUser && currentUser.emailVerified ? currentUser : null;
 
-    if (!verifiedUser) {
+    // Detect if user is fully authenticated by checking provider (Google/Apple)
+    // Don't rely on backendUser as it may not be loaded yet
+    const hasAuthProvider = currentUser?.providerData?.some(
+      (p) => p.providerId === 'google.com' || p.providerId === 'apple.com'
+    );
+    const isFullyAuthenticated = hasAuthProvider || backendUser?.username;
+
+    // Check if this is an expired reservation session
+    // ONLY check expiry for reservation-only sessions (not Google/Apple users)
+    if (verifiedUser && !hasAuthProvider && isReservationSessionExpired()) {
+      clearReservationSession();
+      await firebaseSignOut(auth);
+      setFormError(
+        "Your session expired (48 hours). Please verify your email again to make a reservation."
+      );
+      return;
+    }
+
+    if (!verifiedUser && !isFullyAuthenticated) {
       try {
         setSubmitting(true);
         const actionCodeSettings: ActionCodeSettings = {
@@ -276,7 +316,12 @@ export function WishDetailDialog({
 
     try {
       setSubmitting(true);
-      const idToken = await verifiedUser.getIdToken(true);
+
+      // Get ID token from current user (works for both fully auth and verified email)
+      if (!currentUser) {
+        throw new Error("No authenticated user");
+      }
+      const idToken = await currentUser.getIdToken(true);
 
       await api.reserveWish(wish.id, {
         email: trimmedEmail,
@@ -399,7 +444,7 @@ export function WishDetailDialog({
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleReservationSubmit} className="space-y-4 px-6">
-            {verifiedEmail ? (
+            {backendUser?.username && verifiedEmail ? (
               <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-900 text-center">
                 Signed in as <span className="font-semibold">{verifiedEmail}</span>
               </div>

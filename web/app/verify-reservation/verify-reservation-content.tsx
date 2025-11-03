@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import {
   getFirebaseAuth,
   RESERVATION_EMAIL_STORAGE_KEY,
+  setReservationSession,
 } from "@/lib/firebase-client";
 import { emailPattern } from "@/lib/validators";
 
@@ -27,6 +28,10 @@ export default function VerifyReservationContent() {
       try {
         await signInWithEmailLink(auth, emailForLink, window.location.href);
         window.localStorage.setItem(RESERVATION_EMAIL_STORAGE_KEY, emailForLink);
+
+        // Store reservation session with 48-hour expiry
+        setReservationSession(emailForLink);
+
         setStatus("success");
         setError(null);
 
