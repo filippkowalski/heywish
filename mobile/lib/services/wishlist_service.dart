@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'dart:io';
 import 'api_service.dart';
+import 'review_service.dart';
 import '../models/wishlist.dart';
 import '../models/wish.dart';
 
@@ -321,6 +322,15 @@ class WishlistService extends ChangeNotifier {
       }
 
       print('✅ WishlistService: Wish added successfully');
+
+      // Track wish addition for review prompt
+      try {
+        await ReviewService().onWishAdded();
+      } catch (e) {
+        debugPrint('⚠️  Error tracking wish for review: $e');
+        // Don't fail the wish creation if review tracking fails
+      }
+
       return true;
 
     } catch (e) {

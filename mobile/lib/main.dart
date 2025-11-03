@@ -24,6 +24,7 @@ import 'services/api_service.dart';
 import 'services/fcm_service.dart';
 import 'services/screenshot_detection_service.dart';
 import 'services/deep_link_service.dart';
+import 'services/review_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding/onboarding_flow_screen.dart';
 import 'screens/home_screen.dart';
@@ -72,6 +73,9 @@ void main() async {
 
   // Initialize preferences
   await PreferencesService().initialize();
+
+  // Initialize review service
+  await ReviewService().initialize();
 
   // Initialize singleton services
   await SyncManager().initialize();
@@ -413,6 +417,7 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
         ),
         ChangeNotifierProvider.value(value: FriendsService()),
         ChangeNotifierProvider.value(value: PreferencesService()),
+        ChangeNotifierProvider.value(value: ReviewService()),
         ChangeNotifierProvider.value(value: SyncManager()),
       ],
       child: Screenshot(
