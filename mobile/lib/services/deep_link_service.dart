@@ -170,10 +170,19 @@ class DeepLinkService {
     final route = '/profile/$username${highlightFollow ? '?highlight=follow' : ''}';
     debugPrint('📱 Navigating to route: $route');
 
-    // Use go() to navigate, which will replace current route if already on a profile
     try {
-      _router!.go(route);
-      debugPrint('📱 ✅ Navigation completed');
+      // Build a proper navigation stack: home -> profile
+      // This allows users to navigate back to home
+      debugPrint('📱 Building navigation stack: home -> profile');
+      _router!.go('/home');
+
+      // Wait a frame for home to render, then push profile on top
+      Future.delayed(const Duration(milliseconds: 100), () {
+        debugPrint('📱 Pushing profile on top of home');
+        _router!.push(route);
+      });
+
+      debugPrint('📱 ✅ Navigation initiated');
     } catch (e) {
       debugPrint('❌ Navigation error: $e');
     }
