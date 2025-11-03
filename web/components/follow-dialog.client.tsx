@@ -134,7 +134,7 @@ export function FollowDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 py-4">
+        <div className="space-y-3 px-6 py-4">
           {/* Primary CTA - Open in App */}
           <button
             onClick={handleOpenInApp}
