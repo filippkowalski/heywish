@@ -3,11 +3,11 @@ import '../models/friend.dart';
 import 'api_service.dart' hide Friend, UserSearchResult;
 
 class FriendsService extends ChangeNotifier {
-  static final FriendsService _instance = FriendsService._internal();
-  factory FriendsService() => _instance;
-  FriendsService._internal();
+  // Remove singleton pattern - use Provider for dependency injection
+  final ApiService _apiService;
 
-  final ApiService _apiService = ApiService();
+  FriendsService({ApiService? apiService})
+      : _apiService = apiService ?? ApiService();
 
   // State management
   List<Friend> _friends = [];

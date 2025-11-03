@@ -386,28 +386,7 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-
-    if (state == AppLifecycleState.resumed) {
-      // App came to foreground - refresh friends data to update notification badge
-      debugPrint('🔄 App resumed - refreshing friends data for notification badge');
-      _refreshFriendsDataOnResume();
-    }
-  }
-
-  Future<void> _refreshFriendsDataOnResume() async {
-    try {
-      // We need to use a delay to ensure the widget tree is built
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      if (!mounted) return;
-
-      final friendsService = context.read<FriendsService>();
-      // Refresh all friends data (friends, sent requests, received requests)
-      await friendsService.loadAllData();
-      debugPrint('✅ Friends data refreshed successfully');
-    } catch (e) {
-      debugPrint('❌ Error refreshing friends data on resume: $e');
-    }
+    // Lifecycle handling moved to _AppLifecycleWrapper
   }
 
   @override
@@ -447,22 +426,28 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
             return service;
           },
         ),
-        ChangeNotifierProvider.value(value: FriendsService()),
+        ChangeNotifierProvider<FriendsService>(
+          create: (context) => FriendsService(
+            apiService: context.read<ApiService>(),
+          ),
+        ),
         ChangeNotifierProvider.value(value: PreferencesService()),
         ChangeNotifierProvider.value(value: ReviewService()),
         ChangeNotifierProvider.value(value: SyncManager()),
       ],
       child: Screenshot(
         controller: _screenshotController,
-        child: MaterialApp.router(
-          title: 'Jinnie',
-          theme: AppTheme.lightTheme(),
-          themeMode: ThemeMode.light,
-          debugShowCheckedModeBanner: false,
-          localizationsDelegates: context.localizationDelegates,
-          supportedLocales: context.supportedLocales,
-          locale: context.locale,
-          routerConfig: _router,
+        child: _AppLifecycleWrapper(
+          child: MaterialApp.router(
+            title: 'Jinnie',
+            theme: AppTheme.lightTheme(),
+            themeMode: ThemeMode.light,
+            debugShowCheckedModeBanner: false,
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+            routerConfig: _router,
+          ),
         ),
       ),
     );
@@ -658,3 +643,61 @@ final _router = GoRouter(
     ),
   ],
 );
+
+/// Wrapper widget that handles app lifecycle and has access to Provider context
+class _AppLifecycleWrapper extends StatefulWidget {
+  final Widget child;
+
+  const _AppLifecycleWrapper({required this.child});
+
+  @override
+  State<_AppLifecycleWrapper> createState() => _AppLifecycleWrapperState();
+}
+
+class _AppLifecycleWrapperState extends State<_AppLifecycleWrapper>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.resumed) {
+      // App came to foreground - refresh friends data to update notification badge
+      debugPrint('🔄 App resumed - refreshing friends data for notification badge');
+      _refreshFriendsDataOnResume();
+    }
+  }
+
+  Future<void> _refreshFriendsDataOnResume() async {
+    try {
+      // We need to use a delay to ensure the widget tree is built
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      if (!mounted) return;
+
+      // Now we have proper access to Provider context!
+      final friendsService = context.read<FriendsService>();
+      // Refresh all friends data (friends, sent requests, received requests)
+      await friendsService.loadAllData();
+      debugPrint('✅ Friends data refreshed successfully');
+    } catch (e) {
+      debugPrint('❌ Error refreshing friends data on resume: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
+  }
+}

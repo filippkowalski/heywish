@@ -46,8 +46,15 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     _loadProfile();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   Future<void> _loadProfile() async {
     try {
+      if (!mounted) return;
+
       setState(() {
         _isLoading = true;
         _error = null;
@@ -64,6 +71,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         });
         return;
       }
+
+      if (!mounted) return;
 
       setState(() {
         _userData = response['user'];
@@ -120,6 +129,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       _hasReceivedRequest = friendsService.friendRequests.any(
         (request) => request.requesterId == userId && request.isPending,
       );
+
+      if (!mounted) return;
 
       setState(() {});
     }
@@ -462,7 +473,14 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            // Use post-frame callback to avoid navigator lock issues
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && context.canPop()) {
+                context.pop();
+              }
+            });
+          },
         ),
       ),
       body: _isLoading

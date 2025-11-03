@@ -30,8 +30,6 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _isLoadingUsers = false;
   Timer? _searchDebouncer;
 
-  final FriendsService _friendsService = FriendsService();
-
   @override
   void initState() {
     super.initState();
@@ -77,7 +75,8 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
-      final results = await _friendsService.searchUsers(query);
+      final friendsService = context.read<FriendsService>();
+      final results = await friendsService.searchUsers(query);
       setState(() {
         _userSearchResults = results;
       });
@@ -110,7 +109,8 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     try {
-      await _friendsService.sendFriendRequest(user.id);
+      final friendsService = context.read<FriendsService>();
+      await friendsService.sendFriendRequest(user.id);
 
       // Update the user in the results list
       setState(() {
@@ -158,7 +158,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _cancelFriendRequest(UserSearchResult user) async {
     try {
-      await _friendsService.cancelFriendRequest(user.id);
+      final friendsService = context.read<FriendsService>();
+      await friendsService.cancelFriendRequest(user.id);
 
       // Update the user in the results list
       setState(() {
