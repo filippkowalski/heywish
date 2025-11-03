@@ -122,10 +122,8 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
       );
     });
 
-    // Initialize deep link service
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _deepLinkService.initialize(_router);
-    });
+    // Initialize deep link service immediately to handle cold-start deep links
+    _deepLinkService.initialize(_router);
 
     // Initialize quick actions (iOS and Android only)
     if (Platform.isIOS || Platform.isAndroid) {
@@ -419,6 +417,20 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
 
 final _router = GoRouter(
   initialLocation: '/',
+  redirect: (context, state) {
+    // If the location is a deep link URL (contains "://"), redirect to splash
+    // The deep link service will handle the actual navigation
+    if (state.matchedLocation.contains('://')) {
+      debugPrint('🔗 Redirecting deep link to splash: ${state.matchedLocation}');
+      return '/';
+    }
+    return null; // No redirect needed
+  },
+  errorBuilder: (context, state) {
+    // Handle unmatched routes (like deep link URLs that weren't caught by redirect)
+    debugPrint('❌ Unmatched route: ${state.matchedLocation}');
+    return const SplashScreen();
+  },
   routes: [
     GoRoute(
       path: '/',
