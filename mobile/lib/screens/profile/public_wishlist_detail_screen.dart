@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
 import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
 import '../../common/widgets/skeleton_loading.dart';
 import '../../common/widgets/native_refresh_indicator.dart';
+import '../../common/widgets/confirmation_bottom_sheet.dart';
 import '../../widgets/cached_image.dart';
 import '../wishlists/add_wish_screen.dart';
 
@@ -28,6 +31,7 @@ class _PublicWishlistDetailScreenState extends State<PublicWishlistDetailScreen>
   String? _error;
   Map<String, dynamic>? _wishlistData;
   List<dynamic> _items = [];
+  String? _reservingWishId; // Track which wish is currently being reserved/unreserved
 
   @override
   void initState() {
@@ -124,6 +128,104 @@ class _PublicWishlistDetailScreenState extends State<PublicWishlistDetailScreen>
         'category': item['category'],
       },
     );
+  }
+
+  Future<void> _reserveWish(String wishId) async {
+    final confirmed = await ConfirmationBottomSheet.show(
+      context: context,
+      title: 'wish.reserve_confirmation_title'.tr(),
+      message: 'wish.reserve_confirmation_message'.tr(),
+      confirmText: 'wish.reserve'.tr(),
+      cancelText: 'app.cancel'.tr(),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      _reservingWishId = wishId;
+    });
+
+    try {
+      await _api.post('/wishes/$wishId/reserve', {});
+
+      // Reload wishlist to get updated reservation state
+      await _loadWishlist();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('wish.reserved_successfully'.tr()),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e.toString().contains('409')
+                  ? 'wish.already_reserved'.tr()
+                  : 'wish.reservation_error'.tr(),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _reservingWishId = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _cancelReservation(String wishId) async {
+    final confirmed = await ConfirmationBottomSheet.show(
+      context: context,
+      title: 'wish.unreserve_confirmation_title'.tr(),
+      message: 'wish.unreserve_confirmation_message'.tr(),
+      confirmText: 'wish.cancel_reservation'.tr(),
+      cancelText: 'app.cancel'.tr(),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      _reservingWishId = wishId;
+    });
+
+    try {
+      await _api.delete('/wishes/$wishId/reserve');
+
+      // Reload wishlist to get updated reservation state
+      await _loadWishlist();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('wish.unreserved_successfully'.tr()),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('wish.reservation_error'.tr()),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _reservingWishId = null;
+        });
+      }
+    }
   }
 
   @override
@@ -263,7 +365,7 @@ class _PublicWishlistDetailScreenState extends State<PublicWishlistDetailScreen>
 
   Widget _buildItemCard(Map<String, dynamic> item) {
     final title = item['title'] ?? '';
-    final isReserved = item['is_reserved'] == true;
+    final isReserved = item['status'] == 'reserved';
 
     // Parse price
     double? price;
@@ -419,8 +521,17 @@ class _PublicWishlistDetailScreenState extends State<PublicWishlistDetailScreen>
   Widget _buildItemDetailSheet(Map<String, dynamic> item) {
     final title = item['title'] ?? '';
     final description = item['description'];
-    final isReserved = item['is_reserved'] == true;
+    final isReserved = item['status'] == 'reserved';
+    final reservedByUid = item['reserved_by_uid'];
+    final wishId = item['id'];
     final url = item['url'];
+
+    // Get current user's Firebase UID to check if they reserved this item
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final currentUserUid = authService.firebaseUser?.uid;
+    final isReservedByMe = isReserved && reservedByUid == currentUserUid;
+    final isReservedByOther = isReserved && !isReservedByMe;
+    final isReserving = _reservingWishId == wishId;
 
     // Parse price
     double? price;
@@ -637,7 +748,7 @@ class _PublicWishlistDetailScreenState extends State<PublicWishlistDetailScreen>
               ),
             ),
 
-            // Bottom action button
+            // Bottom action buttons
             Container(
               padding: EdgeInsets.fromLTRB(24, 16, 24, bottomPadding + 24),
               decoration: BoxDecoration(
@@ -646,23 +757,90 @@ class _PublicWishlistDetailScreenState extends State<PublicWishlistDetailScreen>
                   top: BorderSide(color: Colors.grey[200]!, width: 1),
                 ),
               ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _copyItemToMyWishlist(item);
-                  },
-                  icon: const Icon(Icons.add_circle_outline, size: 18),
-                  label: const Text('Add to My Wishlist'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.primaryAccent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Reserve/Cancel Reservation button (only show if not reserved by others)
+                  if (!isReservedByOther) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: isReservedByMe
+                          ? OutlinedButton.icon(
+                              onPressed: isReserving
+                                  ? null
+                                  : () {
+                                      Navigator.pop(context);
+                                      _cancelReservation(wishId);
+                                    },
+                              icon: isReserving
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.bookmark_remove, size: 18),
+                              label: Text('wish.cancel_reservation'.tr()),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppTheme.primaryAccent,
+                                side: const BorderSide(color: AppTheme.primaryAccent),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            )
+                          : FilledButton.icon(
+                              onPressed: isReserving
+                                  ? null
+                                  : () {
+                                      Navigator.pop(context);
+                                      _reserveWish(wishId);
+                                    },
+                              icon: isReserving
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.bookmark_add, size: 18),
+                              label: Text('wish.reserve'.tr()),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppTheme.primaryAccent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
+                  // Add to My Wishlist button (always visible)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _copyItemToMyWishlist(item);
+                      },
+                      icon: const Icon(Icons.add_circle_outline, size: 18),
+                      label: Text('wish.add_to_my_wishlist'.tr()),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.primary,
+                        side: BorderSide(color: Colors.grey[300]!),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
           ],

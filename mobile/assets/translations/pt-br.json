@@ -383,11 +383,19 @@
     "available": "Disponível",
     "reserve": "Reservar",
     "unreserve": "Cancelar Reserva",
+    "cancel_reservation": "Cancelar Reserva",
     "reserved_by": "Reservado por {name}",
+    "reserved_by_you": "Reservado por você",
     "reserver_name": "Seu Nome",
     "reserve_confirmation": "Reservar este item?",
-    "unreserve_confirmation": "Cancelar a reserva deste item?",
+    "reserve_confirmation_title": "Reservar Item",
+    "reserve_confirmation_message": "Seu amigo saberá que você planeja conseguir este presente.",
+    "unreserve_confirmation": "Cancelar reserva?",
+    "unreserve_confirmation_title": "Cancelar Reserva",
+    "unreserve_confirmation_message": "Este item ficará disponível para outras pessoas reservarem.",
     "delete_confirmation": "Tem certeza de que deseja excluir este item?",
+    "reservation_error": "Não foi possível reservar o item",
+    "already_reserved": "Este item já foi reservado",
     "create_failed": "Falha ao adicionar o item",
     "created_successfully": "Item adicionado com sucesso",
     "updated_successfully": "Item atualizado com sucesso",
@@ -495,7 +503,8 @@
     "affiliate_disclosure": "Divulgação de Afiliados",
     "affiliate_disclosure_subtitle": "Saiba mais sobre nossas parcerias de afiliados",
     "affiliate_disclosure_title": "Divulgação de Afiliados",
-    "affiliate_disclosure_content": "O Jinnie participa de vários programas de marketing de afiliados, o que significa que podemos ganhar comissões sobre compras feitas através de links em nossa plataforma.\n\nQuando você clica em certos links de produtos e faz uma compra, podemos receber uma pequena comissão sem custo adicional para você. Essas comissões nos ajudam a manter e melhorar nossos serviços.\n\nNossas relações de afiliados não influenciam nossas recomendações ou os produtos exibidos nas listas de desejos. Estamos comprometidos em fornecer informações honestas e imparciais para ajudá-lo a tomar decisões informadas.\n\nObrigado por apoiar o Jinnie!"
+    "affiliate_disclosure_content": "O Jinnie participa de vários programas de marketing de afiliados, o que significa que podemos ganhar comissões sobre compras feitas através de links em nossa plataforma.\n\nQuando você clica em certos links de produtos e faz uma compra, podemos receber uma pequena comissão sem custo adicional para você. Essas comissões nos ajudam a manter e melhorar nossos serviços.\n\nNossas relações de afiliados não influenciam nossas recomendações ou os produtos exibidos nas listas de desejos. Estamos comprometidos em fornecer informações honestas e imparciais para ajudá-lo a tomar decisões informadas.\n\nObrigado por apoiar o Jinnie!",
+    "crop_avatar": "Recortar avatar"
   },
   "search": {
     "title": "Buscar",
@@ -615,6 +624,14 @@
     "notifications_permission_message": "As notificações foram negadas anteriormente. Para ativá-las:\n\n1. Abra os Ajustes\n2. Encontre \"Jinnie\" na lista de apps\n3. Toque em \"Notificações\"\n4. Ative \"Permitir Notificações\"\n\nVocê pode continuar sem notificações por enquanto.",
     "open_settings": "Abrir Ajustes",
     "language": "Idioma",
-    "select_language": "Selecionar Idioma"
+    "select_language": "Selecionar Idioma",
+    "personalization": "Personalização",
+    "personalization_subtitle": "Personalize sua experiência",
+    "show_wishlist_valuation": "Mostrar valorização da lista de desejos",
+    "show_wishlist_valuation_desc": "Exibir o valor total dos itens em suas listas de desejos"
+  },
+  "wishlist_valuation": {
+    "total_value": "Valor Total",
+    "no_prices": "Sem preços definidos"
   }
 }

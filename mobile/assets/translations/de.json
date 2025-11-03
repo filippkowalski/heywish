@@ -383,11 +383,19 @@
     "available": "Verfügbar",
     "reserve": "Reservieren",
     "unreserve": "Reservierung aufheben",
+    "cancel_reservation": "Reservierung stornieren",
     "reserved_by": "Reserviert von {name}",
+    "reserved_by_you": "Von dir reserviert",
     "reserver_name": "Dein Name",
     "reserve_confirmation": "Diesen Artikel reservieren?",
-    "unreserve_confirmation": "Reservierung für diesen Artikel aufheben?",
+    "reserve_confirmation_title": "Artikel reservieren",
+    "reserve_confirmation_message": "Dein Freund wird benachrichtigt, dass du dieses Geschenk besorgen möchtest.",
+    "unreserve_confirmation": "Reservierung stornieren?",
+    "unreserve_confirmation_title": "Reservierung stornieren",
+    "unreserve_confirmation_message": "Dieser Artikel wird dann für andere verfügbar sein.",
     "delete_confirmation": "Möchtest du diesen Artikel wirklich löschen?",
+    "reservation_error": "Artikel konnte nicht reserviert werden",
+    "already_reserved": "Dieser Artikel wurde bereits reserviert",
     "create_failed": "Artikel konnte nicht hinzugefügt werden",
     "created_successfully": "Artikel erfolgreich hinzugefügt",
     "updated_successfully": "Artikel erfolgreich aktualisiert",
@@ -405,6 +413,7 @@
     "title": "Profil",
     "settings": "Einstellungen",
     "account": "Konto",
+    "crop_avatar": "Profilbild zuschneiden",
     "failed_to_upload_avatar": "Profilbild konnte nicht hochgeladen werden",
     "failed_to_delete_wishlist": "Wunschliste konnte nicht gelöscht werden",
     "check_friend_requests": "Überprüfe deine Freundschaftsanfragen im Freunde-Tab",
@@ -615,6 +624,14 @@
     "notifications_permission_message": "Benachrichtigungen wurden zuvor verweigert. Um sie zu aktivieren:\n\n1. Öffne die Einstellungen\n2. Finde „Jinnie“ in der App-Liste\n3. Tippe auf „Mitteilungen“\n4. Schalte „Mitteilungen erlauben“ ein\n\nDu kannst vorerst ohne Benachrichtigungen fortfahren.",
     "open_settings": "Einstellungen öffnen",
     "language": "Sprache",
-    "select_language": "Sprache auswählen"
+    "select_language": "Sprache auswählen",
+    "personalization": "Personalisierung",
+    "personalization_subtitle": "Passe deine Erfahrung an",
+    "show_wishlist_valuation": "Wunschlisten-Gesamtwert anzeigen",
+    "show_wishlist_valuation_desc": "Zeige den Gesamtwert der Artikel in deinen Wunschlisten an"
+  },
+  "wishlist_valuation": {
+    "total_value": "Gesamtwert",
+    "no_prices": "Keine Preise festgelegt"
   }
 }

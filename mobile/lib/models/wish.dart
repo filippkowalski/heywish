@@ -13,6 +13,7 @@ class Wish {
   final int quantity;
   final String status;
   final String? reservedBy;
+  final String? reservedByUid; // Firebase UID of user who reserved
   final DateTime? reservedAt;
   final String? reserverName;
   final String? notes;
@@ -34,6 +35,7 @@ class Wish {
     this.quantity = 1,
     this.status = 'available',
     this.reservedBy,
+    this.reservedByUid,
     this.reservedAt,
     this.reserverName,
     this.notes,
@@ -43,6 +45,12 @@ class Wish {
 
   bool get isReserved => status == 'reserved';
   String? get imageUrl => images.isNotEmpty ? images.first : null;
+
+  // Check if the wish is reserved by a specific user (by Firebase UID)
+  bool isReservedBy(String? firebaseUid) {
+    if (firebaseUid == null || !isReserved) return false;
+    return reservedByUid == firebaseUid;
+  }
 
   factory Wish.fromJson(Map<String, dynamic> json) {
     return Wish(
@@ -66,8 +74,9 @@ class Wish {
       quantity: json['quantity'] ?? 1,
       status: json['status']?.toString() ?? 'available',
       reservedBy: json['reserved_by']?.toString(),
-      reservedAt: json['reserved_at'] != null 
-          ? DateTime.parse(json['reserved_at']) 
+      reservedByUid: json['reserved_by_uid']?.toString(),
+      reservedAt: json['reserved_at'] != null
+          ? DateTime.parse(json['reserved_at'])
           : null,
       reserverName: json['reserver_name']?.toString(),
       notes: json['notes']?.toString(),
@@ -96,6 +105,7 @@ class Wish {
       'quantity': quantity,
       'status': status,
       'reserved_by': reservedBy,
+      'reserved_by_uid': reservedByUid,
       'reserved_at': reservedAt?.toIso8601String(),
       'reserver_name': reserverName,
       'notes': notes,
