@@ -61,11 +61,11 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-8 px-2">
+        <div className="space-y-4 py-8 px-6">
           <Button
             onClick={handleGoogleSignIn}
             disabled={isLoadingGoogle || isLoadingApple}
-            className="w-full h-14 text-base font-medium shadow-sm hover:shadow-md transition-all"
+            className="w-full h-14 text-base font-medium shadow-sm hover:shadow-md transition-all px-6"
             variant="outline"
           >
             {isLoadingGoogle ? (
@@ -101,7 +101,7 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
           <Button
             onClick={handleAppleSignIn}
             disabled={isLoadingGoogle || isLoadingApple}
-            className="w-full h-14 text-base font-medium shadow-sm hover:shadow-md transition-all bg-black text-white hover:bg-gray-800"
+            className="w-full h-14 text-base font-medium shadow-sm hover:shadow-md transition-all bg-black text-white hover:bg-gray-800 hover:text-white px-6"
             variant="outline"
           >
             {isLoadingApple ? (
