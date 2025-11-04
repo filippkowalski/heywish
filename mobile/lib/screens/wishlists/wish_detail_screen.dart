@@ -13,19 +13,19 @@ import 'edit_wish_screen.dart';
 
 class WishDetailScreen extends StatefulWidget {
   final String wishId;
-  final String wishlistId;
+  final String? wishlistId; // Nullable for unsorted wishes
 
   const WishDetailScreen({
     super.key,
     required this.wishId,
-    required this.wishlistId,
+    this.wishlistId, // Optional for unsorted wishes
   });
 
   /// Show as bottom sheet
   static Future<bool?> show(
     BuildContext context, {
     required String wishId,
-    required String wishlistId,
+    String? wishlistId, // Optional for unsorted wishes
   }) {
     return NativeTransitions.showNativeModalBottomSheet<bool>(
       context: context,
@@ -435,10 +435,11 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
     Navigator.of(context).pop();
 
     // Show edit screen as bottom sheet
+    // Use wish's actual wishlistId (may be null for unsorted)
     final result = await EditWishScreen.show(
       context,
       wishId: widget.wishId,
-      wishlistId: widget.wishlistId,
+      wishlistId: wish?.wishlistId,
     );
 
     // If edit was successful, the wishlist screen will refresh automatically

@@ -933,12 +933,12 @@ class _FeedScreenState extends State<FeedScreen> {
           // Wish item - Clickable
           GestureDetector(
             onTap: () async {
-              // Show wish detail as bottom sheet
-              if (item.wishlistId != null && item.wishId != null) {
+              // Show wish detail as bottom sheet (works for both sorted and unsorted wishes)
+              if (item.wishId != null) {
                 await WishDetailScreen.show(
                   context,
                   wishId: item.wishId!,
-                  wishlistId: item.wishlistId!,
+                  wishlistId: item.wishlistId, // Can be null for unsorted wishes
                 );
               }
             },

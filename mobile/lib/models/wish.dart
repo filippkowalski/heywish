@@ -1,6 +1,6 @@
 class Wish {
   final String id;
-  final String wishlistId;
+  final String? wishlistId; // Nullable for unsorted wishes
   final String title;
   final String? description;
   final double? price;
@@ -22,7 +22,7 @@ class Wish {
 
   Wish({
     required this.id,
-    required this.wishlistId,
+    this.wishlistId, // Optional for unsorted wishes
     required this.title,
     this.description,
     this.price,

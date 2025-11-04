@@ -18,19 +18,19 @@ import 'wishlist_new_screen.dart';
 
 class EditWishScreen extends StatefulWidget {
   final String wishId;
-  final String wishlistId;
+  final String? wishlistId; // Nullable for unsorted wishes
 
   const EditWishScreen({
     super.key,
     required this.wishId,
-    required this.wishlistId,
+    this.wishlistId, // Optional for unsorted wishes
   });
 
   /// Show as bottom sheet
   static Future<bool?> show(
     BuildContext context, {
     required String wishId,
-    required String wishlistId,
+    String? wishlistId, // Optional for unsorted wishes
   }) {
     return NativeTransitions.showNativeModalBottomSheet<bool>(
       context: context,
