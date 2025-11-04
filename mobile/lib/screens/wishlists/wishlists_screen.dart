@@ -10,7 +10,6 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../services/auth_service.dart';
 import '../../services/wishlist_service.dart';
-import '../../services/screenshot_detection_service.dart';
 import '../../services/preferences_service.dart';
 import '../../models/wishlist.dart';
 import '../../models/wish.dart';
@@ -35,10 +34,6 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
   bool _isShareBannerDismissed = false;
   static const String _shareBannerDismissedKey = 'share_banner_dismissed';
 
-  // Screenshot detection
-  bool _showUrlInHeader = false;
-  StreamSubscription<void>? _screenshotSubscription;
-
   // FAB visibility
   bool _isFabVisible = true;
   ScrollController? _scrollController;
@@ -49,7 +44,6 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     _scrollController = ScrollController();
     _scrollController!.addListener(_onScroll);
     _loadShareBannerState();
-    _setupScreenshotDetection();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadWishlists();
     });
@@ -70,30 +64,10 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     }
   }
 
-  void _setupScreenshotDetection() {
-    // Listen to screenshot events - works better on iOS
-    _screenshotSubscription = ScreenshotDetectionService.instance.screenshotStream.listen(
-      (_) {
-        // Show URL immediately (synchronous setState)
-        if (!mounted) return;
-        setState(() => _showUrlInHeader = true);
-
-        // Revert back after 400ms
-        Future.delayed(const Duration(milliseconds: 400), () {
-          if (!mounted) return;
-          setState(() => _showUrlInHeader = false);
-        });
-      },
-      onError: (_) {}, // Ignore errors
-      cancelOnError: false,
-    );
-  }
-
   @override
   void dispose() {
     _scrollController?.removeListener(_onScroll);
     _scrollController?.dispose();
-    _screenshotSubscription?.cancel();
     super.dispose();
   }
 
