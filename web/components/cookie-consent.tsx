@@ -89,8 +89,18 @@ export function CookieConsent() {
         <div className="flex items-start gap-3">
           <div className="flex-1 space-y-2">
             <p className="text-sm leading-relaxed text-foreground">
-              We use cookies and analytics to improve your experience. By
-              clicking &quot;Accept&quot;, you consent to our use of cookies.
+              We use cookies and analytics to improve your experience. We also use affiliate tracking cookies when you click product links—we may earn a commission at no extra cost to you.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              See our{" "}
+              <a href="/privacy" className="underline hover:text-foreground">
+                Privacy Policy
+              </a>
+              {" "}and{" "}
+              <a href="/affiliate-disclosure" className="underline hover:text-foreground">
+                Affiliate Disclosure
+              </a>
+              {" "}for details.
             </p>
             <div className="flex gap-2">
               <Button
