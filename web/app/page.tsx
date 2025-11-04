@@ -293,6 +293,13 @@ export default function HomePage() {
               >
                 Terms of Service
               </Link>
+              <span className="text-muted-foreground/50">•</span>
+              <Link
+                href="/affiliate-disclosure"
+                className="hover:text-foreground transition-colors underline-offset-4 hover:underline"
+              >
+                Affiliate Disclosure
+              </Link>
             </div>
             <p className="text-xs text-muted-foreground/70">
               © 2025 Jinnie. All rights reserved.
