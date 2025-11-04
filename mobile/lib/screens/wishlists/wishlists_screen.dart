@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../services/auth_service.dart';
@@ -111,11 +110,6 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     setState(() {
       _isShareBannerDismissed = true;
     });
-  }
-
-  void _openUserProfilePage(String username) {
-    // Navigate to public profile screen within the app
-    context.push('/profile/$username');
   }
 
   @override
@@ -311,35 +305,32 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
       child: Row(
         children: [
           Expanded(
-            child: GestureDetector(
-              onTap: username != null ? () => _openUserProfilePage(username) : null,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  username != null ? '@$username' : 'home.title'.tr(),
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                if (username != null)
                   Text(
-                    username != null ? '@$username' : 'home.title'.tr(),
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.primary,
+                    _showUrlInHeader ? 'jinnie.co/$username' : 'home.subtitle'.tr(),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.primary.withValues(alpha: 0.7),
+                    ),
+                  )
+                else
+                  Text(
+                    'home.subtitle_create_share'.tr(),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.primary.withValues(alpha: 0.7),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  if (username != null)
-                    Text(
-                      _showUrlInHeader ? 'jinnie.co/$username' : 'home.subtitle'.tr(),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.primary.withValues(alpha: 0.7),
-                      ),
-                    )
-                  else
-                    Text(
-                      'home.subtitle_create_share'.tr(),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.primary.withValues(alpha: 0.7),
-                      ),
-                    ),
-                ],
-              ),
+              ],
             ),
           ),
           // Share button - only show when user has at least one wish
