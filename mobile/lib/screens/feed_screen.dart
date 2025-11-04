@@ -12,7 +12,7 @@ import '../services/friends_service.dart';
 import '../models/friend.dart';
 import '../widgets/cached_image.dart';
 import 'wishlists/add_wish_screen.dart';
-import 'wishlists/wish_detail_screen.dart';
+import 'feed_wish_detail_screen.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class FeedScreen extends StatefulWidget {
@@ -270,17 +270,19 @@ class _FeedScreenState extends State<FeedScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: _isLoading
-                  ? _buildLoadingState()
-                  : _error != null
-                      ? _buildErrorState()
-                      : _buildContent(),
-            ),
-          ],
+        child: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverToBoxAdapter(
+                child: _buildHeader(),
+              ),
+            ];
+          },
+          body: _isLoading
+              ? _buildLoadingState()
+              : _error != null
+                  ? _buildErrorState()
+                  : _buildContent(),
         ),
       ),
     );
@@ -292,16 +294,6 @@ class _FeedScreenState extends State<FeedScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title
-          Text(
-            'feed.title'.tr(),
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: AppTheme.primary,
-            ),
-          ),
-          const SizedBox(height: 16),
-
           // Toggle buttons
           Container(
             padding: const EdgeInsets.all(4),
@@ -467,43 +459,35 @@ class _FeedScreenState extends State<FeedScreen> {
     // Show activity feed
     return NativeRefreshIndicator(
       onRefresh: _loadFeed,
-      child: CustomScrollView(
-        slivers: [
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
           // Sharing card - Always show at top
-          SliverToBoxAdapter(
-            child: _buildSharingCard(),
-          ),
+          _buildSharingCard(),
 
           // Feed items
           if (_feedItems.isNotEmpty)
-            SliverPadding(
+            Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final item = _feedItems[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _buildFeedItem(item),
-                    );
-                  },
-                  childCount: _feedItems.length,
-                ),
+              child: Column(
+                children: _feedItems.map((item) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: _buildFeedItem(item),
+                  );
+                }).toList(),
               ),
             )
           else
-            SliverFillRemaining(
-              hasScrollBody: false,
+            Padding(
+              padding: const EdgeInsets.all(32),
               child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Text(
-                    'feed.empty_subtitle'.tr(),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
+                child: Text(
+                  'feed.empty_subtitle'.tr(),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ),
             ),
@@ -933,23 +917,19 @@ class _FeedScreenState extends State<FeedScreen> {
           // Wish item - Clickable
           GestureDetector(
             onTap: () async {
-              // Navigate to friend's public wishlist or profile
-              if (item.friendUsername != null) {
-                if (item.wishlistId != null) {
-                  // Navigate to public wishlist detail
-                  context.push('/profile/${item.friendUsername}/wishlist/${item.wishlistId}');
-                } else {
-                  // Unsorted wish - navigate to friend's profile
-                  context.push('/profile/${item.friendUsername}');
-                }
-              } else if (item.wishId != null) {
-                // Own wish - show detail as bottom sheet
-                await WishDetailScreen.show(
-                  context,
-                  wishId: item.wishId!,
-                  wishlistId: item.wishlistId,
-                );
-              }
+              // Show friend's wish detail with all data from feed
+              await FeedWishDetailScreen.show(
+                context,
+                wishTitle: item.wishTitle,
+                wishImage: item.wishImage,
+                wishPrice: item.wishPrice,
+                wishCurrency: item.wishCurrency,
+                wishUrl: item.wishUrl,
+                wishDescription: item.wishDescription,
+                friendName: item.friendName,
+                friendUsername: item.friendUsername,
+                friendAvatar: item.friendAvatar,
+              );
             },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
