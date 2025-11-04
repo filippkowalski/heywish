@@ -933,12 +933,21 @@ class _FeedScreenState extends State<FeedScreen> {
           // Wish item - Clickable
           GestureDetector(
             onTap: () async {
-              // Show wish detail as bottom sheet (works for both sorted and unsorted wishes)
-              if (item.wishId != null) {
+              // Navigate to friend's public wishlist or profile
+              if (item.friendUsername != null) {
+                if (item.wishlistId != null) {
+                  // Navigate to public wishlist detail
+                  context.push('/profile/${item.friendUsername}/wishlist/${item.wishlistId}');
+                } else {
+                  // Unsorted wish - navigate to friend's profile
+                  context.push('/profile/${item.friendUsername}');
+                }
+              } else if (item.wishId != null) {
+                // Own wish - show detail as bottom sheet
                 await WishDetailScreen.show(
                   context,
                   wishId: item.wishId!,
-                  wishlistId: item.wishlistId, // Can be null for unsorted wishes
+                  wishlistId: item.wishlistId,
                 );
               }
             },
