@@ -39,14 +39,35 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
   bool _showUrlInHeader = false;
   StreamSubscription<void>? _screenshotSubscription;
 
+  // FAB visibility
+  bool _isFabVisible = true;
+  ScrollController? _scrollController;
+
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
+    _scrollController!.addListener(_onScroll);
     _loadShareBannerState();
     _setupScreenshotDetection();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadWishlists();
     });
+  }
+
+  void _onScroll() {
+    if (_scrollController == null) return;
+
+    // Show FAB when scrolling up, hide when scrolling down
+    if (_scrollController!.position.userScrollDirection == ScrollDirection.reverse) {
+      if (_isFabVisible) {
+        setState(() => _isFabVisible = false);
+      }
+    } else if (_scrollController!.position.userScrollDirection == ScrollDirection.forward) {
+      if (!_isFabVisible) {
+        setState(() => _isFabVisible = true);
+      }
+    }
   }
 
   void _setupScreenshotDetection() {
@@ -70,6 +91,8 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
 
   @override
   void dispose() {
+    _scrollController?.removeListener(_onScroll);
+    _scrollController?.dispose();
     _screenshotSubscription?.cancel();
     super.dispose();
   }
@@ -92,7 +115,11 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
   Future<void> _openUserProfilePage(String username) async {
     final url = Uri.parse('https://jinnie.co/$username');
     try {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+      // Use inAppBrowserView to avoid deep link interception
+      await launchUrl(
+        url,
+        mode: LaunchMode.inAppBrowserView,
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -240,6 +267,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
                           ],
                         )
                       : NestedScrollView(
+                          controller: _scrollController,
                           headerSliverBuilder: (context, innerBoxIsScrolled) {
                             return [
                               SliverToBoxAdapter(
@@ -263,18 +291,26 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
       ),
       floatingActionButton: !_hasCompletedInitialLoad || wishlistService.isLoading
           ? null
-          : FloatingActionButton(
-              onPressed: () async {
-                final result = await AddWishScreen.show(context);
-                // Refresh if wish was added successfully
-                if (result == true && mounted) {
-                  await _loadWishlists();
-                }
-              },
-              backgroundColor: AppTheme.primaryAccent,
-              child: const Icon(
-                Icons.add,
-                color: Colors.white,
+          : AnimatedSlide(
+              duration: const Duration(milliseconds: 200),
+              offset: _isFabVisible ? Offset.zero : const Offset(0, 2),
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _isFabVisible ? 1.0 : 0.0,
+                child: FloatingActionButton(
+                  onPressed: () async {
+                    final result = await AddWishScreen.show(context);
+                    // Refresh if wish was added successfully
+                    if (result == true && mounted) {
+                      await _loadWishlists();
+                    }
+                  },
+                  backgroundColor: AppTheme.primaryAccent,
+                  child: const Icon(
+                    Icons.add,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
     );
