@@ -1,0 +1,88 @@
+# Jinnie - Robots.txt
+# This file prevents automated bots from triggering affiliate links
+# and ensures compliance with affiliate network requirements
+
+# Allow major search engines for SEO
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+# Block aggressive crawlers and SEO tools that might trigger affiliate clicks
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /
+
+User-agent: Screaming Frog SEO Spider
+Disallow: /
+
+User-agent: SiteAuditBot
+Disallow: /
+
+User-agent: Ahrefsbot
+Disallow: /
+
+User-agent: serpstatbot
+Disallow: /
+
+User-agent: MegaIndex.ru
+Disallow: /
+
+User-agent: spbot
+Disallow: /
+
+User-agent: BDCbot
+Disallow: /
+
+User-agent: DataForSeoBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+# Default rules for all other bots
+User-agent: *
+Crawl-delay: 5
+Allow: /
+Disallow: /api/
+Disallow: /onboarding/
+Disallow: /settings/
+
+# Sitemap location
+Sitemap: https://jinnie.co/sitemap.xml
