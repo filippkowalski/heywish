@@ -128,6 +128,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Awin Affiliate Program Verification */}
+        <meta name="awin-verification" content="Awin" />
+
         {/* iOS Smart App Banner */}
         <meta name="apple-itunes-app" content="app-id=6754384455" />
 
