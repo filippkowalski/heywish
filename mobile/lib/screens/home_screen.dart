@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'wishlists/wishlists_screen.dart';
 import 'wishlists/add_wish_screen.dart';
 import 'feed_screen.dart';
@@ -193,12 +194,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             NavigationDestination(
               icon: Icon(Icons.home_outlined),
               selectedIcon: Icon(Icons.home),
-              label: 'Home',
+              label: 'navigation.home'.tr(),
             ),
             NavigationDestination(
               icon: Icon(Icons.dynamic_feed_outlined),
               selectedIcon: Icon(Icons.dynamic_feed),
-              label: 'Feed',
+              label: 'navigation.feed'.tr(),
             ),
             NavigationDestination(
               icon: _buildProfileIcon(
@@ -209,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 selected: true,
                 badgeCount: pendingRequestsCount,
               ),
-              label: 'Profile',
+              label: 'navigation.profile'.tr(),
             ),
           ],
         ),
