@@ -218,32 +218,47 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
       body: Container(
         color: Colors.white,
         child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(context, authService),
-              Expanded(
-                child: NativeRefreshIndicator(
-                  onRefresh: () async {
-                    final wishlistService = context.read<WishlistService>();
-                    final authService = context.read<AuthService>();
+          child: !_hasCompletedInitialLoad || wishlistService.isLoading
+              ? Column(
+                  children: [
+                    _buildHeader(context, authService),
+                    Expanded(child: _buildLoadingShimmer()),
+                  ],
+                )
+              : wishlistService.error != null
+                  ? Column(
+                      children: [
+                        _buildHeader(context, authService),
+                        Expanded(child: _buildErrorState(wishlistService.error!)),
+                      ],
+                    )
+                  : (wishlistService.wishlists.isEmpty && wishlistService.allWishes.isEmpty)
+                      ? Column(
+                          children: [
+                            _buildHeader(context, authService),
+                            Expanded(child: _buildEmptyState(context)),
+                          ],
+                        )
+                      : NestedScrollView(
+                          headerSliverBuilder: (context, innerBoxIsScrolled) {
+                            return [
+                              SliverToBoxAdapter(
+                                child: _buildHeader(context, authService),
+                              ),
+                            ];
+                          },
+                          body: NativeRefreshIndicator(
+                            onRefresh: () async {
+                              final wishlistService = context.read<WishlistService>();
+                              final authService = context.read<AuthService>();
 
-                    if (authService.isAuthenticated && authService.currentUser != null) {
-                      await wishlistService.fetchWishlists();
-                    }
-                  },
-                  child: !_hasCompletedInitialLoad
-                      ? _buildLoadingShimmer()
-                      : wishlistService.isLoading
-                          ? _buildLoadingShimmer()
-                          : wishlistService.error != null
-                              ? _buildErrorState(wishlistService.error!)
-                              : (wishlistService.wishlists.isEmpty && wishlistService.allWishes.isEmpty)
-                                  ? _buildEmptyState(context)
-                                  : _buildContent(wishlistService.wishlists),
-                ),
-              ),
-            ],
-          ),
+                              if (authService.isAuthenticated && authService.currentUser != null) {
+                                await wishlistService.fetchWishlists();
+                              }
+                            },
+                            child: _buildContent(wishlistService.wishlists),
+                          ),
+                        ),
         ),
       ),
       floatingActionButton: !_hasCompletedInitialLoad || wishlistService.isLoading
@@ -450,59 +465,61 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
       }
     }
 
-    return Column(
-      children: [
+    if (filteredWishes.isEmpty) {
+      return _buildEmptyWishesState();
+    }
+
+    return CustomScrollView(
+      slivers: [
         // Share banner (show after 3+ items and if not dismissed)
         if (shouldShowShareBanner && username != null && !_isShareBannerDismissed)
-          _ShareBanner(
-            username: username,
-            wishlistName: selectedWishlist?.name,
-            onShareTap: () => _showShareBottomSheet(context),
-            onDismiss: _dismissShareBanner,
+          SliverToBoxAdapter(
+            child: _ShareBanner(
+              username: username,
+              wishlistName: selectedWishlist?.name,
+              onShareTap: () => _showShareBottomSheet(context),
+              onDismiss: _dismissShareBanner,
+            ),
           ),
 
         // Tabs for filtering by wishlist
         if (wishlists.isNotEmpty || unsortedWishes.isNotEmpty)
-          _buildWishlistTabs(wishlists, unsortedWishes.length),
+          SliverToBoxAdapter(
+            child: _buildWishlistTabs(wishlists, unsortedWishes.length),
+          ),
 
-        // Wishes masonry grid with valuation at bottom
-        Expanded(
-          child: filteredWishes.isEmpty
-              ? _buildEmptyWishesState()
-              : CustomScrollView(
-                  slivers: [
-                    SliverPadding(
-                      padding: const EdgeInsets.all(16.0),
-                      sliver: SliverMasonryGrid.count(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childCount: filteredWishes.length,
-                        itemBuilder: (context, index) {
-                          final wish = filteredWishes[index];
-                          Wishlist? wishlist;
-                          if (wish.wishlistId != null) {
-                            try {
-                              wishlist = wishlists.firstWhere((w) => w.id == wish.wishlistId);
-                            } catch (e) {
-                              wishlist = null;
-                            }
-                          }
-                          return _MasonryWishCard(wish: wish, wishlist: wishlist);
-                        },
-                      ),
-                    ),
-                    // Wishlist valuation at bottom of scrollable list
-                    if ((wishlists.isNotEmpty || unsortedWishes.isNotEmpty) && filteredWishes.isNotEmpty)
-                      SliverToBoxAdapter(
-                        child: _buildWishlistValuation(filteredWishes),
-                      ),
-                    // Extra padding at the bottom for better UX
-                    const SliverPadding(
-                      padding: EdgeInsets.only(bottom: 16),
-                    ),
-                  ],
-                ),
+        // Wishes masonry grid
+        SliverPadding(
+          padding: const EdgeInsets.all(16.0),
+          sliver: SliverMasonryGrid.count(
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childCount: filteredWishes.length,
+            itemBuilder: (context, index) {
+              final wish = filteredWishes[index];
+              Wishlist? wishlist;
+              if (wish.wishlistId != null) {
+                try {
+                  wishlist = wishlists.firstWhere((w) => w.id == wish.wishlistId);
+                } catch (e) {
+                  wishlist = null;
+                }
+              }
+              return _MasonryWishCard(wish: wish, wishlist: wishlist);
+            },
+          ),
+        ),
+
+        // Wishlist valuation at bottom of scrollable list
+        if ((wishlists.isNotEmpty || unsortedWishes.isNotEmpty) && filteredWishes.isNotEmpty)
+          SliverToBoxAdapter(
+            child: _buildWishlistValuation(filteredWishes),
+          ),
+
+        // Extra padding at the bottom for better UX
+        const SliverPadding(
+          padding: EdgeInsets.only(bottom: 16),
         ),
       ],
     );
