@@ -113,7 +113,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
       // IMPORTANT: Reload friends data from server to get latest status
       // This ensures we have up-to-date friendship information
-      await friendsService.loadAllData();
+      await friendsService.loadAllData(forceRefresh: true);
 
       if (!mounted) return;
 
@@ -157,7 +157,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       await friendsService.sendFriendRequest(_userData!['id']);
 
       // Refresh friendship status
-      await friendsService.getFriendRequests(type: FriendRequestType.sent.toJson());
+      await friendsService.getFriendRequests(
+        type: FriendRequestType.sent.toJson(),
+        forceRefresh: true,
+      );
       await _checkFriendshipStatus();
 
       if (mounted) {

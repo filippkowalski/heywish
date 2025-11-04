@@ -139,15 +139,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final isAuthenticated = context.watch<AuthService>().isAuthenticated;
+
+    // Reset flag when user logs out
     if (!isAuthenticated && _friendsDataLoaded) {
       _friendsDataLoaded = false;
-    } else if (isAuthenticated && !_friendsDataLoaded) {
-      _friendsDataLoaded = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        context.read<FriendsService>().loadAllData();
-      });
     }
+
+    // Note: We don't call loadAllData() here anymore to prevent duplicate calls.
+    // Data loading is handled by:
+    // 1. initState() on initial mount (if authenticated)
+    // 2. App lifecycle resume handler in main.dart
+    // 3. Individual screens when needed with forceRefresh flag
+    // The FriendsService cache prevents redundant API calls.
 
     final pendingRequestsCount =
         context.watch<FriendsService>().pendingRequestsCount;

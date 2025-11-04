@@ -42,61 +42,63 @@ import 'screens/profile/public_wishlist_detail_screen.dart';
 import 'common/navigation/native_page_route.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Set system UI overlay style for status bar
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ),
-  );
-
-  // Initialize localization
-  await EasyLocalization.ensureInitialized();
-
-  // Load environment variables (optional in development)
-  try {
-    await dotenv.load(fileName: '.env');
-  } catch (e) {
-    debugPrint('Warning: Could not load .env file: $e');
-  }
-
-  // Initialize Firebase with platform-specific options
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  // Initialize Firebase Crashlytics
-  // Pass all uncaught "fatal" errors from the Flutter framework to Crashlytics
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-
-  // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
-  PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
-
-  // Initialize FCM background handler
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
-  // Initialize preferences
-  await PreferencesService().initialize();
-
-  // Initialize review service
-  await ReviewService().initialize();
-
-  // Initialize singleton services
-  await SyncManager().initialize();
-
-  // Initialize FCM service (will register token after auth)
-  FCMService().initialize();
-
-  // Wrap runApp in runZonedGuarded to catch all errors
+  // Wrap everything in runZonedGuarded to ensure all initialization
+  // and app startup happens in the same zone
   runZonedGuarded<Future<void>>(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    // Set system UI overlay style for status bar
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+    );
+
+    // Initialize localization
+    await EasyLocalization.ensureInitialized();
+
+    // Load environment variables (optional in development)
+    try {
+      await dotenv.load(fileName: '.env');
+    } catch (e) {
+      debugPrint('Warning: Could not load .env file: $e');
+    }
+
+    // Initialize Firebase with platform-specific options
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // Initialize Firebase Crashlytics
+    // Pass all uncaught "fatal" errors from the Flutter framework to Crashlytics
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+    // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+
+    // Initialize FCM background handler
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+    // Initialize preferences
+    await PreferencesService().initialize();
+
+    // Initialize review service
+    await ReviewService().initialize();
+
+    // Initialize singleton services
+    await SyncManager().initialize();
+
+    // Initialize FCM service (will register token after auth)
+    FCMService().initialize();
+
+    // Run the app
     runApp(
       EasyLocalization(
         supportedLocales: const [
@@ -656,6 +658,9 @@ class _AppLifecycleWrapper extends StatefulWidget {
 
 class _AppLifecycleWrapperState extends State<_AppLifecycleWrapper>
     with WidgetsBindingObserver {
+  DateTime? _lastResumeRefreshTime;
+  static const _resumeRefreshThreshold = Duration(seconds: 30);
+
   @override
   void initState() {
     super.initState();
@@ -681,6 +686,18 @@ class _AppLifecycleWrapperState extends State<_AppLifecycleWrapper>
 
   Future<void> _refreshFriendsDataOnResume() async {
     try {
+      // Check if enough time has passed since last resume refresh
+      if (_lastResumeRefreshTime != null) {
+        final timeSinceLastRefresh = DateTime.now().difference(_lastResumeRefreshTime!);
+        if (timeSinceLastRefresh < _resumeRefreshThreshold) {
+          debugPrint('⏭️  App resume: Skipping refresh, last refresh was ${timeSinceLastRefresh.inSeconds}s ago (threshold: ${_resumeRefreshThreshold.inSeconds}s)');
+          return;
+        }
+        debugPrint('🔄 App resume: Refreshing (${timeSinceLastRefresh.inSeconds}s since last refresh)');
+      } else {
+        debugPrint('🔄 App resume: First refresh since app start');
+      }
+
       // We need to use a delay to ensure the widget tree is built
       await Future.delayed(const Duration(milliseconds: 100));
 
@@ -688,11 +705,14 @@ class _AppLifecycleWrapperState extends State<_AppLifecycleWrapper>
 
       // Now we have proper access to Provider context!
       final friendsService = context.read<FriendsService>();
-      // Refresh all friends data (friends, sent requests, received requests)
-      await friendsService.loadAllData();
-      debugPrint('✅ Friends data refreshed successfully');
+
+      // Force refresh to bypass the 30-second cache and get latest data
+      await friendsService.loadAllData(forceRefresh: true);
+
+      _lastResumeRefreshTime = DateTime.now();
+      debugPrint('✅ App resume: Friends data refreshed successfully');
     } catch (e) {
-      debugPrint('❌ Error refreshing friends data on resume: $e');
+      debugPrint('❌ App resume: Error refreshing friends data: $e');
     }
   }
 

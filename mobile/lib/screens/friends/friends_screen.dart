@@ -405,7 +405,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       await friendsService.respondToFriendRequest(request.id, action);
 
       // Reload data after any action so lists stay in sync
-      await friendsService.loadAllData();
+      await friendsService.loadAllData(forceRefresh: true);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -476,7 +476,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       await friendsService.cancelFriendRequest(request.addresseeId!);
 
       // Reload data after cancelling
-      await friendsService.loadAllData();
+      await friendsService.loadAllData(forceRefresh: true);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -713,7 +713,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     }
 
     return NativeRefreshIndicator(
-      onRefresh: () => friendsService.getFriends(),
+      onRefresh: () => friendsService.getFriends(forceRefresh: true),
       child: ListView.builder(
         padding: EdgeInsets.all(16),
         itemCount: friendsService.friends.length,
@@ -971,7 +971,10 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     }
 
     return NativeRefreshIndicator(
-      onRefresh: () => friendsService.getFriendRequests(type: FriendRequestType.received.toJson()),
+      onRefresh: () => friendsService.getFriendRequests(
+            type: FriendRequestType.received.toJson(),
+            forceRefresh: true,
+          ),
       child: ListView.builder(
         padding: EdgeInsets.all(16),
         itemCount: friendsService.friendRequests.length,
@@ -1014,7 +1017,10 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     }
 
     return NativeRefreshIndicator(
-      onRefresh: () => friendsService.getFriendRequests(type: FriendRequestType.sent.toJson()),
+      onRefresh: () => friendsService.getFriendRequests(
+            type: FriendRequestType.sent.toJson(),
+            forceRefresh: true,
+          ),
       child: ListView.builder(
         padding: EdgeInsets.all(16),
         itemCount: friendsService.sentRequests.length,

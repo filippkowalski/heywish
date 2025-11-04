@@ -1065,7 +1065,7 @@ class _FeedScreenState extends State<FeedScreen> {
         }
 
         return NativeRefreshIndicator(
-          onRefresh: () => friendsService.getFriends(),
+          onRefresh: () => friendsService.getFriends(forceRefresh: true),
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
             itemCount: friendsService.friends.length,

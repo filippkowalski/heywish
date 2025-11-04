@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/friend.dart';
 import 'api_service.dart' hide Friend, UserSearchResult;
@@ -18,6 +19,18 @@ class FriendsService extends ChangeNotifier {
   bool _isLoadingRequests = false;
   bool _isLoadingActivities = false;
   String? _error;
+  Future<void>? _loadAllDataFuture;
+
+  final Map<String, Future<List<Friend>>> _friendsRequestsInFlight = {};
+  final Set<String> _friendsLoadingKeys = {};
+  final Map<String, Future<List<FriendRequest>>> _friendRequestsInFlight = {};
+  final Set<String> _friendRequestLoadingKeys = {};
+
+  // Cache management
+  DateTime? _lastLoadAllDataTime;
+  final Map<String, DateTime> _friendsCacheTime = {};
+  final Map<String, DateTime> _friendRequestsCacheTime = {};
+  static const _cacheDuration = Duration(seconds: 30);
 
   // Getters
   List<Friend> get friends => _friends;
@@ -53,11 +66,50 @@ class FriendsService extends ChangeNotifier {
   }
 
   // Load all data for friends screen
-  Future<void> loadAllData() async {
+  Future<void> loadAllData({bool forceRefresh = false}) async {
+    // Check cache age if not forcing refresh
+    if (!forceRefresh && _lastLoadAllDataTime != null) {
+      final age = DateTime.now().difference(_lastLoadAllDataTime!);
+      if (age < _cacheDuration) {
+        debugPrint('📦 FriendsService: Using cached loadAllData (${age.inSeconds}s old)');
+        return;
+      }
+      debugPrint('🔄 FriendsService: Cache expired (${age.inSeconds}s old), refreshing');
+    }
+
+    if (_loadAllDataFuture != null) {
+      if (!forceRefresh) {
+        debugPrint('📦 FriendsService: Reusing in-flight loadAllData request');
+        return _loadAllDataFuture!;
+      }
+
+      try {
+        await _loadAllDataFuture!;
+      } catch (_) {
+        // Allow a refresh even if the previous request failed.
+      }
+    }
+
+    debugPrint('🚀 FriendsService: Starting loadAllData (forceRefresh: $forceRefresh)');
+    final future = _performLoadAllData(forceRefresh: forceRefresh);
+    _loadAllDataFuture = future;
+
+    try {
+      await future;
+      _lastLoadAllDataTime = DateTime.now();
+      debugPrint('✅ FriendsService: loadAllData completed and cached');
+    } finally {
+      if (_loadAllDataFuture == future) {
+        _loadAllDataFuture = null;
+      }
+    }
+  }
+
+  Future<void> _performLoadAllData({required bool forceRefresh}) async {
     await Future.wait([
-      getFriends(),
-      getFriendRequests(type: 'received'),
-      getFriendRequests(type: 'sent'),
+      getFriends(forceRefresh: forceRefresh),
+      getFriendRequests(type: 'received', forceRefresh: forceRefresh),
+      getFriendRequests(type: 'sent', forceRefresh: forceRefresh),
     ]);
   }
 
@@ -94,9 +146,53 @@ class FriendsService extends ChangeNotifier {
   Future<List<Friend>> getFriends({
     int page = 1,
     int limit = 50,
+    bool forceRefresh = false,
   }) async {
+    final requestKey = '$page-$limit';
+
+    // Check cache age if not forcing refresh
+    if (!forceRefresh && _friendsCacheTime.containsKey(requestKey)) {
+      final age = DateTime.now().difference(_friendsCacheTime[requestKey]!);
+      if (age < _cacheDuration) {
+        debugPrint('📦 FriendsService: Using cached getFriends (${age.inSeconds}s old)');
+        return _friends;
+      }
+      debugPrint('🔄 FriendsService: getFriends cache expired (${age.inSeconds}s old)');
+    }
+
+    final existingRequest = _friendsRequestsInFlight[requestKey];
+
+    if (existingRequest != null) {
+      if (!forceRefresh) {
+        debugPrint('📦 FriendsService: Reusing in-flight getFriends request');
+        return existingRequest;
+      }
+
+      try {
+        await existingRequest;
+      } catch (_) {
+        // Previous request failed; continue with a fresh fetch.
+      }
+    }
+
+    debugPrint('🚀 FriendsService: Starting getFriends (forceRefresh: $forceRefresh)');
+    final fetch = _fetchFriends(
+      requestKey: requestKey,
+      page: page,
+      limit: limit,
+    );
+    _friendsRequestsInFlight[requestKey] = fetch;
+    return fetch;
+  }
+
+  Future<List<Friend>> _fetchFriends({
+    required String requestKey,
+    required int page,
+    required int limit,
+  }) async {
+    _friendsLoadingKeys.add(requestKey);
     _updateState(isLoadingFriends: true, error: null);
-    
+
     try {
       debugPrint('👥 FriendsService: Getting friends list');
       
@@ -110,14 +206,21 @@ class FriendsService extends ChangeNotifier {
 
       final List<dynamic> friendsData = response['friends'] ?? [];
       final friends = friendsData.map((friendData) => Friend.fromJson(friendData)).toList();
-      
-      _updateState(friends: friends, isLoadingFriends: false);
-      debugPrint('👥 FriendsService: Found ${friends.length} friends');
+
+      _friendsLoadingKeys.remove(requestKey);
+      final stillLoading = _friendsLoadingKeys.isNotEmpty;
+      _updateState(friends: friends, isLoadingFriends: stillLoading);
+      _friendsCacheTime[requestKey] = DateTime.now();
+      debugPrint('✅ FriendsService: Found ${friends.length} friends (cached)');
       return friends;
     } catch (e) {
-      _updateState(isLoadingFriends: false, error: e.toString());
+      _friendsLoadingKeys.remove(requestKey);
+      final stillLoading = _friendsLoadingKeys.isNotEmpty;
+      _updateState(isLoadingFriends: stillLoading, error: e.toString());
       debugPrint('❌ FriendsService: Error getting friends: $e');
       rethrow;
+    } finally {
+      _friendsRequestsInFlight.remove(requestKey);
     }
   }
 
@@ -172,7 +275,53 @@ class FriendsService extends ChangeNotifier {
     String type = 'received',
     int page = 1,
     int limit = 20,
+    bool forceRefresh = false,
   }) async {
+    final requestKey = '$type-$page-$limit';
+
+    // Check cache age if not forcing refresh
+    if (!forceRefresh && _friendRequestsCacheTime.containsKey(requestKey)) {
+      final age = DateTime.now().difference(_friendRequestsCacheTime[requestKey]!);
+      if (age < _cacheDuration) {
+        debugPrint('📦 FriendsService: Using cached getFriendRequests[$type] (${age.inSeconds}s old)');
+        return type == 'received' ? _friendRequests : _sentRequests;
+      }
+      debugPrint('🔄 FriendsService: getFriendRequests[$type] cache expired (${age.inSeconds}s old)');
+    }
+
+    final existingRequest = _friendRequestsInFlight[requestKey];
+
+    if (existingRequest != null) {
+      if (!forceRefresh) {
+        debugPrint('📦 FriendsService: Reusing in-flight getFriendRequests[$type] request');
+        return existingRequest;
+      }
+
+      try {
+        await existingRequest;
+      } catch (_) {
+        // Previous request failed; continue with a new fetch.
+      }
+    }
+
+    debugPrint('🚀 FriendsService: Starting getFriendRequests[$type] (forceRefresh: $forceRefresh)');
+    final fetch = _fetchFriendRequests(
+      requestKey: requestKey,
+      type: type,
+      page: page,
+      limit: limit,
+    );
+    _friendRequestsInFlight[requestKey] = fetch;
+    return fetch;
+  }
+
+  Future<List<FriendRequest>> _fetchFriendRequests({
+    required String requestKey,
+    required String type,
+    required int page,
+    required int limit,
+  }) async {
+    _friendRequestLoadingKeys.add(requestKey);
     _updateState(isLoadingRequests: true, error: null);
     
     try {
@@ -189,19 +338,26 @@ class FriendsService extends ChangeNotifier {
 
       final List<dynamic> requestsData = response['requests'] ?? [];
       final requests = requestsData.map((requestData) => FriendRequest.fromJson(requestData)).toList();
-      
+      _friendRequestLoadingKeys.remove(requestKey);
+      final stillLoading = _friendRequestLoadingKeys.isNotEmpty;
+
       if (type == 'received') {
-        _updateState(friendRequests: requests, isLoadingRequests: false);
+        _updateState(friendRequests: requests, isLoadingRequests: stillLoading);
       } else {
-        _updateState(sentRequests: requests, isLoadingRequests: false);
+        _updateState(sentRequests: requests, isLoadingRequests: stillLoading);
       }
-      
-      debugPrint('📬 FriendsService: Found ${requests.length} $type friend requests');
+
+      _friendRequestsCacheTime[requestKey] = DateTime.now();
+      debugPrint('✅ FriendsService: Found ${requests.length} $type friend requests (cached)');
       return requests;
     } catch (e) {
-      _updateState(isLoadingRequests: false, error: e.toString());
+      _friendRequestLoadingKeys.remove(requestKey);
+      final stillLoading = _friendRequestLoadingKeys.isNotEmpty;
+      _updateState(isLoadingRequests: stillLoading, error: e.toString());
       debugPrint('❌ FriendsService: Error getting friend requests: $e');
       rethrow;
+    } finally {
+      _friendRequestsInFlight.remove(requestKey);
     }
   }
 
