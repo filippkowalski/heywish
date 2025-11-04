@@ -113,25 +113,9 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     });
   }
 
-  Future<void> _openUserProfilePage(String username) async {
-    final url = Uri.parse('https://jinnie.co/$username');
-    try {
-      // Use inAppBrowserView to avoid deep link interception
-      await launchUrl(
-        url,
-        mode: LaunchMode.inAppBrowserView,
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('wish.could_not_open_url'.tr()),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
+  void _openUserProfilePage(String username) {
+    // Navigate to public profile screen within the app
+    context.push('/profile/$username');
   }
 
   @override
