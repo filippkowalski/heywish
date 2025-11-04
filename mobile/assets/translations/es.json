@@ -235,6 +235,7 @@
   "wishlist": {
     "title": "Lista de deseos",
     "wishlists": "Listas de deseos",
+    "unsorted": "Sin clasificar",
     "create_new": "Crear nueva lista",
     "save_changes": "Guardar cambios",
     "remove": "Eliminar",
