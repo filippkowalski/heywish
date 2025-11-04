@@ -109,6 +109,15 @@ export default function PrivacyPolicy() {
               <li>We may receive aggregated data about clicks and purchases (no personal information)</li>
               <li>Each merchant has their own privacy policy governing their data practices</li>
             </ul>
+            <p className="text-gray-700 mb-4">
+              <strong>Mobile App Affiliate Tracking:</strong> When using the Jinnie mobile app:
+            </p>
+            <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
+              <li>Clicking product links may place affiliate tracking cookies or identifiers on your device</li>
+              <li>These track whether you make a purchase from the merchant within their tracking period (typically 24 hours to 30 days)</li>
+              <li>Tracking only occurs when you actively click on a product link, not while browsing the app</li>
+              <li>You can opt-out of this tracking at any time (see Section 6.4 below)</li>
+            </ul>
 
             <h3 className="text-xl font-semibold text-gray-900 mb-3">4.4 Legal Requirements</h3>
             <p className="text-gray-700 mb-4">
@@ -172,18 +181,59 @@ export default function PrivacyPolicy() {
             <p className="text-gray-700 mb-4">
               You can delete your account at any time, which will:
             </p>
-            <ul className="list-disc pl-6 text-gray-700 space-y-2">
+            <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
               <li>Permanently remove your profile and wishlists</li>
               <li>Delete your personal information from our systems</li>
               <li>Remove your friendships and social connections</li>
               <li>Cancel any pending reservations</li>
             </ul>
+
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">6.4 Opting Out of Affiliate Tracking</h3>
+            <p className="text-gray-700 mb-4">
+              You can opt-out of affiliate tracking through the following methods:
+            </p>
+
+            <h4 className="text-lg font-semibold text-gray-900 mb-2">Mobile App (iOS/Android):</h4>
+            <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
+              <li>
+                <strong>Clear App Data:</strong> Go to your device settings &gt; Apps &gt; Jinnie &gt; Clear Data/Cache. This removes all affiliate tracking cookies stored by the app.
+              </li>
+              <li>
+                <strong>Reset Advertising ID:</strong>
+                <ul className="list-circle pl-6 mt-2 space-y-1">
+                  <li><strong>iOS:</strong> Settings &gt; Privacy &amp; Security &gt; Tracking &gt; Toggle off &quot;Allow Apps to Request to Track&quot;</li>
+                  <li><strong>Android:</strong> Settings &gt; Google &gt; Ads &gt; Reset advertising ID</li>
+                </ul>
+              </li>
+              <li>
+                <strong>Limit Ad Tracking:</strong>
+                <ul className="list-circle pl-6 mt-2 space-y-1">
+                  <li><strong>iOS:</strong> Settings &gt; Privacy &amp; Security &gt; Tracking &gt; Disable tracking</li>
+                  <li><strong>Android:</strong> Settings &gt; Google &gt; Ads &gt; Opt out of Ads Personalization</li>
+                </ul>
+              </li>
+              <li>
+                <strong>Uninstall and Reinstall:</strong> Removing and reinstalling the app will clear all stored affiliate cookies.
+              </li>
+            </ul>
+
+            <h4 className="text-lg font-semibold text-gray-900 mb-2">Website (Browser):</h4>
+            <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
+              <li>Clear your browser cookies and cache</li>
+              <li>Use private/incognito browsing mode</li>
+              <li>Enable &quot;Do Not Track&quot; in your browser settings</li>
+              <li>Use browser extensions that block tracking cookies</li>
+            </ul>
+
+            <p className="text-gray-700">
+              <strong>Note:</strong> Opting out of affiliate tracking does not affect your ability to use Jinnie&apos;s core features. You can still create wishlists, view products, and share with friends. The only change is that we will not earn commissions when you make purchases through product links.
+            </p>
           </section>
 
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Children&apos;s Privacy</h2>
             <p className="text-gray-700">
-              Our Service is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us so we can delete it.
+              Our Service is not intended for children under 16 years of age. We do not knowingly collect personal information from children under 16. If you are a parent or guardian and believe your child under 16 has provided us with personal information, please contact us immediately at privacy@jinnie.co so we can delete it.
             </p>
           </section>
 

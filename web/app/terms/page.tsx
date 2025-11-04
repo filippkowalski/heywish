@@ -49,6 +49,9 @@ export default function TermsOfService() {
               <li>Google authentication</li>
               <li>Apple Sign-In</li>
             </ul>
+            <p className="text-gray-700 mb-4">
+              <strong>Age Requirement:</strong> You must be at least 16 years old to use Jinnie. By creating an account, you represent and warrant that you are at least 16 years of age. If you are under 16, you may not use our Service.
+            </p>
 
             <h3 className="text-xl font-semibold text-gray-900 mb-3">3.2 Account Responsibility</h3>
             <p className="text-gray-700 mb-4">
@@ -97,8 +100,42 @@ export default function TermsOfService() {
             <p className="text-gray-700 mb-4">
               Jinnie may include affiliate links to third-party products and services. When you click on these links and make a purchase, we may earn a commission at no additional cost to you.
             </p>
-            <p className="text-gray-700">
+            <p className="text-gray-700 mb-4">
               We clearly mark affiliate links and maintain transparency about our affiliate relationships. Our affiliate partnerships do not influence the quality or integrity of our Service.
+            </p>
+            <p className="text-gray-700 mb-4">
+              For complete details about our affiliate practices, please review our{' '}
+              <Link href="/affiliate-disclosure" className="text-blue-600 hover:text-blue-800 underline">
+                Affiliate Disclosure
+              </Link>.
+            </p>
+
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">5.1 Mobile App Affiliate Tracking</h3>
+            <p className="text-gray-700 mb-4">
+              When you use the Jinnie mobile application:
+            </p>
+            <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
+              <li>
+                <strong>Affiliate Cookies:</strong> When you click on product links in wishlists (yours or others&apos;), affiliate tracking cookies or identifiers may be placed on your device to track your activity with merchant websites.
+              </li>
+              <li>
+                <strong>Purchase Tracking:</strong> If you make a purchase from a merchant within their tracking period (typically 24 hours to 30 days, depending on the merchant), we may earn a commission from that merchant.
+              </li>
+              <li>
+                <strong>No Additional Cost:</strong> The commission we earn does not affect the price you pay. The price is always the same as going directly to the merchant&apos;s website.
+              </li>
+              <li>
+                <strong>Your Control:</strong> You can manage tracking preferences and opt-out of affiliate tracking through your device settings or by clearing app data. See our Privacy Policy for detailed opt-out instructions.
+              </li>
+              <li>
+                <strong>Transparency:</strong> Affiliate links may be indicated within the app where appropriate. You will always be directed to legitimate merchant websites.
+              </li>
+            </ul>
+            <p className="text-gray-700">
+              By using the mobile app and clicking on product links, you acknowledge and consent to this affiliate tracking. You may opt-out at any time by following the instructions in our{' '}
+              <Link href="/privacy" className="text-blue-600 hover:text-blue-800 underline">
+                Privacy Policy
+              </Link>.
             </p>
           </section>
 
