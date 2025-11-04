@@ -305,32 +305,37 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
       child: Row(
         children: [
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  username != null ? '@$username' : 'home.title'.tr(),
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                if (username != null)
+            child: GestureDetector(
+              onTap: username != null
+                ? () => Share.share('https://jinnie.co/$username')
+                : null,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    _showUrlInHeader ? 'jinnie.co/$username' : 'home.subtitle'.tr(),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.primary.withValues(alpha: 0.7),
-                    ),
-                  )
-                else
-                  Text(
-                    'home.subtitle_create_share'.tr(),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.primary.withValues(alpha: 0.7),
+                    'home.title'.tr(),
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.primary,
                     ),
                   ),
-              ],
+                  const SizedBox(height: 4),
+                  if (username != null)
+                    Text(
+                      'jinnie.co/$username',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.primary.withValues(alpha: 0.7),
+                      ),
+                    )
+                  else
+                    Text(
+                      'home.subtitle_create_share'.tr(),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.primary.withValues(alpha: 0.7),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
           // Share button - only show when user has at least one wish
