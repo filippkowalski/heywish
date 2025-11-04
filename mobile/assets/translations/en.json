@@ -142,7 +142,7 @@
   },
   "navigation": {
     "home": "Home",
-    "feed": "Feed", 
+    "feed": "Inspo",
     "profile": "Profile"
   },
   "home": {
@@ -181,7 +181,7 @@
     "share_profile": "Share Your Profile",
     "search_friends": "Search for Friends",
     "find_more_friends": "Find More Friends",
-    "tab_activity": "Activity",
+    "tab_activity": "Inspo",
     "tab_friends": "Friends",
     "friends_empty_title": "No friends yet",
     "friends_empty_subtitle": "Search and add friends to see their wishlists",
