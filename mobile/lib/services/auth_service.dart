@@ -532,45 +532,141 @@ class AuthService extends ChangeNotifier {
 
   /// Check if anonymous account has data worth merging
   ///
-  /// IMPORTANT: This method queries the SERVER for wishlist/wish data while still
-  /// authenticated as the anonymous user. It must be called BEFORE signing into
-  /// the existing account, otherwise we lose the auth token for the anonymous user.
+  /// IMPORTANT: This method first tries to query the SERVER for wishlist/wish data
+  /// while still authenticated as the anonymous user (catches server-only data like
+  /// wishes created via API but not yet synced locally). If the server check fails
+  /// (offline, network error), it falls back to checking local SQLite for unsynced
+  /// data (catches offline-created wishes/wishlists).
   ///
-  /// This fixes the issue where wishes created on the server (but not saved locally)
-  /// were lost during account merge because local SQLite checks couldn't find them.
+  /// This hybrid approach ensures:
+  /// - Online: Detects ALL data including server-only wishes
+  /// - Offline: Still detects locally-created unsynced data
   ///
   /// Returns: (requiresMerge, anonymousFirebaseUid, hasMergeableData)
   Future<(bool, String?, bool)> _checkMergeRequirement(String firebaseUid) async {
     try {
       debugPrint('🔍 Merge check: Querying server for firebase UID $firebaseUid');
 
-      // Make API calls while we still have the anonymous user's token
-      // This is critical - after signing into the existing account, we lose access
+      // FIRST: Try to check server while we still have the anonymous user's auth token
+      // This catches wishes created via API but not saved to local SQLite
+      try {
+        final wishlistsResponse = await _apiService.get('/wishlists');
+        final wishlists = (wishlistsResponse?['wishlists'] as List?) ?? [];
 
-      // Check for wishlists
-      final wishlistsResponse = await _apiService.get('/wishlists');
-      final wishlists = (wishlistsResponse?['wishlists'] as List?) ?? [];
+        final wishesResponse = await _apiService.get('/wishes');
+        final wishes = (wishesResponse?['wishes'] as List?) ?? [];
 
-      // Check for wishes
-      final wishesResponse = await _apiService.get('/wishes');
-      final wishes = (wishesResponse?['wishes'] as List?) ?? [];
+        final hasData = wishlists.isNotEmpty || wishes.isNotEmpty;
 
-      final hasData = wishlists.isNotEmpty || wishes.isNotEmpty;
+        debugPrint(
+          '🔍 Merge check (server): wishlists=${wishlists.length}, wishes=${wishes.length}, hasData=$hasData',
+        );
 
-      debugPrint(
-        '🔍 Merge check (server): wishlists=${wishlists.length}, wishes=${wishes.length}, hasData=$hasData',
+        if (hasData) {
+          return (true, firebaseUid, true);
+        }
+
+        // No server data, but don't return yet - check local DB too
+        debugPrint('🔍 Merge check: No server data, checking local DB...');
+      } catch (serverError) {
+        // Server check failed (offline, network error, etc.)
+        // Fall through to local SQLite check
+        debugPrint('⚠️  Server merge check failed, falling back to local DB: $serverError');
+      }
+
+      // FALLBACK: Check local SQLite for offline-created or unsynced data
+      // This ensures offline users don't lose data
+      final localDb = LocalDatabase();
+
+      // Query by firebase_uid (not backend UUID)
+      final anonymousUserRows = await localDb.getEntities(
+        'users',
+        where: 'firebase_uid = ?',
+        whereArgs: [firebaseUid],
+        limit: 1,
       );
+
+      bool hasData = false;
+      String? backendUuid;
+      String? username;
+
+      if (anonymousUserRows.isNotEmpty) {
+        final anonymousUser = anonymousUserRows.first;
+        backendUuid = anonymousUser['id'];
+        username = anonymousUser['username'];
+
+        // Check for wishlists linked to this backend UUID
+        final wishlists = await localDb.getEntities(
+          'wishlists',
+          where: 'user_id = ?',
+          whereArgs: [backendUuid],
+          limit: 1,
+        );
+
+        // Check for wishes linked to this backend UUID
+        final wishes = await localDb.getEntities(
+          'wishes',
+          where: 'created_by = ?',
+          whereArgs: [backendUuid],
+          limit: 1,
+        );
+
+        hasData = (username != null && username.isNotEmpty) ||
+                  wishlists.isNotEmpty ||
+                  wishes.isNotEmpty;
+
+        debugPrint(
+          '🔍 Merge check (local DB - user row): username=$username, wishlists=${wishlists.length}, wishes=${wishes.length}',
+        );
+      }
+
+      // Check for any unsynced data (offline-created)
+      if (!hasData) {
+        final pendingWishlists = await localDb.getEntities(
+          'wishlists',
+          where: 'sync_state != ?',
+          whereArgs: [SyncState.synced.toString()],
+          limit: 1,
+        );
+
+        final pendingWishes = await localDb.getEntities(
+          'wishes',
+          where: 'sync_state != ?',
+          whereArgs: [SyncState.synced.toString()],
+          limit: 1,
+        );
+
+        final pendingChanges = await localDb.getEntities(
+          'change_operations',
+          where: 'synced = ?',
+          whereArgs: [0],
+          limit: 1,
+        );
+
+        if (pendingWishlists.isNotEmpty ||
+            pendingWishes.isNotEmpty ||
+            pendingChanges.isNotEmpty) {
+          hasData = true;
+          debugPrint(
+            '🔍 Merge check (local DB - unsynced): wishlists=${pendingWishlists.length}, wishes=${pendingWishes.length}, pendingChanges=${pendingChanges.length}',
+          );
+        }
+      }
+
+      if (!hasData) {
+        debugPrint('🔍 Merge check: No data found (server or local)');
+      }
 
       return (hasData, hasData ? firebaseUid : null, hasData);
     } catch (e) {
-      debugPrint('❌ Error checking merge requirement from server: $e');
+      debugPrint('❌ Error checking merge requirement: $e');
       await CrashlyticsLogger.logError(
         e,
         StackTrace.current,
-        reason: 'Server merge check failed',
+        reason: 'Merge check failed',
         context: {'firebase_uid': firebaseUid},
       );
-      // On error, assume no merge needed (safer than blocking sign-in)
+      // On total failure, assume no merge needed (safer than blocking sign-in)
       return (false, null, false);
     }
   }
