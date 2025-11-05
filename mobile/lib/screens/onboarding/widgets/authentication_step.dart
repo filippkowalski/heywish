@@ -105,6 +105,9 @@ class AuthenticationStep extends StatelessWidget {
     try {
       final result = await authService.authenticateWithGoogle();
 
+      // Store auth method for analytics
+      onboardingService.setAuthMethod('google');
+
       if (context.mounted) {
         if (result.action == NavigationAction.goHome) {
           await authService.markOnboardingCompleted();
@@ -148,6 +151,9 @@ class AuthenticationStep extends StatelessWidget {
   Future<void> _handleAppleSignIn(BuildContext context, AuthService authService, OnboardingService onboardingService) async {
     try {
       final result = await authService.authenticateWithApple();
+
+      // Store auth method for analytics
+      onboardingService.setAuthMethod('apple');
 
       if (context.mounted) {
         if (result.action == NavigationAction.goHome) {

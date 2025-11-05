@@ -68,6 +68,7 @@ class _WishlistsScreenState extends State<WishlistsScreen>
   String? _selectedWishlistFilter;
   bool _isShareBannerDismissed = false;
   static const String _shareBannerDismissedKey = 'share_banner_dismissed';
+  DateTime? _lastCheckedMergeTimestamp;
 
   // FAB visibility
   bool _isFabVisible = true;
@@ -127,8 +128,22 @@ class _WishlistsScreenState extends State<WishlistsScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Try loading wishlists when authentication state changes, but only once
     final authService = context.watch<AuthService>();
+
+    // Check if merge just completed - force reload regardless of _hasLoadedOnce
+    if (authService.lastMergeTimestamp != null &&
+        (_lastCheckedMergeTimestamp == null ||
+            authService.lastMergeTimestamp!
+                .isAfter(_lastCheckedMergeTimestamp!))) {
+      debugPrint('🔄 WishlistsScreen: Merge detected, forcing data reload');
+      _lastCheckedMergeTimestamp = authService.lastMergeTimestamp;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadWishlists();
+      });
+      return;
+    }
+
+    // Try loading wishlists when authentication state changes, but only once
     if (authService.isAuthenticated &&
         authService.currentUser != null &&
         !_hasLoadedOnce) {

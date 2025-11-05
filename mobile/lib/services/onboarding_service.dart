@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:io';
 import 'dart:developer' as developer;
 import 'api_service.dart';
+import 'analytics_service.dart';
 import '../models/user.dart';
 
 enum OnboardingStep {
@@ -66,6 +67,9 @@ class OnboardingData {
 
 class OnboardingService extends ChangeNotifier {
   final ApiService _apiService;
+  final AnalyticsService _analyticsService = AnalyticsService();
+  bool _hasTrackedOnboardingStart = false;
+  String? _authMethod; // Store auth method for completion tracking
 
   OnboardingService({ApiService? apiService})
     : _apiService = apiService ?? ApiService();
@@ -100,8 +104,60 @@ class OnboardingService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Set authentication method for tracking
+  void setAuthMethod(String method) {
+    _authMethod = method;
+  }
+
+  /// Get the step name for analytics
+  String _getStepName(OnboardingStep step) {
+    switch (step) {
+      case OnboardingStep.welcome:
+        return 'Welcome';
+      case OnboardingStep.shoppingInterests:
+        return 'Shopping Interests';
+      case OnboardingStep.profileDetails:
+        return 'Profile Details';
+      case OnboardingStep.notifications:
+        return 'Notifications';
+      case OnboardingStep.accountCreation:
+        return 'Account Creation';
+      case OnboardingStep.checkUserStatus:
+        return 'Check User Status';
+      case OnboardingStep.username:
+        return 'Username';
+      case OnboardingStep.complete:
+        return 'Complete';
+    }
+  }
+
+  /// Get the step index for analytics
+  int _getStepIndex(OnboardingStep step) {
+    return OnboardingStep.values.indexOf(step);
+  }
+
+  /// Track onboarding started (called once on first step view)
+  void _trackOnboardingStartedIfNeeded() {
+    if (!_hasTrackedOnboardingStart) {
+      _analyticsService.trackOnboardingStarted();
+      _hasTrackedOnboardingStart = true;
+    }
+  }
+
   void nextStep() {
+    // Track onboarding start on first step
+    _trackOnboardingStartedIfNeeded();
+
     final previousStep = _currentStep;
+
+    // Track step completion before moving to next step
+    if (previousStep != OnboardingStep.complete) {
+      _analyticsService.trackOnboardingStepCompleted(
+        _getStepName(previousStep),
+        _getStepIndex(previousStep),
+      );
+    }
+
     switch (_currentStep) {
       case OnboardingStep.welcome:
         _currentStep = OnboardingStep.shoppingInterests;
@@ -148,6 +204,12 @@ class OnboardingService extends ChangeNotifier {
         '➡️  STEP TRANSITION: ${previousStep.name} → ${_currentStep.name}',
         name: 'OnboardingService',
       );
+
+      // Track new step viewed
+      _analyticsService.trackOnboardingStepViewed(
+        _getStepName(_currentStep),
+        _getStepIndex(_currentStep),
+      );
     }
     notifyListeners();
   }
@@ -183,6 +245,9 @@ class OnboardingService extends ChangeNotifier {
   }
 
   void goToStep(OnboardingStep step) {
+    // Track onboarding start on first step
+    _trackOnboardingStartedIfNeeded();
+
     // CRITICAL: Prevent going to complete step without username
     if (step == OnboardingStep.complete) {
       if (_data.username == null || _data.username!.isEmpty) {
@@ -192,6 +257,14 @@ class OnboardingService extends ChangeNotifier {
         notifyListeners();
         return;
       }
+    }
+
+    // Track step viewed when navigating directly to a step
+    if (_currentStep != step) {
+      _analyticsService.trackOnboardingStepViewed(
+        _getStepName(step),
+        _getStepIndex(step),
+      );
     }
 
     _currentStep = step;
@@ -258,6 +331,9 @@ class OnboardingService extends ChangeNotifier {
 
       if (response != null) {
         final isAvailable = response['available'] as bool;
+
+        // Track username check
+        _analyticsService.trackUsernameCheck(username, isAvailable);
 
         if (isAvailable) {
           _usernameCheckResult = 'Available';
@@ -407,6 +483,10 @@ class OnboardingService extends ChangeNotifier {
       '🔵 ONBOARDING: Full name updated to: $fullName',
       name: 'OnboardingService',
     );
+
+    // Track profile info added
+    _trackProfileInfoUpdate();
+
     notifyListeners();
   }
 
@@ -425,6 +505,10 @@ class OnboardingService extends ChangeNotifier {
       '🔵 ONBOARDING: Birthday updated to: ${birthday.toIso8601String()}',
       name: 'OnboardingService',
     );
+
+    // Track profile info added
+    _trackProfileInfoUpdate();
+
     notifyListeners();
   }
 
@@ -434,7 +518,20 @@ class OnboardingService extends ChangeNotifier {
       '🔵 ONBOARDING: Gender updated to: $gender',
       name: 'OnboardingService',
     );
+
+    // Track profile info added
+    _trackProfileInfoUpdate();
+
     notifyListeners();
+  }
+
+  /// Track profile info update (called when any profile field is updated)
+  void _trackProfileInfoUpdate() {
+    _analyticsService.trackProfileInfoAdded(
+      hasFullName: _data.fullName != null && _data.fullName!.isNotEmpty,
+      hasBirthday: _data.birthday != null,
+      hasGender: _data.gender != null && _data.gender!.isNotEmpty,
+    );
   }
 
   void updateNotificationPreference(String key, bool value) {
@@ -452,6 +549,12 @@ class OnboardingService extends ChangeNotifier {
       '🔵 ONBOARDING: Shopping interests updated: $interests',
       name: 'OnboardingService',
     );
+
+    // Track shopping interests selection
+    if (interests.isNotEmpty) {
+      _analyticsService.trackShoppingInterestsSelected(interests);
+    }
+
     notifyListeners();
   }
 
@@ -461,6 +564,10 @@ class OnboardingService extends ChangeNotifier {
     _data.username = username;
     _usernameCheckResult = 'Available';
     _usernameSuggestions = [];
+
+    // Track username selected (was generated)
+    _analyticsService.trackUsernameSelected(username, true);
+
     notifyListeners();
   }
 
@@ -561,6 +668,60 @@ class OnboardingService extends ChangeNotifier {
           name: 'OnboardingService',
         );
         debugPrint('✅ OnboardingService: Onboarding completed successfully');
+
+        // Identify user in Mixpanel
+        if (_data.username != null && _data.username!.isNotEmpty) {
+          _analyticsService.identify(_data.username!);
+
+          // Set user properties
+          final userProperties = <String, dynamic>{
+            'username': _data.username,
+          };
+
+          if (_data.fullName != null && _data.fullName!.isNotEmpty) {
+            userProperties['name'] = _data.fullName;
+          }
+
+          if (_data.email != null && _data.email!.isNotEmpty) {
+            userProperties['email'] = _data.email;
+          }
+
+          if (_data.birthday != null) {
+            userProperties['birthday'] = _data.birthday!.toIso8601String().split('T')[0];
+          }
+
+          if (_data.gender != null && _data.gender!.isNotEmpty) {
+            userProperties['gender'] = _data.gender;
+          }
+
+          if (_data.shoppingInterests.isNotEmpty) {
+            userProperties['shopping_interests'] = _data.shoppingInterests;
+            userProperties['shopping_interests_count'] = _data.shoppingInterests.length;
+          }
+
+          if (_authMethod != null) {
+            userProperties['signup_method'] = _authMethod;
+          }
+
+          _analyticsService.setUserProperties(userProperties);
+
+          // Set super properties that will be sent with every event
+          _analyticsService.setSuperProperties({
+            'username': _data.username,
+            'has_completed_onboarding': true,
+          });
+        }
+
+        // Track onboarding completion
+        _analyticsService.trackOnboardingCompleted(
+          username: _data.username ?? 'unknown',
+          authMethod: _authMethod ?? 'unknown',
+          hasFullName: _data.fullName != null && _data.fullName!.isNotEmpty,
+          hasBirthday: _data.birthday != null,
+          hasGender: _data.gender != null && _data.gender!.isNotEmpty,
+          shoppingInterestsCount: _data.shoppingInterests.length,
+        );
+
         _currentStep = OnboardingStep.complete;
         _error = null; // Clear any previous errors
         return true;

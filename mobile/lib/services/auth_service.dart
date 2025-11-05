@@ -514,6 +514,11 @@ class AuthService extends ChangeNotifier {
 
       debugPrint('✅ Account merge completed successfully');
       await CrashlyticsLogger.log('Account merge: Completed successfully');
+
+      // Step 4: Refresh all app data to show merged content
+      debugPrint('🔄 Refreshing app data after merge...');
+      await _refreshAppDataAfterMerge();
+      debugPrint('✅ App data refreshed successfully');
     } catch (e) {
       debugPrint('❌ Account merge failed: $e');
       await CrashlyticsLogger.logError(
@@ -523,6 +528,24 @@ class AuthService extends ChangeNotifier {
         context: {'anonymous_uid': anonymousFirebaseUid},
       );
       rethrow;
+    }
+  }
+
+  /// Timestamp of last successful account merge (used to trigger data refresh in UI)
+  DateTime? _lastMergeTimestamp;
+  DateTime? get lastMergeTimestamp => _lastMergeTimestamp;
+
+  /// Refresh all app services after account merge to show merged data
+  Future<void> _refreshAppDataAfterMerge() async {
+    try {
+      // Update merge timestamp - UI screens will watch this and refresh
+      _lastMergeTimestamp = DateTime.now();
+      notifyListeners(); // Triggers UI updates for screens watching AuthService
+
+      debugPrint('🔄 Merge timestamp updated: $_lastMergeTimestamp');
+    } catch (e) {
+      debugPrint('⚠️  Error refreshing app data after merge: $e');
+      // Don't throw - merge succeeded, this is just a UX improvement
     }
   }
 

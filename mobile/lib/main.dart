@@ -27,6 +27,7 @@ import 'services/fcm_service.dart';
 import 'services/screenshot_detection_service.dart';
 import 'services/deep_link_service.dart';
 import 'services/review_service.dart';
+import 'services/analytics_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding/onboarding_flow_screen.dart';
 import 'screens/home_screen.dart';
@@ -91,6 +92,9 @@ void main() async {
 
     // Initialize review service
     await ReviewService().initialize();
+
+    // Initialize analytics service
+    await AnalyticsService().initialize();
 
     // Initialize singleton services
     await SyncManager().initialize();
