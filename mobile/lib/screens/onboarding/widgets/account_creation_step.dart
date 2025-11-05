@@ -9,6 +9,7 @@ import '../../../services/auth_service.dart';
 import '../../../services/onboarding_service.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/widgets/native_loading_overlay.dart';
+import '../../../common/widgets/merge_accounts_bottom_sheet.dart';
 
 class AccountCreationStep extends StatefulWidget {
   const AccountCreationStep({Key? key}) : super(key: key);
@@ -421,31 +422,53 @@ class _AccountCreationStepState extends State<AccountCreationStep>
       final authService = context.read<AuthService>();
       final onboarding = context.read<OnboardingService>();
 
-      onboarding.setSkipUsernameStep(false);
+      // Use new consolidated authentication method
+      final result = await authService.authenticateWithGoogle();
 
-      // 1. Sign in with Google
-      await authService.signInWithGoogle();
-
-      // 2. Set email in onboarding data
+      // Set email in onboarding data
       final email = authService.firebaseUser?.email;
       if (email != null) {
         onboarding.updateEmail(email);
       }
 
-      // 3. Check if user already exists (has username)
-      final isExistingUser = authService.currentUser?.username != null;
-
       // Dismiss loader before navigation
       dismissLoader();
 
-      if (isExistingUser) {
-        // Existing user - skip onboarding, go to main app
+      // Handle result based on action
+      if (result.action == NavigationAction.goHome) {
+        // Existing user - skip onboarding
         await authService.markOnboardingCompleted();
+        if (context.mounted) context.go('/home');
+      } else if (result.action == NavigationAction.showMergeDialog) {
+        // Handle merge scenario - show merge dialog
         if (context.mounted) {
-          context.go('/home');
+          final shouldMerge = await MergeAccountsBottomSheet.show(context);
+          if (shouldMerge == true) {
+            // Show loader again for merge operation
+            final mergeLoader = NativeLoadingOverlay.show(
+              context,
+              message: 'Merging accounts...'.tr(),
+            );
+            try {
+              await authService.performAccountMerge(result.anonymousUserId!);
+              await authService.markOnboardingCompleted();
+              mergeLoader();
+              if (context.mounted) context.go('/home');
+            } catch (e) {
+              mergeLoader();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('errors.network_error'.tr()),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          }
         }
       } else {
-        // New user - continue to username selection
+        // New user - continue to username (already past shopping/profile/notifications)
         onboarding.setSkipUsernameStep(false);
         onboarding.goToStep(OnboardingStep.username);
       }
@@ -476,31 +499,53 @@ class _AccountCreationStepState extends State<AccountCreationStep>
       final authService = context.read<AuthService>();
       final onboarding = context.read<OnboardingService>();
 
-      onboarding.setSkipUsernameStep(false);
+      // Use new consolidated authentication method
+      final result = await authService.authenticateWithApple();
 
-      // 1. Sign in with Apple
-      await authService.signInWithApple();
-
-      // 2. Set email in onboarding data
+      // Set email in onboarding data
       final email = authService.firebaseUser?.email;
       if (email != null) {
         onboarding.updateEmail(email);
       }
 
-      // 3. Check if user already exists (has username)
-      final isExistingUser = authService.currentUser?.username != null;
-
       // Dismiss loader before navigation
       dismissLoader();
 
-      if (isExistingUser) {
-        // Existing user - skip onboarding, go to main app
+      // Handle result based on action
+      if (result.action == NavigationAction.goHome) {
+        // Existing user - skip onboarding
         await authService.markOnboardingCompleted();
+        if (context.mounted) context.go('/home');
+      } else if (result.action == NavigationAction.showMergeDialog) {
+        // Handle merge scenario - show merge dialog
         if (context.mounted) {
-          context.go('/home');
+          final shouldMerge = await MergeAccountsBottomSheet.show(context);
+          if (shouldMerge == true) {
+            // Show loader again for merge operation
+            final mergeLoader = NativeLoadingOverlay.show(
+              context,
+              message: 'Merging accounts...'.tr(),
+            );
+            try {
+              await authService.performAccountMerge(result.anonymousUserId!);
+              await authService.markOnboardingCompleted();
+              mergeLoader();
+              if (context.mounted) context.go('/home');
+            } catch (e) {
+              mergeLoader();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('errors.network_error'.tr()),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          }
         }
       } else {
-        // New user - continue to username selection
+        // New user - continue to username (already past shopping/profile/notifications)
         onboarding.setSkipUsernameStep(false);
         onboarding.goToStep(OnboardingStep.username);
       }

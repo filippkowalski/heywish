@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:go_router/go_router.dart';
 import '../../../services/onboarding_service.dart';
 import '../../../services/auth_service.dart';
 import '../../../common/theme/app_colors.dart';
+import '../../../common/widgets/merge_accounts_bottom_sheet.dart';
 
 class AccountChoiceStep extends StatefulWidget {
   const AccountChoiceStep({super.key});
@@ -23,11 +25,41 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
     });
 
     try {
-      await context.read<AuthService>().signInWithGoogle();
+      final authService = context.read<AuthService>();
+      final result = await authService.authenticateWithGoogle();
 
       if (mounted) {
-        // Move to completion after successful account creation
-        context.read<OnboardingService>().nextStep();
+        if (result.action == NavigationAction.continueOnboarding) {
+          context.read<OnboardingService>().nextStep();
+        } else if (result.action == NavigationAction.goHome) {
+          await authService.markOnboardingCompleted();
+          context.go('/home');
+        } else if (result.action == NavigationAction.showMergeDialog) {
+          setState(() => _isSigningIn = false);
+          final shouldMerge = await MergeAccountsBottomSheet.show(context);
+          if (!mounted) return;
+
+          if (shouldMerge == true) {
+            setState(() => _isSigningIn = true);
+            try {
+              await authService.performAccountMerge(result.anonymousUserId!);
+              await authService.markOnboardingCompleted();
+              if (!mounted) return;
+              context.go('/home');
+            } catch (e) {
+              if (!mounted) return;
+              String errorMsg;
+              if (e.toString().contains('sync') || e.toString().contains('connection')) {
+                errorMsg = 'errors.network_error'.tr();
+              } else {
+                errorMsg = 'Failed to merge accounts. Please try again.';
+              }
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
+              );
+            }
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -50,11 +82,41 @@ class _AccountChoiceStepState extends State<AccountChoiceStep> {
     });
 
     try {
-      await context.read<AuthService>().signInWithApple();
+      final authService = context.read<AuthService>();
+      final result = await authService.authenticateWithApple();
 
       if (mounted) {
-        // Move to completion after successful account creation
-        context.read<OnboardingService>().nextStep();
+        if (result.action == NavigationAction.continueOnboarding) {
+          context.read<OnboardingService>().nextStep();
+        } else if (result.action == NavigationAction.goHome) {
+          await authService.markOnboardingCompleted();
+          context.go('/home');
+        } else if (result.action == NavigationAction.showMergeDialog) {
+          setState(() => _isSigningIn = false);
+          final shouldMerge = await MergeAccountsBottomSheet.show(context);
+          if (!mounted) return;
+
+          if (shouldMerge == true) {
+            setState(() => _isSigningIn = true);
+            try {
+              await authService.performAccountMerge(result.anonymousUserId!);
+              await authService.markOnboardingCompleted();
+              if (!mounted) return;
+              context.go('/home');
+            } catch (e) {
+              if (!mounted) return;
+              String errorMsg;
+              if (e.toString().contains('sync') || e.toString().contains('connection')) {
+                errorMsg = 'errors.network_error'.tr();
+              } else {
+                errorMsg = 'Failed to merge accounts. Please try again.';
+              }
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
+              );
+            }
+          }
+        }
       }
     } catch (e) {
       if (mounted) {

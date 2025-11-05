@@ -10,8 +10,49 @@ import 'package:crypto/crypto.dart';
 import 'api_service.dart';
 import 'local_database.dart';
 import 'fcm_service.dart';
+import 'onboarding_service.dart';
+import 'sync_manager.dart';
 import '../models/user.dart';
 import '../utils/crashlytics_logger.dart';
+
+/// Navigation action to take after authentication
+enum NavigationAction {
+  continueOnboarding,  // New user → go through full onboarding flow
+  goHome,              // Existing user → skip onboarding, go to /home
+  showMergeDialog,     // Credential conflict → show merge confirmation UI
+}
+
+/// Result of authentication operation
+class AuthenticationResult {
+  /// Primary user state flags
+  final bool isExistingUser;      // User exists in backend DB with username
+  final bool isNewUser;            // User just created, needs onboarding
+  final bool isAnonymousUpgrade;   // Was anonymous, now authenticated
+
+  /// Merge scenario flags
+  final bool requiresMerge;        // Anonymous data needs merging
+  final String? anonymousUserId;   // Firebase UID of anonymous account to merge
+
+  /// Navigation hints
+  final NavigationAction action;   // Action to take (continue onboarding, go home, or show merge dialog)
+  final OnboardingStep? resumeAt;  // Where to resume onboarding if new user
+
+  /// Backend sync state
+  final bool userSynced;           // User data synced to backend
+  final String? username;          // Current username (if exists)
+
+  AuthenticationResult({
+    required this.action,
+    this.isExistingUser = false,
+    this.isNewUser = false,
+    this.isAnonymousUpgrade = false,
+    this.requiresMerge = false,
+    this.anonymousUserId,
+    this.resumeAt,
+    this.userSynced = false,
+    this.username,
+  });
+}
 
 class AuthService extends ChangeNotifier {
   final firebase.FirebaseAuth _firebaseAuth = firebase.FirebaseAuth.instance;
@@ -193,12 +234,25 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  // ============================================================================
+  // NEW CONSOLIDATED AUTHENTICATION METHODS
+  // ============================================================================
 
-  Future<void> signInWithGoogle() async {
+  /// Authenticate with Google - handles new users, existing users, and merge scenarios
+  ///
+  /// Returns [AuthenticationResult] with navigation action and user state
+  ///
+  /// Set [checkMerge] to false to skip merge detection (for legacy callers)
+  Future<AuthenticationResult> authenticateWithGoogle({bool checkMerge = true}) async {
+    debugPrint('🔑 AuthService: Starting Google authentication (checkMerge: $checkMerge)');
+
     try {
-      debugPrint('🔍 AuthService: Starting Google Sign-In...');
+      // Track if user was anonymous before auth
+      final wasAnonymous = _firebaseUser?.isAnonymous ?? false;
+      String? anonymousUidForMerge;
+      bool requiresMerge = false;
 
-      // Trigger the authentication flow
+      // Step 1: Get Google credential
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
@@ -208,78 +262,95 @@ class AuthService extends ChangeNotifier {
 
       debugPrint('✅ AuthService: Google user selected: ${googleUser.email}');
 
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
       if (googleAuth.accessToken == null || googleAuth.idToken == null) {
         debugPrint('❌ AuthService: Failed to get Google auth tokens');
         throw Exception('Failed to get Google authentication tokens');
       }
 
-      debugPrint('✅ AuthService: Google auth tokens obtained');
-
-      // Create a new credential
       final credential = firebase.GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Check if this is a new user
-      final methods = await _firebaseAuth.fetchSignInMethodsForEmail(
-        googleUser.email,
-      );
-      final isNewUser = methods.isEmpty;
+      // Step 2: Perform Firebase authentication
+      firebase.UserCredential userCredential;
 
-      // Sign in to Firebase with the Google credential
-      final userCredential = await _firebaseAuth.signInWithCredential(
-        credential,
-      );
-
-      debugPrint(
-        '✅ AuthService: Firebase auth successful for: ${userCredential.user?.email}',
-      );
-      debugPrint(
-        '✅ AuthService: Display name: ${userCredential.user?.displayName}',
-      );
-
-      // If this is a new user, sync with signup method
-      if (isNewUser) {
-        await syncUserWithBackend(signUpMethod: 'google', sendFullName: true);
-        await CrashlyticsLogger.log('New user signed up with Google');
+      if (wasAnonymous && _firebaseUser != null) {
+        try {
+          // Try to link credential to anonymous account
+          debugPrint('🔗 AuthService: Linking Google to anonymous account...');
+          userCredential = await _firebaseUser!.linkWithCredential(credential);
+          await userCredential.user!.reload();
+          _firebaseUser = _firebaseAuth.currentUser;
+          debugPrint('✅ Successfully linked Google to anonymous account');
+        } on firebase.FirebaseAuthException catch (e) {
+          if (e.code == 'credential-already-in-use' && checkMerge) {
+            // Check if anonymous account has data worth merging
+            debugPrint('⚠️  Credential already in use, checking for merge...');
+            final mergeCheck = await _checkMergeRequirement(_firebaseUser!.uid);
+            requiresMerge = mergeCheck.$1;
+            anonymousUidForMerge = mergeCheck.$2;
+            debugPrint('🔍 Merge required: $requiresMerge');
+          } else if (e.code == 'provider-already-linked') {
+            debugPrint('ℹ️  Provider already linked, signing in...');
+          }
+          // Sign into existing account
+          userCredential = await _firebaseAuth.signInWithCredential(credential);
+        }
       } else {
-        await CrashlyticsLogger.log('Existing user signed in with Google');
+        userCredential = await _firebaseAuth.signInWithCredential(credential);
       }
-      _scheduleTokenRefresh();
-    } catch (e, stackTrace) {
-      debugPrint('❌ AuthService: Error signing in with Google: $e');
-      await CrashlyticsLogger.logError(
-        e,
-        stackTrace,
-        reason: 'Google Sign-In failed',
+
+      debugPrint('✅ AuthService: Firebase auth successful for: ${userCredential.user?.email}');
+
+      // Step 3: Sync with backend and verify user state
+      final userContext = await _syncAndVerifyUser(wasAnonymous, 'google');
+
+      // Step 4: Build result based on all signals
+      final result = _buildAuthResult(
+        wasAnonymous: wasAnonymous,
+        requiresMerge: requiresMerge,
+        anonymousUidForMerge: anonymousUidForMerge,
+        hasUsername: userContext.$1,
+        username: userContext.$2,
       );
+
+      debugPrint('✅ AuthService: Authentication complete - action: ${result.action}');
+      return result;
+    } catch (e) {
+      debugPrint('❌ AuthService: Google authentication failed: $e');
+      await CrashlyticsLogger.logError(e, StackTrace.current, reason: 'Google authentication failed');
       rethrow;
     }
   }
 
-  Future<void> signInWithApple() async {
-    try {
-      debugPrint('🍎 AuthService: Starting Apple Sign-In...');
+  /// Authenticate with Apple - handles new users, existing users, and merge scenarios
+  ///
+  /// Returns [AuthenticationResult] with navigation action and user state
+  ///
+  /// Set [checkMerge] to false to skip merge detection (for legacy callers)
+  Future<AuthenticationResult> authenticateWithApple({bool checkMerge = true}) async {
+    debugPrint('🍎 AuthService: Starting Apple authentication (checkMerge: $checkMerge)');
 
-      // Check if Apple Sign-In is available
-      final isAvailable = await SignInWithApple.isAvailable();
-      if (!isAvailable) {
+    try {
+      // Track if user was anonymous before auth
+      final wasAnonymous = _firebaseUser?.isAnonymous ?? false;
+      String? anonymousUidForMerge;
+      bool requiresMerge = false;
+
+      // Step 1: Check if Apple Sign-In is available
+      if (!await SignInWithApple.isAvailable()) {
         debugPrint('❌ AuthService: Apple Sign-In not available on this device');
         throw Exception('Apple Sign-In is not available on this device');
       }
 
-      // Generate a random nonce
+      // Step 2: Generate nonce
       final rawNonce = _generateNonce();
       final nonce = _sha256ofString(rawNonce);
 
-      debugPrint('🍎 AuthService: Requesting Apple ID credential...');
-
-      // Request Apple ID credential
+      // Step 3: Request Apple credential
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
@@ -288,75 +359,295 @@ class AuthService extends ChangeNotifier {
         nonce: nonce,
       );
 
-      debugPrint('✅ AuthService: Apple ID credential received');
-      debugPrint('🍎 User ID: ${appleCredential.userIdentifier}');
-      debugPrint('🍎 Email: ${appleCredential.email}');
-      debugPrint('🍎 Given Name: ${appleCredential.givenName}');
-      debugPrint('🍎 Family Name: ${appleCredential.familyName}');
+      debugPrint('✅ AuthService: Apple credential obtained');
 
-      // Create OAuth credential for Firebase
-      final oauthCredential = firebase.OAuthProvider(
-        "apple.com",
-      ).credential(
+      // Step 4: Create Firebase credential
+      final oauthCredential = firebase.OAuthProvider('apple.com').credential(
         idToken: appleCredential.identityToken,
         rawNonce: rawNonce,
-        accessToken: appleCredential.authorizationCode,
       );
 
-      // Sign in to Firebase with Apple credential
-      final userCredential = await _firebaseAuth.signInWithCredential(
-        oauthCredential,
-      );
+      // Step 5: Perform Firebase authentication
+      firebase.UserCredential userCredential;
 
-      // Check if this is a new user
-      final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
-
-      debugPrint('✅ AuthService: Firebase auth successful for Apple user');
-      debugPrint('✅ AuthService: Firebase user: ${userCredential.user?.email}');
-      debugPrint(
-        '✅ AuthService: Display name: ${userCredential.user?.displayName}',
-      );
-
-      // If this is the first time signing in and we have name info, update the display name
-      if (userCredential.user?.displayName == null &&
-          (appleCredential.givenName != null ||
-              appleCredential.familyName != null)) {
-        final displayName =
-            '${appleCredential.givenName ?? ''} ${appleCredential.familyName ?? ''}'
-                .trim();
-        if (displayName.isNotEmpty) {
-          await userCredential.user?.updateDisplayName(displayName);
-          debugPrint('✅ AuthService: Updated display name to: $displayName');
+      if (wasAnonymous && _firebaseUser != null) {
+        try {
+          // Try to link credential to anonymous account
+          debugPrint('🔗 AuthService: Linking Apple to anonymous account...');
+          userCredential = await _firebaseUser!.linkWithCredential(oauthCredential);
+          await userCredential.user!.reload();
+          _firebaseUser = _firebaseAuth.currentUser;
+          debugPrint('✅ Successfully linked Apple to anonymous account');
+        } on firebase.FirebaseAuthException catch (e) {
+          if (e.code == 'credential-already-in-use' && checkMerge) {
+            // Check if anonymous account has data worth merging
+            debugPrint('⚠️  Credential already in use, checking for merge...');
+            final mergeCheck = await _checkMergeRequirement(_firebaseUser!.uid);
+            requiresMerge = mergeCheck.$1;
+            anonymousUidForMerge = mergeCheck.$2;
+            debugPrint('🔍 Merge required: $requiresMerge');
+          } else if (e.code == 'provider-already-linked') {
+            debugPrint('ℹ️  Provider already linked, signing in...');
+          }
+          // Sign into existing account
+          userCredential = await _firebaseAuth.signInWithCredential(oauthCredential);
         }
+      } else {
+        userCredential = await _firebaseAuth.signInWithCredential(oauthCredential);
       }
 
-      // If this is a new user, sync with signup method
-      if (isNewUser) {
-        await syncUserWithBackend(signUpMethod: 'apple', sendFullName: true);
-      }
-      _scheduleTokenRefresh();
+      debugPrint('✅ AuthService: Firebase auth successful');
+
+      // Step 6: Sync with backend and verify user state
+      final userContext = await _syncAndVerifyUser(wasAnonymous, 'apple');
+
+      // Step 7: Build result based on all signals
+      final result = _buildAuthResult(
+        wasAnonymous: wasAnonymous,
+        requiresMerge: requiresMerge,
+        anonymousUidForMerge: anonymousUidForMerge,
+        hasUsername: userContext.$1,
+        username: userContext.$2,
+      );
+
+      debugPrint('✅ AuthService: Authentication complete - action: ${result.action}');
+      return result;
     } catch (e) {
-      debugPrint('❌ AuthService: Error signing in with Apple: $e');
-
-      // Provide more specific error messages
-      if (e.toString().contains('AuthorizationErrorCode.unknown')) {
-        throw Exception(
-          'Apple Sign-In capability not enabled.\n\nTo fix this:\n1. Open Apple Developer Portal\n2. Go to Identifiers → com.wishlists.gifts\n3. Enable "Sign In with Apple" capability\n4. Or open Xcode → Signing & Capabilities → Add "Sign In with Apple"',
-        );
-      } else if (e.toString().contains('AuthorizationErrorCode.canceled')) {
-        throw Exception('Apple Sign-In was cancelled by the user');
-      } else if (e.toString().contains(
-        'AuthorizationErrorCode.invalidResponse',
-      )) {
-        throw Exception('Invalid response from Apple Sign-In');
-      } else if (e.toString().contains('AuthorizationErrorCode.notHandled')) {
-        throw Exception('Apple Sign-In request was not handled');
-      } else if (e.toString().contains('AuthorizationErrorCode.failed')) {
-        throw Exception('Apple Sign-In failed. Please try again.');
-      }
-
+      debugPrint('❌ AuthService: Apple authentication failed: $e');
+      await CrashlyticsLogger.logError(e, StackTrace.current, reason: 'Apple authentication failed');
       rethrow;
     }
+  }
+
+  /// Perform account merge for anonymous users
+  ///
+  /// This method handles the complete merge flow:
+  /// 1. Calls backend API to merge anonymous account data
+  /// 2. Syncs user profile to get updated username
+  /// 3. Performs full sync to pull merged wishlists/wishes
+  ///
+  /// PRECONDITIONS:
+  /// - Must be called AFTER user is authenticated with new credential
+  /// - Auth token must be valid
+  ///
+  /// Throws Exception on failure
+  Future<void> performAccountMerge(String anonymousFirebaseUid) async {
+    debugPrint('🔗 AuthService: Starting account merge for: $anonymousFirebaseUid');
+
+    try {
+      // Ensure token is fresh
+      await _refreshAuthToken(force: true);
+
+      // Step 1: Backend merge
+      await _apiService.mergeAccounts(anonymousFirebaseUid);
+      await CrashlyticsLogger.log('Account merge: Backend merge completed');
+
+      // Step 2: Sync user profile
+      await syncUserWithBackend(retries: 1);
+      await CrashlyticsLogger.log('Account merge: User profile synced');
+
+      // Step 3: Full sync for merged data
+      final syncManager = SyncManager();
+      var syncResult = await syncManager.performFullSync();
+
+      // Handle sync-in-progress case
+      if (syncResult.error == 'Sync already in progress') {
+        debugPrint('⚠️  Sync in progress, waiting 2 seconds...');
+        await Future.delayed(const Duration(seconds: 2));
+        syncResult = await syncManager.performFullSync();
+      }
+
+      // Check for errors
+      if (syncResult.hasErrors && syncResult.error != 'Sync already in progress') {
+        debugPrint('❌ Full sync failed: ${syncResult.error}');
+        await CrashlyticsLogger.logError(
+          syncResult.error ?? 'Unknown sync error',
+          StackTrace.current,
+          reason: 'Account merge: Full sync failed',
+          context: {
+            'push_errors': syncResult.pushErrors.toString(),
+            'pull_errors': syncResult.pullErrors.toString(),
+          },
+        );
+        throw Exception('Unable to sync merged data. Please check your connection and try again.');
+      }
+
+      debugPrint('✅ Account merge completed successfully');
+      await CrashlyticsLogger.log('Account merge: Completed successfully');
+    } catch (e) {
+      debugPrint('❌ Account merge failed: $e');
+      await CrashlyticsLogger.logError(
+        e,
+        StackTrace.current,
+        reason: 'Account merge failed',
+        context: {'anonymous_uid': anonymousFirebaseUid},
+      );
+      rethrow;
+    }
+  }
+
+  // ============================================================================
+  // HELPER METHODS
+  // ============================================================================
+
+  /// Check if anonymous account has data worth merging
+  ///
+  /// IMPORTANT: This method only checks the LOCAL SQLite cache.
+  /// If the device is offline or the cache is stale, it may incorrectly
+  /// determine no merge is needed and sign the user into the existing account,
+  /// potentially losing anonymous wishlists/wishes that exist only on the server.
+  ///
+  /// RISK MITIGATION: The app uses offline-first architecture with periodic
+  /// background syncs, so the cache is usually accurate. Users typically create
+  /// wishlists while online, ensuring local cache reflects server state.
+  ///
+  /// TODO (future): Consider fetching fresh user data from backend when online
+  /// to guarantee merge detection accuracy, or implement server-side merge logic.
+  ///
+  /// Returns: (requiresMerge, anonymousFirebaseUid, hasMergeableData)
+  Future<(bool, String?, bool)> _checkMergeRequirement(String firebaseUid) async {
+    try {
+      final localDb = LocalDatabase();
+
+      // Query by firebase_uid (not backend UUID)
+      final anonymousUserRows = await localDb.getEntities(
+        'users',
+        where: 'firebase_uid = ?',
+        whereArgs: [firebaseUid],
+        limit: 1,
+      );
+
+      if (anonymousUserRows.isEmpty) {
+        return (false, null, false);
+      }
+
+      final anonymousUser = anonymousUserRows.first;
+      final backendUuid = anonymousUser['id'];
+      final username = anonymousUser['username'];
+
+      // Check for wishlists
+      final wishlists = await localDb.getEntities(
+        'wishlists',
+        where: 'user_id = ?',
+        whereArgs: [backendUuid],
+      );
+
+      // Check for wishes
+      final wishes = await localDb.getEntities(
+        'wishes',
+        where: 'created_by = ?',
+        whereArgs: [backendUuid],
+      );
+
+      final hasData = (username != null && username.isNotEmpty) ||
+                      wishlists.isNotEmpty ||
+                      wishes.isNotEmpty;
+
+      debugPrint('🔍 Merge check: username=$username, wishlists=${wishlists.length}, wishes=${wishes.length}');
+
+      return (hasData, hasData ? firebaseUid : null, hasData);
+    } catch (e) {
+      debugPrint('❌ Error checking merge requirement: $e');
+      await CrashlyticsLogger.logError(e, StackTrace.current, reason: 'Merge check failed');
+      return (false, null, false);
+    }
+  }
+
+  /// Sync with backend and verify user state
+  ///
+  /// Returns: (hasUsername, username)
+  Future<(bool, String?)> _syncAndVerifyUser(bool wasAnonymous, String signUpMethod) async {
+    // Refresh token before backend calls
+    await _refreshAuthToken(force: true);
+
+    // Check if user exists in backend
+    final emailCheck = await _apiService.checkEmailExists();
+    final existsInDb = emailCheck?['exists'] ?? false;
+
+    debugPrint('📧 User exists in backend: $existsInDb');
+
+    // ALWAYS sync user data - either create new account or update existing
+    // This is critical: brand new users need their backend account created!
+    //
+    // IMPORTANT: Only send full name for BRAND NEW users to avoid overwriting
+    // custom names that returning users may have set in-app.
+    // - Brand new user (existsInDb=false): Send Firebase profile name
+    // - Existing user (existsInDb=true): Don't overwrite their custom name
+    // - Anonymous upgrade (wasAnonymous=true): Don't send name (they set it during signup)
+    await syncUserWithBackend(
+      retries: 3,
+      signUpMethod: signUpMethod,
+      sendFullName: !existsInDb && !wasAnonymous, // Only for brand new Google/Apple users
+    );
+
+    // Get current user state
+    final username = _currentUser?.username;
+    final hasUsername = username != null && username.isNotEmpty;
+
+    return (hasUsername, username);
+  }
+
+  /// Build authentication result based on all signals
+  AuthenticationResult _buildAuthResult({
+    required bool wasAnonymous,
+    required bool requiresMerge,
+    required String? anonymousUidForMerge,
+    required bool hasUsername,
+    required String? username,
+  }) {
+    // CASE 1: Merge required (credential conflict with data)
+    if (requiresMerge && anonymousUidForMerge != null) {
+      return AuthenticationResult(
+        action: NavigationAction.showMergeDialog,
+        requiresMerge: true,
+        anonymousUserId: anonymousUidForMerge,
+      );
+    }
+
+    // CASE 2: Existing user (has username)
+    if (hasUsername) {
+      return AuthenticationResult(
+        action: NavigationAction.goHome,
+        isExistingUser: true,
+        isAnonymousUpgrade: wasAnonymous,
+        username: username,
+        userSynced: true,
+      );
+    }
+
+    // CASE 3: New user (needs onboarding)
+    return AuthenticationResult(
+      action: NavigationAction.continueOnboarding,
+      isNewUser: true,
+      resumeAt: OnboardingStep.shoppingInterests, // Full onboarding flow
+      userSynced: true,
+    );
+  }
+
+  // ============================================================================
+  // DEPRECATED METHODS (for backward compatibility)
+  // ============================================================================
+
+  @Deprecated('Use authenticateWithGoogle() instead. Will be removed in Q2 2025.')
+  Future<void> signInWithGoogle() async {
+    debugPrint('⚠️  DEPRECATED: signInWithGoogle() called - please migrate to authenticateWithGoogle()');
+    await CrashlyticsLogger.log('DEPRECATED_API: signInWithGoogle() called');
+
+    // Still perform full auth + sync so currentUser stays accurate
+    await authenticateWithGoogle(checkMerge: false);
+
+    // Legacy behavior: don't navigate, let auth state listener handle it
+  }
+
+  @Deprecated('Use authenticateWithApple() instead. Will be removed in Q2 2025.')
+  Future<void> signInWithApple() async {
+    debugPrint('⚠️  DEPRECATED: signInWithApple() called - please migrate to authenticateWithApple()');
+    await CrashlyticsLogger.log('DEPRECATED_API: signInWithApple() called');
+
+    // Still perform full auth + sync so currentUser stays accurate
+    await authenticateWithApple(checkMerge: false);
+
+    // Legacy behavior: don't navigate, let auth state listener handle it
   }
 
   /// Sign in anonymously
@@ -506,346 +797,9 @@ class AuthService extends ChangeNotifier {
     return digest.toString();
   }
 
-  /// Sign in with Google for "Already have account" flow
-  /// Returns a map with: {userExists: bool, needsMerge: bool, oldUserId: String?}
-  Future<Map<String, dynamic>> signInWithGoogleCheckExisting() async {
-    try {
-      debugPrint('🔍 AuthService: Starting Google Sign-In (check existing)...');
+  // signInWithGoogleCheckExisting() - DELETED - replaced by authenticateWithGoogle()
 
-      // Check if current user is anonymous
-      final isAnonymous = _firebaseUser?.isAnonymous ?? false;
-      debugPrint('🔍 AuthService: Current user is anonymous: $isAnonymous');
-
-      // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-
-      if (googleUser == null) {
-        debugPrint('❌ AuthService: Google Sign-In was cancelled by user');
-        throw Exception('Google Sign-In was cancelled');
-      }
-
-      debugPrint('✅ AuthService: Google user selected: ${googleUser.email}');
-
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
-      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
-        debugPrint('❌ AuthService: Failed to get Google auth tokens');
-        throw Exception('Failed to get Google authentication tokens');
-      }
-
-      debugPrint('✅ AuthService: Google auth tokens obtained');
-
-      // Create a new credential
-      final credential = firebase.GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      firebase.UserCredential userCredential;
-      String? anonymousUserId;
-      bool requiresMerge = false;
-
-      if (isAnonymous && _firebaseUser != null) {
-        try {
-          // Link the Google credential to the existing anonymous account
-          final oldUid = _firebaseUser!.uid;
-          debugPrint('🔗 AuthService: Linking Google account to anonymous user...');
-          debugPrint('🔗 AuthService: Anonymous UID before linking: $oldUid');
-
-          userCredential = await _firebaseUser!.linkWithCredential(credential);
-
-          final newUid = userCredential.user?.uid;
-          debugPrint('✅ AuthService: Successfully linked Google account');
-          debugPrint('✅ AuthService: UID after linking: $newUid');
-          debugPrint('✅ AuthService: UID preserved: ${oldUid == newUid}');
-
-          // Reload user to get fresh data and update isAnonymous flag
-          await userCredential.user!.reload();
-          _firebaseUser = _firebaseAuth.currentUser;
-          debugPrint('🔄 AuthService: User reloaded, isAnonymous: ${_firebaseUser?.isAnonymous}');
-        } on firebase.FirebaseAuthException catch (e) {
-          if (e.code == 'provider-already-linked') {
-            // Already linked, just sign in instead
-            debugPrint('ℹ️  AuthService: Provider already linked, signing in...');
-            userCredential = await _firebaseAuth.signInWithCredential(credential);
-          } else if (e.code == 'credential-already-in-use') {
-            // This credential is already associated with a different Firebase account
-            // Check if the anonymous user has data that needs to be merged
-            final anonymousFirebaseUid = _firebaseUser!.uid;
-            debugPrint('⚠️  AuthService: Credential already in use. Checking anonymous user data...');
-            debugPrint('🔍 AuthService: Anonymous Firebase UID: $anonymousFirebaseUid');
-
-            // Check if anonymous user has data in local database
-            // IMPORTANT: Query by firebase_uid column, not by primary key (backend UUID)
-            final localDb = LocalDatabase();
-            final anonymousUserRows = await localDb.getEntities(
-              'users',
-              where: 'firebase_uid = ?',
-              whereArgs: [anonymousFirebaseUid],
-              limit: 1,
-            );
-
-            if (anonymousUserRows.isNotEmpty) {
-              final anonymousUser = anonymousUserRows.first;
-              final anonymousBackendId = anonymousUser['id']; // Backend UUID
-              final username = anonymousUser['username'];
-              debugPrint('🔍 AuthService: Anonymous user found - backend ID: $anonymousBackendId, username: $username');
-
-              // Check if user has wishlists (using backend UUID)
-              final wishlists = await localDb.getEntities(
-                'wishlists',
-                where: 'user_id = ?',
-                whereArgs: [anonymousBackendId],
-              );
-              debugPrint('🔍 AuthService: Anonymous user has ${wishlists.length} wishlists');
-
-              // Check if user has wishes (using backend UUID)
-              final wishes = await localDb.getEntities(
-                'wishes',
-                where: 'created_by = ?',
-                whereArgs: [anonymousBackendId],
-              );
-              debugPrint('🔍 AuthService: Anonymous user has ${wishes.length} wishes');
-
-              // If user has username or any wishlists/wishes, require merge
-              if (username != null && username.isNotEmpty || wishlists.isNotEmpty || wishes.isNotEmpty) {
-                requiresMerge = true;
-                anonymousUserId = anonymousFirebaseUid; // Store Firebase UID for backend merge
-                debugPrint('✅ AuthService: Merge required! Anonymous user has data.');
-              }
-            } else {
-              debugPrint('🔍 AuthService: No anonymous user found in local database');
-            }
-
-            // Sign in with the existing account
-            debugPrint('⚠️  AuthService: Signing into existing account...');
-            userCredential = await _firebaseAuth.signInWithCredential(credential);
-          } else {
-            rethrow;
-          }
-        }
-      } else {
-        // Sign in to Firebase with the Google credential
-        debugPrint('🔑 AuthService: Signing in with Google credential...');
-        userCredential = await _firebaseAuth.signInWithCredential(credential);
-      }
-
-      debugPrint(
-        '✅ AuthService: Firebase auth successful for: ${userCredential.user?.email}',
-      );
-
-      // Get auth token to check database
-      await _refreshAuthToken(force: true);
-
-      // Check if user exists in database (they should if they upgraded from anonymous)
-      final emailCheckResponse = await _apiService.checkEmailExists();
-      final userExists = emailCheckResponse?['exists'] ?? false;
-
-      debugPrint('📧 AuthService: User exists in DB: $userExists');
-
-      if (userExists || isAnonymous) {
-        // User exists OR was anonymous (now linked) - sync to update their data
-        await syncUserWithBackend(
-          retries: 3,
-          signUpMethod: 'google',
-          sendFullName: !isAnonymous, // Only send full name for new Google users
-        );
-      }
-      // If user doesn't exist and wasn't anonymous, don't sync yet - let onboarding handle it
-
-      _scheduleTokenRefresh();
-
-      return {
-        'userExists': userExists,
-        'requiresMerge': requiresMerge,
-        'anonymousUserId': anonymousUserId,
-      };
-    } catch (e) {
-      debugPrint('❌ AuthService: Error signing in with Google: $e');
-      rethrow;
-    }
-  }
-
-  /// Sign in with Apple for "Already have account" flow
-  /// Returns map with userExists, requiresMerge, and anonymousUserId
-  Future<Map<String, dynamic>> signInWithAppleCheckExisting() async {
-    try {
-      debugPrint('🍎 AuthService: Starting Apple Sign-In (check existing)...');
-
-      // Check if current user is anonymous
-      final isAnonymous = _firebaseUser?.isAnonymous ?? false;
-      debugPrint('🔍 AuthService: Current user is anonymous: $isAnonymous');
-
-      // Check if Apple Sign-In is available
-      final isAvailable = await SignInWithApple.isAvailable();
-      if (!isAvailable) {
-        debugPrint('❌ AuthService: Apple Sign-In not available on this device');
-        throw Exception('Apple Sign-In is not available on this device');
-      }
-
-      // Generate a random nonce
-      final rawNonce = _generateNonce();
-      final nonce = _sha256ofString(rawNonce);
-
-      debugPrint('🍎 AuthService: Requesting Apple ID credential...');
-
-      // Request Apple ID credential
-      final appleCredential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-        nonce: nonce,
-      );
-
-      debugPrint('✅ AuthService: Apple ID credential received');
-
-      // Create OAuth credential for Firebase
-      final oauthCredential = firebase.OAuthProvider(
-        "apple.com",
-      ).credential(
-        idToken: appleCredential.identityToken,
-        rawNonce: rawNonce,
-        accessToken: appleCredential.authorizationCode,
-      );
-
-      firebase.UserCredential userCredential;
-      String? anonymousUserId;
-      bool requiresMerge = false;
-
-      if (isAnonymous && _firebaseUser != null) {
-        try {
-          // Link the Apple credential to the existing anonymous account
-          final oldUid = _firebaseUser!.uid;
-          debugPrint('🔗 AuthService: Linking Apple account to anonymous user...');
-          debugPrint('🔗 AuthService: Anonymous UID before linking: $oldUid');
-
-          userCredential = await _firebaseUser!.linkWithCredential(oauthCredential);
-
-          final newUid = userCredential.user?.uid;
-          debugPrint('✅ AuthService: Successfully linked Apple account');
-          debugPrint('✅ AuthService: UID after linking: $newUid');
-          debugPrint('✅ AuthService: UID preserved: ${oldUid == newUid}');
-
-          // Reload user to get fresh data and update isAnonymous flag
-          await userCredential.user!.reload();
-          _firebaseUser = _firebaseAuth.currentUser;
-          debugPrint('🔄 AuthService: User reloaded, isAnonymous: ${_firebaseUser?.isAnonymous}');
-        } on firebase.FirebaseAuthException catch (e) {
-          if (e.code == 'provider-already-linked') {
-            // Already linked, just sign in instead
-            debugPrint('ℹ️  AuthService: Provider already linked, signing in...');
-            userCredential = await _firebaseAuth.signInWithCredential(oauthCredential);
-          } else if (e.code == 'credential-already-in-use') {
-            // This credential is already associated with a different Firebase account
-            // Check if the anonymous user has data that needs to be merged
-            final anonymousFirebaseUid = _firebaseUser!.uid;
-            debugPrint('⚠️  AuthService: Credential already in use. Checking anonymous user data...');
-            debugPrint('🔍 AuthService: Anonymous Firebase UID: $anonymousFirebaseUid');
-
-            // Check if anonymous user has data in local database
-            // IMPORTANT: Query by firebase_uid column, not by primary key (backend UUID)
-            final localDb = LocalDatabase();
-            final anonymousUserRows = await localDb.getEntities(
-              'users',
-              where: 'firebase_uid = ?',
-              whereArgs: [anonymousFirebaseUid],
-              limit: 1,
-            );
-
-            if (anonymousUserRows.isNotEmpty) {
-              final anonymousUser = anonymousUserRows.first;
-              final anonymousBackendId = anonymousUser['id']; // Backend UUID
-              final username = anonymousUser['username'];
-              debugPrint('🔍 AuthService: Anonymous user found - backend ID: $anonymousBackendId, username: $username');
-
-              // Check if user has wishlists (using backend UUID)
-              final wishlists = await localDb.getEntities(
-                'wishlists',
-                where: 'user_id = ?',
-                whereArgs: [anonymousBackendId],
-              );
-              debugPrint('🔍 AuthService: Anonymous user has ${wishlists.length} wishlists');
-
-              // Check if user has wishes (using backend UUID)
-              final wishes = await localDb.getEntities(
-                'wishes',
-                where: 'created_by = ?',
-                whereArgs: [anonymousBackendId],
-              );
-              debugPrint('🔍 AuthService: Anonymous user has ${wishes.length} wishes');
-
-              // If user has username or any wishlists/wishes, require merge
-              if (username != null && username.isNotEmpty || wishlists.isNotEmpty || wishes.isNotEmpty) {
-                requiresMerge = true;
-                anonymousUserId = anonymousFirebaseUid; // Store Firebase UID for backend merge
-                debugPrint('✅ AuthService: Merge required! Anonymous user has data.');
-              }
-            } else {
-              debugPrint('🔍 AuthService: No anonymous user found in local database');
-            }
-
-            // Sign in with the existing account
-            debugPrint('⚠️  AuthService: Signing into existing account...');
-            userCredential = await _firebaseAuth.signInWithCredential(oauthCredential);
-          } else {
-            rethrow;
-          }
-        }
-      } else {
-        // Sign in to Firebase with the Apple credential
-        debugPrint('🔑 AuthService: Signing in with Apple credential...');
-        userCredential = await _firebaseAuth.signInWithCredential(oauthCredential);
-      }
-
-      debugPrint('✅ AuthService: Firebase auth successful for Apple user');
-
-      // Update display name if available
-      if (userCredential.user?.displayName == null &&
-          (appleCredential.givenName != null ||
-              appleCredential.familyName != null)) {
-        final displayName =
-            '${appleCredential.givenName ?? ''} ${appleCredential.familyName ?? ''}'
-                .trim();
-        if (displayName.isNotEmpty) {
-          await userCredential.user?.updateDisplayName(displayName);
-          debugPrint('✅ AuthService: Updated display name to: $displayName');
-        }
-      }
-
-      // Get auth token to check database
-      await _refreshAuthToken(force: true);
-
-      // Check if user exists in database (they should if they upgraded from anonymous)
-      final emailCheckResponse = await _apiService.checkEmailExists();
-      final userExists = emailCheckResponse?['exists'] ?? false;
-
-      debugPrint('📧 AuthService: User exists in DB: $userExists');
-
-      if (userExists || isAnonymous) {
-        // User exists OR was anonymous (now linked) - sync to update their data
-        await syncUserWithBackend(
-          retries: 3,
-          signUpMethod: 'apple',
-          sendFullName: !isAnonymous, // Only send full name for new Apple users
-        );
-      }
-      // If user doesn't exist and wasn't anonymous, don't sync yet - let onboarding handle it
-
-      _scheduleTokenRefresh();
-
-      return {
-        'userExists': userExists,
-        'requiresMerge': requiresMerge,
-        'anonymousUserId': anonymousUserId,
-      };
-    } catch (e) {
-      debugPrint('❌ AuthService: Error signing in with Apple: $e');
-      rethrow;
-    }
-  }
+  // signInWithAppleCheckExisting() - DELETED - replaced by authenticateWithApple()
 
   Future<void> signOut() async {
     try {

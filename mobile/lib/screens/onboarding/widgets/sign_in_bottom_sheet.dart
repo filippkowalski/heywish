@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/onboarding_service.dart';
-import '../../../services/sync_manager.dart';
 import '../../../theme/app_theme.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/widgets/merge_accounts_bottom_sheet.dart';
@@ -29,8 +28,6 @@ class _SignInBottomSheetContent extends StatefulWidget {
 }
 
 class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
-  static const _mergeSyncErrorMessage =
-      'Unable to sync merged data. Please check your connection and try again.';
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -44,125 +41,57 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
       final authService = context.read<AuthService>();
       final onboardingService = context.read<OnboardingService>();
 
-      // Check if upgrading from anonymous
-      final wasAnonymous = authService.firebaseUser?.isAnonymous ?? false;
-
-      // Sign in with Google and check if user exists in DB
-      final result = await authService.signInWithGoogleCheckExisting();
-      final userExists = result['userExists'] as bool;
-      final requiresMerge = result['requiresMerge'] as bool;
-      final anonymousUserId = result['anonymousUserId'] as String?;
+      // Use new consolidated authentication method
+      final result = await authService.authenticateWithGoogle();
 
       if (!mounted) return;
 
-      // Check if we need to merge accounts
-      if (requiresMerge && anonymousUserId != null) {
-        setState(() {
-          _isLoading = false;
-        });
+      // Handle merge scenario
+      if (result.action == NavigationAction.showMergeDialog) {
+        setState(() => _isLoading = false);
 
-        // Show merge confirmation dialog
+        // Show merge confirmation
         final shouldMerge = await MergeAccountsBottomSheet.show(context);
-
         if (!mounted) return;
 
         if (shouldMerge == true) {
-          setState(() {
-            _isLoading = true;
-          });
-
+          setState(() => _isLoading = true);
           try {
-            debugPrint('🔗 SignInBottomSheet: Starting account merge...');
-
-            // Call backend to merge accounts
-            final apiService = authService.apiService;
-            await apiService.mergeAccounts(anonymousUserId);
-            debugPrint('✅ SignInBottomSheet: Backend merge completed');
-
-            // Sync user data from backend to get updated username
-            await authService.syncUserWithBackend(retries: 1);
-            debugPrint('✅ SignInBottomSheet: User profile synced');
-
-            // CRITICAL: Perform full sync to fetch merged wishlists/wishes from backend
-            // This ensures local database is updated with all merged data
-            // Handle case where sync is already in progress
-            final syncManager = SyncManager();
-            var syncResult = await syncManager.performFullSync();
-
-            // If sync is already in progress, wait and retry once
-            if (syncResult.error == 'Sync already in progress') {
-              debugPrint('⚠️  SignInBottomSheet: Sync in progress, waiting 2 seconds...');
-              await Future.delayed(const Duration(seconds: 2));
-              syncResult = await syncManager.performFullSync();
-
-              // If still in progress, log warning but continue (periodic sync will catch up)
-              if (syncResult.error == 'Sync already in progress') {
-                debugPrint('⚠️  SignInBottomSheet: Sync still in progress, relying on periodic sync');
-              }
-            }
-
-            if (syncResult.hasErrors && syncResult.error != 'Sync already in progress') {
-              debugPrint(
-                '❌ SignInBottomSheet: Full sync failed after merge '
-                '(pushErrors: ${syncResult.pushErrors}, pullErrors: ${syncResult.pullErrors}, error: ${syncResult.error})',
-              );
-              if (!mounted) return;
-              setState(() {
-                _isLoading = false;
-                _errorMessage = _mergeSyncErrorMessage;
-              });
-              return;
-            }
-
-            debugPrint('✅ SignInBottomSheet: Full sync completed - merged data now available locally');
-
-            // Mark onboarding complete and navigate to home
+            // Perform account merge using new consolidated method
+            await authService.performAccountMerge(result.anonymousUserId!);
             await authService.markOnboardingCompleted();
-
             if (!mounted) return;
-            Navigator.of(context).pop(); // Close bottom sheet
-            context.go('/home'); // Navigate to home screen
+            Navigator.of(context).pop();
+            context.go('/home');
           } catch (e) {
-            debugPrint('❌ SignInBottomSheet: Merge failed: $e');
             if (!mounted) return;
+            // Show localized error message based on error type
+            String errorMsg;
+            if (e.toString().contains('sync') || e.toString().contains('connection')) {
+              errorMsg = 'errors.network_error'.tr();
+            } else {
+              errorMsg = 'Failed to merge accounts. Please try again.';
+            }
             setState(() {
               _isLoading = false;
-              _errorMessage = 'Failed to merge accounts. Please try again.';
+              _errorMessage = errorMsg;
             });
           }
-        } else {
-          // User cancelled merge - stay on current screen
-          return;
         }
-      } else {
-        // After sign-in, check if user is still anonymous or now authenticated
-        final isNowAuthenticated = authService.firebaseUser != null &&
-                                   !authService.firebaseUser!.isAnonymous;
-
-        if (userExists || (wasAnonymous && isNowAuthenticated)) {
-          // Existing user OR successfully upgraded anonymous user - mark onboarding complete and navigate
-          await authService.markOnboardingCompleted();
-          if (!mounted) return;
-          Navigator.of(context).pop(); // Close bottom sheet
-          context.go('/home'); // Navigate to home screen
-        } else {
-          // New user - automatically create account and continue to onboarding
-          // Sync with backend to create the account (if not already created)
-          await authService.syncUserWithBackend(
-            retries: 3,
-            signUpMethod: 'google',
-            sendFullName: true,
-          );
-
-          if (!mounted) return;
-          Navigator.of(context).pop(); // Close bottom sheet
-
-          // Mark that user already signed in so we skip account creation step
-          onboardingService.setHasAlreadySignedIn(true);
-
-          // Continue to profile details (skipping account creation since they already signed in)
-          onboardingService.goToStep(OnboardingStep.profileDetails);
-        }
+      }
+      // Existing user - go home
+      else if (result.action == NavigationAction.goHome) {
+        await authService.markOnboardingCompleted();
+        if (!mounted) return;
+        Navigator.of(context).pop();
+        context.go('/home');
+      }
+      // New user - continue onboarding
+      else {
+        Navigator.of(context).pop();
+        onboardingService.setHasAlreadySignedIn(true);
+        onboardingService.setSkipUsernameStep(false); // Reset anonymous flag
+        onboardingService.goToStep(result.resumeAt!); // Will be shoppingInterests
       }
     } catch (e) {
       if (!mounted) return;
@@ -183,125 +112,57 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
       final authService = context.read<AuthService>();
       final onboardingService = context.read<OnboardingService>();
 
-      // Check if upgrading from anonymous
-      final wasAnonymous = authService.firebaseUser?.isAnonymous ?? false;
-
-      // Sign in with Apple and check if user exists in DB
-      final result = await authService.signInWithAppleCheckExisting();
-      final userExists = result['userExists'] as bool;
-      final requiresMerge = result['requiresMerge'] as bool;
-      final anonymousUserId = result['anonymousUserId'] as String?;
+      // Use new consolidated authentication method
+      final result = await authService.authenticateWithApple();
 
       if (!mounted) return;
 
-      // Check if we need to merge accounts
-      if (requiresMerge && anonymousUserId != null) {
-        setState(() {
-          _isLoading = false;
-        });
+      // Handle merge scenario
+      if (result.action == NavigationAction.showMergeDialog) {
+        setState(() => _isLoading = false);
 
-        // Show merge confirmation dialog
+        // Show merge confirmation
         final shouldMerge = await MergeAccountsBottomSheet.show(context);
-
         if (!mounted) return;
 
         if (shouldMerge == true) {
-          setState(() {
-            _isLoading = true;
-          });
-
+          setState(() => _isLoading = true);
           try {
-            debugPrint('🔗 SignInBottomSheet: Starting account merge...');
-
-            // Call backend to merge accounts
-            final apiService = authService.apiService;
-            await apiService.mergeAccounts(anonymousUserId);
-            debugPrint('✅ SignInBottomSheet: Backend merge completed');
-
-            // Sync user data from backend to get updated username
-            await authService.syncUserWithBackend(retries: 1);
-            debugPrint('✅ SignInBottomSheet: User profile synced');
-
-            // CRITICAL: Perform full sync to fetch merged wishlists/wishes from backend
-            // This ensures local database is updated with all merged data
-            // Handle case where sync is already in progress
-            final syncManager = SyncManager();
-            var syncResult = await syncManager.performFullSync();
-
-            // If sync is already in progress, wait and retry once
-            if (syncResult.error == 'Sync already in progress') {
-              debugPrint('⚠️  SignInBottomSheet: Sync in progress, waiting 2 seconds...');
-              await Future.delayed(const Duration(seconds: 2));
-              syncResult = await syncManager.performFullSync();
-
-              // If still in progress, log warning but continue (periodic sync will catch up)
-              if (syncResult.error == 'Sync already in progress') {
-                debugPrint('⚠️  SignInBottomSheet: Sync still in progress, relying on periodic sync');
-              }
-            }
-
-            if (syncResult.hasErrors && syncResult.error != 'Sync already in progress') {
-              debugPrint(
-                '❌ SignInBottomSheet: Full sync failed after merge '
-                '(pushErrors: ${syncResult.pushErrors}, pullErrors: ${syncResult.pullErrors}, error: ${syncResult.error})',
-              );
-              if (!mounted) return;
-              setState(() {
-                _isLoading = false;
-                _errorMessage = _mergeSyncErrorMessage;
-              });
-              return;
-            }
-
-            debugPrint('✅ SignInBottomSheet: Full sync completed - merged data now available locally');
-
-            // Mark onboarding complete and navigate to home
+            // Perform account merge using new consolidated method
+            await authService.performAccountMerge(result.anonymousUserId!);
             await authService.markOnboardingCompleted();
-
             if (!mounted) return;
-            Navigator.of(context).pop(); // Close bottom sheet
-            context.go('/home'); // Navigate to home screen
+            Navigator.of(context).pop();
+            context.go('/home');
           } catch (e) {
-            debugPrint('❌ SignInBottomSheet: Merge failed: $e');
             if (!mounted) return;
+            // Show localized error message based on error type
+            String errorMsg;
+            if (e.toString().contains('sync') || e.toString().contains('connection')) {
+              errorMsg = 'errors.network_error'.tr();
+            } else {
+              errorMsg = 'Failed to merge accounts. Please try again.';
+            }
             setState(() {
               _isLoading = false;
-              _errorMessage = 'Failed to merge accounts. Please try again.';
+              _errorMessage = errorMsg;
             });
           }
-        } else {
-          // User cancelled merge - stay on current screen
-          return;
         }
-      } else {
-        // After sign-in, check if user is still anonymous or now authenticated
-        final isNowAuthenticated = authService.firebaseUser != null &&
-                                   !authService.firebaseUser!.isAnonymous;
-
-        if (userExists || (wasAnonymous && isNowAuthenticated)) {
-          // Existing user OR successfully upgraded anonymous user - mark onboarding complete and navigate
-          await authService.markOnboardingCompleted();
-          if (!mounted) return;
-          Navigator.of(context).pop(); // Close bottom sheet
-          context.go('/home'); // Navigate to home screen
-        } else {
-          // New user - automatically create account and continue to onboarding
-          // Sync with backend to create the account (if not already created)
-          await authService.syncUserWithBackend(
-            retries: 3,
-            signUpMethod: 'apple',
-            sendFullName: true,
-          );
-
-          if (!mounted) return;
-          Navigator.of(context).pop(); // Close bottom sheet
-
-          // Mark that user already signed in so we skip account creation step
-          onboardingService.setHasAlreadySignedIn(true);
-
-          // Continue to profile details (skipping account creation since they already signed in)
-          onboardingService.goToStep(OnboardingStep.profileDetails);
-        }
+      }
+      // Existing user - go home
+      else if (result.action == NavigationAction.goHome) {
+        await authService.markOnboardingCompleted();
+        if (!mounted) return;
+        Navigator.of(context).pop();
+        context.go('/home');
+      }
+      // New user - continue onboarding
+      else {
+        Navigator.of(context).pop();
+        onboardingService.setHasAlreadySignedIn(true);
+        onboardingService.setSkipUsernameStep(false); // Reset anonymous flag
+        onboardingService.goToStep(result.resumeAt!); // Will be shoppingInterests
       }
     } catch (e) {
       if (!mounted) return;
