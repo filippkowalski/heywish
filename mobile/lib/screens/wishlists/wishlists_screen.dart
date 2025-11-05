@@ -5,9 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:url_launcher/url_launcher.dart';
 import '../../services/auth_service.dart';
 import '../../services/wishlist_service.dart';
 import '../../services/preferences_service.dart';
@@ -20,6 +20,49 @@ import '../../common/utils/wish_category_detector.dart';
 import 'add_wish_screen.dart';
 import 'wish_detail_screen.dart';
 
+Future<void> _launchExternalLink(BuildContext context, String rawUrl) async {
+  final trimmed = rawUrl.trim();
+  if (trimmed.isEmpty) {
+    return;
+  }
+
+  final normalized = trimmed.contains('://') ? trimmed : 'https://$trimmed';
+  final uri = Uri.tryParse(normalized);
+  final messenger = ScaffoldMessenger.maybeOf(context);
+
+  if (uri == null) {
+    debugPrint('❌ Invalid URL provided for launch: $rawUrl');
+    messenger?.showSnackBar(
+      SnackBar(content: Text('wish.could_not_open_url'.tr())),
+    );
+    return;
+  }
+
+  final adjustedUri =
+      (uri.host.toLowerCase() == 'jinnie.co' ||
+              uri.host.toLowerCase() == 'www.jinnie.co')
+          ? uri.replace(scheme: 'http')
+          : uri;
+
+  try {
+    final launched = await launchUrl(
+      adjustedUri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!launched) {
+      messenger?.showSnackBar(
+        SnackBar(content: Text('wish.could_not_open_url'.tr())),
+      );
+    }
+  } catch (error) {
+    debugPrint('❌ Failed to open link $uri: $error');
+    messenger?.showSnackBar(
+      SnackBar(content: Text('wish.could_not_open_url'.tr())),
+    );
+  }
+}
+
 class WishlistsScreen extends StatefulWidget {
   const WishlistsScreen({super.key});
 
@@ -27,7 +70,8 @@ class WishlistsScreen extends StatefulWidget {
   State<WishlistsScreen> createState() => _WishlistsScreenState();
 }
 
-class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProviderStateMixin {
+class _WishlistsScreenState extends State<WishlistsScreen>
+    with SingleTickerProviderStateMixin {
   bool _hasLoadedOnce = false;
   bool _hasCompletedInitialLoad = false;
   String? _selectedWishlistFilter;
@@ -53,11 +97,13 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     if (_scrollController == null) return;
 
     // Show FAB when scrolling up, hide when scrolling down
-    if (_scrollController!.position.userScrollDirection == ScrollDirection.reverse) {
+    if (_scrollController!.position.userScrollDirection ==
+        ScrollDirection.reverse) {
       if (_isFabVisible) {
         setState(() => _isFabVisible = false);
       }
-    } else if (_scrollController!.position.userScrollDirection == ScrollDirection.forward) {
+    } else if (_scrollController!.position.userScrollDirection ==
+        ScrollDirection.forward) {
       if (!_isFabVisible) {
         setState(() => _isFabVisible = true);
       }
@@ -74,7 +120,8 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
   Future<void> _loadShareBannerState() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _isShareBannerDismissed = prefs.getBool(_shareBannerDismissedKey) ?? false;
+      _isShareBannerDismissed =
+          prefs.getBool(_shareBannerDismissedKey) ?? false;
     });
   }
 
@@ -91,7 +138,9 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     super.didChangeDependencies();
     // Try loading wishlists when authentication state changes, but only once
     final authService = context.watch<AuthService>();
-    if (authService.isAuthenticated && authService.currentUser != null && !_hasLoadedOnce) {
+    if (authService.isAuthenticated &&
+        authService.currentUser != null &&
+        !_hasLoadedOnce) {
       _hasLoadedOnce = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadWishlists();
@@ -100,19 +149,21 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
   }
 
   Future<void> _loadWishlists() async {
-    print('🔄 WishlistsScreen: Loading wishlists...');
+    debugPrint('🔄 WishlistsScreen: Loading wishlists...');
     final wishlistService = context.read<WishlistService>();
     final authService = context.read<AuthService>();
 
     try {
       // Wait for authentication and user sync to complete first
       if (!authService.isAuthenticated || authService.currentUser == null) {
-        print('⏳ WishlistsScreen: Waiting for authentication and user sync...');
+        debugPrint(
+          '⏳ WishlistsScreen: Waiting for authentication and user sync...',
+        );
         return;
       }
 
       await wishlistService.fetchWishlists();
-      print('✅ WishlistsScreen: Wishlists loaded successfully');
+      debugPrint('✅ WishlistsScreen: Wishlists loaded successfully');
     } catch (e) {
       debugPrint('❌ WishlistsScreen: Failed to load wishlists: $e');
     } finally {
@@ -139,7 +190,8 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
         hasAnyPrices = true;
         final currency = wish.currency ?? 'USD';
         final totalPrice = wish.price! * wish.quantity;
-        currencyTotals[currency] = (currencyTotals[currency] ?? 0.0) + totalPrice;
+        currencyTotals[currency] =
+            (currencyTotals[currency] ?? 0.0) + totalPrice;
       }
     }
 
@@ -198,74 +250,75 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
       body: Container(
         color: Colors.white,
         child: SafeArea(
-          child: !_hasCompletedInitialLoad || wishlistService.isLoading
-              ? Column(
-                  children: [
-                    _buildHeader(context, authService),
-                    Expanded(child: _buildLoadingShimmer()),
-                  ],
-                )
-              : wishlistService.error != null
+          child:
+              !_hasCompletedInitialLoad || wishlistService.isLoading
                   ? Column(
-                      children: [
-                        _buildHeader(context, authService),
-                        Expanded(child: _buildErrorState(wishlistService.error!)),
-                      ],
-                    )
-                  : (wishlistService.wishlists.isEmpty && wishlistService.allWishes.isEmpty)
-                      ? Column(
-                          children: [
-                            _buildHeader(context, authService),
-                            Expanded(child: _buildEmptyState(context)),
-                          ],
-                        )
-                      : NestedScrollView(
-                          controller: _scrollController,
-                          headerSliverBuilder: (context, innerBoxIsScrolled) {
-                            return [
-                              SliverToBoxAdapter(
-                                child: _buildHeader(context, authService),
-                              ),
-                            ];
-                          },
-                          body: NativeRefreshIndicator(
-                            onRefresh: () async {
-                              final wishlistService = context.read<WishlistService>();
-                              final authService = context.read<AuthService>();
-
-                              if (authService.isAuthenticated && authService.currentUser != null) {
-                                await wishlistService.fetchWishlists();
-                              }
-                            },
-                            child: _buildContent(wishlistService.wishlists),
-                          ),
+                    children: [
+                      _buildHeader(context, authService),
+                      Expanded(child: _buildLoadingShimmer()),
+                    ],
+                  )
+                  : wishlistService.error != null
+                  ? Column(
+                    children: [
+                      _buildHeader(context, authService),
+                      Expanded(child: _buildErrorState(wishlistService.error!)),
+                    ],
+                  )
+                  : (wishlistService.wishlists.isEmpty &&
+                      wishlistService.allWishes.isEmpty)
+                  ? Column(
+                    children: [
+                      _buildHeader(context, authService),
+                      Expanded(child: _buildEmptyState(context)),
+                    ],
+                  )
+                  : NestedScrollView(
+                    controller: _scrollController,
+                    headerSliverBuilder: (context, innerBoxIsScrolled) {
+                      return [
+                        SliverToBoxAdapter(
+                          child: _buildHeader(context, authService),
                         ),
+                      ];
+                    },
+                    body: NativeRefreshIndicator(
+                      onRefresh: () async {
+                        final wishlistService = context.read<WishlistService>();
+                        final authService = context.read<AuthService>();
+
+                        if (authService.isAuthenticated &&
+                            authService.currentUser != null) {
+                          await wishlistService.fetchWishlists();
+                        }
+                      },
+                      child: _buildContent(wishlistService.wishlists),
+                    ),
+                  ),
         ),
       ),
-      floatingActionButton: !_hasCompletedInitialLoad || wishlistService.isLoading
-          ? null
-          : AnimatedSlide(
-              duration: const Duration(milliseconds: 200),
-              offset: _isFabVisible ? Offset.zero : const Offset(0, 2),
-              child: AnimatedOpacity(
+      floatingActionButton:
+          !_hasCompletedInitialLoad || wishlistService.isLoading
+              ? null
+              : AnimatedSlide(
                 duration: const Duration(milliseconds: 200),
-                opacity: _isFabVisible ? 1.0 : 0.0,
-                child: FloatingActionButton(
-                  onPressed: () async {
-                    final result = await AddWishScreen.show(context);
-                    // Refresh if wish was added successfully
-                    if (result == true && mounted) {
-                      await _loadWishlists();
-                    }
-                  },
-                  backgroundColor: AppTheme.primaryAccent,
-                  child: const Icon(
-                    Icons.add,
-                    color: Colors.white,
+                offset: _isFabVisible ? Offset.zero : const Offset(0, 2),
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: _isFabVisible ? 1.0 : 0.0,
+                  child: FloatingActionButton(
+                    onPressed: () async {
+                      final result = await AddWishScreen.show(context);
+                      // Refresh if wish was added successfully
+                      if (result == true && mounted) {
+                        await _loadWishlists();
+                      }
+                    },
+                    backgroundColor: AppTheme.primaryAccent,
+                    child: const Icon(Icons.add, color: Colors.white),
                   ),
                 ),
               ),
-            ),
     );
   }
 
@@ -280,9 +333,13 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
         children: [
           Expanded(
             child: GestureDetector(
-              onTap: username != null
-                ? () => Share.share('https://jinnie.co/$username')
-                : null,
+              onTap:
+                  username != null
+                      ? () => _launchExternalLink(
+                        context,
+                        'https://jinnie.co/$username',
+                      )
+                      : null,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -334,7 +391,6 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     );
   }
 
-
   Widget _buildLoadingShimmer() {
     return MasonryGridView.count(
       padding: const EdgeInsets.all(16.0),
@@ -356,7 +412,9 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
                 height: index.isEven ? 180 : 220,
                 decoration: BoxDecoration(
                   color: Colors.grey.shade200,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                 ),
               ),
               // Content skeleton
@@ -403,7 +461,9 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
               Icon(
                 Icons.error_outline,
                 size: 80,
-                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.error.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 16),
               Text(
@@ -436,9 +496,10 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     final unsortedWishes = wishlistService.unsortedWishes;
 
     // Filter wishes by selected wishlist
-    final filteredWishes = _selectedWishlistFilter == null
-        ? allWishes
-        : wishlistService.getWishesForWishlist(_selectedWishlistFilter);
+    final filteredWishes =
+        _selectedWishlistFilter == null
+            ? allWishes
+            : wishlistService.getWishesForWishlist(_selectedWishlistFilter);
 
     // Determine if we should show the share banner (3+ items)
     final shouldShowShareBanner = filteredWishes.length >= 3;
@@ -450,7 +511,9 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     Wishlist? selectedWishlist;
     if (_selectedWishlistFilter != null) {
       try {
-        selectedWishlist = wishlists.firstWhere((w) => w.id == _selectedWishlistFilter);
+        selectedWishlist = wishlists.firstWhere(
+          (w) => w.id == _selectedWishlistFilter,
+        );
       } catch (e) {
         selectedWishlist = null;
       }
@@ -463,7 +526,9 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     return CustomScrollView(
       slivers: [
         // Share banner (show after 3+ items and if not dismissed)
-        if (shouldShowShareBanner && username != null && !_isShareBannerDismissed)
+        if (shouldShowShareBanner &&
+            username != null &&
+            !_isShareBannerDismissed)
           SliverToBoxAdapter(
             child: _ShareBanner(
               username: username,
@@ -492,7 +557,9 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
               Wishlist? wishlist;
               if (wish.wishlistId != null) {
                 try {
-                  wishlist = wishlists.firstWhere((w) => w.id == wish.wishlistId);
+                  wishlist = wishlists.firstWhere(
+                    (w) => w.id == wish.wishlistId,
+                  );
                 } catch (e) {
                   wishlist = null;
                 }
@@ -503,15 +570,12 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
         ),
 
         // Wishlist valuation at bottom of scrollable list
-        if ((wishlists.isNotEmpty || unsortedWishes.isNotEmpty) && filteredWishes.isNotEmpty)
-          SliverToBoxAdapter(
-            child: _buildWishlistValuation(filteredWishes),
-          ),
+        if ((wishlists.isNotEmpty || unsortedWishes.isNotEmpty) &&
+            filteredWishes.isNotEmpty)
+          SliverToBoxAdapter(child: _buildWishlistValuation(filteredWishes)),
 
         // Extra padding at the bottom for better UX
-        const SliverPadding(
-          padding: EdgeInsets.only(bottom: 16),
-        ),
+        const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
       ],
     );
   }
@@ -539,7 +603,8 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
           const SizedBox(width: 8),
           // Wishlist tabs
           ...wishlists.map((wishlist) {
-            final wishCount = wishlistService.getWishesForWishlist(wishlist.id).length;
+            final wishCount =
+                wishlistService.getWishesForWishlist(wishlist.id).length;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: _buildTabChip(
@@ -580,18 +645,22 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
           color: isSelected ? Colors.grey.shade100 : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected
-                ? Colors.black.withValues(alpha: 0.2)
-                : Colors.black.withValues(alpha: 0.12),
+            color:
+                isSelected
+                    ? Colors.black.withValues(alpha: 0.2)
+                    : Colors.black.withValues(alpha: 0.12),
             width: 1,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ] : null,
+          boxShadow:
+              isSelected
+                  ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ]
+                  : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -610,9 +679,10 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppTheme.primary.withValues(alpha: 0.15)
-                      : Colors.grey.shade200,
+                  color:
+                      isSelected
+                          ? AppTheme.primary.withValues(alpha: 0.15)
+                          : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -689,9 +759,9 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
             Text(
               'home.no_items_yet'.tr(),
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
@@ -719,66 +789,62 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
     );
   }
 
-
   Widget _buildEmptyState(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: constraints.maxHeight,
-            ),
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.all(40.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-              Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Icon(
-                  Icons.card_giftcard_outlined,
-                  size: 48,
-                  color: Colors.grey.shade600,
-                ),
-              ),
+                    Container(
+                      width: 96,
+                      height: 96,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Icon(
+                        Icons.card_giftcard_outlined,
+                        size: 48,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
 
-              const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-              Text(
-                'home.empty_title'.tr(),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+                    Text(
+                      'home.empty_title'.tr(),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
 
-              const SizedBox(height: 8),
+                    const SizedBox(height: 8),
 
-              Text(
-                'home.empty_subtitle'.tr(),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+                    Text(
+                      'home.empty_subtitle'.tr(),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
 
-              const SizedBox(height: 32),
+                    const SizedBox(height: 32),
 
-              ElevatedButton.icon(
-                onPressed: () async {
-                  final result = await AddWishScreen.show(context);
-                  // Refresh if wish was added successfully
-                  if (result == true && mounted) {
-                    await _loadWishlists();
-                  }
-                },
-                icon: Icon(Icons.add),
-                label: Text('home.create_first_wish'.tr()),
-              ),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final result = await AddWishScreen.show(context);
+                        // Refresh if wish was added successfully
+                        if (result == true && mounted) {
+                          await _loadWishlists();
+                        }
+                      },
+                      icon: Icon(Icons.add),
+                      label: Text('home.create_first_wish'.tr()),
+                    ),
                   ],
                 ),
               ),
@@ -803,13 +869,13 @@ class _WishlistsScreenState extends State<WishlistsScreen> with SingleTickerProv
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => _ShareBottomSheet(
-        username: username,
-        wishlists: wishlistService.wishlists,
-      ),
+      builder:
+          (context) => _ShareBottomSheet(
+            username: username,
+            wishlists: wishlistService.wishlists,
+          ),
     );
   }
-
 }
 
 // Masonry Grid Card Widget
@@ -903,36 +969,50 @@ class _MasonryWishCard extends StatelessWidget {
                 AspectRatio(
                   aspectRatio: 1.0,
                   child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: wish.imageUrl != null
-                        ? CachedImageWidget(
-                            imageUrl: wish.imageUrl!,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            errorWidget: Container(
-                              color: Colors.grey.shade100,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
+                    child:
+                        wish.imageUrl != null
+                            ? CachedImageWidget(
+                              imageUrl: wish.imageUrl!,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              errorWidget: Container(
+                                color: Colors.grey.shade100,
+                                child: Center(
+                                  child: Icon(
+                                    WishCategoryDetector.getIconFromTitle(
+                                      wish.title,
+                                    ),
+                                    size: 48,
+                                    color:
+                                        WishCategoryDetector.getColorFromTitle(
+                                          wish.title,
+                                        ),
+                                  ),
+                                ),
+                              ),
+                            )
+                            : Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(16),
+                                ),
+                              ),
                               child: Center(
                                 child: Icon(
-                                  WishCategoryDetector.getIconFromTitle(wish.title),
+                                  WishCategoryDetector.getIconFromTitle(
+                                    wish.title,
+                                  ),
                                   size: 48,
-                                  color: WishCategoryDetector.getColorFromTitle(wish.title),
+                                  color: WishCategoryDetector.getColorFromTitle(
+                                    wish.title,
+                                  ),
                                 ),
                               ),
                             ),
-                          )
-                        : Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                WishCategoryDetector.getIconFromTitle(wish.title),
-                                size: 48,
-                                color: WishCategoryDetector.getColorFromTitle(wish.title),
-                              ),
-                            ),
-                          ),
                   ),
                 ),
                 // Reserved star indicator
@@ -1039,10 +1119,7 @@ class _ShareBanner extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '🎉',
-                style: TextStyle(fontSize: 32),
-              ),
+              Text('🎉', style: TextStyle(fontSize: 32)),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -1051,16 +1128,16 @@ class _ShareBanner extends StatelessWidget {
                     Text(
                       'wishlist.share_banner_title'.tr(),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.3,
-                          ),
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.3,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'wishlist.share_banner_cta'.tr(),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey.shade700,
-                          ),
+                        color: Colors.grey.shade700,
+                      ),
                     ),
                   ],
                 ),
@@ -1098,10 +1175,7 @@ class _ShareBanner extends StatelessWidget {
               icon: Icon(Icons.ios_share, size: 18),
               label: Text(
                 'wishlist.share_now'.tr(),
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
               ),
             ),
           ),
@@ -1116,10 +1190,7 @@ class _ShareBottomSheet extends StatefulWidget {
   final String username;
   final List<Wishlist> wishlists;
 
-  const _ShareBottomSheet({
-    required this.username,
-    required this.wishlists,
-  });
+  const _ShareBottomSheet({required this.username, required this.wishlists});
 
   @override
   State<_ShareBottomSheet> createState() => _ShareBottomSheetState();
@@ -1226,16 +1297,14 @@ class _ShareBottomSheetState extends State<_ShareBottomSheet> {
                       children: [
                         Text(
                           'wishlist.share_sheet_title'.tr(),
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'wishlist.share_sheet_subtitle'.tr(),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.grey.shade600,
-                              ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: Colors.grey.shade600),
                         ),
                       ],
                     ),
@@ -1265,10 +1334,12 @@ class _ShareBottomSheetState extends State<_ShareBottomSheet> {
                           children: [
                             Text(
                               'wishlist.your_lists'.tr(),
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey.shade700,
-                                  ),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade700,
+                              ),
                             ),
                           ],
                         ),
@@ -1279,7 +1350,8 @@ class _ShareBottomSheetState extends State<_ShareBottomSheet> {
                         final wishlistUrl =
                             'jinnie.co/${widget.username}/${wishlist.name.toLowerCase().replaceAll(' ', '-')}';
                         final isPrivate = wishlist.visibility == 'private';
-                        final isUpdating = _updatingVisibility[wishlist.id] ?? false;
+                        final isUpdating =
+                            _updatingVisibility[wishlist.id] ?? false;
 
                         return _WishlistShareItem(
                           wishlist: wishlist,
@@ -1308,20 +1380,14 @@ class _ProfileShareItem extends StatelessWidget {
   final String username;
   final String url;
 
-  const _ProfileShareItem({
-    required this.username,
-    required this.url,
-  });
+  const _ProfileShareItem({required this.username, required this.url});
 
   @override
   Widget build(BuildContext context) {
+    final targetUrl = url.startsWith('http') ? url : 'https://$url';
+
     return InkWell(
-      onTap: () async {
-        await Share.share(
-          'https://$url',
-          subject: 'wishlist.your_profile'.tr(),
-        );
-      },
+      onTap: () => _launchExternalLink(context, targetUrl),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
@@ -1352,15 +1418,15 @@ class _ProfileShareItem extends StatelessWidget {
                   Text(
                     'wishlist.your_profile'.tr(),
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     url,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey.shade600,
-                        ),
+                      color: Colors.grey.shade600,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1368,11 +1434,7 @@ class _ProfileShareItem extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            Icon(
-              Icons.ios_share,
-              color: AppTheme.primaryAccent,
-              size: 20,
-            ),
+            Icon(Icons.ios_share, color: AppTheme.primaryAccent, size: 20),
           ],
         ),
       ),
@@ -1424,18 +1486,18 @@ class _WishlistShareItem extends StatelessWidget {
                 // Wishlist name
                 Text(
                   wishlist.name,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 4),
                 // URL or Private indicator
                 Text(
                   isPrivate ? 'wishlist.private'.tr() : url,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey.shade600,
-                        fontSize: 13,
-                      ),
+                    color: Colors.grey.shade600,
+                    fontSize: 13,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1451,7 +1513,9 @@ class _WishlistShareItem extends StatelessWidget {
                           height: 12,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(AppTheme.primaryAccent),
+                            valueColor: AlwaysStoppedAnimation(
+                              AppTheme.primaryAccent,
+                            ),
                           ),
                         )
                       else
@@ -1459,8 +1523,8 @@ class _WishlistShareItem extends StatelessWidget {
                           wishlist.visibility == 'public'
                               ? Icons.public
                               : wishlist.visibility == 'friends'
-                                  ? Icons.people
-                                  : Icons.lock,
+                              ? Icons.people
+                              : Icons.lock,
                           size: 13,
                           color: AppTheme.primaryAccent,
                         ),
@@ -1470,9 +1534,10 @@ class _WishlistShareItem extends StatelessWidget {
                             ? 'wishlist.updating'.tr()
                             : '${'wishlist.visibility'.tr()}: $visibilityLabel',
                         style: TextStyle(
-                          color: isUpdating
-                              ? AppTheme.primaryAccent
-                              : AppTheme.primaryAccent,
+                          color:
+                              isUpdating
+                                  ? AppTheme.primaryAccent
+                                  : AppTheme.primaryAccent,
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
@@ -1487,14 +1552,13 @@ class _WishlistShareItem extends StatelessWidget {
           // Share button
           if (!isPrivate)
             GestureDetector(
-              onTap: isUpdating
-                  ? null
-                  : () async {
-                      await Share.share(
-                        'https://$url',
-                        subject: wishlist.name,
-                      );
-                    },
+              onTap:
+                  isUpdating
+                      ? null
+                      : () => _launchExternalLink(
+                        context,
+                        url.startsWith('http') ? url : 'https://$url',
+                      ),
               child: Opacity(
                 opacity: isUpdating ? 0.5 : 1.0,
                 child: Container(

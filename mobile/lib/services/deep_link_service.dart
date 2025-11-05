@@ -6,10 +6,13 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'api_service.dart';
 
+const Set<String> _primaryDeepLinkHosts = {'jinnie.app', 'www.jinnie.app'};
+const Set<String> _legacyFollowHosts = {'jinnie.co', 'www.jinnie.co'};
+
 /// Service for handling deep links and universal links
 ///
 /// Supports:
-/// - Universal links: https://jinnie.co/@username/follow
+/// - Universal links: https://jinnie.app/@username/follow
 /// - Custom scheme: jinnie://profile/username
 ///
 /// Usage:
@@ -76,9 +79,16 @@ class DeepLinkService {
       return;
     }
 
-    // Handle universal links: https://jinnie.co/@username/follow
-    if (uri.scheme == 'https' &&
-        (uri.host == 'jinnie.co' || uri.host == 'www.jinnie.co')) {
+    final host = uri.host.toLowerCase();
+    final isPrimaryHost =
+        (uri.scheme == 'https' || uri.scheme == 'http') &&
+        _primaryDeepLinkHosts.contains(host);
+    final isLegacyFollowLink =
+        (uri.scheme == 'https' || uri.scheme == 'http') &&
+        _legacyFollowHosts.contains(host) &&
+        uri.path.startsWith('/@');
+
+    if (isPrimaryHost || isLegacyFollowLink) {
       _handleUniversalLink(uri);
       return;
     }
@@ -92,7 +102,7 @@ class DeepLinkService {
     debugPrint('⚠️ Unhandled deep link scheme: ${uri.scheme}');
   }
 
-  /// Handle universal links (https://jinnie.co/...)
+  /// Handle universal links (https://jinnie.app/...)
   void _handleUniversalLink(Uri uri) {
     final path = uri.path;
     final segments =

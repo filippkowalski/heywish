@@ -23,7 +23,7 @@ Jinnie implements cross-platform deep linking to allow web users to seamlessly o
 │       │                                          │
 └───────┼──────────────────────────────────────────┘
         │
-        ├─→ iOS: window.location.href = https://jinnie.co/@user/follow
+        ├─→ iOS: window.location.href = https://jinnie.app/@user/follow
         │     ↓
         │   Landing Page (Fallback Detection)
         │     ↓
@@ -44,7 +44,7 @@ Jinnie implements cross-platform deep linking to allow web users to seamlessly o
 
 **How It Works:**
 1. User clicks "Follow" button on web
-2. Web navigates to `https://jinnie.co/@username/follow`
+2. Web navigates to `https://jinnie.app/@username/follow`
 3. iOS checks Associated Domains configuration
 4. If app installed: Opens app via universal link
 5. If not installed: Loads web landing page → redirects to App Store
@@ -55,8 +55,8 @@ Jinnie implements cross-platform deep linking to allow web users to seamlessly o
 ```xml
 <key>com.apple.developer.associated-domains</key>
 <array>
-    <string>applinks:jinnie.co</string>
-    <string>applinks:www.jinnie.co</string>
+    <string>applinks:jinnie.app</string>
+    <string>applinks:www.jinnie.app</string>
 </array>
 ```
 
@@ -76,12 +76,23 @@ Jinnie implements cross-platform deep linking to allow web users to seamlessly o
 **Requirements:**
 - Must use HTTPS (not custom schemes)
 - Must use top-level navigation (iOS 13+ blocks iframes)
-- File must be accessible at `https://jinnie.co/.well-known/apple-app-site-association`
+- File must be accessible at `https://jinnie.app/.well-known/apple-app-site-association`
 - No file extension, served as `application/json`
 
 **Deep Link Handler** (`mobile/lib/services/deep_link_service.dart`):
 ```dart
-if (uri.scheme == 'https' && uri.host == 'jinnie.co') {
+const primaryHosts = {'jinnie.app', 'www.jinnie.app'};
+const legacyFollowHosts = {'jinnie.co', 'www.jinnie.co'};
+
+final host = uri.host.toLowerCase();
+final isPrimaryHost =
+    (uri.scheme == 'https' || uri.scheme == 'http') && primaryHosts.contains(host);
+final isLegacyFollowLink =
+    (uri.scheme == 'https' || uri.scheme == 'http') &&
+    legacyFollowHosts.contains(host) &&
+    uri.path.startsWith('/@');
+
+if (isPrimaryHost || isLegacyFollowLink) {
   // Parse path: /@username/follow
   final followMatch = RegExp(r'^/@([^/]+)/follow$').firstMatch(path);
   if (followMatch != null) {
@@ -112,11 +123,11 @@ if (uri.scheme == 'https' && uri.host == 'jinnie.co') {
     <category android:name="android.intent.category.BROWSABLE" />
     <data
         android:scheme="https"
-        android:host="jinnie.co"
+        android:host="jinnie.app"
         android:pathPrefix="/" />
     <data
         android:scheme="https"
-        android:host="www.jinnie.co"
+        android:host="www.jinnie.app"
         android:pathPrefix="/" />
 </intent-filter>
 ```
@@ -149,7 +160,7 @@ const intentUrl =
 **Requirements:**
 - Intent URL format with scheme, package, and fallback
 - SHA-256 fingerprints from both debug and release keystores
-- File must be accessible at `https://jinnie.co/.well-known/assetlinks.json`
+- File must be accessible at `https://jinnie.app/.well-known/assetlinks.json`
 - `autoVerify="true"` in intent filter
 
 **Deep Link Handler** (`mobile/lib/services/deep_link_service.dart`):
@@ -205,7 +216,7 @@ if (uri.scheme == 'com.wishlists.gifts') {
 ```typescript
 if (platform === 'ios') {
   // iOS: Universal link with landing page fallback
-  window.location.href = `https://jinnie.co/@${username}/follow`;
+  window.location.href = `https://jinnie.app/@${username}/follow`;
 } else if (platform === 'android') {
   // Android: Intent URL with automatic fallback
   window.location.href = intentUrl;
@@ -295,8 +306,8 @@ void dispose() {
 ```
 
 **Supported URL Patterns:**
-- `https://jinnie.co/@username/follow` → Navigate to profile
-- `https://jinnie.co/@username` → Navigate to profile
+- `https://jinnie.app/@username/follow` → Navigate to profile
+- `https://jinnie.app/@username` → Navigate to profile
 - `com.wishlists.gifts://profile/username?action=follow` → Navigate to profile
 
 **Navigation:**
@@ -320,21 +331,21 @@ void _navigateToProfile(String username, {bool highlightFollow = false}) {
 2. Select Runner target → Signing & Capabilities
 3. Add "Associated Domains" capability
 4. Add domains:
-   - `applinks:jinnie.co`
-   - `applinks:www.jinnie.co`
+   - `applinks:jinnie.app`
+   - `applinks:www.jinnie.app`
 
 **Entitlements File:** `ios/Runner/Runner.entitlements`
 ```xml
 <key>com.apple.developer.associated-domains</key>
 <array>
-    <string>applinks:jinnie.co</string>
-    <string>applinks:www.jinnie.co</string>
+    <string>applinks:jinnie.app</string>
+    <string>applinks:www.jinnie.app</string>
 </array>
 ```
 
 **Web Server File:** Must be accessible at:
 ```
-https://jinnie.co/.well-known/apple-app-site-association
+https://jinnie.app/.well-known/apple-app-site-association
 ```
 
 ---
@@ -366,7 +377,7 @@ keytool -list -v -keystore /path/to/release.keystore \
 
 **Web Server File:** Must be accessible at:
 ```
-https://jinnie.co/.well-known/assetlinks.json
+https://jinnie.app/.well-known/assetlinks.json
 ```
 
 ---
@@ -375,11 +386,11 @@ https://jinnie.co/.well-known/assetlinks.json
 
 ### iOS - App Installed
 ```
-1. User visits https://jinnie.co/@john
+1. User visits https://jinnie.app/@john
 2. Clicks "Follow" button
 3. Dialog opens: "Open in Jinnie App"
 4. Clicks button
-5. Navigates to: https://jinnie.co/@john/follow
+5. Navigates to: https://jinnie.app/@john/follow
 6. iOS checks Associated Domains
 7. ✅ App installed → Opens app immediately (< 0.5s)
 8. DeepLinkService receives URL
@@ -389,11 +400,11 @@ https://jinnie.co/.well-known/assetlinks.json
 
 ### iOS - App NOT Installed
 ```
-1. User visits https://jinnie.co/@john
+1. User visits https://jinnie.app/@john
 2. Clicks "Follow" button
 3. Dialog opens: "Open in Jinnie App"
 4. Clicks button
-5. Navigates to: https://jinnie.co/@john/follow
+5. Navigates to: https://jinnie.app/@john/follow
 6. iOS checks Associated Domains
 7. ❌ App not installed → Loads web page
 8. Landing page shows: "Opening Jinnie..."
@@ -404,34 +415,34 @@ https://jinnie.co/.well-known/assetlinks.json
 
 ### Android - App Installed
 ```
-1. User visits https://jinnie.co/@john
+1. User visits https://jinnie.app/@john
 2. Clicks "Follow" button
 3. Dialog opens: "Open in Jinnie App"
 4. Clicks button
-5. Navigates to Intent URL with fallback
-6. Android parses Intent URL
+5. Navigates to universal link https://jinnie.app/@john/follow
+6. Android verifies App Link
 7. ✅ App installed → Opens app immediately
-8. DeepLinkService receives custom scheme URL
+8. DeepLinkService receives universal link URL
 9. Navigates to /profile/john in app
 10. User can follow @john
 ```
 
 ### Android - App NOT Installed
 ```
-1. User visits https://jinnie.co/@john
+1. User visits https://jinnie.app/@john
 2. Clicks "Follow" button
 3. Dialog opens: "Open in Jinnie App"
 4. Clicks button
-5. Navigates to Intent URL with fallback
-6. Android parses Intent URL
-7. ❌ App not installed → Uses browser_fallback_url
-8. Immediately redirects to Play Store
+5. Navigates to universal link https://jinnie.app/@john/follow
+6. Android attempts to open app via App Link
+7. ❌ App not installed → Link remains in browser
+8. After timeout, web dialog redirects to Play Store
 9. User can download app
 ```
 
 ### Desktop
 ```
-1. User visits https://jinnie.co/@john
+1. User visits https://jinnie.app/@john
 2. Clicks "Follow" button
 3. Dialog opens: "Open in Jinnie App"
 4. Clicks button
@@ -449,7 +460,7 @@ https://jinnie.co/.well-known/assetlinks.json
 **Verify Configuration:**
 ```bash
 # Check file is accessible
-curl https://jinnie.co/.well-known/apple-app-site-association
+curl https://jinnie.app/.well-known/apple-app-site-association
 
 # Expected: JSON with Team ID 474TK9U3BP
 ```
@@ -457,7 +468,7 @@ curl https://jinnie.co/.well-known/apple-app-site-association
 **Test Universal Links:**
 ```bash
 # iOS Simulator
-xcrun simctl openurl booted "https://jinnie.co/@testuser/follow"
+xcrun simctl openurl booted "https://jinnie.app/@testuser/follow"
 
 # Should open app if installed, Safari if not
 ```
@@ -474,7 +485,7 @@ xcrun simctl openurl booted "https://jinnie.co/@testuser/follow"
 **Verify Configuration:**
 ```bash
 # Check file is accessible
-curl https://jinnie.co/.well-known/assetlinks.json
+curl https://jinnie.app/.well-known/assetlinks.json
 
 # Expected: JSON with SHA-256 fingerprints
 ```
@@ -483,11 +494,11 @@ curl https://jinnie.co/.well-known/assetlinks.json
 ```bash
 # Test on device/emulator
 adb shell am start -a android.intent.action.VIEW \
-  -d "https://jinnie.co/@testuser/follow"
+  -d "https://jinnie.app/@testuser/follow"
 
 # Check verification status
 adb shell pm get-app-links com.wishlists.gifts
-# Should show: verified for jinnie.co
+# Should show: verified for jinnie.app
 ```
 
 **Test Intent URLs:**
