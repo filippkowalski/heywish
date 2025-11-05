@@ -37,13 +37,48 @@ When adding entries to this changelog:
 ## [Unreleased]
 
 ### 🎉 New Features
-- None yet
+
+**Automatic Data Refresh After Account Merge** (2025-01-05)
+- App now automatically refreshes wishlists and wishes after successful account merge
+- Users see merged content immediately without manual refresh
+- Implemented using reactive timestamp-based detection pattern
+- See `AUTHENTICATION.md` for detailed technical documentation
 
 ### ✨ Improvements
-- None yet
+
+**Enhanced Merge Detection** (2025-01-05)
+- Hybrid merge detection: checks server API first, falls back to local SQLite
+- Prevents data loss in both online and offline scenarios
+- Catches server-only wishes that haven't synced to local database yet
+- Gracefully handles network failures during merge detection
+
+**Analytics Integration** (2025-01-05)
+- Integrated Mixpanel for comprehensive analytics tracking
+- Onboarding funnel tracking with step completion metrics
+- User authentication method tracking (Google, Apple, Email)
+- Profile completion tracking with customizable user properties
+- Shopping interests and notification preference tracking
 
 ### 🐛 Bug Fixes
-- None yet
+
+**Apple Sign-In OAuth Credential** (2025-01-05)
+- Fixed "Invalid OAuth response from apple.com" error
+- Added missing `accessToken` parameter to OAuth credential
+- Apple Sign-In now works reliably on both iOS devices and simulator
+
+**Anonymous Wish Data Loss** (2025-01-05)
+- Fixed issue where anonymous wishes disappeared after signing into existing account
+- Merge detection now queries server while still authenticated as anonymous user
+- Offline fallback ensures local-only data is also detected for merge
+
+### 📚 Documentation
+
+**Authentication System Documentation** (2025-01-05)
+- Created comprehensive `AUTHENTICATION.md` documentation
+- Covers all authentication flows, account merging, and data refresh
+- Includes technical implementation details and troubleshooting guide
+- Documents hybrid merge detection algorithm and design decisions
+- See `AUTHENTICATION.md` in project root
 
 ---
 

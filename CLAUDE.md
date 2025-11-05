@@ -83,6 +83,7 @@ Review these files for context:
 - `docs/DESIGN_SYSTEM.md` - UI components and styling guidelines
 - `docs/API_SPECIFICATION.md` - Detailed description of the REST API.
 - `docs/TECHNICAL_SPEC.md` - Database schema and technical details.
+- `mobile/AUTHENTICATION.md` - **Comprehensive authentication system documentation** including authentication flows, account merging, data refresh after merge, troubleshooting, and testing guidelines.
 
 ## Database Schema
 
@@ -98,6 +99,13 @@ The PostgreSQL schema is defined in `docs/TECHNICAL_SPEC.md`. Key tables include
 2. When auth is enabled, Firebase handles email/password, Google, and Apple flows.
 3. On any Firebase authentication event, the `/api/auth/sync` endpoint creates or updates the user in PostgreSQL.
 4. Authenticated API calls include a Firebase ID token in the `Authorization` header and are verified server-side.
+
+**IMPORTANT**: For detailed information about authentication flows, account merging, data refresh patterns, and troubleshooting, see `mobile/AUTHENTICATION.md`. This document covers:
+- All authentication providers (Anonymous, Google, Apple, Email/Password)
+- Account merging flow with hybrid detection (server + local SQLite)
+- Automatic data refresh after merge using reactive timestamps
+- Error handling and recovery patterns
+- Testing procedures and troubleshooting guides
 
 ## API Structure
 
