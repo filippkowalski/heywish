@@ -79,6 +79,10 @@ export function FollowDialog({
     }
 
     const universalLink = `https://jinnie.app/@${username}/follow`;
+    const restoreTimer = setTimeout(() => {
+      setAttemptedDeepLink(false);
+      setIsRedirecting(false);
+    }, 4000);
 
     // Mobile: Use universal link navigation
     window.location.href = universalLink;
@@ -104,7 +108,14 @@ export function FollowDialog({
           setIsRedirecting(true);
           window.location.href = appStoreUrl;
         }
+        clearTimeout(restoreTimer);
       }, 2000);
+    } else {
+      // iOS: always clear the state after the restore window
+      setTimeout(() => {
+        clearTimeout(restoreTimer);
+        setAttemptedDeepLink(false);
+      }, 0);
     }
   };
 

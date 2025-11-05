@@ -38,17 +38,8 @@ Future<void> _launchExternalLink(BuildContext context, String rawUrl) async {
     return;
   }
 
-  final adjustedUri =
-      (uri.host.toLowerCase() == 'jinnie.co' ||
-              uri.host.toLowerCase() == 'www.jinnie.co')
-          ? uri.replace(scheme: 'http')
-          : uri;
-
   try {
-    final launched = await launchUrl(
-      adjustedUri,
-      mode: LaunchMode.externalApplication,
-    );
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
 
     if (!launched) {
       messenger?.showSnackBar(

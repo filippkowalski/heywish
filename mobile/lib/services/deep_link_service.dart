@@ -6,8 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'api_service.dart';
 
-const Set<String> _primaryDeepLinkHosts = {'jinnie.app', 'www.jinnie.app'};
-const Set<String> _legacyFollowHosts = {'jinnie.co', 'www.jinnie.co'};
+const Set<String> _deepLinkHosts = {'jinnie.app', 'www.jinnie.app'};
 
 /// Service for handling deep links and universal links
 ///
@@ -79,16 +78,8 @@ class DeepLinkService {
       return;
     }
 
-    final host = uri.host.toLowerCase();
-    final isPrimaryHost =
-        (uri.scheme == 'https' || uri.scheme == 'http') &&
-        _primaryDeepLinkHosts.contains(host);
-    final isLegacyFollowLink =
-        (uri.scheme == 'https' || uri.scheme == 'http') &&
-        _legacyFollowHosts.contains(host) &&
-        uri.path.startsWith('/@');
-
-    if (isPrimaryHost || isLegacyFollowLink) {
+    if ((uri.scheme == 'https' || uri.scheme == 'http') &&
+        _deepLinkHosts.contains(uri.host.toLowerCase())) {
       _handleUniversalLink(uri);
       return;
     }

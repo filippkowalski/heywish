@@ -81,18 +81,10 @@ Jinnie implements cross-platform deep linking to allow web users to seamlessly o
 
 **Deep Link Handler** (`mobile/lib/services/deep_link_service.dart`):
 ```dart
-const primaryHosts = {'jinnie.app', 'www.jinnie.app'};
-const legacyFollowHosts = {'jinnie.co', 'www.jinnie.co'};
+const hosts = {'jinnie.app', 'www.jinnie.app'};
 
-final host = uri.host.toLowerCase();
-final isPrimaryHost =
-    (uri.scheme == 'https' || uri.scheme == 'http') && primaryHosts.contains(host);
-final isLegacyFollowLink =
-    (uri.scheme == 'https' || uri.scheme == 'http') &&
-    legacyFollowHosts.contains(host) &&
-    uri.path.startsWith('/@');
-
-if (isPrimaryHost || isLegacyFollowLink) {
+if ((uri.scheme == 'https' || uri.scheme == 'http') &&
+    hosts.contains(uri.host.toLowerCase())) {
   // Parse path: /@username/follow
   final followMatch = RegExp(r'^/@([^/]+)/follow$').firstMatch(path);
   if (followMatch != null) {
