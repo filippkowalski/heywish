@@ -12,6 +12,7 @@ import 'local_database.dart';
 import 'fcm_service.dart';
 import 'onboarding_service.dart';
 import 'sync_manager.dart';
+import 'analytics_service.dart';
 import '../models/user.dart';
 import '../models/sync_entity.dart';
 import '../utils/crashlytics_logger.dart';
@@ -59,18 +60,21 @@ class AuthService extends ChangeNotifier {
   final firebase.FirebaseAuth _firebaseAuth = firebase.FirebaseAuth.instance;
   final ApiService _apiService = ApiService();
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final AnalyticsService _analyticsService = AnalyticsService();
 
   User? _currentUser;
   firebase.User? _firebaseUser;
   StreamSubscription<firebase.User?>? _authStateSubscription;
   bool _isOnboardingCompleted = false;
   Timer? _tokenRefreshTimer;
+  String? _lastAuthMethod; // Track the last auth method used
 
   User? get currentUser => _currentUser;
   firebase.User? get firebaseUser => _firebaseUser;
   bool get isAuthenticated => _firebaseUser != null;
   bool get isOnboardingCompleted => _isOnboardingCompleted;
   ApiService get apiService => _apiService;
+  String? get lastAuthMethod => _lastAuthMethod;
 
   AuthService() {
     _authStateSubscription = _firebaseAuth.authStateChanges().listen(
@@ -247,6 +251,9 @@ class AuthService extends ChangeNotifier {
   Future<AuthenticationResult> authenticateWithGoogle({bool checkMerge = true}) async {
     debugPrint('🔑 AuthService: Starting Google authentication (checkMerge: $checkMerge)');
 
+    // Track sign in attempt
+    _analyticsService.trackSignInAttempt('google');
+
     try {
       // Track if user was anonymous before auth
       final wasAnonymous = _firebaseUser?.isAnonymous ?? false;
@@ -318,10 +325,24 @@ class AuthService extends ChangeNotifier {
         username: userContext.$2,
       );
 
+      // Track successful authentication
+      if (result.isNewUser) {
+        _analyticsService.trackSignUpSuccess('google');
+      } else {
+        _analyticsService.trackSignInSuccess('google');
+      }
+
+      // Store auth method for later use in onboarding completion
+      _lastAuthMethod = 'google';
+
       debugPrint('✅ AuthService: Authentication complete - action: ${result.action}');
       return result;
     } catch (e) {
       debugPrint('❌ AuthService: Google authentication failed: $e');
+
+      // Track authentication failure
+      _analyticsService.trackSignInFailure('google', e.toString());
+
       await CrashlyticsLogger.logError(e, StackTrace.current, reason: 'Google authentication failed');
       rethrow;
     }
@@ -334,6 +355,9 @@ class AuthService extends ChangeNotifier {
   /// Set [checkMerge] to false to skip merge detection (for legacy callers)
   Future<AuthenticationResult> authenticateWithApple({bool checkMerge = true}) async {
     debugPrint('🍎 AuthService: Starting Apple authentication (checkMerge: $checkMerge)');
+
+    // Track sign in attempt
+    _analyticsService.trackSignInAttempt('apple');
 
     try {
       // Track if user was anonymous before auth
@@ -412,10 +436,24 @@ class AuthService extends ChangeNotifier {
         username: userContext.$2,
       );
 
+      // Track successful authentication
+      if (result.isNewUser) {
+        _analyticsService.trackSignUpSuccess('apple');
+      } else {
+        _analyticsService.trackSignInSuccess('apple');
+      }
+
+      // Store auth method for later use in onboarding completion
+      _lastAuthMethod = 'apple';
+
       debugPrint('✅ AuthService: Authentication complete - action: ${result.action}');
       return result;
     } catch (e) {
       debugPrint('❌ AuthService: Apple authentication failed: $e');
+
+      // Track authentication failure
+      _analyticsService.trackSignInFailure('apple', e.toString());
+
       await CrashlyticsLogger.logError(e, StackTrace.current, reason: 'Apple authentication failed');
       rethrow;
     }
@@ -494,111 +532,45 @@ class AuthService extends ChangeNotifier {
 
   /// Check if anonymous account has data worth merging
   ///
-  /// IMPORTANT: This method only checks the LOCAL SQLite cache.
-  /// If the device is offline or the cache is stale, it may incorrectly
-  /// determine no merge is needed and sign the user into the existing account,
-  /// potentially losing anonymous wishlists/wishes that exist only on the server.
+  /// IMPORTANT: This method queries the SERVER for wishlist/wish data while still
+  /// authenticated as the anonymous user. It must be called BEFORE signing into
+  /// the existing account, otherwise we lose the auth token for the anonymous user.
   ///
-  /// RISK MITIGATION: The app uses offline-first architecture with periodic
-  /// background syncs, so the cache is usually accurate. Users typically create
-  /// wishlists while online, ensuring local cache reflects server state.
-  ///
-  /// TODO (future): Consider fetching fresh user data from backend when online
-  /// to guarantee merge detection accuracy, or implement server-side merge logic.
+  /// This fixes the issue where wishes created on the server (but not saved locally)
+  /// were lost during account merge because local SQLite checks couldn't find them.
   ///
   /// Returns: (requiresMerge, anonymousFirebaseUid, hasMergeableData)
   Future<(bool, String?, bool)> _checkMergeRequirement(String firebaseUid) async {
     try {
-      final localDb = LocalDatabase();
+      debugPrint('🔍 Merge check: Querying server for firebase UID $firebaseUid');
 
-      // Query by firebase_uid (not backend UUID)
-      final anonymousUserRows = await localDb.getEntities(
-        'users',
-        where: 'firebase_uid = ?',
-        whereArgs: [firebaseUid],
-        limit: 1,
+      // Make API calls while we still have the anonymous user's token
+      // This is critical - after signing into the existing account, we lose access
+
+      // Check for wishlists
+      final wishlistsResponse = await _apiService.get('/wishlists');
+      final wishlists = (wishlistsResponse?['wishlists'] as List?) ?? [];
+
+      // Check for wishes
+      final wishesResponse = await _apiService.get('/wishes');
+      final wishes = (wishesResponse?['wishes'] as List?) ?? [];
+
+      final hasData = wishlists.isNotEmpty || wishes.isNotEmpty;
+
+      debugPrint(
+        '🔍 Merge check (server): wishlists=${wishlists.length}, wishes=${wishes.length}, hasData=$hasData',
       );
-
-      bool hasData = false;
-      String? backendUuid;
-      String? username;
-
-      if (anonymousUserRows.isNotEmpty) {
-        final anonymousUser = anonymousUserRows.first;
-        backendUuid = anonymousUser['id'];
-        username = anonymousUser['username'];
-
-        // Check for wishlists linked to this backend UUID
-        final wishlists = await localDb.getEntities(
-          'wishlists',
-          where: 'user_id = ?',
-          whereArgs: [backendUuid],
-          limit: 1,
-        );
-
-        // Check for wishes linked to this backend UUID
-        final wishes = await localDb.getEntities(
-          'wishes',
-          where: 'created_by = ?',
-          whereArgs: [backendUuid],
-          limit: 1,
-        );
-
-        hasData = (username != null && username.isNotEmpty) ||
-                  wishlists.isNotEmpty ||
-                  wishes.isNotEmpty;
-
-        debugPrint(
-          '🔍 Merge check (user row found): username=$username, wishlists=${wishlists.length}, wishes=${wishes.length}',
-        );
-      }
-
-      // Fallback: even if user row missing or no direct matches, look for any offline data
-      if (!hasData) {
-        final pendingWishlists = await localDb.getEntities(
-          'wishlists',
-          where: 'sync_state != ?',
-          whereArgs: [SyncState.synced.toString()],
-          limit: 1,
-        );
-
-        final pendingWishes = await localDb.getEntities(
-          'wishes',
-          where: 'sync_state != ?',
-          whereArgs: [SyncState.synced.toString()],
-          limit: 1,
-        );
-
-        final pendingChanges = await localDb.getEntities(
-          'change_operations',
-          where: 'synced = ?',
-          whereArgs: [0],
-          limit: 1,
-        );
-
-        if (pendingWishlists.isNotEmpty ||
-            pendingWishes.isNotEmpty ||
-            pendingChanges.isNotEmpty) {
-          hasData = true;
-          debugPrint(
-            '🔍 Merge check fallback: detected offline data (wishlists=${pendingWishlists.length}, wishes=${pendingWishes.length}, pendingChanges=${pendingChanges.length})',
-          );
-        }
-      }
-
-      if (!hasData) {
-        debugPrint('🔍 Merge check: No local data detected for firebase UID $firebaseUid');
-      }
 
       return (hasData, hasData ? firebaseUid : null, hasData);
     } catch (e) {
-      debugPrint('❌ Error checking merge requirement: $e');
+      debugPrint('❌ Error checking merge requirement from server: $e');
       await CrashlyticsLogger.logError(
         e,
         StackTrace.current,
-        reason: 'Merge check failed',
+        reason: 'Server merge check failed',
         context: {'firebase_uid': firebaseUid},
       );
+      // On error, assume no merge needed (safer than blocking sign-in)
       return (false, null, false);
     }
   }
