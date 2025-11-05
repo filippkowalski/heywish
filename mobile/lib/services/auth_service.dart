@@ -13,6 +13,7 @@ import 'fcm_service.dart';
 import 'onboarding_service.dart';
 import 'sync_manager.dart';
 import '../models/user.dart';
+import '../models/sync_entity.dart';
 import '../utils/crashlytics_logger.dart';
 
 /// Navigation action to take after authentication
@@ -365,6 +366,7 @@ class AuthService extends ChangeNotifier {
       final oauthCredential = firebase.OAuthProvider('apple.com').credential(
         idToken: appleCredential.identityToken,
         rawNonce: rawNonce,
+        accessToken: appleCredential.authorizationCode,
       );
 
       // Step 5: Perform Firebase authentication
@@ -517,38 +519,86 @@ class AuthService extends ChangeNotifier {
         limit: 1,
       );
 
-      if (anonymousUserRows.isEmpty) {
-        return (false, null, false);
+      bool hasData = false;
+      String? backendUuid;
+      String? username;
+
+      if (anonymousUserRows.isNotEmpty) {
+        final anonymousUser = anonymousUserRows.first;
+        backendUuid = anonymousUser['id'];
+        username = anonymousUser['username'];
+
+        // Check for wishlists linked to this backend UUID
+        final wishlists = await localDb.getEntities(
+          'wishlists',
+          where: 'user_id = ?',
+          whereArgs: [backendUuid],
+          limit: 1,
+        );
+
+        // Check for wishes linked to this backend UUID
+        final wishes = await localDb.getEntities(
+          'wishes',
+          where: 'created_by = ?',
+          whereArgs: [backendUuid],
+          limit: 1,
+        );
+
+        hasData = (username != null && username.isNotEmpty) ||
+                  wishlists.isNotEmpty ||
+                  wishes.isNotEmpty;
+
+        debugPrint(
+          '🔍 Merge check (user row found): username=$username, wishlists=${wishlists.length}, wishes=${wishes.length}',
+        );
       }
 
-      final anonymousUser = anonymousUserRows.first;
-      final backendUuid = anonymousUser['id'];
-      final username = anonymousUser['username'];
+      // Fallback: even if user row missing or no direct matches, look for any offline data
+      if (!hasData) {
+        final pendingWishlists = await localDb.getEntities(
+          'wishlists',
+          where: 'sync_state != ?',
+          whereArgs: [SyncState.synced.toString()],
+          limit: 1,
+        );
 
-      // Check for wishlists
-      final wishlists = await localDb.getEntities(
-        'wishlists',
-        where: 'user_id = ?',
-        whereArgs: [backendUuid],
-      );
+        final pendingWishes = await localDb.getEntities(
+          'wishes',
+          where: 'sync_state != ?',
+          whereArgs: [SyncState.synced.toString()],
+          limit: 1,
+        );
 
-      // Check for wishes
-      final wishes = await localDb.getEntities(
-        'wishes',
-        where: 'created_by = ?',
-        whereArgs: [backendUuid],
-      );
+        final pendingChanges = await localDb.getEntities(
+          'change_operations',
+          where: 'synced = ?',
+          whereArgs: [0],
+          limit: 1,
+        );
 
-      final hasData = (username != null && username.isNotEmpty) ||
-                      wishlists.isNotEmpty ||
-                      wishes.isNotEmpty;
+        if (pendingWishlists.isNotEmpty ||
+            pendingWishes.isNotEmpty ||
+            pendingChanges.isNotEmpty) {
+          hasData = true;
+          debugPrint(
+            '🔍 Merge check fallback: detected offline data (wishlists=${pendingWishlists.length}, wishes=${pendingWishes.length}, pendingChanges=${pendingChanges.length})',
+          );
+        }
+      }
 
-      debugPrint('🔍 Merge check: username=$username, wishlists=${wishlists.length}, wishes=${wishes.length}');
+      if (!hasData) {
+        debugPrint('🔍 Merge check: No local data detected for firebase UID $firebaseUid');
+      }
 
       return (hasData, hasData ? firebaseUid : null, hasData);
     } catch (e) {
       debugPrint('❌ Error checking merge requirement: $e');
-      await CrashlyticsLogger.logError(e, StackTrace.current, reason: 'Merge check failed');
+      await CrashlyticsLogger.logError(
+        e,
+        StackTrace.current,
+        reason: 'Merge check failed',
+        context: {'firebase_uid': firebaseUid},
+      );
       return (false, null, false);
     }
   }
