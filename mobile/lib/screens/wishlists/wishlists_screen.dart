@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,8 +15,10 @@ import '../../models/wish.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/cached_image.dart';
 import '../../common/widgets/native_refresh_indicator.dart';
+import '../../common/navigation/native_page_route.dart';
 import '../../common/utils/wish_category_detector.dart';
 import 'add_wish_screen.dart';
+import 'edit_wishlist_screen.dart';
 import 'wish_detail_screen.dart';
 
 Future<void> _launchExternalLink(BuildContext context, String rawUrl) async {
@@ -624,7 +625,12 @@ class _WishlistsScreenState extends State<WishlistsScreen>
                 },
                 onLongPress: () {
                   // Navigate to edit wishlist on long press
-                  context.push('/wishlists/${wishlist.id}/edit');
+                  // Use Navigator (not GoRouter) from IndexedStack tab
+                  Navigator.of(context).push(
+                    NativePageRoute(
+                      child: EditWishlistScreen(wishlistId: wishlist.id),
+                    ),
+                  );
                 },
               ),
             );

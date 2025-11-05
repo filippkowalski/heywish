@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart';
 import '../../services/friends_service.dart';
 import '../../services/auth_service.dart';
 import '../../models/friend.dart';
@@ -11,6 +10,8 @@ import '../../models/friendship_enums.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/cached_image.dart';
 import '../../common/widgets/native_refresh_indicator.dart';
+import '../../common/navigation/native_page_route.dart';
+import '../profile/public_profile_screen.dart';
 
 class FriendsScreen extends StatefulWidget {
   final VoidCallback? onNavigateToSearch;
@@ -833,7 +834,14 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
         ),
         trailing: _buildFriendshipButton(user),
         onTap: user.isFriend
-          ? () => context.push('/profile/${user.username}')
+          ? () {
+              // Navigate using Navigator (not GoRouter) from profile navigation chain
+              Navigator.of(context).push(
+                NativePageRoute(
+                  child: PublicProfileScreen(username: user.username),
+                ),
+              );
+            }
           : null,
       ),
     );
@@ -1061,8 +1069,12 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
         ),
         trailing: Icon(Icons.chevron_right),
         onTap: () {
-          // Navigate to friend's profile page
-          context.push('/profile/${friend.username}');
+          // Navigate using Navigator (not GoRouter) from profile navigation chain
+          Navigator.of(context).push(
+            NativePageRoute(
+              child: PublicProfileScreen(username: friend.username),
+            ),
+          );
         },
       ),
     );
@@ -1106,7 +1118,14 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
           ],
         ),
         onTap: request.requesterUsername != null
-            ? () => context.push('/profile/${request.requesterUsername}')
+            ? () {
+                // Navigate using Navigator (not GoRouter) from profile navigation chain
+                Navigator.of(context).push(
+                  NativePageRoute(
+                    child: PublicProfileScreen(username: request.requesterUsername!),
+                  ),
+                );
+              }
             : null,
       ),
     );
@@ -1177,7 +1196,14 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
           ],
         ),
         onTap: request.addresseeUsername != null
-            ? () => context.push('/profile/${request.addresseeUsername}')
+            ? () {
+                // Navigate using Navigator (not GoRouter) from profile navigation chain
+                Navigator.of(context).push(
+                  NativePageRoute(
+                    child: PublicProfileScreen(username: request.addresseeUsername!),
+                  ),
+                );
+              }
             : null,
       ),
     );
