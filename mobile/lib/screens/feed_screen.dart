@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../common/widgets/skeleton_loading.dart';
 import '../common/widgets/native_refresh_indicator.dart';
+import '../common/navigation/native_page_route.dart';
 import '../services/api_service.dart' hide Friend;
 import '../services/auth_service.dart';
 import '../services/friends_service.dart';
@@ -13,6 +13,7 @@ import '../models/friend.dart';
 import '../widgets/cached_image.dart';
 import 'wishlists/add_wish_screen.dart';
 import 'feed_wish_detail_screen.dart';
+import 'profile/public_profile_screen.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class FeedScreen extends StatefulWidget {
@@ -742,8 +743,12 @@ class _FeedScreenState extends State<FeedScreen> {
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: () {
-          // Navigate to user profile
-          context.push('/profile/${user.username}');
+          // Navigate to user profile using Navigator (not GoRouter) from IndexedStack tab
+          Navigator.of(context).push(
+            NativePageRoute(
+              child: PublicProfileScreen(username: user.username),
+            ),
+          );
         },
         borderRadius: BorderRadius.circular(12),
         child: Container(
@@ -841,7 +846,12 @@ class _FeedScreenState extends State<FeedScreen> {
                 // Clickable avatar
                 GestureDetector(
                   onTap: () {
-                    context.push('/profile/${item.friendUsername}');
+                    // Navigate using Navigator (not GoRouter) from IndexedStack tab
+                    Navigator.of(context).push(
+                      NativePageRoute(
+                        child: PublicProfileScreen(username: item.friendUsername),
+                      ),
+                    );
                   },
                   child: CircleAvatar(
                     radius: 20,
@@ -880,7 +890,12 @@ class _FeedScreenState extends State<FeedScreen> {
                       // Clickable username
                       GestureDetector(
                         onTap: () {
-                          context.push('/profile/${item.friendUsername}');
+                          // Navigate using Navigator (not GoRouter) from IndexedStack tab
+                          Navigator.of(context).push(
+                            NativePageRoute(
+                              child: PublicProfileScreen(username: item.friendUsername),
+                            ),
+                          );
                         },
                         child: RichText(
                           text: TextSpan(
@@ -1077,8 +1092,12 @@ class _FeedScreenState extends State<FeedScreen> {
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: () {
-          // Navigate to friend's profile
-          context.push('/profile/${friend.username}');
+          // Navigate using Navigator (not GoRouter) from IndexedStack tab
+          Navigator.of(context).push(
+            NativePageRoute(
+              child: PublicProfileScreen(username: friend.username),
+            ),
+          );
         },
         borderRadius: BorderRadius.circular(12),
         child: Container(

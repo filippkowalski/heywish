@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
 import '../../services/api_service.dart';
@@ -235,13 +234,7 @@ class _PublicWishlistDetailScreenState extends State<PublicWishlistDetailScreen>
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: AppTheme.primary,
-          ),
-          onPressed: () => context.pop(),
-        ),
+        // Let Flutter/GoRouter handle back navigation automatically
         title: _wishlistData != null
             ? Text(
                 _wishlistData!['name'] ?? 'wishlist.title'.tr(),

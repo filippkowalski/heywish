@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../theme/app_theme.dart';
@@ -11,8 +10,10 @@ import '../../services/auth_service.dart';
 import '../../models/friendship_enums.dart';
 import '../../common/widgets/skeleton_loading.dart';
 import '../../common/widgets/native_refresh_indicator.dart';
+import '../../common/navigation/native_page_route.dart';
 import '../../widgets/cached_image.dart' show CachedAvatarImage, CachedImageWidget;
 import '../../common/utils/wish_category_detector.dart';
+import 'public_wishlist_detail_screen.dart';
 
 class PublicProfileScreen extends StatefulWidget {
   final String username;
@@ -33,6 +34,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Map<String, dynamic>? _userData;
   List<dynamic> _wishlists = [];
   bool _isSendingRequest = false;
+  bool _disposed = false; // Track if widget is disposed
 
   // Friendship status
   bool _isAlreadyFriend = false;
@@ -48,12 +50,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
   @override
   void dispose() {
+    _disposed = true; // Mark as disposed to cancel async operations
     super.dispose();
   }
 
   Future<void> _loadProfile() async {
     try {
-      if (!mounted) return;
+      if (_disposed || !mounted) return;
 
       setState(() {
         _isLoading = true;
@@ -62,9 +65,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
       final response = await _api.get('/public/users/${widget.username}');
 
-      if (!mounted) return;
+      if (_disposed || !mounted) return;
 
       if (response == null) {
+        if (_disposed || !mounted) return;
         setState(() {
           _error = 'errors.not_found'.tr();
           _isLoading = false;
@@ -72,7 +76,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         return;
       }
 
-      if (!mounted) return;
+      if (_disposed || !mounted) return;
 
       setState(() {
         _userData = response['user'];
@@ -82,9 +86,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
       // Check friendship status in background (non-blocking)
       // This allows the profile to render immediately while friends data loads
-      _checkFriendshipStatus();
+      if (!_disposed && mounted) {
+        _checkFriendshipStatus();
+      }
     } catch (error) {
-      if (!mounted) return;
+      if (_disposed || !mounted) return;
 
       setState(() {
         _error = error.toString();
@@ -94,16 +100,17 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   }
 
   Future<void> _checkFriendshipStatus() async {
+    if (_disposed || !mounted) return;
+
     final authService = context.read<AuthService>();
     final friendsService = context.read<FriendsService>();
 
     // Check if viewing own profile
     if (authService.currentUser?.username == widget.username) {
-      if (mounted) {
-        setState(() {
-          _isOwnProfile = true;
-        });
-      }
+      if (_disposed || !mounted) return;
+      setState(() {
+        _isOwnProfile = true;
+      });
       return;
     }
 
@@ -115,7 +122,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       // This ensures we have up-to-date friendship information
       await friendsService.loadAllData(forceRefresh: true);
 
-      if (!mounted) return;
+      if (_disposed || !mounted) return;
 
       // Check if already friends
       _isAlreadyFriend = friendsService.friends.any((friend) => friend.id == userId);
@@ -130,13 +137,14 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         (request) => request.requesterId == userId && request.isPending,
       );
 
-      if (!mounted) return;
+      if (_disposed || !mounted) return;
 
       setState(() {});
     }
   }
 
   Future<void> _sendFriendRequest() async {
+    if (_disposed || !mounted) return;
     if (_userData == null || _userData!['id'] == null) return;
 
     // Check if user is anonymous
@@ -146,7 +154,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       return;
     }
 
-    if (!mounted) return;
+    if (_disposed || !mounted) return;
 
     setState(() {
       _isSendingRequest = true;
@@ -156,32 +164,45 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       final friendsService = context.read<FriendsService>();
       await friendsService.sendFriendRequest(_userData!['id']);
 
+      if (_disposed || !mounted) return;
+
       // Refresh friendship status
       await friendsService.getFriendRequests(
         type: FriendRequestType.sent.toJson(),
         forceRefresh: true,
       );
+
+      if (_disposed || !mounted) return;
+
       await _checkFriendshipStatus();
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('friends.request_sent'.tr(namedArgs: {'name': _userData!['username'] ?? 'User'})),
-            backgroundColor: Colors.green.shade600,
-          ),
-        );
-      }
+      if (_disposed || !mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('friends.request_sent'.tr(namedArgs: {'name': _userData!['username'] ?? 'User'})),
+          backgroundColor: Colors.green.shade600,
+        ),
+      );
     } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('friends.error_sending_request'.tr()),
-            backgroundColor: Colors.red.shade600,
-          ),
-        );
+      if (_disposed || !mounted) {
+        // Still need to reset state even on error
+        if (mounted && !_disposed) {
+          setState(() {
+            _isSendingRequest = false;
+          });
+        }
+        return;
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('friends.error_sending_request'.tr()),
+          backgroundColor: Colors.red.shade600,
+        ),
+      );
     } finally {
-      if (mounted) {
+      if (mounted && !_disposed) {
         setState(() {
           _isSendingRequest = false;
         });
@@ -357,11 +378,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   }
 
   Future<void> _linkWithGoogle() async {
+    if (_disposed || !mounted) return;
+
     try {
       final authService = context.read<AuthService>();
       await authService.linkWithGoogle();
 
-      if (!mounted) return;
+      if (_disposed || !mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -373,7 +396,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       // Refresh the profile to update friendship status
       await _loadProfile();
     } catch (error) {
-      if (!mounted) return;
+      if (_disposed || !mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -385,11 +408,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   }
 
   Future<void> _linkWithApple() async {
+    if (_disposed || !mounted) return;
+
     try {
       final authService = context.read<AuthService>();
       await authService.linkWithApple();
 
-      if (!mounted) return;
+      if (_disposed || !mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -401,7 +426,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       // Refresh the profile to update friendship status
       await _loadProfile();
     } catch (error) {
-      if (!mounted) return;
+      if (_disposed || !mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -413,9 +438,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   }
 
   Future<void> _cancelFriendRequest() async {
+    if (_disposed || !mounted) return;
     if (_userData == null || _userData!['id'] == null) return;
-
-    if (!mounted) return;
 
     setState(() {
       _isSendingRequest = true;
@@ -425,27 +449,29 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       final friendsService = context.read<FriendsService>();
       await friendsService.cancelFriendRequest(_userData!['id']);
 
+      if (_disposed || !mounted) return;
+
       // Refresh friendship status
       await _checkFriendshipStatus();
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('friends.request_cancelled'.tr()),
-            backgroundColor: Colors.orange.shade600,
-          ),
-        );
-      }
+      if (_disposed || !mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('friends.request_cancelled'.tr()),
+          backgroundColor: Colors.orange.shade600,
+        ),
+      );
     } catch (error) {
-      // If the request doesn't exist or was already processed,
-      // just refresh the status instead of showing an error
-      final errorMessage = error.toString().toLowerCase();
-      if (errorMessage.contains('not found') || errorMessage.contains('already processed')) {
-        // Silently refresh the friendship status
-        await _checkFriendshipStatus();
-      } else {
-        // Show error for other types of failures
-        if (mounted) {
+      if (!(_disposed || !mounted)) {
+        // If the request doesn't exist or was already processed,
+        // just refresh the status instead of showing an error
+        final errorMessage = error.toString().toLowerCase();
+        if (errorMessage.contains('not found') || errorMessage.contains('already processed')) {
+          // Silently refresh the friendship status
+          await _checkFriendshipStatus();
+        } else {
+          // Show error for other types of failures
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('friends.error_cancelling_request'.tr()),
@@ -455,7 +481,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         }
       }
     } finally {
-      if (mounted) {
+      if (mounted && !_disposed) {
         setState(() {
           _isSendingRequest = false;
         });
@@ -474,17 +500,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         iconTheme: const IconThemeData(
           color: Colors.black,
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            // Use post-frame callback to avoid navigator lock issues
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted && context.canPop()) {
-                context.pop();
-              }
-            });
-          },
-        ),
+        // Let Flutter/GoRouter handle back navigation automatically
+        // Custom back handlers cause Navigator state corruption with IndexedStack + GoRouter
       ),
       body: _isLoading
           ? _buildLoadingState()
@@ -966,9 +983,16 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
     return GestureDetector(
       onTap: () {
-        // Navigate to wishlist detail
+        // Navigate to wishlist detail using Navigator (not GoRouter) from profile screen
         if (wishlistId != null) {
-          context.push('/profile/${widget.username}/wishlist/$wishlistId');
+          Navigator.of(context).push(
+            NativePageRoute(
+              child: PublicWishlistDetailScreen(
+                username: widget.username,
+                wishlistId: wishlistId,
+              ),
+            ),
+          );
         }
       },
       child: Container(
