@@ -6,6 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Jinnie** is our brand name, inspired by genies and djinn from mythology. The name was chosen for several strategic reasons:
 
+Instructions:
+- Run 'flutter analyze' everytime you do some bigger change to verify that the build will build, same applies for web with npm build, especially before we push changes to the repository (auto-build)
+
 ### Why "Jinnie"?
 
 1. **Sound and Feel**:
