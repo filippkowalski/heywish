@@ -90,7 +90,7 @@ class _FeedScreenState extends State<FeedScreen> {
         _isSearching = false;
       });
     } catch (e) {
-      print('Error searching users: $e');
+      debugPrint('Error searching users: $e');
       setState(() {
         _searchResults = [];
         _isSearching = false;
@@ -135,6 +135,8 @@ class _FeedScreenState extends State<FeedScreen> {
               }
             }
 
+            final wishUrl = activity.data['wish_url'] ?? activity.data['url'];
+
             feedItems.add(FeedItem(
               id: activity.id,
               friendName: activity.fullName ?? activity.username,
@@ -148,7 +150,7 @@ class _FeedScreenState extends State<FeedScreen> {
               action: 'added to wishlist',
               wishId: activity.data['wish_id'],
               wishlistId: activity.data['wishlist_id'],
-              wishUrl: activity.data['wish_url'] ?? activity.data['url'],
+              wishUrl: wishUrl,
               wishDescription: activity.data['wish_description'] ?? activity.data['description'],
             ));
           }
@@ -234,8 +236,8 @@ class _FeedScreenState extends State<FeedScreen> {
         }
       }
     } catch (error, stackTrace) {
-      print('Error loading Jinnie feed: $error');
-      print('Stack trace: $stackTrace');
+      debugPrint('Error loading Jinnie feed: $error');
+      debugPrint('Stack trace: $stackTrace');
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 
 class ShareHandlerService {
   static final ShareHandlerService _instance = ShareHandlerService._internal();
