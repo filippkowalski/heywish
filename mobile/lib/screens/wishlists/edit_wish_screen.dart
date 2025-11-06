@@ -369,6 +369,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
                             fontWeight: FontWeight.w600,
                             maxLines: 2,
                             textCapitalization: TextCapitalization.words,
+                            autofocus: _titleController.text.isEmpty,
                           ),
                         ),
                       ],
@@ -629,12 +630,14 @@ class _EditWishScreenState extends State<EditWishScreen> {
     TextCapitalization textCapitalization = TextCapitalization.none,
     TextInputType? keyboardType,
     Color? textColor,
+    bool autofocus = false,
   }) {
     return Material(
       color: Colors.transparent,
       child: TextField(
         controller: controller,
         focusNode: focusNode,
+        autofocus: autofocus,
         style: TextStyle(
           fontSize: fontSize,
           fontWeight: fontWeight,
