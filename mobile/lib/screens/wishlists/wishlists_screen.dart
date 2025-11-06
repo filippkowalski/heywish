@@ -528,10 +528,6 @@ class _WishlistsScreenState extends State<WishlistsScreen>
       }
     }
 
-    if (filteredWishes.isEmpty) {
-      return _buildEmptyWishesState();
-    }
-
     return CustomScrollView(
       slivers: [
         // Share banner (show after 3+ items and if not dismissed)
@@ -554,38 +550,46 @@ class _WishlistsScreenState extends State<WishlistsScreen>
                 _buildWishlistTabs(filteredWishlists, unsortedWishes.length),
           ),
 
-        // Wishes masonry grid
-        SliverPadding(
-          padding: const EdgeInsets.all(16.0),
-          sliver: SliverMasonryGrid.count(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childCount: filteredWishes.length,
-            itemBuilder: (context, index) {
-              final wish = filteredWishes[index];
-              Wishlist? wishlist;
-              if (wish.wishlistId != null) {
-                try {
-                  wishlist = filteredWishlists.firstWhere(
-                    (w) => w.id == wish.wishlistId,
-                  );
-                } catch (e) {
-                  wishlist = null;
+        // Show either wishes grid or empty state
+        if (filteredWishes.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: _buildEmptyWishesStateContent(),
+          )
+        else ...[
+          // Wishes masonry grid
+          SliverPadding(
+            padding: const EdgeInsets.all(16.0),
+            sliver: SliverMasonryGrid.count(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childCount: filteredWishes.length,
+              itemBuilder: (context, index) {
+                final wish = filteredWishes[index];
+                Wishlist? wishlist;
+                if (wish.wishlistId != null) {
+                  try {
+                    wishlist = filteredWishlists.firstWhere(
+                      (w) => w.id == wish.wishlistId,
+                    );
+                  } catch (e) {
+                    wishlist = null;
+                  }
                 }
-              }
-              return _MasonryWishCard(wish: wish, wishlist: wishlist);
-            },
+                return _MasonryWishCard(wish: wish, wishlist: wishlist);
+              },
+            ),
           ),
-        ),
 
-        // Wishlist valuation at bottom of scrollable list
-        if ((wishlists.isNotEmpty || unsortedWishes.isNotEmpty) &&
-            filteredWishes.isNotEmpty)
-          SliverToBoxAdapter(child: _buildWishlistValuation(filteredWishes)),
+          // Wishlist valuation at bottom of scrollable list
+          if ((wishlists.isNotEmpty || unsortedWishes.isNotEmpty) &&
+              filteredWishes.isNotEmpty)
+            SliverToBoxAdapter(child: _buildWishlistValuation(filteredWishes)),
 
-        // Extra padding at the bottom for better UX
-        const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
+          // Extra padding at the bottom for better UX
+          const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
+        ],
       ],
     );
   }
@@ -753,7 +757,7 @@ class _WishlistsScreenState extends State<WishlistsScreen>
     );
   }
 
-  Widget _buildEmptyWishesState() {
+  Widget _buildEmptyWishesStateContent() {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40.0),
