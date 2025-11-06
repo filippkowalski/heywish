@@ -81,13 +81,27 @@ class WishlistService extends ChangeNotifier {
         final wishlistsJson = wishlistsResponse['wishlists'] as List;
 
         // Parse wishlists off main thread if we have many items
+        List<Wishlist> parsedWishlists;
         if (wishlistsJson.length > 10) {
-          _wishlists = await compute(_parseWishlistsInIsolate, wishlistsJson);
+          parsedWishlists =
+              await compute(_parseWishlistsInIsolate, wishlistsJson);
         } else {
-          _wishlists = wishlistsJson
+          parsedWishlists = wishlistsJson
               .map((json) => Wishlist.fromJson(json))
               .toList();
         }
+
+        // Filter out synthetic "All Wishes" wishlist injected by backend
+        final syntheticCount =
+            parsedWishlists.where((w) => w.isSynthetic).length;
+        if (syntheticCount > 0) {
+          debugPrint(
+            '📋 WishlistService: filtered $syntheticCount synthetic wishlists',
+          );
+        }
+
+        _wishlists =
+            parsedWishlists.where((wishlist) => !wishlist.isSynthetic).toList();
 
         print('📋 WishlistService: Parsed ${_wishlists.length} wishlists');
       } else {
@@ -179,6 +193,12 @@ class WishlistService extends ChangeNotifier {
     String? visibility,
     String? coverImageUrl,
   }) async {
+    // Prevent updating synthetic "All Wishes" wishlist
+    if (id == 'uncategorized') {
+      debugPrint('Cannot update synthetic wishlist');
+      return false;
+    }
+
     try {
       final data = <String, dynamic>{};
       if (name != null) data['name'] = name;
@@ -206,6 +226,12 @@ class WishlistService extends ChangeNotifier {
   }
   
   Future<bool> deleteWishlist(String id) async {
+    // Prevent deleting synthetic "All Wishes" wishlist
+    if (id == 'uncategorized') {
+      debugPrint('Cannot delete synthetic wishlist');
+      return false;
+    }
+
     try {
       await _apiService.delete('/wishlists/$id');
 

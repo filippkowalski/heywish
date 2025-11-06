@@ -21,7 +21,9 @@ class WishlistSelectorBottomSheet {
   }) async {
     final wishlistService = context.read<WishlistService>();
     await wishlistService.fetchWishlists();
-    final wishlists = wishlistService.wishlists;
+    final allWishlists = wishlistService.wishlists;
+    // Filter out synthetic "All Wishes" wishlist
+    final wishlists = allWishlists.where((w) => !w.isSynthetic).toList();
 
     if (wishlists.isEmpty) {
       return null;
@@ -62,7 +64,9 @@ class WishlistSelectorBottomSheet {
   }) async {
     final wishlistService = context.read<WishlistService>();
     await wishlistService.fetchWishlists();
-    final wishlists = wishlistService.wishlists;
+    final allWishlists = wishlistService.wishlists;
+    // Filter out synthetic "All Wishes" wishlist
+    final wishlists = allWishlists.where((w) => !w.isSynthetic).toList();
 
     if (wishlists.isEmpty) {
       return null;

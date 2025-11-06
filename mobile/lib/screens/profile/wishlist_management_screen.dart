@@ -89,7 +89,9 @@ class _WishlistManagementScreenState extends State<WishlistManagementScreen> {
   @override
   Widget build(BuildContext context) {
     final wishlistService = context.watch<WishlistService>();
-    final wishlists = wishlistService.wishlists;
+    final allWishlists = wishlistService.wishlists;
+    // Filter out synthetic "All Wishes" wishlist
+    final wishlists = allWishlists.where((w) => !w.isSynthetic).toList();
 
     return Scaffold(
       backgroundColor: Colors.white,

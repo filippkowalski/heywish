@@ -501,6 +501,8 @@ class _WishlistsScreenState extends State<WishlistsScreen>
     final authService = context.watch<AuthService>();
     final allWishes = wishlistService.allWishes;
     final unsortedWishes = wishlistService.unsortedWishes;
+    final filteredWishlists =
+        wishlists.where((wishlist) => !wishlist.isSynthetic).toList();
 
     // Filter wishes by selected wishlist
     final filteredWishes =
@@ -518,7 +520,7 @@ class _WishlistsScreenState extends State<WishlistsScreen>
     Wishlist? selectedWishlist;
     if (_selectedWishlistFilter != null) {
       try {
-        selectedWishlist = wishlists.firstWhere(
+        selectedWishlist = filteredWishlists.firstWhere(
           (w) => w.id == _selectedWishlistFilter,
         );
       } catch (e) {
@@ -546,9 +548,10 @@ class _WishlistsScreenState extends State<WishlistsScreen>
           ),
 
         // Tabs for filtering by wishlist
-        if (wishlists.isNotEmpty || unsortedWishes.isNotEmpty)
+        if (filteredWishlists.isNotEmpty || unsortedWishes.isNotEmpty)
           SliverToBoxAdapter(
-            child: _buildWishlistTabs(wishlists, unsortedWishes.length),
+            child:
+                _buildWishlistTabs(filteredWishlists, unsortedWishes.length),
           ),
 
         // Wishes masonry grid
@@ -564,7 +567,7 @@ class _WishlistsScreenState extends State<WishlistsScreen>
               Wishlist? wishlist;
               if (wish.wishlistId != null) {
                 try {
-                  wishlist = wishlists.firstWhere(
+                  wishlist = filteredWishlists.firstWhere(
                     (w) => w.id == wish.wishlistId,
                   );
                 } catch (e) {
@@ -608,8 +611,8 @@ class _WishlistsScreenState extends State<WishlistsScreen>
             },
           ),
           const SizedBox(width: 8),
-          // Wishlist tabs
-          ...wishlists.map((wishlist) {
+          // Wishlist tabs (filter out synthetic "All Wishes" wishlist)
+          ...wishlists.where((w) => !w.isSynthetic).map((wishlist) {
             final wishCount =
                 wishlistService.getWishesForWishlist(wishlist.id).length;
             return Padding(
@@ -624,6 +627,9 @@ class _WishlistsScreenState extends State<WishlistsScreen>
                   });
                 },
                 onLongPress: () {
+                  if (wishlist.isSynthetic) {
+                    return;
+                  }
                   // Navigate to edit wishlist on long press
                   // Use Navigator (not GoRouter) from IndexedStack tab
                   Navigator.of(context).push(
@@ -1357,8 +1363,8 @@ class _ShareBottomSheetState extends State<_ShareBottomSheet> {
                         ),
                       ),
 
-                      // Wishlist Items
-                      ...widget.wishlists.map((wishlist) {
+                      // Wishlist Items (filter out synthetic "All Wishes" wishlist)
+                      ...widget.wishlists.where((w) => !w.isSynthetic).map((wishlist) {
                         final wishlistUrl =
                             'jinnie.co/${widget.username}/${wishlist.name.toLowerCase().replaceAll(' ', '-')}';
                         final isPrivate = wishlist.visibility == 'private';

@@ -31,6 +31,10 @@ class Wishlist {
 
   bool get isPublic => visibility == 'public';
 
+  /// Returns true if this is a synthetic "All Wishes" wishlist created by the backend
+  /// for uncategorized wishes. This wishlist should not be edited or deleted.
+  bool get isSynthetic => id == 'uncategorized';
+
   factory Wishlist.fromJson(Map<String, dynamic> json) {
     return Wishlist(
       id: json['id'].toString(),

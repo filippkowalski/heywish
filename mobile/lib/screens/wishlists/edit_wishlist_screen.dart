@@ -59,6 +59,17 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
     _wishlist = wishlistService.getCachedWishlist(widget.wishlistId);
 
     if (_wishlist != null) {
+      // Prevent editing synthetic "All Wishes" wishlist
+      if (_wishlist!.isSynthetic) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _showErrorMessage('Cannot edit this wishlist');
+            Navigator.of(context).pop();
+          }
+        });
+        return;
+      }
+
       _titleController.text = _wishlist!.name;
       _descriptionController.text = _wishlist!.description ?? '';
       _selectedVisibility = _wishlist!.visibility;
@@ -68,6 +79,12 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
   }
 
   Future<void> _saveWishlist() async {
+    // Prevent saving synthetic "All Wishes" wishlist
+    if (_wishlist?.isSynthetic == true) {
+      _showErrorMessage('Cannot edit this wishlist');
+      return;
+    }
+
     final title = _titleController.text.trim();
     if (title.isEmpty) {
       _showErrorMessage('wishlist.name_required'.tr());
