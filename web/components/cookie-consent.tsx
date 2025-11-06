@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { initializeAnalytics } from "@/lib/firebase";
@@ -93,13 +94,13 @@ export function CookieConsent() {
             </p>
             <p className="text-xs text-muted-foreground">
               See our{" "}
-              <a href="/privacy" className="underline hover:text-foreground">
+              <Link href="/privacy" className="underline hover:text-foreground">
                 Privacy Policy
-              </a>
+              </Link>
               {" "}and{" "}
-              <a href="/affiliate-disclosure" className="underline hover:text-foreground">
+              <Link href="/affiliate-disclosure" className="underline hover:text-foreground">
                 Affiliate Disclosure
-              </a>
+              </Link>
               {" "}for details.
             </p>
             <div className="flex gap-2">

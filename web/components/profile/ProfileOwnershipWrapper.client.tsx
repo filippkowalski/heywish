@@ -20,7 +20,7 @@ interface OwnershipContextValue {
   isOwner: boolean;
   openNewWishlist: () => void;
   openNewWish: (wishlistId?: string | null) => void;
-  openEditWish: (wish: Wish, wishlistId: string) => void;
+  openEditWish: (wish: Wish, wishlistId?: string) => void;
   openDeleteWish: (wish: Wish) => void;
   openEditWishlist: (wishlist: Wishlist) => void;
   openDeleteWishlist: (wishlist: Wishlist) => void;
@@ -44,7 +44,7 @@ export function ProfileOwnershipWrapper({
   const [showNewWishlist, setShowNewWishlist] = useState(false);
   const [showNewWish, setShowNewWish] = useState(false);
   const [newWishWishlistId, setNewWishWishlistId] = useState<string | null>(null);
-  const [editingWish, setEditingWish] = useState<{ wish: Wish; wishlistId: string } | null>(null);
+  const [editingWish, setEditingWish] = useState<{ wish: Wish; wishlistId?: string } | null>(null);
   const [deletingWish, setDeletingWish] = useState<Wish | null>(null);
   const [editingWishlist, setEditingWishlist] = useState<Wishlist | null>(null);
   const [deletingWishlist, setDeletingWishlist] = useState<Wishlist | null>(null);
@@ -75,7 +75,7 @@ export function ProfileOwnershipWrapper({
       setNewWishWishlistId(wishlistId || null);
       setShowNewWish(true);
     },
-    openEditWish: (wish: Wish, wishlistId: string) => setEditingWish({ wish, wishlistId }),
+    openEditWish: (wish: Wish, wishlistId?: string) => setEditingWish({ wish, wishlistId }),
     openDeleteWish: (wish: Wish) => setDeletingWish(wish),
     openEditWishlist: (wishlist: Wishlist) => setEditingWishlist(wishlist),
     openDeleteWishlist: (wishlist: Wishlist) => setDeletingWishlist(wishlist),

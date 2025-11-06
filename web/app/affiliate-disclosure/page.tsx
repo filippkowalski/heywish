@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Affiliate Disclosure - Jinnie',
@@ -103,7 +104,7 @@ export default function AffiliateDisclosure() {
               <li>You can manage cookies through your browser settings, though this may affect the functionality of some merchant websites</li>
             </ul>
             <p className="text-gray-700">
-              For more information about how we handle your data, please see our <a href="/privacy" className="text-blue-600 hover:text-blue-800 underline">Privacy Policy</a>.
+              For more information about how we handle your data, please see our <Link href="/privacy" className="text-blue-600 hover:text-blue-800 underline">Privacy Policy</Link>.
             </p>
           </section>
 

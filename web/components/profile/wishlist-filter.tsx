@@ -22,6 +22,9 @@ export function WishlistFilter({
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
+  // Filter out synthetic "All Wishes" wishlist (uncategorized)
+  const realWishlists = wishlists.filter(w => w.id !== 'uncategorized');
+
   const updateScrollIndicators = () => {
     if (!scrollContainerRef.current) return;
 
@@ -103,8 +106,8 @@ export function WishlistFilter({
                 ref={scrollContainerRef}
                 className="flex items-center gap-3 py-3 overflow-x-auto scrollbar-hide"
               >
-            {/* All filter - only show if there are multiple wishlists */}
-            {wishlists.length > 1 && (
+            {/* All filter - only show if there are multiple real wishlists */}
+            {realWishlists.length > 1 && (
               <button
                 onClick={() => onFilterChange(null)}
                 className={`
@@ -120,8 +123,8 @@ export function WishlistFilter({
               </button>
             )}
 
-            {/* Wishlist filters */}
-            {wishlists.map((wishlist) => {
+            {/* Wishlist filters - only show real wishlists, not synthetic ones */}
+            {realWishlists.map((wishlist) => {
               const wishCount =
                 wishlist.wishes?.length ?? wishlist.items?.length ?? wishlist.wishCount ?? 0;
               const isSelected = selectedWishlistId === wishlist.id;

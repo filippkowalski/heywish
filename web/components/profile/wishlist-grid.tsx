@@ -189,8 +189,12 @@ function WishListViewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
 export function WishlistGrid({ wishlists, username, initialWishlistId }: WishlistGridProps) {
   const searchParams = useSearchParams();
   const ownership = useOwnership();
-  // Auto-select first wishlist if only one exists, otherwise default to "All" (null)
-  const defaultSelection = initialWishlistId ?? (wishlists.length === 1 ? wishlists[0].id : null);
+
+  // Filter out synthetic "All Wishes" wishlist for selection logic
+  const realWishlists = wishlists.filter(w => w.id !== 'uncategorized');
+
+  // Auto-select first real wishlist if only one exists, otherwise default to "All" (null)
+  const defaultSelection = initialWishlistId ?? (realWishlists.length === 1 ? realWishlists[0].id : null);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(defaultSelection);
   const [detailOpen, setDetailOpen] = useState(false);
   const [activePreview, setActivePreview] = useState<{ wish: Wish; wishlist: Wishlist } | null>(null);
@@ -419,7 +423,11 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
             <Button
               variant="outline"
               onClick={() => {
-                ownership.openEditWish(activePreview.wish, activePreview.wishlist.id);
+                // Pass null for uncategorized synthetic wishlist instead of 'uncategorized' ID
+                const wishlistId = activePreview.wishlist.id === 'uncategorized'
+                  ? undefined
+                  : activePreview.wishlist.id;
+                ownership.openEditWish(activePreview.wish, wishlistId);
                 close();
               }}
               className="flex-1 h-11 sm:h-12 text-base font-medium gap-2"
