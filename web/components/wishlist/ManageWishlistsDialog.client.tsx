@@ -27,6 +27,8 @@ export function ManageWishlistsDialog({
   onEdit,
   onDelete,
 }: ManageWishlistsDialogProps) {
+  // Filter out synthetic "All Wishes" wishlist (uncategorized)
+  const realWishlists = wishlists.filter(w => w.id !== 'uncategorized');
 
   const getVisibilityIcon = (visibility: string) => {
     switch (visibility) {
@@ -65,14 +67,14 @@ export function ManageWishlistsDialog({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto py-4 px-2">
-          {wishlists.length === 0 ? (
+          {realWishlists.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <p>No wishlists yet</p>
               <p className="text-sm mt-1">Create your first wishlist to get started</p>
             </div>
           ) : (
             <div className="space-y-3 px-2">
-              {wishlists.map((wishlist) => {
+              {realWishlists.map((wishlist) => {
                 const wishCount = wishlist.wishes?.length ?? wishlist.items?.length ?? wishlist.wishCount ?? 0;
 
                 return (

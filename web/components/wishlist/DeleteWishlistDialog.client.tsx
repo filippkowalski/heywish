@@ -28,6 +28,13 @@ export function DeleteWishlistDialog({ open, onOpenChange, wishlist, onSuccess }
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
+    // Prevent deletion of synthetic "All Wishes" wishlist
+    if (wishlist.id === 'uncategorized') {
+      toast.error('Cannot delete this wishlist');
+      onOpenChange(false);
+      return;
+    }
+
     setIsDeleting(true);
 
     try {

@@ -18,14 +18,16 @@ import { compressWishImage } from '@/lib/utils/imageCompression';
 import { uploadToR2 } from '@/lib/utils/upload';
 import { wishSchema, type WishFormData } from '@/lib/utils/validation';
 import type { Wish, Wishlist } from '@/lib/api';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles, Plus } from 'lucide-react';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectSeparator,
 } from '@/components/ui/select';
+import { WishlistSlideOver } from '@/components/wishlist/WishlistSlideOver.client';
 
 interface WishSlideOverProps {
   open: boolean;
@@ -40,6 +42,8 @@ export function WishSlideOver({ open, onClose, onSuccess, wishlistId, wish, wish
   const api = useApiAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScrapingUrl, setIsScrapingUrl] = useState(false);
+  const [showCreateWishlist, setShowCreateWishlist] = useState(false);
+  const [localWishlists, setLocalWishlists] = useState(wishlists);
 
   const {
     register,
@@ -65,6 +69,11 @@ export function WishSlideOver({ open, onClose, onSuccess, wishlistId, wish, wish
   const images = watch('images') || [];
   const currency = watch('currency');
   const selectedWishlistId = watch('wishlistId');
+
+  // Sync local wishlists with prop
+  useEffect(() => {
+    setLocalWishlists(wishlists);
+  }, [wishlists]);
 
   // Reset form when wish changes or modal opens
   useEffect(() => {
@@ -214,7 +223,13 @@ export function WishSlideOver({ open, onClose, onSuccess, wishlistId, wish, wish
           </Label>
           <Select
             value={selectedWishlistId || 'none'}
-            onValueChange={(value) => setValue('wishlistId', value === 'none' ? undefined : value)}
+            onValueChange={(value) => {
+              if (value === 'create-new') {
+                setShowCreateWishlist(true);
+              } else {
+                setValue('wishlistId', value === 'none' ? undefined : value);
+              }
+            }}
             disabled={isSubmitting || isScrapingUrl}
           >
             <SelectTrigger id="wishlist">
@@ -224,11 +239,20 @@ export function WishSlideOver({ open, onClose, onSuccess, wishlistId, wish, wish
               <SelectItem value="none">
                 <span className="text-muted-foreground">No wishlist (uncategorized)</span>
               </SelectItem>
-              {wishlists.map((wishlist) => (
-                <SelectItem key={wishlist.id} value={wishlist.id}>
-                  {wishlist.name}
-                </SelectItem>
-              ))}
+              {localWishlists
+                .filter(w => w.id !== 'uncategorized')
+                .map((wishlist) => (
+                  <SelectItem key={wishlist.id} value={wishlist.id}>
+                    {wishlist.name}
+                  </SelectItem>
+                ))}
+              <SelectSeparator />
+              <SelectItem value="create-new">
+                <div className="flex items-center gap-2 text-primary">
+                  <Plus className="h-4 w-4" />
+                  <span>Create new wishlist</span>
+                </div>
+              </SelectItem>
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
@@ -345,6 +369,30 @@ export function WishSlideOver({ open, onClose, onSuccess, wishlistId, wish, wish
           </Button>
         </div>
       </form>
+
+      {/* Nested Wishlist Creation Dialog */}
+      <WishlistSlideOver
+        open={showCreateWishlist}
+        onClose={() => setShowCreateWishlist(false)}
+        onSuccess={async () => {
+          // Fetch updated wishlists from API
+          try {
+            const updatedWishlists = await api.getMyWishlists();
+            setLocalWishlists(updatedWishlists);
+
+            // Auto-select the newly created wishlist (last one)
+            if (updatedWishlists.length > 0) {
+              const newWishlist = updatedWishlists[updatedWishlists.length - 1];
+              setValue('wishlistId', newWishlist.id);
+            }
+
+            toast.success('Wishlist created! Now add your wish.');
+          } catch (error) {
+            console.error('Failed to fetch updated wishlists:', error);
+          }
+          setShowCreateWishlist(false);
+        }}
+      />
     </SlideOver>
   );
 }

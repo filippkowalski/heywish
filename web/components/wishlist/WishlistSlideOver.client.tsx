@@ -88,6 +88,12 @@ export function WishlistSlideOver({ open, onClose, onSuccess, wishlist }: Wishli
   };
 
   const onSubmit = async (data: WishlistFormData) => {
+    // Prevent editing of synthetic "All Wishes" wishlist
+    if (wishlist && wishlist.id === 'uncategorized') {
+      toast.error('Cannot edit this wishlist');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
