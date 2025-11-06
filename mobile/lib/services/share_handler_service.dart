@@ -57,6 +57,12 @@ class ShareHandlerService {
 
     // Check if thumbnail contains a URL (alternative way text/URLs are shared)
     if (file.thumbnail != null && _isValidUrl(file.thumbnail!)) {
+      // Ignore jinnie.app URLs - these should be handled by DeepLinkService
+      if (_isJinnieAppUrl(file.thumbnail!)) {
+        debugPrint('🔗 Ignoring jinnie.app URL in share handler thumbnail (deep link): ${file.thumbnail}');
+        return;
+      }
+
       _sharedContentController.add(SharedContent(
         type: SharedContentType.url,
         url: file.thumbnail,
@@ -93,6 +99,16 @@ class ShareHandlerService {
       return uri.hasScheme &&
           (uri.scheme == 'http' || uri.scheme == 'https') &&
           uri.host.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  bool _isJinnieAppUrl(String text) {
+    try {
+      final uri = Uri.parse(text);
+      final host = uri.host.toLowerCase();
+      return host == 'jinnie.app' || host == 'www.jinnie.app';
     } catch (e) {
       return false;
     }

@@ -313,46 +313,60 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
       return;
     }
 
+    // Ignore jinnie.app URLs - these should be handled by deep linking
+    if (type == 'url') {
+      try {
+        final uri = Uri.parse(value);
+        final host = uri.host.toLowerCase();
+        if (host == 'jinnie.app' || host == 'www.jinnie.app') {
+          debugPrint('🔗 Ignoring jinnie.app URL in iOS share handler (deep link): $value');
+          return;
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error parsing shared URL: $e');
+      }
+    }
+
     debugPrint('✅ Processing shared $type: $value');
 
     // Navigate to add wish screen with the shared URL
-    final context = _router.routerDelegate.navigatorKey.currentContext;
-    if (context != null) {
-      // Wait a moment to ensure home screen is loaded
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (type == 'url') {
-          Navigator.of(context).push(
-            NativePageRoute(
-              child: AddWishScreen(
-                initialUrl: value,
-              ),
+    // Wait a moment to ensure home screen is loaded
+    Future.delayed(const Duration(milliseconds: 500), () {
+      final context = _router.routerDelegate.navigatorKey.currentContext;
+      if (context == null) return;
+
+      if (type == 'url') {
+        Navigator.of(context).push(
+          NativePageRoute(
+            child: AddWishScreen(
+              initialUrl: value,
             ),
-          );
-        } else if (type == 'image') {
-          // Handle image sharing - use prefilledData for image path
-          Navigator.of(context).push(
-            NativePageRoute(
-              child: AddWishScreen(
-                prefilledData: {
-                  'image': value,
-                },
-              ),
+          ),
+        );
+      } else if (type == 'image') {
+        // Handle image sharing - use prefilledData for image path
+        Navigator.of(context).push(
+          NativePageRoute(
+            child: AddWishScreen(
+              prefilledData: {
+                'image': value,
+              },
             ),
-          );
-        } else if (type == 'text') {
-          // Handle text sharing - use prefilledData for title
-          Navigator.of(context).push(
-            NativePageRoute(
-              child: AddWishScreen(
-                prefilledData: {
-                  'title': value,
-                },
-              ),
+          ),
+        );
+      } else if (type == 'text') {
+        // Handle text sharing - use prefilledData for title
+        Navigator.of(context).push(
+          NativePageRoute(
+            child: AddWishScreen(
+              prefilledData: {
+                'title': value,
+              },
             ),
-          );
-        }
-      });
-    }
+          ),
+        );
+      }
+    });
   }
 
   void _initializeQuickActions() {
@@ -387,12 +401,6 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
         ),
       );
     }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    // Lifecycle handling moved to _AppLifecycleWrapper
   }
 
   @override
@@ -466,25 +474,53 @@ final _router = GoRouter(
     // Check if this is a deep link by examining state.uri
     // For cold-start deep links, state.matchedLocation is '/' but state.uri contains the full URL
     final uriString = state.uri.toString();
+    final path = state.uri.path;
+    final scheme = state.uri.scheme;
+
     debugPrint('🔍 GoRouter redirect called:');
     debugPrint('   - state.uri: $uriString');
-    debugPrint('   - state.uri.scheme: ${state.uri.scheme}');
+    debugPrint('   - state.uri.scheme: $scheme');
+    debugPrint('   - state.uri.path: $path');
     debugPrint('   - state.matchedLocation: ${state.matchedLocation}');
-    debugPrint('   - state.path: ${state.path}');
     debugPrint('   - DeepLinkService initialized: ${_JinnieAppState._deepLinkServiceInitialized}');
 
-    if (state.uri.scheme.isNotEmpty && state.uri.scheme != 'http' && state.uri.scheme != 'https') {
+    // Handle iOS universal links and Android App Links (https://jinnie.app/...)
+    if ((scheme == 'https' || scheme == 'http') &&
+        (state.uri.host == 'jinnie.app' || state.uri.host == 'www.jinnie.app')) {
+      debugPrint('🔗 ✅ Universal link detected: $uriString');
+
+      // Parse the path to extract username
+      final segments = state.uri.pathSegments.where((s) => s.isNotEmpty).toList();
+      if (segments.isNotEmpty) {
+        final firstSegment = segments.first;
+        if (firstSegment.startsWith('@')) {
+          final username = firstSegment.substring(1);
+          if (username.isNotEmpty) {
+            // Handle /@username or /@username/follow
+            if (segments.length == 1 || (segments.length == 2 && segments[1] == 'follow')) {
+              debugPrint('🔗 Redirecting to profile: $username');
+              return '/profile/$username';
+            }
+          }
+        }
+      }
+      debugPrint('🔗 ⚠️ Could not parse universal link, continuing');
+    }
+
+    // Handle custom schemes (jinnie:// or com.wishlists.gifts://)
+    if (scheme.isNotEmpty && scheme != 'http' && scheme != 'https') {
       // Only store pending deep links for cold start (before DeepLinkService initialized)
       // Warm-start deep links are handled by the stream listener
       if (!_JinnieAppState._deepLinkServiceInitialized) {
-        debugPrint('🔗 ✅ Cold-start deep link detected! Storing for later: $uriString');
+        debugPrint('🔗 ✅ Cold-start custom scheme deep link detected! Storing for later: $uriString');
         _JinnieAppState._pendingDeepLink = uriString;
         return '/';
       } else {
-        debugPrint('🔗 🔄 Warm-start deep link detected - already handled by stream, ignoring');
+        debugPrint('🔗 🔄 Warm-start custom scheme deep link detected - already handled by stream, ignoring');
         return null; // Let the stream handler deal with it
       }
     }
+
     debugPrint('🔗 ❌ Not a deep link, continuing normally');
     return null; // No redirect needed
   },
