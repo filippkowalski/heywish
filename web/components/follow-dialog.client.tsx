@@ -78,7 +78,7 @@ export function FollowDialog({
       return;
     }
 
-    const universalLink = `https://jinnie.app/@${username}/follow`;
+    const universalLink = `https://jinnie.app/@${username}`;
     const restoreTimer = setTimeout(() => {
       setAttemptedDeepLink(false);
       setIsRedirecting(false);

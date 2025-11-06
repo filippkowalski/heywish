@@ -53,9 +53,17 @@ class Wish {
   }
 
   factory Wish.fromJson(Map<String, dynamic> json) {
+    final dynamic rawWishlistId = json['wishlist_id'] ?? json['wishlistId'];
+    String normalizedWishlistId = '';
+    if (rawWishlistId != null) {
+      final candidate = rawWishlistId.toString();
+      // Treat synthetic "All Wishes" identifier as uncategorized (empty)
+      normalizedWishlistId = candidate == 'uncategorized' ? '' : candidate;
+    }
+
     return Wish(
       id: json['id']?.toString() ?? '',
-      wishlistId: json['wishlist_id']?.toString() ?? '',
+      wishlistId: normalizedWishlistId,
       title: json['title']?.toString() ?? 'Untitled',
       description: json['description']?.toString(),
       price: json['price'] != null

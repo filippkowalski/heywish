@@ -106,8 +106,8 @@ export function WishlistFilter({
                 ref={scrollContainerRef}
                 className="flex items-center gap-3 py-3 overflow-x-auto scrollbar-hide"
               >
-            {/* All filter - only show if there are multiple real wishlists */}
-            {realWishlists.length > 1 && (
+            {/* All filter - show if there are any wishlists (including synthetic for uncategorized) */}
+            {wishlists.length > 0 && (
               <button
                 onClick={() => onFilterChange(null)}
                 className={`

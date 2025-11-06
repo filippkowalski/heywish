@@ -42,6 +42,12 @@ class ShareHandlerService {
 
     // First, check if it's a direct URL (shared text containing a URL)
     if (_isValidUrl(path)) {
+      // Ignore jinnie.app URLs - these should be handled by DeepLinkService
+      if (_isJinnieAppUrl(path)) {
+        debugPrint('🔗 Ignoring jinnie.app URL in share handler (deep link): $path');
+        return;
+      }
+
       _sharedContentController.add(SharedContent(
         type: SharedContentType.url,
         url: path,

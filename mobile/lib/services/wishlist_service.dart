@@ -41,7 +41,10 @@ class WishlistService extends ChangeNotifier {
 
   /// Get wishes that don't belong to any wishlist (unsorted)
   List<Wish> get unsortedWishes {
-    return _allWishes.where((w) => w.wishlistId == '').toList();
+    return _allWishes.where((wish) {
+      final id = wish.wishlistId;
+      return id == null || id.isEmpty || id == 'uncategorized';
+    }).toList();
   }
 
   /// Get a cached wishlist by ID
