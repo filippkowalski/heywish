@@ -6,6 +6,8 @@ import { SiteHeader } from "@/components/site-header";
 import { CookieConsent } from "@/components/cookie-consent";
 import { AppDownloadBannerWrapper } from "@/components/app-download-banner-wrapper";
 import { Providers } from "@/components/providers.client";
+import { AnalyticsProvider } from "@/components/analytics-provider";
+import { PageViewTracker } from "@/components/page-view-tracker";
 
 const GA_MEASUREMENT_ID = "G-BRDJHGM96Y";
 
@@ -143,7 +145,10 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
 
-        {/* Google Analytics - Consent Mode */}
+        {/* Google Analytics - Consent Mode
+            Default to 'denied' for safety. The AnalyticsProvider component
+            will immediately update consent based on region (EU vs non-EU)
+            and user preferences on client-side load. */}
         <Script
           id="google-analytics-consent"
           strategy="beforeInteractive"
@@ -186,6 +191,8 @@ export default function RootLayout({
         />
 
         <Providers>
+          <AnalyticsProvider />
+          <PageViewTracker />
           <AppDownloadBannerWrapper />
           <SiteHeader />
           {children}

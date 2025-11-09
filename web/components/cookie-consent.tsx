@@ -4,80 +4,25 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { initializeAnalytics } from "@/lib/firebase";
-
-const CONSENT_KEY = "jinnie-cookie-consent";
-const CONSENT_TIMESTAMP_KEY = "jinnie-cookie-consent-timestamp";
-const CONSENT_EXPIRY_DAYS = 365;
+import { acceptConsent, declineConsent, shouldShowConsentBanner } from "@/components/analytics-provider";
 
 export function CookieConsent() {
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    // Check if consent was already given
-    const consent = localStorage.getItem(CONSENT_KEY);
-    const consentTimestamp = localStorage.getItem(CONSENT_TIMESTAMP_KEY);
-
-    // Check if consent has expired (after 1 year)
-    if (consent && consentTimestamp) {
-      const consentDate = new Date(parseInt(consentTimestamp));
-      const expiryDate = new Date(consentDate);
-      expiryDate.setDate(expiryDate.getDate() + CONSENT_EXPIRY_DAYS);
-
-      if (new Date() > expiryDate) {
-        // Consent expired, show banner again
-        localStorage.removeItem(CONSENT_KEY);
-        localStorage.removeItem(CONSENT_TIMESTAMP_KEY);
-      }
-    }
-
-    // Detect if user is likely in EU based on timezone
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const euTimezones = [
-      "Europe/",
-      "Atlantic/Reykjavik",
-      "Atlantic/Faroe",
-      "Atlantic/Canary",
-    ];
-    const isLikelyEU = euTimezones.some((tz) => timezone.startsWith(tz));
-
-    // Show banner if no consent given and user is likely in EU
-    if (!consent) {
-      // Show to everyone for GDPR safety, or only EU users
-      setShowBanner(isLikelyEU);
-    } else if (consent === "accepted") {
-      // Initialize analytics if consent was previously given
-      initializeAnalytics();
-    }
+    // Determine if we should show the banner
+    // (EU users who haven't made a choice)
+    setShowBanner(shouldShowConsentBanner());
   }, []);
 
   const handleAccept = () => {
-    localStorage.setItem(CONSENT_KEY, "accepted");
-    localStorage.setItem(CONSENT_TIMESTAMP_KEY, Date.now().toString());
+    acceptConsent();
     setShowBanner(false);
-
-    // Initialize analytics
-    initializeAnalytics();
-
-    // Load Google Analytics
-    if (typeof window !== "undefined" && window.gtag) {
-      window.gtag("consent", "update", {
-        analytics_storage: "granted",
-      });
-    }
   };
 
   const handleDecline = () => {
-    localStorage.setItem(CONSENT_KEY, "declined");
-    localStorage.setItem(CONSENT_TIMESTAMP_KEY, Date.now().toString());
+    declineConsent();
     setShowBanner(false);
-
-    // Deny analytics
-    if (typeof window !== "undefined" && window.gtag) {
-      window.gtag("consent", "update", {
-        analytics_storage: "denied",
-      });
-    }
   };
 
   if (!showBanner) {
