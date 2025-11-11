@@ -1,0 +1,5 @@
+# Ignore changes in these directories for builds
+../web/**
+../mobile/**
+../docs/**
+../.github/**
