@@ -19,18 +19,21 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Verify password client-side (simple approach for internal tool)
-      const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
+      // Call server-side authentication API
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
 
-      if (password === adminPassword) {
-        // Store session in localStorage
-        localStorage.setItem('admin_authenticated', 'true');
-        localStorage.setItem('admin_session_time', Date.now().toString());
+      const data = await response.json();
 
+      if (response.ok && data.success) {
+        // Session is now stored in httpOnly cookie
         // Redirect to dashboard
         router.push('/dashboard');
       } else {
-        setError('Invalid password');
+        setError(data.error || 'Invalid password');
       }
     } catch (err) {
       setError('Authentication failed');

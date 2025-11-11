@@ -18,30 +18,24 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Check authentication on mount
-    const isAuthenticated = localStorage.getItem('admin_authenticated');
-    const sessionTime = localStorage.getItem('admin_session_time');
-
-    if (!isAuthenticated) {
-      router.push('/');
-      return;
-    }
-
-    // Check if session is older than 24 hours
-    if (sessionTime) {
-      const age = Date.now() - parseInt(sessionTime);
-      const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-
-      if (age > maxAge) {
-        handleLogout();
-      }
-    }
+    // Check authentication via cookie on mount
+    fetch('/api/auth/verify')
+      .then((res) => {
+        if (!res.ok) {
+          router.push('/');
+        }
+      })
+      .catch(() => {
+        router.push('/');
+      });
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_authenticated');
-    localStorage.removeItem('admin_session_time');
-    router.push('/');
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } finally {
+      router.push('/');
+    }
   };
 
   const navItems = [

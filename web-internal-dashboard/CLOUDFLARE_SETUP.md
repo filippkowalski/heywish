@@ -44,11 +44,11 @@ Click **Add variable** for each:
 
 | Variable Name | Value | Note |
 |--------------|-------|------|
-| `NEXT_PUBLIC_ADMIN_PASSWORD` | `your_secure_password` | Simple auth password |
+| `ADMIN_PASSWORD` | `your_secure_password` | Server-side auth password (NOT exposed to client) |
 | `NEXT_PUBLIC_API_BASE_URL` | `https://openai-rewrite.onrender.com/jinnie/v1` | Backend API |
 | `ADMIN_API_KEY` | `your_admin_key` | Must match backend key |
 
-**🔒 Security Note**: Also set these as **Deployment Environment Variables** to keep them out of build logs.
+**🔒 Security Note**: `ADMIN_PASSWORD` and `ADMIN_API_KEY` are server-side only and NOT exposed to the client. Only variables with `NEXT_PUBLIC_` prefix are exposed to the client.
 
 ### 4. Deploy!
 
@@ -125,7 +125,7 @@ Should succeed without errors.
 
 ### 3. Test Access
 1. Open your dashboard URL
-2. Enter password from `NEXT_PUBLIC_ADMIN_PASSWORD`
+2. Enter password (set in `ADMIN_PASSWORD` env var)
 3. Should see dashboard with statistics
 
 ## Troubleshooting

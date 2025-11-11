@@ -47,11 +47,11 @@ Internal admin dashboard for managing the Jinnie wishlist application. This dash
 - **Auth**: API key-based authentication (`X-Admin-Key` header)
 
 ### Security
-1. **Password Protection**: Simple password gate on login page
+1. **Password Protection**: Server-side password verification with httpOnly cookies
 2. **API Key**: Admin endpoints require API key in headers
 3. **IP Filtering**: Cloudflare Firewall Rules (recommended)
 4. **Separate Domain**: Not accessible from main jinnie.co
-5. **Session Management**: 24-hour sessions with localStorage
+5. **Session Management**: 24-hour sessions with secure httpOnly cookies
 
 ## 📦 Installation
 
@@ -79,8 +79,8 @@ Copy `.env.local.example` to `.env.local` and update:
 ```bash
 # Admin Dashboard Configuration
 
-# Password for accessing the dashboard (exposed to client)
-NEXT_PUBLIC_ADMIN_PASSWORD=your_secure_password_here
+# Password for accessing the dashboard (server-side only, NOT exposed to client)
+ADMIN_PASSWORD=your_secure_password_here
 
 # Backend API base URL
 NEXT_PUBLIC_API_BASE_URL=https://openai-rewrite.onrender.com/jinnie/v1
