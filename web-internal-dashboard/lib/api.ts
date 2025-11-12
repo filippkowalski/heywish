@@ -85,7 +85,7 @@ export interface UserListResponse {
   };
 }
 
-export async function createUser(data: CreateUserData): Promise<{ user: User }> {
+export async function createUser(data: CreateUserData): Promise<{ user: User; wishlist: { id: string; name: string; description: string; visibility: string } }> {
   return fetchAPI('/admin/users/create', {
     method: 'POST',
     body: JSON.stringify(data),

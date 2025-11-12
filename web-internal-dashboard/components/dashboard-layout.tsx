@@ -10,6 +10,7 @@ import {
   Gift,
   TrendingUp,
   BarChart3,
+  UserPlus,
   LogOut
 } from 'lucide-react';
 
@@ -40,6 +41,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/create-user', label: 'Create User', icon: UserPlus },
     { href: '/users', label: 'Users', icon: Users },
     { href: '/wishes', label: 'Wishes', icon: Gift },
     { href: '/brands', label: 'Brands', icon: TrendingUp },
