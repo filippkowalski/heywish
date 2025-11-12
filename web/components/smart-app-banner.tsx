@@ -19,8 +19,21 @@ export function SmartAppBanner() {
     const info = detectPlatform();
     setPlatformInfo(info);
 
+    const isDismissed = isBannerDismissed();
+
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[SmartAppBanner] Init:', {
+        platform: info.platform,
+        browser: info.browser,
+        shouldShowBanner: info.shouldShowBanner,
+        isBannerDismissed: isDismissed,
+        willShow: info.shouldShowBanner && !isDismissed,
+      });
+    }
+
     // Show banner if platform requires it and hasn't been dismissed
-    if (info.shouldShowBanner && !isBannerDismissed()) {
+    if (info.shouldShowBanner && !isDismissed) {
       setIsVisible(true);
     }
   }, []);

@@ -11,6 +11,7 @@ export interface PlatformInfo {
   browser: Browser;
   isStandalone: boolean;
   shouldShowBanner: boolean;
+  shouldShowBottomSheet: boolean;
 }
 
 /**
@@ -24,6 +25,7 @@ export function detectPlatform(): PlatformInfo {
       browser: 'other',
       isStandalone: false,
       shouldShowBanner: false,
+      shouldShowBottomSheet: false,
     };
   }
 
@@ -56,18 +58,31 @@ export function detectPlatform(): PlatformInfo {
   }
 
   // Should show banner if:
-  // 1. On iOS but NOT in Safari (Safari has native smart banner)
-  // 2. On Android
+  // 1. On iOS BUT NOT Safari (Safari uses native smart banner via meta tag)
+  // 2. On Android (any browser)
   // 3. NOT already running as standalone/PWA
+  // Note: Safari iOS has native smart banner (apple-itunes-app meta tag),
+  //       so we only show custom banner for other iOS browsers (Chrome, Firefox, etc.)
   const shouldShowBanner =
     !standalone &&
     ((platform === 'ios' && browser !== 'safari') || platform === 'android');
+
+  // Should show bottom sheet if:
+  // 1. On iOS (ALL browsers, including Safari)
+  // 2. On Android (any browser)
+  // 3. NOT already running as standalone/PWA
+  // Note: Bottom sheet shows on Safari iOS even though it has native banner,
+  //       providing a second touchpoint for app downloads after 1.5 seconds
+  const shouldShowBottomSheet =
+    !standalone &&
+    (platform === 'ios' || platform === 'android');
 
   return {
     platform,
     browser,
     isStandalone: standalone,
     shouldShowBanner,
+    shouldShowBottomSheet,
   };
 }
 

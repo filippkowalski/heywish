@@ -19,10 +19,27 @@ export function AppDownloadBottomSheet() {
     const info = detectPlatform();
     setPlatform(info.platform);
 
+    const isDismissed = isBottomSheetDismissed();
+
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AppDownloadBottomSheet] Init:', {
+        platform: info.platform,
+        browser: info.browser,
+        shouldShowBanner: info.shouldShowBanner,
+        shouldShowBottomSheet: info.shouldShowBottomSheet,
+        isBottomSheetDismissed: isDismissed,
+        willShow: info.shouldShowBottomSheet && !isDismissed,
+      });
+    }
+
     // Show bottom sheet if platform requires it and hasn't been dismissed
-    if (info.shouldShowBanner && !isBottomSheetDismissed()) {
+    if (info.shouldShowBottomSheet && !isDismissed) {
       // Delay showing the bottom sheet slightly for better UX
       const timer = setTimeout(() => {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[AppDownloadBottomSheet] Showing bottom sheet');
+        }
         setIsVisible(true);
         // Trigger animation after mount
         requestAnimationFrame(() => {

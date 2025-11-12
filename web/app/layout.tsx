@@ -134,7 +134,7 @@ export default function RootLayout({
         <meta name="awin-verification" content="Awin" />
 
         {/* iOS Smart App Banner */}
-        <meta name="apple-itunes-app" content="app-id=6754384455" />
+        <meta name="apple-itunes-app" content="app-id=6754384455, app-argument=https://jinnie.co" />
 
         {/* Android App Intent - Opens app or redirects to Play Store */}
         <meta name="google-play-app" content="app-id=com.wishlists.gifts" />
