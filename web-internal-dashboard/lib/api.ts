@@ -1,10 +1,7 @@
 /**
  * API Client for Internal Admin Dashboard
- * Handles all communication with the backend admin endpoints
+ * Routes requests through server-side proxy to securely handle ADMIN_API_KEY
  */
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/jinnie/v1';
-const ADMIN_API_KEY = process.env.ADMIN_API_KEY || '';
 
 class APIError extends Error {
   constructor(public status: number, message: string, public code?: string) {
@@ -14,17 +11,15 @@ class APIError extends Error {
 }
 
 async function fetchAPI(endpoint: string, options: RequestInit = {}) {
-  const url = `${API_BASE_URL}${endpoint}`;
+  // Route through server-side proxy instead of calling backend directly
+  const proxyUrl = `/api/proxy?endpoint=${encodeURIComponent(endpoint)}`;
 
-  const headers = {
-    'Content-Type': 'application/json',
-    'X-Admin-Key': ADMIN_API_KEY,
-    ...options.headers,
-  };
-
-  const response = await fetch(url, {
+  const response = await fetch(proxyUrl, {
     ...options,
-    headers,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 
   if (!response.ok) {
