@@ -5,13 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { getBrandStats, type BrandStats } from '@/lib/api';
 import useSWR from 'swr';
 import { TrendingUp, Globe } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-
-// Color palette for charts
-const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#6366f1', '#ef4444', '#14b8a6', '#f97316'];
 
 export default function BrandsPage() {
-  const { data, error, isLoading } = useSWR<BrandStats>('/admin/stats/brands?limit=20', () => getBrandStats(20), {
+  const { data, error, isLoading } = useSWR<BrandStats>('/admin/stats/brands?limit=50', () => getBrandStats(50), {
     refreshInterval: 60000, // Refresh every 60 seconds
   });
 
@@ -39,7 +35,7 @@ export default function BrandsPage() {
           </div>
         )}
 
-        {/* Charts */}
+        {/* Brand Lists */}
         {data && (
           <>
             {/* Summary Cards */}
@@ -71,123 +67,25 @@ export default function BrandsPage() {
               </Card>
             </div>
 
-            {/* Domain Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Domains</CardTitle>
-                <CardDescription>
-                  Most popular websites where users find their wishes
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {data.domains.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
-                    <BarChart
-                      data={data.domains}
-                      layout="vertical"
-                      margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis type="category" dataKey="domain" width={90} />
-                      <Tooltip
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            return (
-                              <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                                <p className="font-semibold">{payload[0].payload.domain}</p>
-                                <p className="text-sm text-gray-600">
-                                  {payload[0].value} wishes
-                                </p>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                      <Bar dataKey="count" radius={[0, 8, 8, 0]}>
-                        {data.domains.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="text-center py-12 text-gray-500">
-                    No domain data available yet. Users need to add wishes with URLs.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Brand Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Brands</CardTitle>
-                <CardDescription>
-                  Most mentioned brand names in wish titles
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {data.brands.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
-                    <BarChart
-                      data={data.brands}
-                      layout="vertical"
-                      margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis type="category" dataKey="brand" width={70} />
-                      <Tooltip
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            return (
-                              <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                                <p className="font-semibold">{payload[0].payload.brand}</p>
-                                <p className="text-sm text-gray-600">
-                                  {payload[0].value} mentions
-                                </p>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                      <Bar dataKey="count" radius={[0, 8, 8, 0]}>
-                        {data.brands.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="text-center py-12 text-gray-500">
-                    No brand data available yet. Users need to add wishes with brand names in titles.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Top Lists Side by Side */}
+            {/* Tables */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Domain List */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Domain Rankings</CardTitle>
-                  <CardDescription>Complete list of domains</CardDescription>
+                  <CardTitle>Top Domains</CardTitle>
+                  <CardDescription>Most popular websites where users find their wishes</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {data.domains.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-0 divide-y">
                       {data.domains.map((domain, index) => (
-                        <div key={domain.domain} className="flex items-center justify-between py-2 border-b last:border-0">
+                        <div key={domain.domain} className="flex items-center justify-between py-3">
                           <div className="flex items-center gap-3">
-                            <div className="text-lg font-semibold text-gray-400 w-6">
+                            <div className="text-sm font-semibold text-gray-400 w-8">
                               #{index + 1}
                             </div>
                             <div>
-                              <p className="font-medium">{domain.domain}</p>
+                              <p className="font-medium text-sm">{domain.domain}</p>
                             </div>
                           </div>
                           <div className="text-right">
@@ -206,20 +104,20 @@ export default function BrandsPage() {
               {/* Brand List */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Brand Rankings</CardTitle>
-                  <CardDescription>Complete list of brands</CardDescription>
+                  <CardTitle>Top Brands</CardTitle>
+                  <CardDescription>Most mentioned brand names in wish titles</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {data.brands.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-0 divide-y">
                       {data.brands.map((brand, index) => (
-                        <div key={brand.brand} className="flex items-center justify-between py-2 border-b last:border-0">
+                        <div key={brand.brand} className="flex items-center justify-between py-3">
                           <div className="flex items-center gap-3">
-                            <div className="text-lg font-semibold text-gray-400 w-6">
+                            <div className="text-sm font-semibold text-gray-400 w-8">
                               #{index + 1}
                             </div>
                             <div>
-                              <p className="font-medium">{brand.brand}</p>
+                              <p className="font-medium text-sm">{brand.brand}</p>
                             </div>
                           </div>
                           <div className="text-right">
