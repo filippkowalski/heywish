@@ -59,8 +59,8 @@ export default function AddWishPage() {
     setWishlistId('');
 
     try {
-      // Fetch user's wishlists using public endpoint
-      const response = await fetch(`/api/proxy?endpoint=${encodeURIComponent(`/users/${searchUsername}/wishlists`)}`);
+      // Fetch user's profile with wishlists using public endpoint
+      const response = await fetch(`/api/proxy?endpoint=${encodeURIComponent(`/public/users/${searchUsername}`)}`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -69,9 +69,9 @@ export default function AddWishPage() {
 
       const data = await response.json();
 
-      if (data.wishlists && data.wishlists.length > 0) {
-        setWishlists(data.wishlists);
-        setWishlistId(data.wishlists[0].id); // Auto-select first wishlist
+      if (data.profile && data.profile.wishlists && data.profile.wishlists.length > 0) {
+        setWishlists(data.profile.wishlists);
+        setWishlistId(data.profile.wishlists[0].id); // Auto-select first wishlist
         setUserFound(true);
       } else {
         setError('User has no wishlists');
