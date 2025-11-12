@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import {
   LayoutDashboard,
   Users,
@@ -12,7 +13,8 @@ import {
   BarChart3,
   UserPlus,
   Plus,
-  LogOut
+  LogOut,
+  Zap
 } from 'lucide-react';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -40,59 +42,85 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  const overviewItems = [
+    { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
+  ];
+
+  const actionItems = [
     { href: '/create-user', label: 'Create User', icon: UserPlus },
     { href: '/add-wish', label: 'Add Wish', icon: Plus },
+  ];
+
+  const analyticsItems = [
     { href: '/users', label: 'Users', icon: Users },
     { href: '/wishes', label: 'Wishes', icon: Gift },
     { href: '/brands', label: 'Brands', icon: TrendingUp },
-    { href: '/stats', label: 'Statistics', icon: BarChart3 },
+    { href: '/stats', label: 'Growth', icon: BarChart3 },
   ];
 
+  const renderNavSection = (title: string, items: typeof overviewItems, icon?: React.ReactNode) => (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2 px-3 mb-2">
+        {icon}
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          {title}
+        </h4>
+      </div>
+      {items.map((item) => {
+        const Icon = item.icon;
+        const isActive = pathname === item.href;
+
+        return (
+          <Link key={item.href} href={item.href}>
+            <div
+              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-secondary text-secondary-foreground'
+                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-secondary-foreground'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              <span>{item.label}</span>
+            </div>
+          </Link>
+        );
+      })}
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200">
+      <div className="fixed inset-y-0 left-0 w-64 border-r bg-background">
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-6 border-b border-gray-200">
-            <h1 className="text-2xl font-bold">Jinnie Admin</h1>
-            <p className="text-sm text-gray-500 mt-1">Internal Dashboard</p>
+          <div className="px-6 py-5 border-b">
+            <h1 className="text-xl font-bold tracking-tight">Jinnie Admin</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Internal Dashboard</p>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
+          <nav className="flex-1 overflow-y-auto p-4 space-y-6">
+            {renderNavSection('Overview', overviewItems)}
 
-              return (
-                <Link key={item.href} href={item.href}>
-                  <div
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-gray-100 text-gray-900'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </div>
-                </Link>
-              );
-            })}
+            <Separator />
+
+            {renderNavSection('Actions', actionItems, <Zap className="h-3 w-3 text-muted-foreground" />)}
+
+            <Separator />
+
+            {renderNavSection('Analytics', analyticsItems, <BarChart3 className="h-3 w-3 text-muted-foreground" />)}
           </nav>
 
           {/* Logout button */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t">
             <Button
-              variant="outline"
-              className="w-full justify-start gap-3"
+              variant="ghost"
+              className="w-full justify-start gap-3 h-9"
               onClick={handleLogout}
             >
-              <LogOut className="w-5 h-5" />
-              Logout
+              <LogOut className="h-4 w-4" />
+              <span className="text-sm font-medium">Logout</span>
             </Button>
           </div>
         </div>
@@ -100,7 +128,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <div className="ml-64">
-        <div className="p-8">
+        <div className="container py-6 px-8">
           {children}
         </div>
       </div>
