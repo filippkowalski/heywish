@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createWish, listUsers } from '@/lib/api';
-import { Plus, Search, CheckCircle, User } from 'lucide-react';
+import { createWish, listUsers, updateWish, deleteWish, browseWishes, type Wish } from '@/lib/api';
+import { Plus, Search, CheckCircle, User, Edit, Trash2, X } from 'lucide-react';
 import useSWR from 'swr';
 
 export default function AddWishPage() {
@@ -30,12 +30,22 @@ export default function AddWishPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [userFound, setUserFound] = useState(false);
+  const [editingWish, setEditingWish] = useState<Wish | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Fetch fake users list
   const { data: fakeUsersData } = useSWR(
     '/admin/users/list?fake_only=true&limit=100',
     () => listUsers({ fake_only: true, limit: 100 }),
     { refreshInterval: 30000 }
+  );
+
+  // Fetch user's wishes when a user is selected
+  const { data: wishesData, mutate: mutateWishes } = useSWR(
+    userFound && username ? `/admin/wishes/browse?username=${username}&limit=100` : null,
+    () => browseWishes({ username, limit: 100 }),
+    { refreshInterval: 10000 }
   );
 
   const selectFakeUser = (fakeUsername: string) => {
@@ -88,6 +98,31 @@ export default function AddWishPage() {
     }
   };
 
+  const startEditWish = (wish: Wish) => {
+    setEditingWish(wish);
+    setTitle(wish.title);
+    setDescription(wish.description || '');
+    setUrl(wish.url || '');
+    setPrice(wish.price ? wish.price.toString() : '');
+    setCurrency(wish.currency || 'USD');
+    setImages(wish.images ? wish.images.join(', ') : '');
+    setPriority(wish.priority?.toString() || '3');
+    setQuantity(wish.quantity?.toString() || '1');
+    setWishlistId(wish.wishlist_id);
+  };
+
+  const cancelEdit = () => {
+    setEditingWish(null);
+    setTitle('');
+    setDescription('');
+    setUrl('');
+    setPrice('');
+    setCurrency('USD');
+    setImages('');
+    setPriority('3');
+    setQuantity('1');
+  };
+
   const handleCreateWish = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -126,12 +161,77 @@ export default function AddWishPage() {
       setPriority('3');
       setQuantity('1');
 
+      // Refresh wishes list
+      mutateWishes();
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(err.message || 'Failed to create wish');
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleUpdateWish = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!editingWish) return;
+
+    setError('');
+    setSuccess('');
+    setIsUpdating(true);
+
+    try {
+      await updateWish(editingWish.id, {
+        username,
+        wishlist_id: wishlistId,
+        title,
+        description: description || undefined,
+        url: url || undefined,
+        price: price ? parseFloat(price) : undefined,
+        currency: currency || 'USD',
+        images: images ? images.split(',').map(url => url.trim()) : undefined,
+        priority: parseInt(priority) || 3,
+        quantity: parseInt(quantity) || 1,
+      });
+
+      setSuccess(`Wish "${title}" updated successfully!`);
+
+      // Reset form and exit edit mode
+      cancelEdit();
+
+      // Refresh wishes list
+      mutateWishes();
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update wish');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteWish = async (wishId: string, wishTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${wishTitle}"?`)) return;
+
+    setIsDeleting(wishId);
+    setError('');
+
+    try {
+      await deleteWish(wishId);
+      setSuccess(`Wish "${wishTitle}" deleted successfully!`);
+
+      // Refresh wishes list
+      mutateWishes();
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete wish');
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -243,15 +343,15 @@ export default function AddWishPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                Wish Details
+                {editingWish ? <Edit className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+                {editingWish ? 'Edit Wish' : 'Add New Wish'}
               </CardTitle>
               <CardDescription>
-                Fill in the wish information for @{username}
+                {editingWish ? `Editing "${editingWish.title}"` : `Fill in the wish information for @${username}`}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleCreateWish} className="space-y-4">
+              <form onSubmit={editingWish ? handleUpdateWish : handleCreateWish} className="space-y-4">
                 {/* Title - Required */}
                 <div className="space-y-2">
                   <Label htmlFor="title">
@@ -352,16 +452,91 @@ export default function AddWishPage() {
                 <div className="flex gap-3 pt-4">
                   <Button
                     type="submit"
-                    disabled={isCreating || !title}
+                    disabled={(editingWish ? isUpdating : isCreating) || !title}
                     className="flex-1"
                   >
-                    {isCreating ? 'Adding Wish...' : 'Add Wish'}
+                    {editingWish
+                      ? (isUpdating ? 'Updating...' : 'Update Wish')
+                      : (isCreating ? 'Adding Wish...' : 'Add Wish')
+                    }
                   </Button>
-                  <Button type="button" variant="outline" onClick={resetForm}>
-                    Reset
-                  </Button>
+                  {editingWish ? (
+                    <Button type="button" variant="outline" onClick={cancelEdit}>
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                  ) : (
+                    <Button type="button" variant="outline" onClick={resetForm}>
+                      Reset
+                    </Button>
+                  )}
                 </div>
               </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Existing Wishes List */}
+        {userFound && wishesData && wishesData.wishes && wishesData.wishes.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Existing Wishes ({wishesData.wishes.length})</CardTitle>
+              <CardDescription>
+                Click Edit to modify or Delete to remove a wish
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {wishesData.wishes.map((wish) => (
+                  <div
+                    key={wish.id}
+                    className="flex items-start justify-between p-3 rounded-lg border hover:bg-secondary/50 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0 pr-4">
+                      <h4 className="font-medium text-sm truncate">{wish.title}</h4>
+                      {wish.description && (
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                          {wish.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                        {wish.price && (
+                          <span className="font-medium">
+                            {wish.currency || 'USD'} {wish.price}
+                          </span>
+                        )}
+                        <span className="capitalize">{wish.status}</span>
+                        {wish.wishlist_name && (
+                          <span>List: {wish.wishlist_name}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => startEditWish(wish)}
+                        disabled={isDeleting !== null}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteWish(wish.id, wish.title)}
+                        disabled={isDeleting !== null}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        {isDeleting === wish.id ? (
+                          <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}
