@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createWish, listUsers, updateWish, deleteWish, browseWishes, type Wish } from '@/lib/api';
-import { Plus, Search, CheckCircle, User, Edit, Trash2, X } from 'lucide-react';
+import { Plus, Search, CheckCircle, User, Edit, Trash2, X, Upload, FileJson, Download } from 'lucide-react';
 import useSWR from 'swr';
 
 export default function AddWishPage() {
@@ -33,6 +33,14 @@ export default function AddWishPage() {
   const [editingWish, setEditingWish] = useState<Wish | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+  // Bulk import state
+  const [showBulkImport, setShowBulkImport] = useState(false);
+  const [bulkJson, setBulkJson] = useState('');
+  const [validationError, setValidationError] = useState('');
+  const [parsedWishes, setParsedWishes] = useState<any[]>([]);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
 
   // Fetch fake users list
   const { data: fakeUsersData } = useSWR(
@@ -252,6 +260,219 @@ export default function AddWishPage() {
     setSuccess('');
   };
 
+  // JSON Schema for bulk import
+  const exampleJson = {
+    wishes: [
+      {
+        title: "iPhone 15 Pro",
+        description: "Space Black, 256GB",
+        url: "https://www.apple.com/shop/buy-iphone/iphone-15-pro",
+        price: 999,
+        currency: "USD",
+        image_urls: [
+          "https://example.com/image1.jpg",
+          "https://example.com/image2.jpg"
+        ],
+        priority: 5,
+        quantity: 1
+      },
+      {
+        title: "AirPods Pro",
+        description: "2nd generation with MagSafe",
+        url: "https://www.apple.com/airpods-pro/",
+        price: 249,
+        currency: "USD",
+        image_urls: ["https://example.com/airpods.jpg"],
+        priority: 3,
+        quantity: 1
+      }
+    ]
+  };
+
+  const validateBulkJson = (jsonString: string): boolean => {
+    try {
+      const parsed = JSON.parse(jsonString);
+
+      if (!parsed.wishes || !Array.isArray(parsed.wishes)) {
+        setValidationError('JSON must have a "wishes" array');
+        return false;
+      }
+
+      if (parsed.wishes.length === 0) {
+        setValidationError('Wishes array cannot be empty');
+        return false;
+      }
+
+      if (parsed.wishes.length > 50) {
+        setValidationError('Maximum 50 wishes allowed per import');
+        return false;
+      }
+
+      for (let i = 0; i < parsed.wishes.length; i++) {
+        const wish = parsed.wishes[i];
+
+        if (!wish.title || typeof wish.title !== 'string') {
+          setValidationError(`Wish #${i + 1}: "title" is required and must be a string`);
+          return false;
+        }
+
+        if (wish.description && typeof wish.description !== 'string') {
+          setValidationError(`Wish #${i + 1}: "description" must be a string`);
+          return false;
+        }
+
+        if (wish.url && typeof wish.url !== 'string') {
+          setValidationError(`Wish #${i + 1}: "url" must be a string`);
+          return false;
+        }
+
+        if (wish.price !== undefined && typeof wish.price !== 'number') {
+          setValidationError(`Wish #${i + 1}: "price" must be a number`);
+          return false;
+        }
+
+        if (wish.currency && typeof wish.currency !== 'string') {
+          setValidationError(`Wish #${i + 1}: "currency" must be a string`);
+          return false;
+        }
+
+        if (wish.image_urls && !Array.isArray(wish.image_urls)) {
+          setValidationError(`Wish #${i + 1}: "image_urls" must be an array`);
+          return false;
+        }
+
+        if (wish.priority !== undefined && (typeof wish.priority !== 'number' || wish.priority < 1 || wish.priority > 5)) {
+          setValidationError(`Wish #${i + 1}: "priority" must be a number between 1-5`);
+          return false;
+        }
+
+        if (wish.quantity !== undefined && (typeof wish.quantity !== 'number' || wish.quantity < 1)) {
+          setValidationError(`Wish #${i + 1}: "quantity" must be a positive number`);
+          return false;
+        }
+      }
+
+      setParsedWishes(parsed.wishes);
+      setValidationError('');
+      return true;
+    } catch (error) {
+      setValidationError('Invalid JSON format: ' + (error as Error).message);
+      return false;
+    }
+  };
+
+  const uploadImageToServer = async (imageUrl: string): Promise<string> => {
+    try {
+      // Download the image
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
+
+      const blob = await response.blob();
+      const contentType = blob.type || 'image/jpeg';
+      const extension = contentType.split('/')[1] || 'jpg';
+
+      // Get presigned upload URL
+      const uploadUrlResponse = await fetch('/api/proxy?endpoint=' + encodeURIComponent('/uploads/wish-image'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wishlistId: wishlistId,
+          fileExtension: extension,
+          contentType: contentType
+        })
+      });
+
+      if (!uploadUrlResponse.ok) throw new Error('Failed to get upload URL');
+
+      const uploadData = await uploadUrlResponse.json();
+
+      // Upload to R2
+      const uploadResponse = await fetch(uploadData.uploadUrl, {
+        method: 'PUT',
+        body: blob,
+        headers: {
+          'Content-Type': contentType
+        }
+      });
+
+      if (!uploadResponse.ok) throw new Error('Failed to upload image');
+
+      return uploadData.publicUrl;
+    } catch (error) {
+      console.error('Image upload error:', error);
+      return imageUrl; // Return original URL if upload fails
+    }
+  };
+
+  const handleBulkImport = async () => {
+    if (!wishlistId) {
+      setValidationError('Please select a wishlist first');
+      return;
+    }
+
+    if (!validateBulkJson(bulkJson)) {
+      return;
+    }
+
+    setIsImporting(true);
+    setImportProgress({ current: 0, total: parsedWishes.length });
+    const errors: string[] = [];
+    let successCount = 0;
+
+    for (let i = 0; i < parsedWishes.length; i++) {
+      const wish = parsedWishes[i];
+      setImportProgress({ current: i + 1, total: parsedWishes.length });
+
+      try {
+        // Upload images if present
+        let uploadedImageUrls: string[] = [];
+        if (wish.image_urls && wish.image_urls.length > 0) {
+          const uploadPromises = wish.image_urls.map((url: string) => uploadImageToServer(url));
+          uploadedImageUrls = await Promise.all(uploadPromises);
+        }
+
+        // Create the wish
+        await createWish({
+          username,
+          wishlist_id: wishlistId,
+          title: wish.title,
+          description: wish.description,
+          url: wish.url,
+          price: wish.price,
+          currency: wish.currency || 'USD',
+          images: uploadedImageUrls.length > 0 ? uploadedImageUrls : undefined,
+          priority: wish.priority || 3,
+          quantity: wish.quantity || 1,
+        });
+
+        successCount++;
+      } catch (error) {
+        errors.push(`Wish "${wish.title}": ${(error as Error).message}`);
+      }
+    }
+
+    setIsImporting(false);
+    setImportProgress({ current: 0, total: 0 });
+
+    if (errors.length > 0) {
+      setError(`Imported ${successCount}/${parsedWishes.length} wishes. Errors: ${errors.join('; ')}`);
+    } else {
+      setSuccess(`Successfully imported ${successCount} wishes!`);
+      setBulkJson('');
+      setParsedWishes([]);
+      setShowBulkImport(false);
+    }
+
+    // Refresh wishes list
+    mutateWishes();
+
+    // Clear messages after 5 seconds
+    setTimeout(() => {
+      setSuccess('');
+      setError('');
+    }, 5000);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -338,8 +559,154 @@ export default function AddWishPage() {
           </CardContent>
         </Card>
 
+        {/* Bulk Import Toggle Button */}
+        {userFound && !editingWish && (
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setShowBulkImport(!showBulkImport)}
+              className="gap-2"
+            >
+              <FileJson className="h-4 w-4" />
+              {showBulkImport ? 'Hide' : 'Show'} Bulk Import
+            </Button>
+          </div>
+        )}
+
+        {/* Bulk Import Section */}
+        {userFound && showBulkImport && !editingWish && (
+          <Card className="border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Upload className="h-5 w-5" />
+                Bulk Import Wishes from JSON
+              </CardTitle>
+              <CardDescription>
+                Import multiple wishes at once using JSON format. Images will be automatically downloaded and uploaded to our server.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* JSON Schema Example */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">JSON Schema Example</Label>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      navigator.clipboard.writeText(JSON.stringify(exampleJson, null, 2));
+                      setSuccess('Example JSON copied to clipboard!');
+                      setTimeout(() => setSuccess(''), 2000);
+                    }}
+                    className="gap-2 h-8"
+                  >
+                    <Download className="h-3 w-3" />
+                    Copy Example
+                  </Button>
+                </div>
+                <pre className="bg-muted p-4 rounded-lg text-xs overflow-x-auto border">
+{JSON.stringify(exampleJson, null, 2)}
+                </pre>
+                <p className="text-xs text-muted-foreground mt-2">
+                  <strong>Instructions for LLM:</strong> Generate a JSON object with a "wishes" array. Each wish must have a "title" (required).
+                  Optional fields: "description", "url", "price" (number), "currency" (string, default: USD), "image_urls" (array of strings),
+                  "priority" (1-5, default: 3), "quantity" (number, default: 1). Maximum 50 wishes per import.
+                </p>
+              </div>
+
+              {/* JSON Input */}
+              <div className="space-y-2">
+                <Label htmlFor="bulkJson">Paste JSON Here</Label>
+                <textarea
+                  id="bulkJson"
+                  value={bulkJson}
+                  onChange={(e) => {
+                    setBulkJson(e.target.value);
+                    setValidationError('');
+                    setParsedWishes([]);
+                  }}
+                  placeholder="Paste your JSON here..."
+                  className="w-full min-h-[200px] p-3 text-sm font-mono border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={isImporting}
+                />
+              </div>
+
+              {/* Validation Error */}
+              {validationError && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-sm text-destructive">
+                  {validationError}
+                </div>
+              )}
+
+              {/* Parsed Wishes Preview */}
+              {parsedWishes.length > 0 && !validationError && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-green-600">
+                    ✓ Valid JSON - {parsedWishes.length} wishes ready to import
+                  </Label>
+                  <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3 max-h-[200px] overflow-y-auto">
+                    <ul className="text-sm space-y-1">
+                      {parsedWishes.map((wish, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-green-600 font-mono">{idx + 1}.</span>
+                          <span className="flex-1">
+                            <strong>{wish.title}</strong>
+                            {wish.price && <span className="text-muted-foreground ml-2">({wish.currency || 'USD'} {wish.price})</span>}
+                            {wish.image_urls && wish.image_urls.length > 0 && (
+                              <span className="text-xs text-muted-foreground ml-2">
+                                [{wish.image_urls.length} image(s)]
+                              </span>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Import Progress */}
+              {isImporting && (
+                <div className="space-y-2">
+                  <Label className="text-sm">
+                    Importing wishes... {importProgress.current}/{importProgress.total}
+                  </Label>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Please wait... Downloading and uploading images, creating wishes.
+                  </p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                <Button
+                  onClick={() => validateBulkJson(bulkJson)}
+                  disabled={!bulkJson || isImporting}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Validate JSON
+                </Button>
+                <Button
+                  onClick={handleBulkImport}
+                  disabled={parsedWishes.length === 0 || isImporting || !wishlistId}
+                  className="flex-1"
+                >
+                  {isImporting ? 'Importing...' : `Import ${parsedWishes.length} Wishes`}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Wish Form */}
-        {userFound && (
+        {userFound && !showBulkImport && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
