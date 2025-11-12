@@ -69,12 +69,17 @@ export default function AddWishPage() {
 
       const data = await response.json();
 
-      if (data.profile && data.profile.wishlists && data.profile.wishlists.length > 0) {
-        setWishlists(data.profile.wishlists);
-        setWishlistId(data.profile.wishlists[0].id); // Auto-select first wishlist
-        setUserFound(true);
+      // Check if user exists and has wishlists array (even if empty, we can still add wishes)
+      if (data.wishlists) {
+        if (data.wishlists.length > 0) {
+          setWishlists(data.wishlists);
+          setWishlistId(data.wishlists[0].id); // Auto-select first wishlist
+          setUserFound(true);
+        } else {
+          setError('User has no wishlists. Create a wishlist for this user first.');
+        }
       } else {
-        setError('User has no wishlists');
+        setError('Failed to load user wishlists');
       }
     } catch (err: any) {
       setError(err.message || 'Failed to find user');
