@@ -56,4 +56,49 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Dark mode form elements */
+  .dark {
+    color-scheme: dark;
+  }
+
+  /* Selection styling for dark mode */
+  .dark ::selection {
+    background-color: rgba(63, 63, 70, 0.99); /* zinc-700 */
+    color: rgba(255, 255, 255, 0.99);
+  }
+
+  /* Select dropdowns */
+  .dark select {
+    background-color: #27272a; /* zinc-800 */
+    color: white;
+    border-color: #3f3f46; /* zinc-700 */
+  }
+
+  .dark select:focus {
+    border-color: #52525b; /* zinc-600 */
+    outline: none;
+    ring: 2px;
+    ring-color: #52525b;
+  }
+
+  /* Textarea */
+  .dark textarea {
+    background-color: #27272a; /* zinc-800 */
+    color: white;
+    border-color: #3f3f46; /* zinc-700 */
+  }
+
+  .dark textarea:focus {
+    border-color: #52525b; /* zinc-600 */
+  }
+
+  /* Disabled states */
+  .dark input:disabled,
+  .dark select:disabled,
+  .dark textarea:disabled {
+    background-color: #18181b; /* zinc-900 */
+    color: #71717a; /* zinc-500 */
+    cursor: not-allowed;
+  }
 }

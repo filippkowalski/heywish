@@ -23,11 +23,28 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Request failed' }));
+    // Try to get error details from response
+    let errorBody;
+    try {
+      errorBody = await response.json();
+    } catch {
+      errorBody = { message: 'Request failed' };
+    }
+
+    // Log detailed error info for debugging
+    console.error('API Error Details:', {
+      endpoint,
+      proxyUrl,
+      status: response.status,
+      statusText: response.statusText,
+      errorBody,
+      method: options.method || 'GET',
+    });
+
     throw new APIError(
       response.status,
-      error.error?.message || error.message || 'Request failed',
-      error.error?.code || error.code
+      errorBody.error?.message || errorBody.message || `Request failed with status ${response.status}`,
+      errorBody.error?.code || errorBody.code || 'UNKNOWN_ERROR'
     );
   }
 

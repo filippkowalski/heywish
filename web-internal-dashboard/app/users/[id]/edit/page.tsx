@@ -353,7 +353,7 @@ export default function EditUserPage() {
                     id="gender"
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3 py-2 border border-zinc-700 rounded-md bg-zinc-800 text-white"
                   >
                     <option value="">Select gender</option>
                     <option value="male">Male</option>

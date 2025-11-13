@@ -606,7 +606,7 @@ export default function AddWishPage() {
                   id="wishlist"
                   value={wishlistId}
                   onChange={(e) => setWishlistId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 border border-zinc-700 rounded-md bg-zinc-800 text-white"
                 >
                   {wishlists.map((wl) => (
                     <option key={wl.id} value={wl.id}>
@@ -686,7 +686,7 @@ export default function AddWishPage() {
                     setParsedWishes([]);
                   }}
                   placeholder="Paste your JSON here..."
-                  className="w-full min-h-[200px] p-3 text-sm font-mono border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full min-h-[200px] p-3 text-sm font-mono border border-zinc-700 rounded-md bg-zinc-800 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-600"
                   disabled={isImporting}
                 />
               </div>
