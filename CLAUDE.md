@@ -122,12 +122,29 @@ The REST API is implemented using Next.js API routes. Key characteristics includ
 ## WEB Guidelines
 - Shadcn design, black and white, elegant, sleek
 - Tailwind.css, React
-- **IMPORTANT**: Deployed on Cloudflare Pages which uses Edge runtime
-  - No Node.js-specific APIs available
-  - Use `@cloudflare/next-on-pages` adapter for building
-  - Build command: `npm run pages:build` (uses `npx @cloudflare/next-on-pages`)
-  - All pages use `export const runtime = 'edge'` when needed
-  - Client components with hooks (useState, useEffect, useRouter) are fine but must be marked with "use client"
+
+### Cloudflare Pages Deployment - CRITICAL REQUIREMENTS
+- **⚠️ ALWAYS add `export const runtime = 'edge';` to ALL dynamic routes**
+- Deployed on Cloudflare Pages which uses Edge runtime exclusively
+- **Any new page with dynamic segments (e.g., `/users/[id]/edit`) MUST have edge runtime export**
+- Build will FAIL without edge runtime on dynamic routes
+- Build command: `npm run pages:build` (uses `npx @cloudflare/next-on-pages`)
+- Test build locally before pushing: `npm run pages:build` in `web-internal-dashboard` directory
+
+**Edge Runtime Requirements:**
+- No Node.js-specific APIs available (no `fs`, `path`, etc.)
+- All server-side code must be edge-compatible
+- Client components with hooks (useState, useEffect, useRouter) are fine but must be marked with "use client"
+
+**Required pattern for dynamic routes:**
+```typescript
+'use client';
+
+export const runtime = 'edge';
+
+// ... rest of imports and component code
+```
+
 - Please use the playwright MCP server when making visual changes to the front-end website to check your work
 
 ## Mobile Guidelines
