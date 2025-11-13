@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createWish, listUsers, updateWish, deleteWish, browseWishes, type Wish } from '@/lib/api';
-import { Plus, Search, CheckCircle, User, Edit, Trash2, X, Upload, FileJson, Download } from 'lucide-react';
+import { createWish, listUsers, updateWish, deleteWish, browseWishes, bulkDeleteWishes, scrapeUrl, type Wish } from '@/lib/api';
+import { Plus, Search, CheckCircle, User, Edit, Trash2, X, Upload, FileJson, Download, Loader2 } from 'lucide-react';
 import useSWR from 'swr';
 import { toast } from 'sonner';
 
@@ -41,7 +41,11 @@ export default function AddWishPage() {
   const [validationError, setValidationError] = useState('');
   const [parsedWishes, setParsedWishes] = useState<any[]>([]);
   const [isImporting, setIsImporting] = useState(false);
-  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0, status: '' });
+
+  // Bulk selection state
+  const [selectedWishes, setSelectedWishes] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Fetch fake users list
   const { data: fakeUsersData } = useSWR(
@@ -462,6 +466,67 @@ export default function AddWishPage() {
     }
   };
 
+  const toggleWishSelection = (wishId: string) => {
+    const newSelection = new Set(selectedWishes);
+    if (newSelection.has(wishId)) {
+      newSelection.delete(wishId);
+    } else {
+      newSelection.add(wishId);
+    }
+    setSelectedWishes(newSelection);
+  };
+
+  const toggleSelectAll = () => {
+    if (!wishesData?.wishes) return;
+
+    if (selectedWishes.size === wishesData.wishes.length) {
+      // Deselect all
+      setSelectedWishes(new Set());
+    } else {
+      // Select all
+      const allIds = new Set(wishesData.wishes.map(w => w.id));
+      setSelectedWishes(allIds);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedWishes.size === 0) return;
+
+    if (!confirm(`Are you sure you want to delete ${selectedWishes.size} wish(es)? This action cannot be undone.`)) {
+      return;
+    }
+
+    setIsBulkDeleting(true);
+    setError('');
+
+    try {
+      const wishIds = Array.from(selectedWishes);
+      await bulkDeleteWishes(wishIds);
+
+      toast.success('Bulk delete successful', {
+        description: `Successfully deleted ${selectedWishes.size} wish(es).`
+      });
+
+      setSelectedWishes(new Set());
+      mutateWishes();
+    } catch (err: any) {
+      console.error('Bulk delete error:', err);
+
+      const errorMessage = err.message || 'Failed to delete wishes';
+      const errorCode = err.code || 'UNKNOWN_ERROR';
+      const statusCode = err.status || 'N/A';
+
+      toast.error('Bulk delete failed', {
+        description: `${errorMessage}\n\nError Code: ${errorCode}\nStatus: ${statusCode}`,
+        duration: 8000,
+      });
+
+      setError(`${errorMessage} (Status: ${statusCode}, Code: ${errorCode})`);
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   const handleBulkImport = async () => {
     if (!wishlistId) {
       setValidationError('Please select a wishlist first');
@@ -473,34 +538,67 @@ export default function AddWishPage() {
     }
 
     setIsImporting(true);
-    setImportProgress({ current: 0, total: parsedWishes.length });
+    setImportProgress({ current: 0, total: parsedWishes.length, status: 'Starting import...' });
     const errors: string[] = [];
     let successCount = 0;
 
     for (let i = 0; i < parsedWishes.length; i++) {
       const wish = parsedWishes[i];
-      setImportProgress({ current: i + 1, total: parsedWishes.length });
+      setImportProgress({ current: i + 1, total: parsedWishes.length, status: `Processing "${wish.title}"...` });
 
       try {
-        // Upload images if present
+        let finalWish = { ...wish };
+
+        // Step 1: Scrape URL if provided and missing data
+        if (wish.url && (!wish.image_urls || wish.image_urls.length === 0 || !wish.description)) {
+          setImportProgress({ current: i + 1, total: parsedWishes.length, status: `Scraping data for "${wish.title}"...` });
+
+          try {
+            const scrapedData = await scrapeUrl(wish.url);
+
+            // Merge scraped data with existing wish data (existing data takes precedence)
+            if (scrapedData.title && !finalWish.title) {
+              finalWish.title = scrapedData.title;
+            }
+            if (scrapedData.description && !finalWish.description) {
+              finalWish.description = scrapedData.description;
+            }
+            if (scrapedData.price && !finalWish.price) {
+              finalWish.price = scrapedData.price;
+            }
+            if (scrapedData.currency && !finalWish.currency) {
+              finalWish.currency = scrapedData.currency;
+            }
+            if (scrapedData.image && (!finalWish.image_urls || finalWish.image_urls.length === 0)) {
+              finalWish.image_urls = [scrapedData.image];
+            }
+          } catch (scrapeError) {
+            console.warn(`Failed to scrape URL for "${wish.title}":`, scrapeError);
+            // Continue with original wish data if scraping fails
+          }
+        }
+
+        // Step 2: Upload images if present
         let uploadedImageUrls: string[] = [];
-        if (wish.image_urls && wish.image_urls.length > 0) {
-          const uploadPromises = wish.image_urls.map((url: string) => uploadImageToServer(url));
+        if (finalWish.image_urls && finalWish.image_urls.length > 0) {
+          setImportProgress({ current: i + 1, total: parsedWishes.length, status: `Uploading images for "${finalWish.title}"...` });
+          const uploadPromises = finalWish.image_urls.map((url: string) => uploadImageToServer(url));
           uploadedImageUrls = await Promise.all(uploadPromises);
         }
 
-        // Create the wish
+        // Step 3: Create the wish
+        setImportProgress({ current: i + 1, total: parsedWishes.length, status: `Creating wish "${finalWish.title}"...` });
         await createWish({
           username,
           wishlist_id: wishlistId,
-          title: wish.title,
-          description: wish.description,
-          url: wish.url,
-          price: wish.price,
-          currency: wish.currency || 'USD',
+          title: finalWish.title,
+          description: finalWish.description,
+          url: finalWish.url,
+          price: finalWish.price,
+          currency: finalWish.currency || 'USD',
           images: uploadedImageUrls.length > 0 ? uploadedImageUrls : undefined,
-          priority: wish.priority || 3,
-          quantity: wish.quantity || 1,
+          priority: finalWish.priority || 3,
+          quantity: finalWish.quantity || 1,
         });
 
         successCount++;
@@ -510,7 +608,7 @@ export default function AddWishPage() {
     }
 
     setIsImporting(false);
-    setImportProgress({ current: 0, total: 0 });
+    setImportProgress({ current: 0, total: 0, status: '' });
 
     if (errors.length > 0) {
       const errorMessage = `Imported ${successCount}/${parsedWishes.length} wishes. ${errors.length} failed.`;
@@ -737,8 +835,9 @@ export default function AddWishPage() {
                       style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Please wait... Downloading and uploading images, creating wishes.
+                  <p className="text-xs text-muted-foreground flex items-center gap-2">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    {importProgress.status || 'Please wait... Scraping URLs, downloading and uploading images, creating wishes.'}
                   </p>
                 </div>
               )}
@@ -907,19 +1006,76 @@ export default function AddWishPage() {
         {userFound && wishesData && wishesData.wishes && wishesData.wishes.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Existing Wishes ({wishesData.wishes.length})</CardTitle>
-              <CardDescription>
-                Click Edit to modify or Delete to remove a wish
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">Existing Wishes ({wishesData.wishes.length})</CardTitle>
+                  <CardDescription>
+                    Select multiple wishes to bulk delete, or click Edit/Delete for individual actions
+                  </CardDescription>
+                </div>
+                {selectedWishes.size > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      {selectedWishes.size} selected
+                    </span>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleBulkDelete}
+                      disabled={isBulkDeleting}
+                      className="gap-2"
+                    >
+                      {isBulkDeleting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="h-4 w-4" />
+                          Delete {selectedWishes.size}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
+              {/* Select All Checkbox */}
+              <div className="flex items-center gap-2 mb-3 pb-3 border-b">
+                <input
+                  type="checkbox"
+                  id="select-all"
+                  checked={selectedWishes.size === wishesData.wishes.length && wishesData.wishes.length > 0}
+                  onChange={toggleSelectAll}
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                />
+                <Label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+                  Select All ({wishesData.wishes.length})
+                </Label>
+              </div>
+
               <div className="space-y-2">
                 {wishesData.wishes.map((wish) => (
                   <div
                     key={wish.id}
-                    className="flex items-start justify-between p-3 rounded-lg border hover:bg-secondary/50 transition-colors"
+                    className="flex items-start gap-3 p-3 rounded-lg border hover:bg-secondary/50 transition-colors"
                   >
-                    <div className="flex-1 min-w-0 pr-4">
+                    {/* Checkbox */}
+                    <div className="flex items-start pt-1">
+                      <input
+                        type="checkbox"
+                        id={`wish-${wish.id}`}
+                        checked={selectedWishes.has(wish.id)}
+                        onChange={() => toggleWishSelection(wish.id)}
+                        disabled={isBulkDeleting || isDeleting !== null}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer disabled:opacity-50"
+                      />
+                    </div>
+
+                    {/* Wish Content */}
+                    <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm truncate">{wish.title}</h4>
                       {wish.description && (
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
@@ -936,14 +1092,19 @@ export default function AddWishPage() {
                         {wish.wishlist_name && (
                           <span>List: {wish.wishlist_name}</span>
                         )}
+                        {wish.images && wish.images.length > 0 && (
+                          <span className="text-green-600">✓ {wish.images.length} image(s)</span>
+                        )}
                       </div>
                     </div>
+
+                    {/* Action Buttons */}
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => startEditWish(wish)}
-                        disabled={isDeleting !== null}
+                        disabled={isDeleting !== null || isBulkDeleting}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -951,7 +1112,7 @@ export default function AddWishPage() {
                         size="sm"
                         variant="ghost"
                         onClick={() => handleDeleteWish(wish.id, wish.title)}
-                        disabled={isDeleting !== null}
+                        disabled={isDeleting !== null || isBulkDeleting}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         {isDeleting === wish.id ? (

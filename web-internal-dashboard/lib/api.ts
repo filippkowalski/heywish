@@ -301,6 +301,34 @@ export async function deleteWish(wishId: string): Promise<{ success: boolean }> 
   });
 }
 
+export async function bulkDeleteWishes(wishIds: string[]): Promise<{ success: boolean; deleted: number }> {
+  return fetchAPI('/admin/wishes/bulk-delete', {
+    method: 'POST',
+    body: JSON.stringify({ wish_ids: wishIds }),
+  });
+}
+
+// ============================================================================
+// URL SCRAPING
+// ============================================================================
+
+export interface ScrapedData {
+  title?: string;
+  description?: string;
+  image?: string;
+  price?: number;
+  currency?: string;
+  brand?: string;
+  source?: string;
+}
+
+export async function scrapeUrl(url: string): Promise<ScrapedData> {
+  return fetchAPI('/wishes/scrape-url', {
+    method: 'POST',
+    body: JSON.stringify({ url }),
+  });
+}
+
 // ============================================================================
 // AUTHENTICATION
 // ============================================================================
