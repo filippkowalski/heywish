@@ -49,8 +49,15 @@ export default function EditUserPage() {
     try {
       // We'll fetch all users and find the one we need
       // In a production app, you'd have a dedicated endpoint for fetching a single user
-      const response = await listUsers({ page: 1, limit: 1000 });
-      const foundUser = response.users.find(u => u.id === userId);
+      // Try fetching from all users (real users)
+      let response = await listUsers({ page: 1, limit: 1000 });
+      let foundUser = response.users.find(u => u.id === userId);
+
+      // If not found in real users, try fake users
+      if (!foundUser) {
+        response = await listUsers({ page: 1, limit: 1000, fake_only: true });
+        foundUser = response.users.find(u => u.id === userId);
+      }
 
       if (!foundUser) {
         setError('User not found');
