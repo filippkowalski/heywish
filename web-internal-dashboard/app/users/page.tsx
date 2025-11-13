@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { listUsers, type User, type UserListResponse } from '@/lib/api';
 import useSWR from 'swr';
-import { Users as UsersIcon, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users as UsersIcon, Filter, ChevronLeft, ChevronRight, Edit } from 'lucide-react';
+import Link from 'next/link';
 
 export default function UsersPage() {
   const [page, setPage] = useState(1);
@@ -207,11 +208,14 @@ export default function UsersPage() {
                           </div>
                         </div>
 
-                        {/* Actions placeholder */}
+                        {/* Actions */}
                         <div className="flex-shrink-0">
-                          <Button variant="outline" size="sm" disabled>
-                            View
-                          </Button>
+                          <Link href={`/users/${user.id}/edit`}>
+                            <Button variant="outline" size="sm">
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                          </Link>
                         </div>
                       </div>
                     ))}
