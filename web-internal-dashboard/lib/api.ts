@@ -272,14 +272,14 @@ export async function getTopWishes(by: 'reservations' | 'price' | 'recent' = 're
 }
 
 export async function updateWish(wishId: string, data: Partial<CreateWishData>): Promise<{ wish: Wish }> {
-  return fetchAPI(`/wishes/${wishId}`, {
+  return fetchAPI(`/admin/wishes/${wishId}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
 }
 
 export async function deleteWish(wishId: string): Promise<{ success: boolean }> {
-  return fetchAPI(`/wishes/${wishId}`, {
+  return fetchAPI(`/admin/wishes/${wishId}`, {
     method: 'DELETE',
   });
 }
