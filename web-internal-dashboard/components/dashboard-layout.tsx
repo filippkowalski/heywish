@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Toaster } from 'sonner';
 import {
   LayoutDashboard,
   Users,
@@ -132,6 +133,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </div>
+
+      {/* Toast notifications */}
+      <Toaster position="top-right" richColors closeButton />
     </div>
   );
 }

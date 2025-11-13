@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { createWish, listUsers, updateWish, deleteWish, browseWishes, type Wish } from '@/lib/api';
 import { Plus, Search, CheckCircle, User, Edit, Trash2, X, Upload, FileJson, Download } from 'lucide-react';
 import useSWR from 'swr';
+import { toast } from 'sonner';
 
 export default function AddWishPage() {
   // Form state
@@ -65,6 +66,9 @@ export default function AddWishPage() {
     const searchUsername = usernameToSearch || username;
 
     if (!searchUsername.trim()) {
+      toast.error('Missing username', {
+        description: 'Please enter a username to search.'
+      });
       setError('Please enter a username');
       return;
     }
@@ -93,14 +97,32 @@ export default function AddWishPage() {
           setWishlists(data.wishlists);
           setWishlistId(data.wishlists[0].id); // Auto-select first wishlist
           setUserFound(true);
+          toast.success(`User found`, {
+            description: `@${searchUsername} has ${data.wishlists.length} wishlist(s).`
+          });
         } else {
-          setError('User has no wishlists. Create a wishlist for this user first.');
+          const errorMsg = 'User has no wishlists. Create a wishlist for this user first.';
+          toast.warning('No wishlists found', {
+            description: errorMsg
+          });
+          setError(errorMsg);
         }
       } else {
-        setError('Failed to load user wishlists');
+        const errorMsg = 'Failed to load user wishlists';
+        toast.error('API Error', {
+          description: errorMsg
+        });
+        setError(errorMsg);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to find user');
+      console.error('Search user error:', err);
+
+      const errorMessage = err.message || 'Failed to find user';
+      toast.error(`User search failed`, {
+        description: `${errorMessage}\nUsername: ${searchUsername}`,
+        duration: 6000,
+      });
+      setError(errorMessage);
     } finally {
       setIsSearching(false);
     }
@@ -135,6 +157,9 @@ export default function AddWishPage() {
     e.preventDefault();
 
     if (!wishlistId) {
+      toast.error('Missing wishlist', {
+        description: 'Please select a wishlist before creating a wish.'
+      });
       setError('Please select a wishlist');
       return;
     }
@@ -157,7 +182,9 @@ export default function AddWishPage() {
         quantity: parseInt(quantity) || 1,
       });
 
-      setSuccess(`Wish "${title}" added successfully to @${username}'s wishlist!`);
+      toast.success(`Wish created successfully`, {
+        description: `"${title}" added to @${username}'s wishlist.`
+      });
 
       // Reset wish form (but keep user/wishlist selection)
       setTitle('');
@@ -171,11 +198,20 @@ export default function AddWishPage() {
 
       // Refresh wishes list
       mutateWishes();
-
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.message || 'Failed to create wish');
+      console.error('Create wish error:', err);
+
+      // Extract detailed error information
+      const errorMessage = err.message || 'Failed to create wish';
+      const errorCode = err.code || 'UNKNOWN_ERROR';
+      const statusCode = err.status || 'N/A';
+
+      toast.error(`Failed to create wish`, {
+        description: `${errorMessage}\n\nError Code: ${errorCode}\nStatus: ${statusCode}\nUsername: ${username}\nWishlist ID: ${wishlistId}`,
+        duration: 8000,
+      });
+
+      setError(`${errorMessage} (Status: ${statusCode}, Code: ${errorCode})`);
     } finally {
       setIsCreating(false);
     }
@@ -204,18 +240,29 @@ export default function AddWishPage() {
         quantity: parseInt(quantity) || 1,
       });
 
-      setSuccess(`Wish "${title}" updated successfully!`);
+      toast.success(`Wish updated successfully`, {
+        description: `"${title}" has been updated.`
+      });
 
       // Reset form and exit edit mode
       cancelEdit();
 
       // Refresh wishes list
       mutateWishes();
-
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.message || 'Failed to update wish');
+      console.error('Update wish error:', err);
+
+      // Extract detailed error information
+      const errorMessage = err.message || 'Failed to update wish';
+      const errorCode = err.code || 'UNKNOWN_ERROR';
+      const statusCode = err.status || 'N/A';
+
+      toast.error(`Failed to update wish`, {
+        description: `${errorMessage}\n\nError Code: ${errorCode}\nStatus: ${statusCode}\nWish ID: ${editingWish.id}`,
+        duration: 8000,
+      });
+
+      setError(`${errorMessage} (Status: ${statusCode}, Code: ${errorCode})`);
     } finally {
       setIsUpdating(false);
     }
@@ -229,15 +276,26 @@ export default function AddWishPage() {
 
     try {
       await deleteWish(wishId);
-      setSuccess(`Wish "${wishTitle}" deleted successfully!`);
+      toast.success(`Wish deleted successfully`, {
+        description: `"${wishTitle}" has been removed from the wishlist.`
+      });
 
       // Refresh wishes list
       mutateWishes();
-
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.message || 'Failed to delete wish');
+      console.error('Delete wish error:', err);
+
+      // Extract detailed error information
+      const errorMessage = err.message || 'Failed to delete wish';
+      const errorCode = err.code || 'UNKNOWN_ERROR';
+      const statusCode = err.status || 'N/A';
+
+      toast.error(`Failed to delete wish`, {
+        description: `${errorMessage}\n\nError Code: ${errorCode}\nStatus: ${statusCode}\nWish ID: ${wishId}`,
+        duration: 8000,
+      });
+
+      setError(`${errorMessage} (Status: ${statusCode}, Code: ${errorCode})`);
     } finally {
       setIsDeleting(null);
     }
@@ -455,9 +513,17 @@ export default function AddWishPage() {
     setImportProgress({ current: 0, total: 0 });
 
     if (errors.length > 0) {
-      setError(`Imported ${successCount}/${parsedWishes.length} wishes. Errors: ${errors.join('; ')}`);
+      const errorMessage = `Imported ${successCount}/${parsedWishes.length} wishes. ${errors.length} failed.`;
+      toast.error('Bulk import completed with errors', {
+        description: `${errorMessage}\n\nErrors:\n${errors.slice(0, 3).join('\n')}${errors.length > 3 ? `\n... and ${errors.length - 3} more` : ''}`,
+        duration: 10000,
+      });
+      setError(errorMessage + ' Check console for details.');
+      console.error('Bulk import errors:', errors);
     } else {
-      setSuccess(`Successfully imported ${successCount} wishes!`);
+      toast.success('Bulk import successful', {
+        description: `Successfully imported ${successCount} wishes!`
+      });
       setBulkJson('');
       setParsedWishes([]);
       setShowBulkImport(false);
@@ -465,12 +531,6 @@ export default function AddWishPage() {
 
     // Refresh wishes list
     mutateWishes();
-
-    // Clear messages after 5 seconds
-    setTimeout(() => {
-      setSuccess('');
-      setError('');
-    }, 5000);
   };
 
   return (
