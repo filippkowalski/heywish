@@ -124,12 +124,17 @@ The REST API is implemented using Next.js API routes. Key characteristics includ
 - Tailwind.css, React
 
 ### Cloudflare Pages Deployment - CRITICAL REQUIREMENTS
-- **⚠️ ALWAYS add `export const runtime = 'edge';` to ALL dynamic routes**
-- Deployed on Cloudflare Pages which uses Edge runtime exclusively
-- **Any new page with dynamic segments (e.g., `/users/[id]/edit`) MUST have edge runtime export**
+**⚠️ APPLIES TO BOTH: `web/` and `web-internal-dashboard/`**
+
+- **⚠️ ALWAYS add `export const runtime = 'edge';` to ALL dynamic routes in BOTH projects**
+- Both `web/` (public app) and `web-internal-dashboard/` (admin) are deployed on Cloudflare Pages
+- Both use Edge runtime exclusively
+- **Any new page with dynamic segments (e.g., `/users/[id]/edit`, `/[username]`) MUST have edge runtime export**
 - Build will FAIL without edge runtime on dynamic routes
 - Build command: `npm run pages:build` (uses `npx @cloudflare/next-on-pages`)
-- Test build locally before pushing: `npm run pages:build` in `web-internal-dashboard` directory
+- Test build locally before pushing:
+  - For public web: `cd web && npm run pages:build`
+  - For admin dashboard: `cd web-internal-dashboard && npm run pages:build`
 
 **Edge Runtime Requirements:**
 - No Node.js-specific APIs available (no `fs`, `path`, etc.)
