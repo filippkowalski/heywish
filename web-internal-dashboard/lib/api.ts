@@ -323,7 +323,7 @@ export interface ScrapedData {
 }
 
 export async function scrapeUrl(url: string): Promise<ScrapedData> {
-  return fetchAPI('/wishes/scrape-url', {
+  return fetchAPI('/admin/scrape-url', {
     method: 'POST',
     body: JSON.stringify({ url }),
   });
