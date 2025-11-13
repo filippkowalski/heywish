@@ -433,8 +433,8 @@ export default function AddWishPage() {
       const contentType = blob.type || 'image/jpeg';
       const extension = contentType.split('/')[1] || 'jpg';
 
-      // Get presigned upload URL
-      const uploadUrlResponse = await fetch('/api/proxy?endpoint=' + encodeURIComponent('/uploads/wish-image'), {
+      // Get presigned upload URL from admin endpoint
+      const uploadUrlResponse = await fetch('/api/proxy?endpoint=' + encodeURIComponent('/admin/upload/wish-image'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -561,6 +561,11 @@ export default function AddWishPage() {
 
             console.log(`[Scrape] Result for "${wish.title}":`, scrapedData);
 
+            // Check if scraping was successful
+            if (scrapedData.success === false || scrapedData.error) {
+              throw new Error(scrapedData.error || 'Scraping failed');
+            }
+
             // Merge scraped data with existing wish data (existing data takes precedence)
             if (scrapedData.title && !finalWish.title) {
               finalWish.title = scrapedData.title;
@@ -574,11 +579,18 @@ export default function AddWishPage() {
             if (scrapedData.currency && !finalWish.currency) {
               finalWish.currency = scrapedData.currency;
             }
-            if (scrapedData.image && (!finalWish.image_urls || finalWish.image_urls.length === 0)) {
-              finalWish.image_urls = [scrapedData.image];
-              console.log(`[Scrape] Added image URL: ${scrapedData.image}`);
-            } else {
-              console.log(`[Scrape] No image found in scraped data:`, scrapedData);
+
+            // Handle images - support both single image and images array
+            if (!finalWish.image_urls || finalWish.image_urls.length === 0) {
+              if (scrapedData.images && scrapedData.images.length > 0) {
+                finalWish.image_urls = scrapedData.images;
+                console.log(`[Scrape] Added ${scrapedData.images.length} image(s) from images array`);
+              } else if (scrapedData.image) {
+                finalWish.image_urls = [scrapedData.image];
+                console.log(`[Scrape] Added image URL: ${scrapedData.image}`);
+              } else {
+                console.log(`[Scrape] No images found in scraped data`);
+              }
             }
           } catch (scrapeError: any) {
             console.error(`[Scrape] Failed to scrape URL for "${wish.title}":`, scrapeError);
@@ -586,8 +598,8 @@ export default function AddWishPage() {
 
             // Show error toast but continue
             toast.warning(`Scraping failed for "${wish.title}"`, {
-              description: `Could not fetch images from URL. Wish will be created without images.`,
-              duration: 3000
+              description: `Could not fetch data from URL: ${scrapeError.message || 'Unknown error'}. Wish will be created with provided data only.`,
+              duration: 4000
             });
           }
         } else {
