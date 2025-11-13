@@ -43,18 +43,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Card className="w-[400px]">
+    <div className="min-h-screen flex items-center justify-center bg-zinc-950">
+      <Card className="w-[400px] bg-zinc-900 border-zinc-800">
         <CardHeader>
-          <CardTitle>Jinnie Internal Dashboard</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-white">Jinnie Internal Dashboard</CardTitle>
+          <CardDescription className="text-zinc-400">
             Enter your password to access the admin dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-zinc-200">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -63,14 +63,15 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
                 autoFocus
+                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
               />
             </div>
 
             {error && (
-              <div className="text-sm text-red-600">{error}</div>
+              <div className="text-sm text-red-400 bg-red-950/50 border border-red-900 rounded-lg p-3">{error}</div>
             )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full bg-white text-black hover:bg-zinc-200" disabled={loading}>
               {loading ? 'Authenticating...' : 'Login'}
             </Button>
           </form>
