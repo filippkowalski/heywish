@@ -554,7 +554,12 @@ export default function AddWishPage() {
           setImportProgress({ current: i + 1, total: parsedWishes.length, status: `Scraping data for "${wish.title}"...` });
 
           try {
+            console.log(`[Scrape] Starting scrape for: ${wish.title}`);
+            console.log(`[Scrape] URL: ${wish.url}`);
+
             const scrapedData = await scrapeUrl(wish.url);
+
+            console.log(`[Scrape] Result for "${wish.title}":`, scrapedData);
 
             // Merge scraped data with existing wish data (existing data takes precedence)
             if (scrapedData.title && !finalWish.title) {
@@ -571,11 +576,22 @@ export default function AddWishPage() {
             }
             if (scrapedData.image && (!finalWish.image_urls || finalWish.image_urls.length === 0)) {
               finalWish.image_urls = [scrapedData.image];
+              console.log(`[Scrape] Added image URL: ${scrapedData.image}`);
+            } else {
+              console.log(`[Scrape] No image found in scraped data:`, scrapedData);
             }
-          } catch (scrapeError) {
-            console.warn(`Failed to scrape URL for "${wish.title}":`, scrapeError);
-            // Continue with original wish data if scraping fails
+          } catch (scrapeError: any) {
+            console.error(`[Scrape] Failed to scrape URL for "${wish.title}":`, scrapeError);
+            console.error(`[Scrape] Error details:`, scrapeError.message, scrapeError.stack);
+
+            // Show error toast but continue
+            toast.warning(`Scraping failed for "${wish.title}"`, {
+              description: `Could not fetch images from URL. Wish will be created without images.`,
+              duration: 3000
+            });
           }
+        } else {
+          console.log(`[Scrape] Skipping scrape for "${wish.title}" - has images or no URL`);
         }
 
         // Step 2: Upload images if present
