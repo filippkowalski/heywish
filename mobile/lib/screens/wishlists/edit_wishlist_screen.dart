@@ -257,36 +257,71 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
+    final bool canSave = _titleController.text.trim().isNotEmpty && !_isLoading && !_isCompressingImage;
+
+    return GestureDetector(
+      onTap: () {
+        // Dismiss keyboard when tapping outside text fields
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
         backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: AppTheme.primary),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          'Edit Wishlist',
-          style: TextStyle(
-            color: AppTheme.primary,
-            fontWeight: FontWeight.w600,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.close, color: AppTheme.primary),
+            onPressed: () => context.pop(),
           ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildBasicInfoSection(),
-            const SizedBox(height: 32),
-            _buildHeaderImageSection(),
-            const SizedBox(height: 32),
-            _buildPrivacySection(),
-            const SizedBox(height: 32),
-            _buildSaveButton(),
+          title: Text(
+            'Edit Wishlist',
+            style: TextStyle(
+              color: AppTheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          actions: [
+            if (_isLoading || _isCompressingImage)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryAccent),
+                    ),
+                  ),
+                ),
+              )
+            else
+              TextButton(
+                onPressed: canSave ? _saveWishlist : null,
+                child: Text(
+                  'Save',
+                  style: TextStyle(
+                    color: canSave ? AppTheme.primaryAccent : Colors.grey,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
           ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildBasicInfoSection(),
+              const SizedBox(height: 32),
+              _buildHeaderImageSection(),
+              const SizedBox(height: 32),
+              _buildPrivacySection(),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
@@ -545,34 +580,4 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
     );
   }
 
-  Widget _buildSaveButton() {
-    final bool isDisabled = _isLoading || _isCompressingImage;
-
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton(
-        onPressed: isDisabled ? null : _saveWishlist,
-        style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        child: isDisabled
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(_isCompressingImage ? 'Processing image...' : 'Saving...'),
-                ],
-              )
-            : const Text('Save Changes'),
-      ),
-    );
-  }
 }
