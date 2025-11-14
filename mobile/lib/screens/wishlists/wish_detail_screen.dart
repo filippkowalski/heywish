@@ -416,16 +416,39 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
   }
 
   void _openUrl() async {
-    if (wish?.url != null) {
-      try {
-        final uri = Uri.parse(wish!.url!);
-        await launchUrl(uri, mode: LaunchMode.platformDefault);
-      } catch (e) {
+    if (wish?.url == null) return;
+
+    try {
+      final uri = Uri.parse(wish!.url!);
+
+      // Check if the URL can be launched
+      final canLaunch = await canLaunchUrl(uri);
+
+      if (!canLaunch) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('wish.could_not_open_url'.tr())),
           );
         }
+        return;
+      }
+
+      // Launch the URL in external browser
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('wish.could_not_open_url'.tr())),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('wish.could_not_open_url'.tr())),
+        );
       }
     }
   }
