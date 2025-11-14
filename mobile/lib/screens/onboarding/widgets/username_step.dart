@@ -318,6 +318,7 @@ class _UsernameStepState extends State<UsernameStep> {
                         
                         // Username field with inline loader
                         Container(
+                          key: const ValueKey('username-input-container'),
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                           decoration: BoxDecoration(
                             color: Colors.white,

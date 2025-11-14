@@ -480,45 +480,51 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
     if (wish?.imageUrl == null) return;
 
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
+      NativePageRoute(
+        child: Scaffold(
           backgroundColor: Colors.black,
-          body: Stack(
-            children: [
-              // Full screen image
-              Center(
-                child: InteractiveViewer(
-                  minScale: 0.5,
-                  maxScale: 4.0,
-                  child: CachedImageWidget(
-                    imageUrl: wish!.imageUrl,
-                    fit: BoxFit.contain,
-                    errorWidget: Container(
-                      color: Colors.black,
-                      child: Icon(
-                        WishCategoryDetector.getIconFromTitle(wish!.title),
-                        size: 64,
-                        color: WishCategoryDetector.getColorFromTitle(wish!.title),
+          body: GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Stack(
+              children: [
+                // Full screen image
+                Center(
+                  child: GestureDetector(
+                    onTap: () {}, // Prevents taps on image from closing
+                    child: InteractiveViewer(
+                      minScale: 0.5,
+                      maxScale: 4.0,
+                      child: CachedImageWidget(
+                        imageUrl: wish!.imageUrl,
+                        fit: BoxFit.contain,
+                        errorWidget: Container(
+                          color: Colors.black,
+                          child: Icon(
+                            WishCategoryDetector.getIconFromTitle(wish!.title),
+                            size: 64,
+                            color: WishCategoryDetector.getColorFromTitle(wish!.title),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              // Close button
-              SafeArea(
-                child: Positioned(
-                  top: 16,
-                  right: 16,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 28),
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.black.withValues(alpha: 0.5),
+                // Close button
+                SafeArea(
+                  child: Positioned(
+                    top: 16,
+                    right: 16,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.black.withValues(alpha: 0.5),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
