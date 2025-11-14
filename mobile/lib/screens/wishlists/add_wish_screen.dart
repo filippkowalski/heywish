@@ -6,11 +6,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'dart:io';
 import '../../services/wishlist_service.dart';
-import '../../services/image_cache_service.dart';
 import '../../services/api_service.dart';
 import '../../services/preferences_service.dart';
 import '../../theme/app_theme.dart';
-import '../../models/wishlist.dart';
 import '../../common/navigation/native_page_route.dart';
 import '../../common/widgets/add_item_tip_bottom_sheet.dart';
 import 'wishlist_new_screen.dart';
@@ -80,14 +78,12 @@ class _AddWishScreenState extends State<AddWishScreen> {
 
   // Image picker
   final ImagePicker _imagePicker = ImagePicker();
-  final ImageCacheService _imageCacheService = ImageCacheService();
 
   // Form state
   File? _selectedImage;
   String? _scrapedImageUrl;
   String _currency = 'USD';
   bool _isLoading = false;
-  bool _isCompressingImage = false;
   bool _isScrapingUrl = false;
   String? _selectedWishlistId;
   String? _lastScrapedUrl;
@@ -518,41 +514,23 @@ class _AddWishScreenState extends State<AddWishScreen> {
     if (source == null) return;
 
     try {
+      // Use imageQuality and size constraints in pickImage for faster initial compression
       final XFile? image = await _imagePicker.pickImage(
         source: source,
+        imageQuality: 85,
+        maxWidth: 1024,
+        maxHeight: 1024,
       );
 
       if (image != null && mounted) {
+        // Image is already compressed by image_picker, just use it directly
         setState(() {
-          _isCompressingImage = true;
+          _selectedImage = File(image.path);
+          _visibleFields.add('image');
         });
-
-        final compressedImage = await _imageCacheService.compressAndCacheImage(
-          imageFile: File(image.path),
-          quality: 85,
-          maxWidth: 1024,
-          maxHeight: 1024,
-        );
-
-        if (compressedImage != null && mounted) {
-          setState(() {
-            _selectedImage = compressedImage;
-            _isCompressingImage = false;
-            _visibleFields.add('image');
-          });
-        } else if (mounted) {
-          setState(() {
-            _selectedImage = File(image.path);
-            _isCompressingImage = false;
-            _visibleFields.add('image');
-          });
-        }
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isCompressingImage = false;
-        });
         _showPermissionDeniedDialog();
       }
     }
@@ -1156,7 +1134,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
 
   Widget _buildAddImageButton() {
     return GestureDetector(
-      onTap: _isCompressingImage ? null : _pickImage,
+      onTap: _pickImage,
       child: Container(
         width: double.infinity,
         height: 180,
@@ -1166,22 +1144,20 @@ class _AddWishScreenState extends State<AddWishScreen> {
           border: Border.all(color: Colors.grey[300]!, width: 1.5),
         ),
         child: Center(
-          child: _isCompressingImage
-              ? const CircularProgressIndicator(strokeWidth: 2)
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.image_outlined, size: 48, color: Colors.grey[400]),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Tap to add photo',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.image_outlined, size: 48, color: Colors.grey[400]),
+              const SizedBox(height: 8),
+              Text(
+                'Tap to add photo',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
                 ),
+              ),
+            ],
+          ),
         ),
       ),
     );

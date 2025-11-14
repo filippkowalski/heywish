@@ -266,6 +266,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   final XFile? image = await picker.pickImage(
                     source: ImageSource.camera,
                     imageQuality: 85,
+                    maxWidth: 1024,
+                    maxHeight: 1024,
                   );
                   if (image != null) {
                     await _cropImage(image.path);
@@ -280,6 +282,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   final XFile? image = await picker.pickImage(
                     source: ImageSource.gallery,
                     imageQuality: 85,
+                    maxWidth: 1024,
+                    maxHeight: 1024,
                   );
                   if (image != null) {
                     await _cropImage(image.path);
