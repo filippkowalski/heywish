@@ -8,6 +8,7 @@ import '../../../services/auth_service.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/widgets/primary_button.dart';
 import '../../../common/widgets/platform_loader.dart';
+import '../../../common/behavior/no_stretch_scroll_behavior.dart';
 
 /// Custom text formatter to convert input to lowercase
 class LowerCaseTextFormatter extends TextInputFormatter {
@@ -66,7 +67,9 @@ class _UsernameStepState extends State<UsernameStep> {
 
     // Check if it's an Apple anonymous email (privaterelay.appleid.com)
     if (email.contains('@privaterelay.appleid.com')) {
-      debugPrint('📧 UsernameStep: Skipping autopopulate for Apple anonymous email');
+      debugPrint(
+        '📧 UsernameStep: Skipping autopopulate for Apple anonymous email',
+      );
       return;
     }
 
@@ -74,7 +77,9 @@ class _UsernameStepState extends State<UsernameStep> {
     final emailPrefix = email.split('@').first;
 
     if (emailPrefix.isNotEmpty) {
-      debugPrint('📧 UsernameStep: Autopopulating username from email: $emailPrefix');
+      debugPrint(
+        '📧 UsernameStep: Autopopulating username from email: $emailPrefix',
+      );
       _usernameController.text = emailPrefix;
       _onUsernameChanged(emailPrefix);
     }
@@ -124,12 +129,6 @@ class _UsernameStepState extends State<UsernameStep> {
     }
 
     return null; // Valid
-  }
-
-  /// Clean and format username input
-  String _cleanUsername(String input) {
-    // Remove spaces and convert to lowercase
-    return input.replaceAll(' ', '').toLowerCase();
   }
 
   void _onUsernameChanged(String value) {
@@ -222,15 +221,15 @@ class _UsernameStepState extends State<UsernameStep> {
     if (_validationError != null) {
       return Colors.red.shade600;
     }
-    
+
     // Color based on API result
     if (onboardingService.usernameCheckResult == 'Available') {
       return Colors.green.shade600;
-    } else if (onboardingService.usernameCheckResult != null && 
-               onboardingService.usernameCheckResult != 'Checking...') {
+    } else if (onboardingService.usernameCheckResult != null &&
+        onboardingService.usernameCheckResult != 'Checking...') {
       return Colors.red.shade600;
     }
-    
+
     // Gray for checking
     return AppColors.textSecondary;
   }
@@ -256,188 +255,241 @@ class _UsernameStepState extends State<UsernameStep> {
       child: SafeArea(
         child: Column(
           children: [
-          // Scrollable content
-          Expanded(
-            child: SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: const EdgeInsets.only(
-                left: 32.0,
-                right: 32.0,
-                top: 40.0,
-                bottom: 24.0,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Title
-                  Text(
-                    'onboarding.username_title'.tr(),
-                    style: const TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                      letterSpacing: -0.5,
-                    ),
-                    textAlign: TextAlign.left,
+            // Scrollable content
+            Expanded(
+              child: ScrollConfiguration(
+                behavior: const NoStretchScrollBehavior(),
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.only(
+                    left: 32.0,
+                    right: 32.0,
+                    top: 40.0,
+                    bottom: 24.0,
                   ),
-
-                  const SizedBox(height: 12),
-
-                  // Subtitle
-                  Text(
-                    'onboarding.username_subtitle'.tr(),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppColors.textSecondary,
-                      height: 1.5,
-                    ),
-                    textAlign: TextAlign.left,
-                  ),
-
-                  const SizedBox(height: 48),
-                
-                // Username input - centered and styled
-                Consumer<OnboardingService>(
-                  builder: (context, onboardingService, child) {
-                    return Column(
-                      children: [
-                        // Status message above input
-                        if (_usernameController.text.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Text(
-                              _getStatusMessage(onboardingService),
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: _getStatusColor(onboardingService),
-                                fontWeight: FontWeight.w500,
-                                fontSize: 13,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        
-                        // Username field with inline loader
-                        Container(
-                          key: const ValueKey('username-input-container'),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: AppColors.textSecondary.withValues(alpha: 0.2),
-                              width: 1,
-                            ),
-                          ),
-                          child: TextField(
-                            controller: _usernameController,
-                            focusNode: _focusNode,
-                            onChanged: _onUsernameChanged,
-                            textAlign: TextAlign.left,
-                            maxLength: 30,
-                            inputFormatters: [
-                              // Filter out spaces and convert to lowercase
-                              FilteringTextInputFormatter.deny(RegExp(r'\s')),
-                              LowerCaseTextFormatter(),
-                              // Only allow letters, numbers, periods, and underscores
-                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9._]')),
-                            ],
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 20,
-                            ),
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              hintText: 'onboarding.username_placeholder'.tr(),
-                              counterText: '', // Hide character counter
-                              contentPadding: EdgeInsets.zero,
-                              hintStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: AppColors.textSecondary.withValues(alpha: 0.5),
-                                fontWeight: FontWeight.w400,
-                                fontSize: 20,
-                              ),
-                              prefixIcon: Container(
-                                margin: const EdgeInsets.only(right: 8),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: AppColors.textSecondary.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  Icons.alternate_email,
-                                  color: AppColors.textSecondary.withValues(alpha: 0.6),
-                                  size: 24,
-                                ),
-                              ),
-                              prefixIconConstraints: const BoxConstraints(
-                                minWidth: 0,
-                                minHeight: 0,
-                              ),
-                              suffixIcon: onboardingService.isLoading && _validationError == null
-                                  ? Container(
-                                      width: 20,
-                                      height: 20,
-                                      padding: const EdgeInsets.all(12),
-                                      child: PlatformLoader(
-                                        size: 16,
-                                        color: AppColors.primary.withValues(alpha: 0.6),
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                            textInputAction: TextInputAction.done,
-                            onSubmitted: (_) {
-                              if (onboardingService.canProceedFromCurrentStep() && _validationError == null) {
-                                onboardingService.nextStep();
-                              }
-                            },
-                          ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Title
+                      Text(
+                        'onboarding.username_title'.tr(),
+                        style: const TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.5,
                         ),
+                        textAlign: TextAlign.left,
+                      ),
 
-                        // URL preview below input
-                        if (_usernameController.text.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 12.0, left: 24),
-                            child: Text(
-                              'jinnie.co/${_usernameController.text}',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary.withValues(alpha: 0.7),
-                                fontSize: 14,
+                      const SizedBox(height: 12),
+
+                      // Subtitle
+                      Text(
+                        'onboarding.username_subtitle'.tr(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: AppColors.textSecondary,
+                          height: 1.5,
+                        ),
+                        textAlign: TextAlign.left,
+                      ),
+
+                      const SizedBox(height: 48),
+
+                      // Username input - centered and styled
+                      Consumer<OnboardingService>(
+                        builder: (context, onboardingService, child) {
+                          return Column(
+                            children: [
+                              // Status message above input
+                              if (_usernameController.text.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: Text(
+                                    _getStatusMessage(onboardingService),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall?.copyWith(
+                                      color: _getStatusColor(onboardingService),
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 13,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+
+                              // Username field with inline loader
+                              Container(
+                                key: const ValueKey('username-input-container'),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: AppColors.textSecondary.withValues(
+                                      alpha: 0.2,
+                                    ),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: TextField(
+                                  controller: _usernameController,
+                                  focusNode: _focusNode,
+                                  onChanged: _onUsernameChanged,
+                                  textAlign: TextAlign.left,
+                                  maxLength: 30,
+                                  inputFormatters: [
+                                    // Filter out spaces and convert to lowercase
+                                    FilteringTextInputFormatter.deny(
+                                      RegExp(r'\s'),
+                                    ),
+                                    LowerCaseTextFormatter(),
+                                    // Only allow letters, numbers, periods, and underscores
+                                    FilteringTextInputFormatter.allow(
+                                      RegExp(r'[a-zA-Z0-9._]'),
+                                    ),
+                                  ],
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleLarge?.copyWith(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 20,
+                                  ),
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText:
+                                        'onboarding.username_placeholder'.tr(),
+                                    counterText: '', // Hide character counter
+                                    contentPadding: EdgeInsets.zero,
+                                    hintStyle: Theme.of(
+                                      context,
+                                    ).textTheme.titleLarge?.copyWith(
+                                      color: AppColors.textSecondary.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 20,
+                                    ),
+                                    prefixIcon: Container(
+                                      margin: const EdgeInsets.only(right: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.textSecondary
+                                            .withValues(alpha: 0.08),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.alternate_email,
+                                        color: AppColors.textSecondary
+                                            .withValues(alpha: 0.6),
+                                        size: 24,
+                                      ),
+                                    ),
+                                    prefixIconConstraints: const BoxConstraints(
+                                      minWidth: 0,
+                                      minHeight: 0,
+                                    ),
+                                    suffixIcon:
+                                        onboardingService.isLoading &&
+                                                _validationError == null
+                                            ? Container(
+                                              width: 20,
+                                              height: 20,
+                                              padding: const EdgeInsets.all(12),
+                                              child: PlatformLoader(
+                                                size: 16,
+                                                color: AppColors.primary
+                                                    .withValues(alpha: 0.6),
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                            : null,
+                                  ),
+                                  textInputAction: TextInputAction.done,
+                                  onSubmitted: (_) {
+                                    if (onboardingService
+                                            .canProceedFromCurrentStep() &&
+                                        _validationError == null) {
+                                      onboardingService.nextStep();
+                                    }
+                                  },
+                                ),
                               ),
-                              textAlign: TextAlign.left,
-                            ),
-                          ),
 
-                        // Extra spacing to ensure URL is visible above keyboard
-                        SizedBox(height: MediaQuery.of(context).viewInsets.bottom > 0 ? 200 : 0),
-                      ],
-                    );
-                  },
+                              // URL preview below input
+                              if (_usernameController.text.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 12.0,
+                                    left: 24,
+                                  ),
+                                  child: Text(
+                                    'jinnie.co/${_usernameController.text}',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.copyWith(
+                                      color: AppColors.textSecondary.withValues(
+                                        alpha: 0.7,
+                                      ),
+                                      fontSize: 14,
+                                    ),
+                                    textAlign: TextAlign.left,
+                                  ),
+                                ),
+
+                              // Extra spacing to ensure URL is visible above keyboard
+                              SizedBox(
+                                height:
+                                    MediaQuery.of(context).viewInsets.bottom > 0
+                                        ? 200
+                                        : 0,
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
 
-        // Bottom button
-        Padding(
-          padding: EdgeInsets.fromLTRB(24.0, 0.0, 24.0, bottomPadding + 16.0),
-          child: Consumer<OnboardingService>(
-            builder: (context, onboardingService, child) {
-              final canProceed = onboardingService.canProceedFromCurrentStep() &&
-                               _validationError == null &&
-                               _usernameController.text.isNotEmpty;
+            // Bottom button
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                24.0,
+                0.0,
+                24.0,
+                bottomPadding + 16.0,
+              ),
+              child: Consumer<OnboardingService>(
+                builder: (context, onboardingService, child) {
+                  final canProceed =
+                      onboardingService.canProceedFromCurrentStep() &&
+                      _validationError == null &&
+                      _usernameController.text.isNotEmpty;
 
-              return PrimaryButton(
-                text: 'app.continue'.tr(),
-                onPressed: canProceed ? () => _handleContinue(onboardingService) : null,
-                isLoading: onboardingService.isLoading,
-              );
-            },
-          ),
-        ),
-        ],
+                  return PrimaryButton(
+                    text: 'app.continue'.tr(),
+                    onPressed:
+                        canProceed
+                            ? () => _handleContinue(onboardingService)
+                            : null,
+                    isLoading: onboardingService.isLoading,
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
