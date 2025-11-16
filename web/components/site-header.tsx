@@ -85,6 +85,11 @@ export function SiteHeader() {
 
           {/* Auth Section - aligned to the right */}
           <div className="flex items-center gap-1 flex-shrink-0 md:gap-2">
+            {/* Browse Link - always visible */}
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/browse">Browse</Link>
+            </Button>
+
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             ) : user && !isReservationSession ? (
