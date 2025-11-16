@@ -198,6 +198,12 @@ export default function RootLayout({
           {children}
           <CookieConsent />
         </Providers>
+
+        {/* Skimlinks Affiliate Script */}
+        <Script
+          src="https://s.skimresources.com/js/294546X1781833.skimlinks.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
