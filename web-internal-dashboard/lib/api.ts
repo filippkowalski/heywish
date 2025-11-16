@@ -284,6 +284,10 @@ export async function createWish(data: CreateWishData): Promise<{ wish: Wish }> 
   });
 }
 
+export async function getWish(wishId: string): Promise<{ wish: Wish }> {
+  return fetchAPI(`/admin/wishes/${wishId}`);
+}
+
 export async function getTopWishes(by: 'reservations' | 'price' | 'recent' = 'recent', limit: number = 20): Promise<{ wishes: Wish[]; criteria: string }> {
   return fetchAPI(`/admin/wishes/top?by=${by}&limit=${limit}`);
 }

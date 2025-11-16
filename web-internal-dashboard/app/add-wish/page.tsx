@@ -6,12 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createWish, listUsers, updateWish, deleteWish, browseWishes, bulkDeleteWishes, scrapeUrl, type Wish } from '@/lib/api';
-import { Plus, Search, CheckCircle, User, Edit, Trash2, X, Upload, FileJson, Download, Loader2 } from 'lucide-react';
+import { createWish, listUsers, deleteWish, browseWishes, bulkDeleteWishes, scrapeUrl } from '@/lib/api';
+import { Plus, Search, CheckCircle, User, Edit, Trash2, Upload, FileJson, Download, Loader2 } from 'lucide-react';
 import useSWR from 'swr';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 export default function AddWishPage() {
+  const router = useRouter();
   // Form state
   const [username, setUsername] = useState('');
   const [wishlistId, setWishlistId] = useState('');
@@ -31,8 +33,6 @@ export default function AddWishPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [userFound, setUserFound] = useState(false);
-  const [editingWish, setEditingWish] = useState<Wish | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Bulk import state
@@ -132,31 +132,6 @@ export default function AddWishPage() {
     }
   };
 
-  const startEditWish = (wish: Wish) => {
-    setEditingWish(wish);
-    setTitle(wish.title);
-    setDescription(wish.description || '');
-    setUrl(wish.url || '');
-    setPrice(wish.price ? wish.price.toString() : '');
-    setCurrency(wish.currency || 'USD');
-    setImages(wish.images ? wish.images.join(', ') : '');
-    setPriority(wish.priority?.toString() || '3');
-    setQuantity(wish.quantity?.toString() || '1');
-    setWishlistId(wish.wishlist_id);
-  };
-
-  const cancelEdit = () => {
-    setEditingWish(null);
-    setTitle('');
-    setDescription('');
-    setUrl('');
-    setPrice('');
-    setCurrency('USD');
-    setImages('');
-    setPriority('3');
-    setQuantity('1');
-  };
-
   const handleCreateWish = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -218,57 +193,6 @@ export default function AddWishPage() {
       setError(`${errorMessage} (Status: ${statusCode}, Code: ${errorCode})`);
     } finally {
       setIsCreating(false);
-    }
-  };
-
-  const handleUpdateWish = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!editingWish) return;
-
-    setError('');
-    setSuccess('');
-    setIsUpdating(true);
-
-    try {
-      await updateWish(editingWish.id, {
-        username,
-        wishlist_id: wishlistId,
-        title,
-        description: description || undefined,
-        url: url || undefined,
-        price: price ? parseFloat(price) : undefined,
-        currency: currency || 'USD',
-        images: images ? images.split(',').map(url => url.trim()) : undefined,
-        priority: parseInt(priority) || 3,
-        quantity: parseInt(quantity) || 1,
-      });
-
-      toast.success(`Wish updated successfully`, {
-        description: `"${title}" has been updated.`
-      });
-
-      // Reset form and exit edit mode
-      cancelEdit();
-
-      // Refresh wishes list
-      mutateWishes();
-    } catch (err: any) {
-      console.error('Update wish error:', err);
-
-      // Extract detailed error information
-      const errorMessage = err.message || 'Failed to update wish';
-      const errorCode = err.code || 'UNKNOWN_ERROR';
-      const statusCode = err.status || 'N/A';
-
-      toast.error(`Failed to update wish`, {
-        description: `${errorMessage}\n\nError Code: ${errorCode}\nStatus: ${statusCode}\nWish ID: ${editingWish.id}`,
-        duration: 8000,
-      });
-
-      setError(`${errorMessage} (Status: ${statusCode}, Code: ${errorCode})`);
-    } finally {
-      setIsUpdating(false);
     }
   };
 
@@ -746,7 +670,7 @@ export default function AddWishPage() {
         </Card>
 
         {/* Bulk Import Toggle Button */}
-        {userFound && !editingWish && (
+        {userFound && (
           <div className="flex justify-end">
             <Button
               variant="outline"
@@ -760,7 +684,7 @@ export default function AddWishPage() {
         )}
 
         {/* Bulk Import Section */}
-        {userFound && showBulkImport && !editingWish && (
+        {userFound && showBulkImport && (
           <Card className="border-primary/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -897,15 +821,15 @@ export default function AddWishPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                {editingWish ? <Edit className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-                {editingWish ? 'Edit Wish' : 'Add New Wish'}
+                <Plus className="h-5 w-5" />
+                Add New Wish
               </CardTitle>
               <CardDescription>
-                {editingWish ? `Editing "${editingWish.title}"` : `Fill in the wish information for @${username}`}
+                Fill in the wish information for @{username || 'username'}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={editingWish ? handleUpdateWish : handleCreateWish} className="space-y-4">
+              <form onSubmit={handleCreateWish} className="space-y-4">
                 {/* Title - Required */}
                 <div className="space-y-2">
                   <Label htmlFor="title">
@@ -1006,24 +930,14 @@ export default function AddWishPage() {
                 <div className="flex gap-3 pt-4">
                   <Button
                     type="submit"
-                    disabled={(editingWish ? isUpdating : isCreating) || !title}
+                    disabled={isCreating || !title}
                     className="flex-1"
                   >
-                    {editingWish
-                      ? (isUpdating ? 'Updating...' : 'Update Wish')
-                      : (isCreating ? 'Adding Wish...' : 'Add Wish')
-                    }
+                    {isCreating ? 'Adding Wish...' : 'Add Wish'}
                   </Button>
-                  {editingWish ? (
-                    <Button type="button" variant="outline" onClick={cancelEdit}>
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
-                    </Button>
-                  ) : (
-                    <Button type="button" variant="outline" onClick={resetForm}>
-                      Reset
-                    </Button>
-                  )}
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    Reset
+                  </Button>
                 </div>
               </form>
             </CardContent>
@@ -1131,7 +1045,7 @@ export default function AddWishPage() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => startEditWish(wish)}
+                        onClick={() => router.push(`/wishes/${wish.id}/edit`)}
                         disabled={isDeleting !== null || isBulkDeleting}
                       >
                         <Edit className="h-4 w-4" />
