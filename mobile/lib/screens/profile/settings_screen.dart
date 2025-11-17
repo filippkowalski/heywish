@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -10,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../common/widgets/confirmation_bottom_sheet.dart';
 import '../../common/navigation/native_page_route.dart';
 import '../feedback/feedback_sheet_page.dart';
+import '../onboarding/widgets/onboarding_complete_step.dart';
 import 'privacy_settings_screen.dart';
 import 'notifications_settings_screen.dart';
 import 'personalization_settings_screen.dart';
@@ -114,6 +116,10 @@ class SettingsScreen extends StatelessWidget {
               _buildSignOutSection(context),
               const SizedBox(height: 32),
               _buildDangerZoneSection(context),
+              if (kDebugMode) ...[
+                const SizedBox(height: 32),
+                _buildDebugSection(context),
+              ],
               const SizedBox(height: 40),
             ],
           ),
@@ -281,6 +287,91 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildDebugSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(32, 0, 32, 8),
+          child: Text(
+            'DEBUG TOOLS',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF6D6D72), // iOS section header gray
+              letterSpacing: -0.08,
+            ),
+          ),
+        ),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _showOnboardingCompletePage(context),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 11,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.celebration_outlined,
+                      color: AppTheme.primaryAccent,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'Preview Onboarding Complete',
+                            style: TextStyle(
+                              fontSize: 17,
+                              color: Colors.black,
+                            ),
+                          ),
+                          Text(
+                            'Test the onboarding completion page',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF8E8E93), // iOS gray
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right,
+                      color: Color(0xFFC7C7CC), // iOS chevron color
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showOnboardingCompletePage(BuildContext context) {
+    Navigator.of(context).push(
+      NativePageRoute(
+        child: Scaffold(
+          body: const OnboardingCompleteStep(),
+        ),
+      ),
     );
   }
 

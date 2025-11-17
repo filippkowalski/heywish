@@ -90,6 +90,11 @@ export function SiteHeader() {
               <Link href="/browse">Browse</Link>
             </Button>
 
+            {/* Gift Guides Link - always visible */}
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/gift-guides">Guides</Link>
+            </Button>
+
             {/* Inspo Link - always visible */}
             <Button asChild variant="ghost" size="sm">
               <Link href="/inspo">Inspo</Link>
