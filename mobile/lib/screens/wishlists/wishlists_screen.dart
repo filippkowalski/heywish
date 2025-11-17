@@ -129,7 +129,9 @@ class _WishlistsScreenState extends State<WishlistsScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final authService = context.watch<AuthService>();
+    // Use read() instead of watch() to avoid creating a dependency loop
+    // didChangeDependencies is already triggered by dependencies, so we don't need watch here
+    final authService = context.read<AuthService>();
 
     // Check if merge just completed - force reload regardless of _hasLoadedOnce
     if (authService.lastMergeTimestamp != null &&
