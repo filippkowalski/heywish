@@ -90,6 +90,11 @@ export function SiteHeader() {
               <Link href="/browse">Browse</Link>
             </Button>
 
+            {/* Inspo Link - always visible */}
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/inspo">Inspo</Link>
+            </Button>
+
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             ) : user && !isReservationSession ? (
