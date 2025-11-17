@@ -99,7 +99,7 @@ export function WishDetailDialog({
   const [imageError, setImageError] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showAddWish, setShowAddWish] = useState(false);
-  const [pendingWishData, setPendingWishData] = useState<{
+  const [prefilledWishData, setPrefilledWishData] = useState<{
     title?: string;
     description?: string;
     price?: number;
@@ -107,6 +107,7 @@ export function WishDetailDialog({
     url?: string;
     images?: string[];
   } | null>(null);
+  const [pendingSignIn, setPendingSignIn] = useState(false);
   const [wishlists, setWishlists] = useState<Wishlist[]>([]);
 
   useEffect(() => {
@@ -117,7 +118,8 @@ export function WishDetailDialog({
     setImageError(false);
     setShowSignIn(false);
     setShowAddWish(false);
-    setPendingWishData(null);
+    setPrefilledWishData(null);
+    setPendingSignIn(false);
   }, [wish?.id]);
 
   // Load wishlists when user is authenticated
@@ -138,11 +140,11 @@ export function WishDetailDialog({
 
   // Open add wish modal after successful sign-in
   useEffect(() => {
-    if (backendUser && pendingWishData && !showSignIn) {
+    if (backendUser && pendingSignIn && !showSignIn) {
       setShowAddWish(true);
-      setPendingWishData(null);
+      setPendingSignIn(false);
     }
-  }, [backendUser, pendingWishData, showSignIn]);
+  }, [backendUser, pendingSignIn, showSignIn]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -225,13 +227,15 @@ export function WishDetailDialog({
       images: wish.images && wish.images.length > 0 ? wish.images : undefined,
     };
 
+    // Store the prefilled data
+    setPrefilledWishData(prefilledData);
+
     // If user is logged in, open add wish modal directly
     if (backendUser) {
-      setPendingWishData(prefilledData);
       setShowAddWish(true);
     } else {
-      // If not logged in, save the data and show sign-in modal
-      setPendingWishData(prefilledData);
+      // If not logged in, save the flag and show sign-in modal
+      setPendingSignIn(true);
       setShowSignIn(true);
     }
   };
@@ -711,14 +715,18 @@ export function WishDetailDialog({
       {showAddWish && (
         <WishSlideOver
           open={showAddWish}
-          onClose={() => setShowAddWish(false)}
+          onClose={() => {
+            setShowAddWish(false);
+            setPrefilledWishData(null);
+          }}
           onSuccess={() => {
             setShowAddWish(false);
+            setPrefilledWishData(null);
             handleClose();
             window.location.reload();
           }}
           wishlists={wishlists}
-          prefilledData={pendingWishData || undefined}
+          prefilledData={prefilledWishData || undefined}
         />
       )}
     </Dialog>
