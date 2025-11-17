@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { X, ExternalLink, Loader2, Mail } from "lucide-react";
+import { X, ExternalLink, Loader2, Mail, Plus } from "lucide-react";
 import {
   onAuthStateChanged,
   sendSignInLinkToEmail,
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api, type Wish } from "@/lib/api";
+import { api, type Wish, type Wishlist } from "@/lib/api";
 import {
   getFirebaseAuth,
   RESERVATION_EMAIL_STORAGE_KEY,
@@ -33,6 +33,9 @@ import {
 import { emailPattern } from "@/lib/validators";
 import { useAuth } from "@/lib/auth/AuthContext.client";
 import { signOut as firebaseSignOut } from "firebase/auth";
+import { SignInModal } from "@/components/auth/SignInModal.client";
+import { WishSlideOver } from "@/components/wish/WishSlideOver.client";
+import { useApiAuth } from "@/lib/hooks/useApiAuth";
 
 function formatPrice(amount?: number, currency: string = "USD") {
   if (amount == null) return null;
@@ -84,6 +87,7 @@ export function WishDetailDialog({
   shareToken,
 }: WishDetailDialogProps) {
   const { backendUser } = useAuth();
+  const apiAuth = useApiAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showReservationForm, setShowReservationForm] = useState(false);
   const [formValues, setFormValues] = useState({ name: "", email: "", message: "" });
@@ -93,6 +97,17 @@ export function WishDetailDialog({
   const [authUser, setAuthUser] = useState<FirebaseUser | null>(null);
   const [authInitialized, setAuthInitialized] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [showAddWish, setShowAddWish] = useState(false);
+  const [pendingWishData, setPendingWishData] = useState<{
+    title?: string;
+    description?: string;
+    price?: number;
+    currency?: string;
+    url?: string;
+    images?: string[];
+  } | null>(null);
+  const [wishlists, setWishlists] = useState<Wishlist[]>([]);
 
   useEffect(() => {
     setCurrentImageIndex(0);
@@ -100,7 +115,34 @@ export function WishDetailDialog({
     setFormError(null);
     setFormNotice(null);
     setImageError(false);
+    setShowSignIn(false);
+    setShowAddWish(false);
+    setPendingWishData(null);
   }, [wish?.id]);
+
+  // Load wishlists when user is authenticated
+  useEffect(() => {
+    const loadWishlists = async () => {
+      if (backendUser) {
+        try {
+          const userWishlists = await apiAuth.getMyWishlists();
+          setWishlists(userWishlists);
+        } catch (error) {
+          console.error('Failed to load wishlists:', error);
+        }
+      }
+    };
+
+    loadWishlists();
+  }, [backendUser, apiAuth]);
+
+  // Open add wish modal after successful sign-in
+  useEffect(() => {
+    if (backendUser && pendingWishData && !showSignIn) {
+      setShowAddWish(true);
+      setPendingWishData(null);
+    }
+  }, [backendUser, pendingWishData, showSignIn]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -168,6 +210,30 @@ export function WishDetailDialog({
   const handleClose = () => {
     onOpenChange(false);
     setShowReservationForm(false);
+  };
+
+  const handleAddToMyWishlist = () => {
+    if (!wish) return;
+
+    // Prepare prefilled data from the wish
+    const prefilledData = {
+      title: wish.title,
+      description: wish.description || undefined,
+      price: wish.price || undefined,
+      currency: wish.currency || 'USD',
+      url: wish.url || undefined,
+      images: wish.images && wish.images.length > 0 ? wish.images : undefined,
+    };
+
+    // If user is logged in, open add wish modal directly
+    if (backendUser) {
+      setPendingWishData(prefilledData);
+      setShowAddWish(true);
+    } else {
+      // If not logged in, save the data and show sign-in modal
+      setPendingWishData(prefilledData);
+      setShowSignIn(true);
+    }
   };
 
   const handleStartReservation = () => {
@@ -361,17 +427,48 @@ export function WishDetailDialog({
       const showCancelButton = (isMine && onCancel) || isMyReservation;
 
       return (
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-          {showCancelButton && (
-            <Button
-              variant="outline"
-              onClick={isMyReservation ? handleCancelReservation : onCancel}
-              disabled={submitting}
-              className="flex-1 h-11 sm:h-12 text-base font-medium"
-            >
-              {submitting ? "Canceling..." : "Cancel reservation"}
-            </Button>
-          )}
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            {showCancelButton && (
+              <Button
+                variant="outline"
+                onClick={isMyReservation ? handleCancelReservation : onCancel}
+                disabled={submitting}
+                className="flex-1 h-11 sm:h-12 text-base font-medium"
+              >
+                {submitting ? "Canceling..." : "Cancel reservation"}
+              </Button>
+            )}
+            {wish.url && (
+              <Button
+                asChild
+                variant="outline"
+                className="flex-1 h-11 sm:h-12 text-base font-medium gap-2"
+              >
+                <a href={wish.url} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4" />
+                  View details
+                </a>
+              </Button>
+            )}
+          </div>
+          <Button
+            onClick={handleAddToMyWishlist}
+            variant="outline"
+            className="w-full h-11 sm:h-12 text-base font-medium gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add to my wishlist
+          </Button>
+        </div>
+      );
+    }
+
+    const canReserve = !isReserved && (onReserve != null || reserveHref || shareToken);
+
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
           {wish.url && (
             <Button
               asChild
@@ -384,50 +481,39 @@ export function WishDetailDialog({
               </a>
             </Button>
           )}
+          {canReserve && (
+            onReserve ? (
+              <Button
+                onClick={onReserve}
+                className="flex-1 h-11 sm:h-12 text-base font-medium"
+              >
+                {reserveLabel ?? "Reserve"}
+              </Button>
+            ) : reserveHref ? (
+              <Button
+                asChild
+                className="flex-1 h-11 sm:h-12 text-base font-medium"
+              >
+                <Link href={reserveHref}>{reserveLabel ?? "Reserve"}</Link>
+              </Button>
+            ) : shareToken ? (
+              <Button
+                onClick={handleStartReservation}
+                className="flex-1 h-11 sm:h-12 text-base font-medium"
+              >
+                Reserve
+              </Button>
+            ) : null
+          )}
         </div>
-      );
-    }
-
-    const canReserve = !isReserved && (onReserve != null || reserveHref || shareToken);
-
-    return (
-      <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
-        {wish.url && (
-          <Button
-            asChild
-            variant="outline"
-            className="flex-1 h-11 sm:h-12 text-base font-medium gap-2"
-          >
-            <a href={wish.url} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4" />
-              View details
-            </a>
-          </Button>
-        )}
-        {canReserve && (
-          onReserve ? (
-            <Button
-              onClick={onReserve}
-              className="flex-1 h-11 sm:h-12 text-base font-medium"
-            >
-              {reserveLabel ?? "Reserve"}
-            </Button>
-          ) : reserveHref ? (
-            <Button
-              asChild
-              className="flex-1 h-11 sm:h-12 text-base font-medium"
-            >
-              <Link href={reserveHref}>{reserveLabel ?? "Reserve"}</Link>
-            </Button>
-          ) : shareToken ? (
-            <Button
-              onClick={handleStartReservation}
-              className="flex-1 h-11 sm:h-12 text-base font-medium"
-            >
-              Reserve
-            </Button>
-          ) : null
-        )}
+        <Button
+          onClick={handleAddToMyWishlist}
+          variant="outline"
+          className="w-full h-11 sm:h-12 text-base font-medium gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Add to my wishlist
+        </Button>
       </div>
     );
   };
@@ -614,6 +700,27 @@ export function WishDetailDialog({
           {renderFooter()}
         </div>
       </DialogContent>
+
+      {/* Sign In Modal */}
+      <SignInModal
+        open={showSignIn}
+        onOpenChange={setShowSignIn}
+      />
+
+      {/* Add Wish Modal */}
+      {showAddWish && (
+        <WishSlideOver
+          open={showAddWish}
+          onClose={() => setShowAddWish(false)}
+          onSuccess={() => {
+            setShowAddWish(false);
+            handleClose();
+            window.location.reload();
+          }}
+          wishlists={wishlists}
+          prefilledData={pendingWishData || undefined}
+        />
+      )}
     </Dialog>
   );
 }

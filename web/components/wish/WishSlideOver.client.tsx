@@ -29,6 +29,15 @@ import {
 } from '@/components/ui/select';
 import { WishlistSlideOver } from '@/components/wishlist/WishlistSlideOver.client';
 
+interface PrefilledWishData {
+  title?: string;
+  description?: string;
+  url?: string;
+  price?: number;
+  currency?: string;
+  images?: string[];
+}
+
 interface WishSlideOverProps {
   open: boolean;
   onClose: () => void;
@@ -36,9 +45,10 @@ interface WishSlideOverProps {
   wishlistId?: string;
   wish?: Wish;
   wishlists: Wishlist[];
+  prefilledData?: PrefilledWishData;
 }
 
-export function WishSlideOver({ open, onClose, onSuccess, wishlistId, wish, wishlists }: WishSlideOverProps) {
+export function WishSlideOver({ open, onClose, onSuccess, wishlistId, wish, wishlists, prefilledData }: WishSlideOverProps) {
   const api = useApiAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScrapingUrl, setIsScrapingUrl] = useState(false);
@@ -88,6 +98,16 @@ export function WishSlideOver({ open, onClose, onSuccess, wishlistId, wish, wish
           currency: wish.currency || 'USD',
           images: wish.images || [],
         });
+      } else if (prefilledData) {
+        reset({
+          wishlistId: wishlistId || undefined,
+          title: prefilledData.title || '',
+          description: prefilledData.description || '',
+          url: prefilledData.url || '',
+          price: prefilledData.price || 0,
+          currency: prefilledData.currency || 'USD',
+          images: prefilledData.images || [],
+        });
       } else {
         reset({
           wishlistId: wishlistId || undefined,
@@ -100,7 +120,7 @@ export function WishSlideOver({ open, onClose, onSuccess, wishlistId, wish, wish
         });
       }
     }
-  }, [open, wish, wishlistId, reset]);
+  }, [open, wish, wishlistId, prefilledData, reset]);
 
   // Debounced URL scraping
   const scrapeUrl = useDebouncedCallback(async (url: string) => {
