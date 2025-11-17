@@ -156,18 +156,7 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
         final screenHeight = mediaQuery.size.height;
 
         return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                AppColors.primary.withValues(alpha: 0.03),
-                Colors.white,
-                Colors.white,
-              ],
-              stops: const [0.0, 0.3, 1.0],
-            ),
-          ),
+          color: Colors.white,
           child: SafeArea(
             child: Stack(
               children: [
@@ -178,59 +167,52 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
                         behavior: const NoStretchScrollBehavior(),
                         child: SingleChildScrollView(
                           padding: EdgeInsets.fromLTRB(
-                            32,
-                            screenHeight * 0.08,
-                            32,
+                            24,
+                            screenHeight * 0.04,
+                            24,
                             24,
                           ),
                           child: Column(
                             children: [
-                              // Animated checkmark circle
+                              // Hero image - circular (smaller for mobile screens)
                               FadeTransition(
                                 opacity: _fadeAnimation,
                                 child: Container(
-                                  width: 100,
-                                  height: 100,
+                                  width: screenHeight * 0.22,
+                                  height: screenHeight * 0.22,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        AppColors.success,
-                                        AppColors.success.withValues(alpha: 0.8),
-                                      ],
-                                    ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.success.withValues(alpha: 0.3),
+                                        color: Colors.black.withValues(alpha: 0.1),
                                         blurRadius: 20,
                                         offset: const Offset(0, 8),
                                       ),
                                     ],
                                   ),
-                                  child: const Icon(
-                                    Icons.check_rounded,
-                                    size: 60,
-                                    color: Colors.white,
+                                  child: ClipOval(
+                                    child: Image.asset(
+                                      'assets/images/onboarding_complete_hero.png',
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 ),
                               ),
-                              SizedBox(height: screenHeight * 0.05),
+                              SizedBox(height: screenHeight * 0.03),
 
-                              // Title
+                              // Title with username
                               SlideTransition(
                                 position: _slideAnimation,
                                 child: FadeTransition(
                                   opacity: _fadeAnimation,
                                   child: Text(
-                                    'onboarding.complete_title'.tr(),
+                                    'You\'re all set, $username!',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w700,
                                       color: AppColors.textPrimary,
-                                      fontSize: 36,
-                                      letterSpacing: -1.2,
-                                      height: 1.1,
+                                      fontSize: 32,
+                                      letterSpacing: -0.8,
+                                      height: 1.2,
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
@@ -247,8 +229,8 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
                                     'onboarding.complete_subtitle'.tr(),
                                     style: const TextStyle(
                                       color: AppColors.textSecondary,
-                                      fontSize: 17,
-                                      height: 1.4,
+                                      fontSize: 16,
+                                      height: 1.5,
                                       fontWeight: FontWeight.w400,
                                     ),
                                     textAlign: TextAlign.center,
@@ -268,188 +250,104 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
                                     textAlign: TextAlign.center,
                                   ),
                                 ),
-                              SizedBox(height: screenHeight * 0.06),
+                              SizedBox(height: screenHeight * 0.04),
 
-                              // Profile card - completely redesigned
+                              // URL Card
                               FadeTransition(
                                 opacity: _fadeAnimation,
                                 child: Container(
                                   width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 16,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(28),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.08),
-                                        blurRadius: 30,
-                                        offset: const Offset(0, 10),
-                                        spreadRadius: 0,
+                                    color: AppColors.surfaceVariant,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: AppColors.outline,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.link_rounded,
+                                        size: 20,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        profileUrl,
+                                        style: const TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          letterSpacing: -0.3,
+                                        ),
                                       ),
                                     ],
                                   ),
-                                  child: Column(
-                                    children: [
-                                      // Top accent bar
-                                      Container(
-                                        height: 5,
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              AppColors.primary.withValues(alpha: 0.6),
-                                              AppColors.primary,
-                                            ],
-                                          ),
-                                          borderRadius: const BorderRadius.only(
-                                            topLeft: Radius.circular(28),
-                                            topRight: Radius.circular(28),
-                                          ),
-                                        ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Copy Link Button
+                              FadeTransition(
+                                opacity: _fadeAnimation,
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () => _copyLink(username),
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
                                       ),
-
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(28, 36, 28, 32),
-                                        child: Column(
-                                          children: [
-                                            // Username with accent
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(
-                                                    horizontal: 20,
-                                                    vertical: 12,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    gradient: LinearGradient(
-                                                      colors: [
-                                                        AppColors.primary.withValues(alpha: 0.08),
-                                                        AppColors.primary.withValues(alpha: 0.04),
-                                                      ],
-                                                    ),
-                                                    borderRadius: BorderRadius.circular(16),
-                                                  ),
-                                                  child: Text(
-                                                    '@$username',
-                                                    style: TextStyle(
-                                                      color: AppColors.primary,
-                                                      fontWeight: FontWeight.w700,
-                                                      fontSize: 26,
-                                                      letterSpacing: -0.8,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 28),
-
-                                            // Divider
-                                            Container(
-                                              height: 1,
-                                              margin: const EdgeInsets.symmetric(horizontal: 20),
-                                              decoration: BoxDecoration(
-                                                gradient: LinearGradient(
-                                                  colors: [
-                                                    Colors.transparent,
-                                                    const Color(0xFFE8E8E8),
-                                                    Colors.transparent,
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 28),
-
-                                            // Profile URL
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                Icon(
-                                                  Icons.link_rounded,
-                                                  size: 20,
-                                                  color: AppColors.textSecondary.withValues(alpha: 0.6),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  profileUrl,
-                                                  style: TextStyle(
-                                                    color: AppColors.textSecondary,
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w500,
-                                                    letterSpacing: -0.3,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 28),
-
-                                            // Copy link button - redesigned
-                                            Material(
-                                              color: Colors.transparent,
-                                              child: InkWell(
-                                                onTap: () => _copyLink(username),
-                                                borderRadius: BorderRadius.circular(16),
-                                                child: AnimatedContainer(
-                                                  duration: const Duration(milliseconds: 200),
-                                                  width: double.infinity,
-                                                  padding: const EdgeInsets.symmetric(
-                                                    vertical: 16,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    gradient: _linkCopied
-                                                        ? LinearGradient(
-                                                            colors: [
-                                                              AppColors.success,
-                                                              AppColors.success.withValues(alpha: 0.8),
-                                                            ],
-                                                          )
-                                                        : LinearGradient(
-                                                            colors: [
-                                                              AppColors.primary,
-                                                              AppColors.primary.withValues(alpha: 0.9),
-                                                            ],
-                                                          ),
-                                                    borderRadius: BorderRadius.circular(16),
-                                                    boxShadow: [
-                                                      BoxShadow(
-                                                        color: (_linkCopied
-                                                                ? AppColors.success
-                                                                : AppColors.primary)
-                                                            .withValues(alpha: 0.3),
-                                                        blurRadius: 12,
-                                                        offset: const Offset(0, 4),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisAlignment: MainAxisAlignment.center,
-                                                    children: [
-                                                      Icon(
-                                                        _linkCopied
-                                                            ? Icons.check_circle_rounded
-                                                            : Icons.content_copy_rounded,
-                                                        size: 22,
-                                                        color: Colors.white,
-                                                      ),
-                                                      const SizedBox(width: 10),
-                                                      Text(
-                                                        _linkCopied
-                                                            ? 'onboarding.link_copied'.tr()
-                                                            : 'onboarding.copy_link'.tr(),
-                                                        style: const TextStyle(
-                                                          color: Colors.white,
-                                                          fontWeight: FontWeight.w600,
-                                                          fontSize: 17,
-                                                          letterSpacing: -0.3,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                      decoration: BoxDecoration(
+                                        color: _linkCopied
+                                            ? AppColors.success
+                                            : AppColors.primary,
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: (_linkCopied
+                                                    ? AppColors.success
+                                                    : AppColors.primary)
+                                                .withValues(alpha: 0.3),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
                                       ),
-                                    ],
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            _linkCopied
+                                                ? Icons.check_circle_rounded
+                                                : Icons.content_copy_rounded,
+                                            size: 20,
+                                            color: Colors.white,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            _linkCopied
+                                                ? 'onboarding.link_copied'.tr()
+                                                : 'onboarding.copy_link'.tr(),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16,
+                                              letterSpacing: -0.3,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),

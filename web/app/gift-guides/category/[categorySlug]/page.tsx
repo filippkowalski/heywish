@@ -77,11 +77,6 @@ export default function CategoryDetailPage() {
             <h1 className="mb-4 font-poppins text-4xl font-bold tracking-tight text-gray-900 md:text-5xl">
               {category.label}
             </h1>
-
-            {/* Category Description */}
-            {category.description && (
-              <p className="text-lg text-gray-600">{category.description}</p>
-            )}
           </div>
         </div>
       </div>
