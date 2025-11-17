@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/onboarding_service.dart';
+import '../../../services/api_service.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/widgets/native_loading_overlay.dart';
 import '../../../common/widgets/merge_accounts_bottom_sheet.dart';
@@ -622,59 +623,40 @@ class _AccountCreationStepState extends State<AccountCreationStep>
     }
   }
 
-  /// Generate anonymous username (user1234567 format)
-  String _generateAnonymousUsername() {
-    // Generate 7-digit random number
-    final random = Random();
-    final digits = 1000000 + random.nextInt(9000000);
-    return 'user$digits';
-  }
-
-  /// Generate unique anonymous username with collision check
+  /// Generate unique anonymous username from backend (cute 3-letter word + digits format)
   Future<String> _generateUniqueAnonymousUsername(
     OnboardingService onboarding,
   ) async {
-    const maxAttempts = 10;
-    int attempts = 0;
+    debugPrint('🎲 Requesting unique username from backend...');
 
-    while (attempts < maxAttempts) {
-      attempts++;
-      final username = _generateAnonymousUsername();
+    try {
+      // Call backend API to generate unique username
+      final apiService = ApiService();
+      final username = await apiService.generateUsername();
 
-      debugPrint(
-        '🎲 Checking username availability (attempt $attempts/$maxAttempts): $username',
-      );
-
-      try {
-        await onboarding.checkUsernameAvailability(username);
-
-        // Check if username is available
-        if (onboarding.usernameCheckResult == 'Available') {
-          debugPrint('✅ Username available: $username');
-          return username;
-        } else {
-          debugPrint(
-            '❌ Username taken: $username (${onboarding.usernameCheckResult})',
-          );
-          // Try again with a different username
-          continue;
-        }
-      } catch (e) {
-        debugPrint('❌ Error checking username: $e');
-        // If there's an error checking, we'll retry
-        if (attempts < maxAttempts) {
-          await Future.delayed(Duration(milliseconds: 500 * attempts));
-          continue;
-        }
-        // On final attempt, throw the error
-        rethrow;
+      if (username != null && username.isNotEmpty) {
+        debugPrint('✅ Received unique username from backend: $username');
+        return username;
       }
-    }
 
-    // Fallback: if we couldn't find a unique username after max attempts,
-    // throw an error
-    throw Exception(
-      'Failed to generate unique username after $maxAttempts attempts',
-    );
+      // Fallback to local generation if backend fails
+      debugPrint('⚠️ Backend returned null, falling back to local generation');
+      return _generateLocalFallbackUsername();
+    } catch (e) {
+      debugPrint('❌ Error generating username from backend: $e');
+      // Fallback to local generation if backend call fails
+      debugPrint('⚠️ Falling back to local username generation');
+      return _generateLocalFallbackUsername();
+    }
+  }
+
+  /// Local fallback username generation (user1234567 format)
+  String _generateLocalFallbackUsername() {
+    // Generate 7-digit random number as fallback
+    final random = Random();
+    final digits = 1000000 + random.nextInt(9000000);
+    final username = 'user$digits';
+    debugPrint('🔄 Generated local fallback username: $username');
+    return username;
   }
 }

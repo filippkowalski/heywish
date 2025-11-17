@@ -528,6 +528,30 @@ class ApiService {
     }
   }
 
+  /// Generate unique username from backend (cute 3-letter word + digits)
+  Future<String?> generateUsername() async {
+    try {
+      debugPrint('🎲 API: Generating unique username from backend');
+
+      final response = await post('/auth/generate-username', {});
+      if (kDebugMode) {
+        debugPrint('✅ API: Generated username response: $response');
+      }
+
+      if (response != null && response['username'] != null) {
+        final username = response['username'] as String;
+        debugPrint('✅ API: Generated username: $username');
+        return username;
+      }
+
+      debugPrint('❌ API: No username in response');
+      return null;
+    } catch (e) {
+      debugPrint('❌ API: Error generating username: $e');
+      return null;
+    }
+  }
+
   /// Merge anonymous user data into authenticated account
   Future<Map<String, dynamic>?> mergeAccounts(String anonymousUserId) async {
     try {
