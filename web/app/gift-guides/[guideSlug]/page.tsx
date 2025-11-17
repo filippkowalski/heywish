@@ -165,17 +165,16 @@ export default function GuideDetailPage() {
 
       {/* Guide Items */}
       <div className="container mx-auto px-4 py-8 md:py-12">
-        <div className="mx-auto max-w-6xl">
-          {items.length > 0 ? (
-            <>
-              <div className="mb-6">
-                <h2 className="font-poppins text-xl font-bold text-gray-900 md:text-2xl">
-                  {items.length} Gift {items.length === 1 ? 'Idea' : 'Ideas'}
-                </h2>
-              </div>
-              <GuideItemGrid items={items} onSaveItem={handleSaveItem} />
-            </>
-          ) : (
+        {items.length > 0 ? (
+          <>
+            <div className="mb-6">
+              <h2 className="font-poppins text-xl font-bold text-gray-900 md:text-2xl">
+                {items.length} Gift {items.length === 1 ? 'Idea' : 'Ideas'}
+              </h2>
+            </div>
+            <GuideItemGrid items={items} onSaveItem={handleSaveItem} />
+          </>
+        ) : (
             <div className="rounded-xl bg-white p-12 text-center shadow-sm">
               <p className="text-gray-600">
                 Gift ideas for this guide are coming soon! Check back later for curated recommendations.
@@ -188,7 +187,6 @@ export default function GuideDetailPage() {
               </Link>
             </div>
           )}
-        </div>
       </div>
 
       {/* Sign In Modal */}
