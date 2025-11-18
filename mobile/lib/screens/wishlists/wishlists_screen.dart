@@ -1658,8 +1658,10 @@ class _MasonryImageCard extends StatelessWidget {
             // Min: 0.6 (tall/portrait), Max: 1.5 (wide/landscape)
             aspectRatio = aspectRatio.clamp(0.6, 1.5);
 
-            // Determine if we should crop tall images
-            final shouldCrop = (imageWidth / imageHeight) < 0.6 || (imageWidth / imageHeight) > 1.5;
+            // Landscape images (wider than tall) should always use contain to show full object
+            final isLandscape = imageWidth >= imageHeight;
+            // Only crop very tall portrait images (aspect ratio < 0.6)
+            final shouldCrop = !isLandscape && (imageWidth / imageHeight) < 0.6;
 
             return AspectRatio(
               aspectRatio: aspectRatio,
