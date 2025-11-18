@@ -6,8 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Jinnie** is our brand name, inspired by genies and djinn from mythology. The name was chosen for several strategic reasons:
 
+## Git Workflow & Commit Policy
+
+**IMPORTANT - REQUIRES APPROVAL BEFORE COMMITS:**
+- **NEVER commit or push changes automatically**
+- **ALWAYS ask for user approval before creating commits**
+- Present a summary of changes and wait for explicit confirmation
+- This app has active users - all commits must be reviewed before deployment
+- **Major changes MUST be submitted as Pull Requests** using `gh pr create` for code review
+- Minor fixes can be committed directly after approval
+
 Instructions:
 - Run 'flutter analyze' everytime you do some bigger change to verify that the build will build, same applies for web with npm build, especially before we push changes to the repository (auto-build)
+- After completing work, present changes to user and await approval before committing
+- When user approves, create descriptive commit messages following conventional commits format
 
 ### Why "Jinnie"?
 
