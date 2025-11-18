@@ -12,6 +12,7 @@ import '../../common/utils/wish_category_detector.dart';
 import '../../common/navigation/native_page_route.dart';
 import '../../common/widgets/confirmation_bottom_sheet.dart';
 import 'edit_wish_screen.dart';
+import 'add_wish_screen.dart';
 
 class WishDetailScreen extends StatefulWidget {
   // Original mode: Load from WishlistService
@@ -244,12 +245,12 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Full-width image with overlayed elements
-          if (wish!.images.isNotEmpty)
-            Stack(
-              children: [
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Full-width image with overlayed elements
+            if (wish!.images.isNotEmpty)
+              Stack(
+                children: [
                 // Image gallery
                 GestureDetector(
                   onTap: () => _showFullscreenImage(context),
@@ -457,10 +458,10 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                             ),
                     ),
                   ),
-              ],
-            ),
+                ],
+              ),
 
-          // Scrollable content
+            // Scrollable content
           Flexible(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 36),
@@ -687,7 +688,51 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
               ),
             ),
           ),
-        ],
+
+          // "Add to My Wishlist" button - only show in read-only mode
+          if (widget.isReadOnly)
+            Container(
+              padding: EdgeInsets.fromLTRB(
+                24.0,
+                16.0,
+                24.0,
+                MediaQuery.of(context).padding.bottom + 16.0,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 62,
+                child: ElevatedButton.icon(
+                  onPressed: _addToMyWishlist,
+                  icon: const Icon(Icons.add_circle_outline, size: 20),
+                  label: const Text(
+                    'Add to My Wishlist',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryAccent,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -858,6 +903,27 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
           title: wish!.title,
         ),
       ),
+    );
+  }
+
+  Future<void> _addToMyWishlist() async {
+    if (wish == null) return;
+
+    // Close the detail sheet first
+    Navigator.of(context).pop();
+
+    // Show add wish screen with prefilled data
+    await AddWishScreen.show(
+      context,
+      prefilledData: {
+        'title': wish!.title,
+        'price': wish!.price,
+        'currency': wish!.currency,
+        'image': wish!.images.isNotEmpty ? wish!.images.first : null,
+        'images': wish!.images,
+        'url': wish!.url,
+        'description': wish!.description,
+      },
     );
   }
 

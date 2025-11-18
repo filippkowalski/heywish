@@ -994,11 +994,42 @@ class _MasonryWishCard extends StatelessWidget {
                   imageUrl: wish.imageUrl,
                   wishTitle: wish.title,
                 ),
-                // Reserved star indicator
+                // Price overlay (bottom-left)
+                if (wish.price != null)
+                  Positioned(
+                    bottom: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _formatPrice(wish.price!, wish.currency),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                // Link indicator with favicon (top-left)
+                if (wish.url != null && wish.url!.isNotEmpty)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: _FaviconIndicator(url: wish.url!),
+                  ),
+                // Reserved star indicator (top-right)
                 if (wish.isReserved)
                   Positioned(
-                    top: 10,
-                    right: 10,
+                    top: 8,
+                    right: 8,
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
@@ -1015,7 +1046,7 @@ class _MasonryWishCard extends StatelessWidget {
                       child: Icon(
                         Icons.star,
                         color: AppTheme.primaryAccent,
-                        size: 18,
+                        size: 16,
                       ),
                     ),
                   ),
@@ -1042,16 +1073,19 @@ class _MasonryWishCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
 
-                  // Price (only add spacing if price exists)
-                  if (wish.price != null) ...[
+                  // Description preview (only if description exists)
+                  if (wish.description != null && wish.description!.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(
-                      _formatPrice(wish.price!, wish.currency),
+                      wish.description!,
                       style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey.shade700,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        height: 1.4,
+                        color: Colors.grey.shade600,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ],
@@ -1703,5 +1737,88 @@ class _MasonryImageCard extends StatelessWidget {
     );
 
     return completer.future;
+  }
+}
+
+/// Widget that displays a favicon for a URL or a fallback link icon
+class _FaviconIndicator extends StatelessWidget {
+  final String url;
+
+  const _FaviconIndicator({required this.url});
+
+  /// Extract domain from URL
+  String? _extractDomain(String url) {
+    try {
+      final uri = Uri.tryParse(url.contains('://') ? url : 'https://$url');
+      return uri?.host;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final domain = _extractDomain(url);
+
+    if (domain == null) {
+      // Fallback to link icon if we can't parse the domain
+      return Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(
+          Icons.link,
+          color: Colors.grey.shade700,
+          size: 14,
+        ),
+      );
+    }
+
+    // Use Google's favicon service
+    final faviconUrl = 'https://www.google.com/s2/favicons?domain=$domain&sz=32';
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: CachedNetworkImage(
+        imageUrl: faviconUrl,
+        width: 18,
+        height: 18,
+        fit: BoxFit.contain,
+        placeholder: (context, url) => SizedBox(
+          width: 18,
+          height: 18,
+          child: Icon(
+            Icons.link,
+            color: Colors.grey.shade400,
+            size: 14,
+          ),
+        ),
+        errorWidget: (context, url, error) => Icon(
+          Icons.link,
+          color: Colors.grey.shade700,
+          size: 14,
+        ),
+      ),
+    );
   }
 }
