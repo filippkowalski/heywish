@@ -1,0 +1,51 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build IPA and upload to App Store Connect with metadata"
+  lane :release do
+    # Get current version from pubspec.yaml
+    pubspec_path = "../pubspec.yaml"
+    pubspec = File.read(pubspec_path)
+    version_line = pubspec.match(/version:\s*(\d+\.\d+\.\d+)\+(\d+)/)
+
+    unless version_line
+      UI.user_error!("Could not find version in pubspec.yaml")
+    end
+
+    version_name = version_line[1]  # e.g., "1.9.0"
+    build_number = version_line[2].to_i  # e.g., 20
+    new_build_number = build_number + 1
+
+    UI.message("Current version: #{version_name}+#{build_number}")
+    UI.message("New version: #{version_name}+#{new_build_number}")
+
+    # Update pubspec.yaml with new build number
+    new_pubspec = pubspec.sub(
+      /version:\s*\d+\.\d+\.\d+\+\d+/,
+      "version: #{version_name}+#{new_build_number}"
+    )
+    File.write(pubspec_path, new_pubspec)
+
+    UI.success("Version bumped to #{version_name}+#{new_build_number}")
+    UI.message("Flutter will automatically sync to Xcode from pubspec.yaml")
+
+    # Build the IPA
+    build_app(
+      workspace: "ios/Runner.xcworkspace",
+      scheme: "Runner",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "build/ios/ipa",
+      output_name: "jinnie.ipa"
+    )
+
+    # Upload to App Store Connect with metadata
+    upload_to_app_store(
+      api_key_path: ENV["APP_STORE_CONNECT_API_KEY_PATH"] || "#{Dir.home}/.appstoreconnect/private_keys/AuthKey_LW4DRB22XD.p8",
+      skip_screenshots: true,
+      skip_metadata: false,
+      submit_for_review: false,
+      force: true
+    )
+  end
+end
