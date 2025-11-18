@@ -171,16 +171,35 @@ class _AddWishScreenState extends State<AddWishScreen> {
       });
     }
 
-    // Pre-select wishlist if provided, or select first available wishlist
+    // Pre-select wishlist with priority:
+    // 1. Widget parameter (if provided)
+    // 2. Last used wishlist (from preferences)
+    // 3. First available wishlist
     _selectedWishlistId = widget.wishlistId;
 
-    // Auto-select first wishlist after a short delay if none is pre-selected
+    // Auto-select wishlist after a short delay if none is pre-selected
     Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted && _selectedWishlistId == null) {
         final wishlistService = context.read<WishlistService>();
+        final preferencesService = PreferencesService();
+
         if (wishlistService.wishlists.isNotEmpty) {
+          String? wishlistToSelect;
+
+          // Try to use last used wishlist if it still exists
+          final lastUsedId = preferencesService.lastUsedWishlistId;
+          if (lastUsedId != null) {
+            final lastUsedExists = wishlistService.wishlists.any((w) => w.id == lastUsedId);
+            if (lastUsedExists) {
+              wishlistToSelect = lastUsedId;
+            }
+          }
+
+          // Fall back to first wishlist if last used doesn't exist
+          wishlistToSelect ??= wishlistService.wishlists.first.id;
+
           setState(() {
-            _selectedWishlistId = wishlistService.wishlists.first.id;
+            _selectedWishlistId = wishlistToSelect;
           });
         }
       }
@@ -595,6 +614,11 @@ class _AddWishScreenState extends State<AddWishScreen> {
             ? [_scrapedImageUrl!]
             : null,
       );
+
+      // Save the selected wishlist as last used for future use
+      if (_selectedWishlistId != null) {
+        await PreferencesService().setLastUsedWishlistId(_selectedWishlistId);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
