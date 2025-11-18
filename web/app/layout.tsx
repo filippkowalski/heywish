@@ -204,6 +204,13 @@ export default function RootLayout({
           src="https://s.skimresources.com/js/294546X1781833.skimlinks.js"
           strategy="afterInteractive"
         />
+
+        {/* Simple Analytics - privacy-first analytics */}
+        <Script
+          async
+          src="https://scripts.simpleanalyticscdn.com/latest.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
