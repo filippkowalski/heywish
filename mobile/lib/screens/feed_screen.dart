@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
@@ -12,7 +14,7 @@ import '../services/friends_service.dart';
 import '../models/friend.dart';
 import '../widgets/cached_image.dart';
 import 'wishlists/add_wish_screen.dart';
-import 'feed_wish_detail_screen.dart';
+import 'wishlists/wish_detail_screen.dart';
 import 'profile/public_profile_screen.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -924,10 +926,12 @@ class _FeedScreenState extends State<FeedScreen> {
           GestureDetector(
             onTap: () async {
               // Show friend's wish detail with all data from feed
-              await FeedWishDetailScreen.show(
+              await WishDetailScreen.showFeed(
                 context,
                 wishTitle: item.wishTitle,
-                wishImage: item.wishImage,
+                wishImages: item.wishImage != null && item.wishImage!.isNotEmpty
+                    ? [item.wishImage!]
+                    : null,
                 wishPrice: item.wishPrice,
                 wishCurrency: item.wishCurrency,
                 wishUrl: item.wishUrl,
@@ -944,20 +948,10 @@ class _FeedScreenState extends State<FeedScreen> {
                 if (item.wishImage != null && item.wishImage!.isNotEmpty)
                   Stack(
                     children: [
-                      Container(
-                        width: double.infinity,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-                          child: CachedImageWidget(
-                            imageUrl: item.wishImage,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
+                      _DynamicHeightImage(
+                        imageUrl: item.wishImage!,
+                        minHeight: 180,
+                        maxHeight: 400,
                       ),
                       // Price badge overlay
                       if (item.wishPrice != null)
@@ -1204,4 +1198,137 @@ class FeedItem {
     this.wishUrl,
     this.wishDescription,
   });
+}
+
+/// Widget that displays an image with dynamic height based on aspect ratio
+/// with constraints to prevent overly tall images from dominating the view
+class _DynamicHeightImage extends StatelessWidget {
+  final String imageUrl;
+  final double minHeight;
+  final double maxHeight;
+
+  const _DynamicHeightImage({
+    required this.imageUrl,
+    this.minHeight = 180,
+    this.maxHeight = 400,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenWidth = constraints.maxWidth;
+
+        return CachedNetworkImage(
+          imageUrl: imageUrl,
+          imageBuilder: (context, imageProvider) {
+            return FutureBuilder<ImageInfo>(
+              future: _getImageInfo(imageProvider),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  // Loading state - show min height container
+                  return Container(
+                    width: double.infinity,
+                    height: minHeight,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(12),
+                      ),
+                    ),
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                final imageInfo = snapshot.data!;
+                final imageWidth = imageInfo.image.width.toDouble();
+                final imageHeight = imageInfo.image.height.toDouble();
+                final aspectRatio = imageWidth / imageHeight;
+
+                // Calculate ideal height based on screen width and aspect ratio
+                final idealHeight = screenWidth / aspectRatio;
+
+                // Clamp height between min and max
+                final constrainedHeight = idealHeight.clamp(minHeight, maxHeight);
+
+                // Determine if we need to crop (image would be taller than max)
+                final shouldCrop = idealHeight > maxHeight;
+
+                return Container(
+                  width: double.infinity,
+                  height: constrainedHeight,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(12),
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(12),
+                    ),
+                    child: Image(
+                      image: imageProvider,
+                      fit: shouldCrop ? BoxFit.cover : BoxFit.contain,
+                      width: double.infinity,
+                      height: constrainedHeight,
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+          placeholder: (context, url) => Container(
+            width: double.infinity,
+            height: minHeight,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(12),
+              ),
+            ),
+          ),
+          errorWidget: (context, url, error) => Container(
+            width: double.infinity,
+            height: minHeight,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(12),
+              ),
+            ),
+            child: Icon(
+              Icons.image_not_supported_outlined,
+              color: Colors.grey.shade400,
+              size: 48,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<ImageInfo> _getImageInfo(ImageProvider imageProvider) {
+    final completer = Completer<ImageInfo>();
+    final stream = imageProvider.resolve(const ImageConfiguration());
+
+    stream.addListener(
+      ImageStreamListener(
+        (info, _) {
+          if (!completer.isCompleted) {
+            completer.complete(info);
+          }
+        },
+        onError: (exception, stackTrace) {
+          if (!completer.isCompleted) {
+            completer.completeError(exception, stackTrace);
+          }
+        },
+      ),
+    );
+
+    return completer.future;
+  }
 }

@@ -14,20 +14,49 @@ import '../../common/widgets/confirmation_bottom_sheet.dart';
 import 'edit_wish_screen.dart';
 
 class WishDetailScreen extends StatefulWidget {
-  final String wishId;
-  final String? wishlistId; // Nullable for unsorted wishes
+  // Original mode: Load from WishlistService
+  final String? wishId;
+  final String? wishlistId;
+
+  // Feed/Read-only mode: Direct wish data
+  final String? directWishTitle;
+  final List<String>? directWishImages;
+  final double? directWishPrice;
+  final String? directWishCurrency;
+  final String? directWishUrl;
+  final String? directWishDescription;
+  final bool? directWishIsReserved;
+
+  // Friend info for feed context
+  final String? friendName;
+  final String? friendUsername;
+  final String? friendAvatar;
+
+  // Control flags
+  final bool isReadOnly;
 
   const WishDetailScreen({
     super.key,
-    required this.wishId,
-    this.wishlistId, // Optional for unsorted wishes
+    this.wishId,
+    this.wishlistId,
+    this.directWishTitle,
+    this.directWishImages,
+    this.directWishPrice,
+    this.directWishCurrency,
+    this.directWishUrl,
+    this.directWishDescription,
+    this.directWishIsReserved,
+    this.friendName,
+    this.friendUsername,
+    this.friendAvatar,
+    this.isReadOnly = false,
   });
 
-  /// Show as bottom sheet
+  /// Show as bottom sheet - Original mode (load from service)
   static Future<bool?> show(
     BuildContext context, {
     required String wishId,
-    String? wishlistId, // Optional for unsorted wishes
+    String? wishlistId,
   }) {
     return NativeTransitions.showNativeModalBottomSheet<bool>(
       context: context,
@@ -37,6 +66,42 @@ class WishDetailScreen extends StatefulWidget {
       child: WishDetailScreen(
         wishId: wishId,
         wishlistId: wishlistId,
+        isReadOnly: false,
+      ),
+    );
+  }
+
+  /// Show as bottom sheet - Feed mode (direct data, read-only)
+  static Future<void> showFeed(
+    BuildContext context, {
+    required String wishTitle,
+    List<String>? wishImages,
+    double? wishPrice,
+    String? wishCurrency,
+    String? wishUrl,
+    String? wishDescription,
+    bool? wishIsReserved,
+    required String friendName,
+    required String friendUsername,
+    String? friendAvatar,
+  }) {
+    return NativeTransitions.showNativeModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      child: WishDetailScreen(
+        directWishTitle: wishTitle,
+        directWishImages: wishImages,
+        directWishPrice: wishPrice,
+        directWishCurrency: wishCurrency,
+        directWishUrl: wishUrl,
+        directWishDescription: wishDescription,
+        directWishIsReserved: wishIsReserved,
+        friendName: friendName,
+        friendUsername: friendUsername,
+        friendAvatar: friendAvatar,
+        isReadOnly: true,
       ),
     );
   }
@@ -65,8 +130,35 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
   }
 
   void _loadWish() async {
-    final wishlistService = context.read<WishlistService>();
-    wish = wishlistService.findWishById(widget.wishId);
+    // If using direct data (feed mode), create Wish object from parameters
+    if (widget.directWishTitle != null) {
+      wish = Wish(
+        id: 'feed-wish', // Placeholder ID for feed wishes
+        title: widget.directWishTitle!,
+        images: widget.directWishImages ?? [],
+        price: widget.directWishPrice,
+        currency: widget.directWishCurrency ?? 'USD',
+        url: widget.directWishUrl,
+        description: widget.directWishDescription,
+        status: widget.directWishIsReserved == true ? 'reserved' : 'available',
+        wishlistId: null,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
+    // Otherwise, load from WishlistService (original mode)
+    if (widget.wishId != null) {
+      final wishlistService = context.read<WishlistService>();
+      wish = wishlistService.findWishById(widget.wishId!);
+    }
 
     if (mounted) {
       setState(() {
@@ -196,61 +288,62 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                     ),
                   ),
                 ),
-                // Menu button overlay (top-right)
-                Positioned(
-                  top: 16,
-                  right: 16,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert, color: Colors.white, size: 20),
-                      onSelected: (value) {
-                        if (value == 'edit') {
-                          _editWish();
-                        } else if (value == 'share') {
-                          _shareWish();
-                        } else if (value == 'delete') {
-                          _deleteWish();
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'edit',
-                          child: Row(
-                            children: [
-                              const Icon(Icons.edit_outlined, size: 20),
-                              const SizedBox(width: 12),
-                              Text('app.edit'.tr()),
-                            ],
+                // Menu button overlay (top-right) - only show if not read-only
+                if (!widget.isReadOnly)
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, color: Colors.white, size: 20),
+                        onSelected: (value) {
+                          if (value == 'edit') {
+                            _editWish();
+                          } else if (value == 'share') {
+                            _shareWish();
+                          } else if (value == 'delete') {
+                            _deleteWish();
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: 'edit',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.edit_outlined, size: 20),
+                                const SizedBox(width: 12),
+                                Text('app.edit'.tr()),
+                              ],
+                            ),
                           ),
-                        ),
-                        PopupMenuItem(
-                          value: 'share',
-                          child: Row(
-                            children: [
-                              const Icon(Icons.share_outlined, size: 20),
-                              const SizedBox(width: 12),
-                              Text('app.share'.tr()),
-                            ],
+                          PopupMenuItem(
+                            value: 'share',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.share_outlined, size: 20),
+                                const SizedBox(width: 12),
+                                Text('app.share'.tr()),
+                              ],
+                            ),
                           ),
-                        ),
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                              const SizedBox(width: 12),
-                              Text('app.delete'.tr(), style: const TextStyle(color: Colors.red)),
-                            ],
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                                const SizedBox(width: 12),
+                                Text('app.delete'.tr(), style: const TextStyle(color: Colors.red)),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
                 // Price and status badges overlay (bottom-left)
                 Positioned(
                   bottom: 16,
@@ -376,6 +469,52 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                 children: [
                   // Add top spacing if there's an image
                   if (wish!.images.isNotEmpty) const SizedBox(height: 16),
+
+                  // Friend info for feed mode
+                  if (widget.isReadOnly && widget.friendName != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          // Friend avatar
+                          CachedAvatarImage(
+                            imageUrl: widget.friendAvatar,
+                            radius: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          // Friend name
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'On ${widget.friendName}\'s wishlist',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  '@${widget.friendUsername}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
 
                   // Title
                   Text(
@@ -657,6 +796,9 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
   }
 
   void _editWish() async {
+    // Guard against read-only mode
+    if (widget.isReadOnly || widget.wishId == null) return;
+
     // Close the detail bottom sheet first
     Navigator.of(context).pop();
 
@@ -664,7 +806,7 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
     // Use wish's actual wishlistId (may be null for unsorted)
     final result = await EditWishScreen.show(
       context,
-      wishId: widget.wishId,
+      wishId: widget.wishId!,
       wishlistId: wish?.wishlistId,
     );
 
@@ -675,6 +817,9 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
   }
 
   void _deleteWish() async {
+    // Guard against read-only mode
+    if (widget.isReadOnly || widget.wishId == null) return;
+
     final shouldDelete = await ConfirmationBottomSheet.show(
       context: context,
       title: 'app.delete'.tr(),
@@ -688,7 +833,7 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
       Navigator.of(context).pop(true);
 
       // Perform deletion (optimistic UI handles removal)
-      final success = await context.read<WishlistService>().deleteWish(widget.wishId);
+      final success = await context.read<WishlistService>().deleteWish(widget.wishId!);
 
       if (!success && mounted) {
         // Show error if deletion failed (the wish will be restored by the service)

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,7 +14,6 @@ import '../../services/preferences_service.dart';
 import '../../models/wishlist.dart';
 import '../../models/wish.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/cached_image.dart';
 import '../../common/widgets/native_refresh_indicator.dart';
 import '../../common/navigation/native_page_route.dart';
 import '../../common/utils/wish_category_detector.dart';
@@ -990,62 +990,9 @@ class _MasonryWishCard extends StatelessWidget {
             // Image section
             Stack(
               children: [
-                AspectRatio(
-                  aspectRatio: 1.0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(16),
-                      ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(16),
-                      ),
-                      child:
-                          wish.imageUrl != null
-                              ? CachedImageWidget(
-                                imageUrl: wish.imageUrl!,
-                                fit: BoxFit.contain,
-                                width: double.infinity,
-                                errorWidget: Container(
-                                  color: Colors.grey.shade100,
-                                  child: Center(
-                                    child: Icon(
-                                      WishCategoryDetector.getIconFromTitle(
-                                        wish.title,
-                                      ),
-                                      size: 48,
-                                      color:
-                                          WishCategoryDetector.getColorFromTitle(
-                                            wish.title,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                              )
-                              : Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(16),
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Icon(
-                                    WishCategoryDetector.getIconFromTitle(
-                                      wish.title,
-                                    ),
-                                    size: 48,
-                                    color: WishCategoryDetector.getColorFromTitle(
-                                      wish.title,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                    ),
-                  ),
+                _MasonryImageCard(
+                  imageUrl: wish.imageUrl,
+                  wishTitle: wish.title,
                 ),
                 // Reserved star indicator
                 if (wish.isReserved)
@@ -1610,5 +1557,151 @@ class _WishlistShareItem extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Widget for masonry grid image cards with dynamic aspect ratios
+class _MasonryImageCard extends StatelessWidget {
+  final String? imageUrl;
+  final String wishTitle;
+
+  const _MasonryImageCard({
+    required this.imageUrl,
+    required this.wishTitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl == null || imageUrl!.isEmpty) {
+      // No image - show fallback with square aspect ratio
+      return AspectRatio(
+        aspectRatio: 1.0,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(16),
+            ),
+          ),
+          child: Center(
+            child: Icon(
+              WishCategoryDetector.getIconFromTitle(wishTitle),
+              size: 48,
+              color: WishCategoryDetector.getColorFromTitle(wishTitle),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl!,
+      imageBuilder: (context, imageProvider) {
+        return FutureBuilder<ImageInfo>(
+          future: _getImageInfo(imageProvider),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              // Loading - show square placeholder
+              return AspectRatio(
+                aspectRatio: 1.0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            final imageInfo = snapshot.data!;
+            final imageWidth = imageInfo.image.width.toDouble();
+            final imageHeight = imageInfo.image.height.toDouble();
+            var aspectRatio = imageWidth / imageHeight;
+
+            // Constrain aspect ratio for masonry grid
+            // Min: 0.6 (tall/portrait), Max: 1.5 (wide/landscape)
+            aspectRatio = aspectRatio.clamp(0.6, 1.5);
+
+            // Determine if we should crop tall images
+            final shouldCrop = (imageWidth / imageHeight) < 0.6 || (imageWidth / imageHeight) > 1.5;
+
+            return AspectRatio(
+              aspectRatio: aspectRatio,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                  child: Image(
+                    image: imageProvider,
+                    fit: shouldCrop ? BoxFit.cover : BoxFit.contain,
+                    width: double.infinity,
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+      placeholder: (context, url) => AspectRatio(
+        aspectRatio: 1.0,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(16),
+            ),
+          ),
+        ),
+      ),
+      errorWidget: (context, url, error) => AspectRatio(
+        aspectRatio: 1.0,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(16),
+            ),
+          ),
+          child: Center(
+            child: Icon(
+              WishCategoryDetector.getIconFromTitle(wishTitle),
+              size: 48,
+              color: WishCategoryDetector.getColorFromTitle(wishTitle),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<ImageInfo> _getImageInfo(ImageProvider imageProvider) {
+    final completer = Completer<ImageInfo>();
+    final stream = imageProvider.resolve(const ImageConfiguration());
+
+    stream.addListener(
+      ImageStreamListener(
+        (info, _) {
+          if (!completer.isCompleted) {
+            completer.complete(info);
+          }
+        },
+        onError: (exception, stackTrace) {
+          if (!completer.isCompleted) {
+            completer.completeError(exception, stackTrace);
+          }
+        },
+      ),
+    );
+
+    return completer.future;
   }
 }

@@ -120,35 +120,42 @@ class CachedAvatarImage extends StatelessWidget {
       );
     }
 
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: defaultBgColor,
-      child: ClipOval(
-        child: CachedNetworkImage(
-          imageUrl: imageUrl!,
-          width: radius * 2,
-          height: radius * 2,
-          fit: BoxFit.cover,
-          placeholder: (context, url) => placeholder ?? Shimmer.fromColors(
-            baseColor: Colors.grey.shade300,
-            highlightColor: Colors.grey.shade100,
-            child: Container(
-              width: radius * 2,
-              height: radius * 2,
+    return CachedNetworkImage(
+      imageUrl: imageUrl!,
+      imageBuilder: (context, imageProvider) => CircleAvatar(
+        radius: radius,
+        backgroundColor: defaultBgColor,
+        backgroundImage: imageProvider,
+      ),
+      placeholder: (context, url) => CircleAvatar(
+        radius: radius,
+        backgroundColor: defaultBgColor,
+        child: placeholder ?? Shimmer.fromColors(
+          baseColor: Colors.grey.shade300,
+          highlightColor: Colors.grey.shade100,
+          child: Container(
+            width: radius * 2,
+            height: radius * 2,
+            decoration: const BoxDecoration(
               color: Colors.white,
+              shape: BoxShape.circle,
             ),
           ),
-          errorWidget: (context, url, error) => errorWidget ?? Icon(
-            Icons.person,
-            color: defaultIconColor,
-            size: radius * 0.8,
-          ),
-          fadeInDuration: const Duration(milliseconds: 300),
-          fadeOutDuration: const Duration(milliseconds: 100),
-          memCacheWidth: (radius * 2).toInt(),
-          memCacheHeight: (radius * 2).toInt(),
         ),
       ),
+      errorWidget: (context, url, error) => CircleAvatar(
+        radius: radius,
+        backgroundColor: defaultBgColor,
+        child: errorWidget ?? Icon(
+          Icons.person,
+          color: defaultIconColor,
+          size: radius * 0.8,
+        ),
+      ),
+      fadeInDuration: const Duration(milliseconds: 300),
+      fadeOutDuration: const Duration(milliseconds: 100),
+      memCacheWidth: (radius * 2).toInt(),
+      memCacheHeight: (radius * 2).toInt(),
     );
   }
 }
