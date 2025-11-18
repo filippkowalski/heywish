@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import '../services/preferences_service.dart';
-import '../theme/app_theme.dart';
-import '../common/widgets/heart_icon.dart';
+import '../services/review_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -29,7 +27,17 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     // Check if user is already authenticated and completed onboarding
-    if (authService.isAuthenticated && !authService.needsOnboarding) {
+    final hasCompletedOnboarding = authService.isAuthenticated && !authService.needsOnboarding;
+
+    // Track app launch for review prompting
+    try {
+      await ReviewService().onAppLaunched(hasCompletedOnboarding: hasCompletedOnboarding);
+    } catch (e) {
+      debugPrint('⚠️  Error tracking app launch for review: $e');
+      // Don't fail app initialization if review tracking fails
+    }
+
+    if (hasCompletedOnboarding) {
       context.go('/home');
     } else {
       // If not authenticated, go to onboarding where they must create an account

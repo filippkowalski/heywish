@@ -5,16 +5,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ReviewService extends ChangeNotifier {
   static const String _hasRequestedReviewKey = 'has_requested_review';
   static const String _wishesAddedCountKey = 'wishes_added_count';
-  static const int _reviewThreshold = 3;
+  static const String _appLaunchCountKey = 'app_launch_count';
+  static const int _reviewThreshold = 2;
+  static const int _launchCountThreshold = 2;
 
   final InAppReview _inAppReview = InAppReview.instance;
   SharedPreferences? _prefs;
 
   bool _hasRequestedReview = false;
   int _wishesAddedCount = 0;
+  int _appLaunchCount = 0;
 
   bool get hasRequestedReview => _hasRequestedReview;
   int get wishesAddedCount => _wishesAddedCount;
+  int get appLaunchCount => _appLaunchCount;
 
   static final ReviewService _instance = ReviewService._internal();
   factory ReviewService() => _instance;
@@ -24,7 +28,26 @@ class ReviewService extends ChangeNotifier {
     _prefs = await SharedPreferences.getInstance();
     _hasRequestedReview = _prefs?.getBool(_hasRequestedReviewKey) ?? false;
     _wishesAddedCount = _prefs?.getInt(_wishesAddedCountKey) ?? 0;
+    _appLaunchCount = _prefs?.getInt(_appLaunchCountKey) ?? 0;
     notifyListeners();
+  }
+
+  /// Call this on app launch to track launches and potentially request review
+  Future<void> onAppLaunched({required bool hasCompletedOnboarding}) async {
+    // Don't track if we've already requested a review
+    if (_hasRequestedReview) return;
+
+    _appLaunchCount++;
+    await _prefs?.setInt(_appLaunchCountKey, _appLaunchCount);
+    notifyListeners();
+
+    debugPrint('🚀 ReviewService: App launch count: $_appLaunchCount');
+
+    // Request review on second launch if onboarding is complete
+    if (_appLaunchCount >= _launchCountThreshold && hasCompletedOnboarding) {
+      debugPrint('⭐ ReviewService: Requesting review on app launch #$_appLaunchCount');
+      await _requestReview();
+    }
   }
 
   /// Call this after successfully adding a wish
@@ -95,8 +118,10 @@ class ReviewService extends ChangeNotifier {
   Future<void> resetReviewState() async {
     _hasRequestedReview = false;
     _wishesAddedCount = 0;
+    _appLaunchCount = 0;
     await _prefs?.setBool(_hasRequestedReviewKey, false);
     await _prefs?.setInt(_wishesAddedCountKey, 0);
+    await _prefs?.setInt(_appLaunchCountKey, 0);
     notifyListeners();
     debugPrint('🔄 ReviewService: Review state reset');
   }
