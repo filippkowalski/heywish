@@ -1,0 +1,1 @@
+Build IPA and upload to App Store with metadata using `cd mobile && fastlane release`. This is the complete release process including build, metadata, and upload.
