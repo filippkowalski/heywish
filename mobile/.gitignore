@@ -54,3 +54,10 @@ lib/firebase_options.dart
 ios/firebase_app_id_file.json
 macos/Runner/GoogleService-Info.plist
 macos/firebase_app_id_file.json
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/.env.local
+fastlane/test_output/
+fastlane/.scan*

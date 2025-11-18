@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
+import '../theme/app_theme.dart';
 
 class CachedImageWidget extends StatelessWidget {
   final String? imageUrl;
@@ -103,13 +104,17 @@ class CachedAvatarImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Default greyish background with accent color icon
+    final defaultBgColor = backgroundColor ?? Colors.grey.shade100;
+    final defaultIconColor = AppTheme.primaryAccent;
+
     if (imageUrl == null || imageUrl!.isEmpty) {
       return CircleAvatar(
         radius: radius,
-        backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        backgroundColor: defaultBgColor,
         child: errorWidget ?? Icon(
           Icons.person,
-          color: Theme.of(context).colorScheme.primary,
+          color: defaultIconColor,
           size: radius * 0.8,
         ),
       );
@@ -117,7 +122,7 @@ class CachedAvatarImage extends StatelessWidget {
 
     return CircleAvatar(
       radius: radius,
-      backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+      backgroundColor: defaultBgColor,
       child: ClipOval(
         child: CachedNetworkImage(
           imageUrl: imageUrl!,
@@ -135,7 +140,7 @@ class CachedAvatarImage extends StatelessWidget {
           ),
           errorWidget: (context, url, error) => errorWidget ?? Icon(
             Icons.person,
-            color: Theme.of(context).colorScheme.primary,
+            color: defaultIconColor,
             size: radius * 0.8,
           ),
           fadeInDuration: const Duration(milliseconds: 300),

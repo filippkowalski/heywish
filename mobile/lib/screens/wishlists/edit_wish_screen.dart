@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -9,12 +8,11 @@ import '../../services/wishlist_service.dart';
 import '../../services/image_cache_service.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
-import '../../models/wishlist.dart';
 import '../../models/wish.dart';
 import '../../common/navigation/native_page_route.dart';
 import '../../widgets/cached_image.dart';
 import '../../common/utils/wish_category_detector.dart';
-import 'wishlist_new_screen.dart';
+import 'widgets/wish_form_widgets.dart';
 
 class EditWishScreen extends StatefulWidget {
   final String wishId;
@@ -352,7 +350,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
             // Scrollable content
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -361,11 +359,11 @@ class _EditWishScreenState extends State<EditWishScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: _buildBorderlessTextField(
+                          child: WishFormTextField(
                             controller: _titleController,
                             focusNode: _titleFocusNode,
                             hintText: 'wish.title_placeholder'.tr(),
-                            fontSize: 28,
+                            fontSize: 22,
                             fontWeight: FontWeight.w600,
                             maxLines: 2,
                             textCapitalization: TextCapitalization.words,
@@ -382,7 +380,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: _buildBorderlessTextField(
+                            child: WishFormTextField(
                               controller: _descriptionController,
                               focusNode: _descriptionFocusNode,
                               hintText: 'Description',
@@ -392,22 +390,13 @@ class _EditWishScreenState extends State<EditWishScreen> {
                               textCapitalization: TextCapitalization.sentences,
                             ),
                           ),
-                          GestureDetector(
+                          WishFieldCloseButton(
                             onTap: () {
-                              HapticFeedback.lightImpact();
                               setState(() {
                                 _visibleFields.remove('description');
                                 _descriptionController.clear();
                               });
                             },
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              child: Icon(
-                                Icons.close,
-                                size: 24,
-                                color: Colors.grey[400],
-                              ),
-                            ),
                           ),
                         ],
                       ),
@@ -420,7 +409,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: _buildBorderlessTextField(
+                            child: WishFormTextField(
                               controller: _urlController,
                               focusNode: _urlFocusNode,
                               hintText: 'Link',
@@ -430,22 +419,13 @@ class _EditWishScreenState extends State<EditWishScreen> {
                               textColor: Colors.grey[600],
                             ),
                           ),
-                          GestureDetector(
+                          WishFieldCloseButton(
                             onTap: () {
-                              HapticFeedback.lightImpact();
                               setState(() {
                                 _visibleFields.remove('url');
                                 _urlController.clear();
                               });
                             },
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              child: Icon(
-                                Icons.close,
-                                size: 24,
-                                color: Colors.grey[400],
-                              ),
-                            ),
                           ),
                         ],
                       ),
@@ -463,9 +443,8 @@ class _EditWishScreenState extends State<EditWishScreen> {
                                   ? _buildImagePreview()
                                   : _buildAddImageButton(),
                             ),
-                            GestureDetector(
+                            WishFieldCloseButton(
                               onTap: () {
-                                HapticFeedback.lightImpact();
                                 setState(() {
                                   _visibleFields.remove('image');
                                   _selectedImage = null;
@@ -473,14 +452,6 @@ class _EditWishScreenState extends State<EditWishScreen> {
                                   _scrapedImageUrl = null;
                                 });
                               },
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                child: Icon(
-                                  Icons.close,
-                                  size: 24,
-                                  color: Colors.grey[400],
-                                ),
-                              ),
                             ),
                           ],
                         ),
@@ -494,14 +465,24 @@ class _EditWishScreenState extends State<EditWishScreen> {
                         children: [
                           Expanded(
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
+                                Text(
+                                  CurrencyHelper.getSymbol(_currency),
+                                  style: const TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppTheme.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
                                 Expanded(
                                   flex: 2,
-                                  child: _buildBorderlessTextField(
+                                  child: WishFormTextField(
                                     controller: _priceController,
                                     focusNode: _priceFocusNode,
-                                    hintText: 'Price',
-                                    fontSize: 20,
+                                    hintText: '0.00',
+                                    fontSize: 17,
                                     fontWeight: FontWeight.w500,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   ),
@@ -516,7 +497,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
                                       child: Text(
                                         currency,
                                         style: const TextStyle(
-                                          fontSize: 18,
+                                          fontSize: 16,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -531,33 +512,20 @@ class _EditWishScreenState extends State<EditWishScreen> {
                               ],
                             ),
                           ),
-                          GestureDetector(
+                          WishFieldCloseButton(
                             onTap: () {
-                              HapticFeedback.lightImpact();
                               setState(() {
                                 _visibleFields.remove('price');
                                 _priceController.clear();
                               });
                             },
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              child: Icon(
-                                Icons.close,
-                                size: 24,
-                                color: Colors.grey[400],
-                              ),
-                            ),
                           ),
                         ],
                       ),
                     ],
 
-                    // Add More Details buttons
+                    // Wishlist Selector
                     const SizedBox(height: 20),
-                    _buildAddFieldButtons(),
-
-                    // Wishlist Selector - Always visible at bottom
-                    const SizedBox(height: 16),
                     Text(
                       'List',
                       style: TextStyle(
@@ -567,7 +535,46 @@ class _EditWishScreenState extends State<EditWishScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    _buildWishlistSelector(),
+                    WishlistSelector(
+                      selectedWishlistId: _selectedWishlistId,
+                      onWishlistSelected: (id) {
+                        setState(() {
+                          _selectedWishlistId = id;
+                        });
+                      },
+                      onCreateNew: () async {
+                        final newId = await createNewWishlist(context);
+                        if (newId != null && mounted) {
+                          setState(() {
+                            _selectedWishlistId = newId;
+                          });
+                        }
+                      },
+                    ),
+
+                    // Add More Details buttons
+                    WishFieldButtons(
+                      visibleFields: _visibleFields,
+                      onFieldAdd: (fieldKey) {
+                        setState(() {
+                          _visibleFields.add(fieldKey);
+                        });
+
+                        // Request focus or perform action after setState
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          if (!mounted) return;
+                          if (fieldKey == 'image') {
+                            _pickImage();
+                          } else if (fieldKey == 'description') {
+                            _descriptionFocusNode.requestFocus();
+                          } else if (fieldKey == 'url') {
+                            _urlFocusNode.requestFocus();
+                          } else if (fieldKey == 'price') {
+                            _priceFocusNode.requestFocus();
+                          }
+                        });
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -575,7 +582,12 @@ class _EditWishScreenState extends State<EditWishScreen> {
 
             // Bottom button
             Container(
-              padding: EdgeInsets.fromLTRB(24, 12, 24, bottomPadding + 12),
+              padding: EdgeInsets.fromLTRB(
+                12,
+                12,
+                12,
+                bottomPadding > 0 ? bottomPadding + 16 : mediaQuery.padding.bottom + 16,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border(
@@ -620,121 +632,12 @@ class _EditWishScreenState extends State<EditWishScreen> {
     );
   }
 
-  Widget _buildBorderlessTextField({
-    required TextEditingController controller,
-    FocusNode? focusNode,
-    required String hintText,
-    double fontSize = 16,
-    FontWeight fontWeight = FontWeight.w400,
-    int maxLines = 1,
-    TextCapitalization textCapitalization = TextCapitalization.none,
-    TextInputType? keyboardType,
-    Color? textColor,
-    bool autofocus = false,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        autofocus: autofocus,
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: fontWeight,
-          color: textColor ?? AppTheme.primary,
-          height: 1.3,
-        ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            fontSize: fontSize,
-            fontWeight: fontWeight,
-            color: Colors.grey[400],
-            height: 1.3,
-          ),
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
-        ),
-        maxLines: maxLines,
-        minLines: 1,
-        textCapitalization: textCapitalization,
-        keyboardType: keyboardType,
-      ),
-    );
-  }
-
-  Widget _buildAddFieldButtons() {
-    final availableFields = [
-      if (!_visibleFields.contains('description')) {'key': 'description', 'label': 'Description', 'icon': Icons.notes, 'focusNode': _descriptionFocusNode},
-      if (!_visibleFields.contains('url')) {'key': 'url', 'label': 'Link', 'icon': Icons.link, 'focusNode': _urlFocusNode},
-      if (!_visibleFields.contains('image')) {'key': 'image', 'label': 'Photo', 'icon': Icons.image},
-      if (!_visibleFields.contains('price')) {'key': 'price', 'label': 'Price', 'icon': Icons.attach_money, 'focusNode': _priceFocusNode},
-    ];
-
-    if (availableFields.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: availableFields.map((field) {
-        return GestureDetector(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            setState(() {
-              _visibleFields.add(field['key'] as String);
-            });
-
-            // Request focus or perform action after setState
-            Future.delayed(const Duration(milliseconds: 100), () {
-              if (field['key'] == 'image') {
-                _pickImage();
-              } else if (field['focusNode'] != null) {
-                (field['focusNode'] as FocusNode).requestFocus();
-              }
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  field['icon'] as IconData,
-                  size: 16,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  field['label'] as String,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
   Widget _buildImagePreview() {
     return GestureDetector(
       onTap: _pickImage,
       child: Container(
         width: double.infinity,
-        height: 180,
+        height: 140,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           color: Colors.grey.shade100,
@@ -781,7 +684,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
       onTap: _isCompressingImage ? null : _pickImage,
       child: Container(
         width: double.infinity,
-        height: 180,
+        height: 140,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           color: Colors.grey[50],
@@ -809,96 +712,4 @@ class _EditWishScreenState extends State<EditWishScreen> {
     );
   }
 
-  Widget _buildWishlistSelector() {
-    final wishlistService = context.watch<WishlistService>();
-    final wishlists = wishlistService.wishlists;
-
-    return SizedBox(
-      height: 32,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: wishlists.length + 1, // +1 for "New List" button
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          // Last item is "New List" button
-          if (index == wishlists.length) {
-            return GestureDetector(
-              onTap: _createNewWishlist,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.add,
-                        size: 16,
-                        color: AppTheme.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'New List',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppTheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }
-
-          final wishlist = wishlists[index];
-          final isSelected = _selectedWishlistId == wishlist.id;
-
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedWishlistId = wishlist.id;
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSelected ? AppTheme.primaryAccent : Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Text(
-                  wishlist.name,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: isSelected ? Colors.white : AppTheme.primary,
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Future<void> _createNewWishlist() async {
-    // Show create new wishlist bottom sheet
-    final newWishlistId = await WishlistNewScreen.show(context);
-
-    if (newWishlistId != null && mounted) {
-      // Refresh wishlists
-      await context.read<WishlistService>().fetchWishlists();
-
-      // Select the newly created wishlist
-      setState(() {
-        _selectedWishlistId = newWishlistId as String;
-      });
-    }
-  }
 }

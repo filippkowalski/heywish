@@ -992,51 +992,59 @@ class _MasonryWishCard extends StatelessWidget {
               children: [
                 AspectRatio(
                   aspectRatio: 1.0,
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
                     ),
-                    child:
-                        wish.imageUrl != null
-                            ? CachedImageWidget(
-                              imageUrl: wish.imageUrl!,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              errorWidget: Container(
-                                color: Colors.grey.shade100,
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
+                      child:
+                          wish.imageUrl != null
+                              ? CachedImageWidget(
+                                imageUrl: wish.imageUrl!,
+                                fit: BoxFit.contain,
+                                width: double.infinity,
+                                errorWidget: Container(
+                                  color: Colors.grey.shade100,
+                                  child: Center(
+                                    child: Icon(
+                                      WishCategoryDetector.getIconFromTitle(
+                                        wish.title,
+                                      ),
+                                      size: 48,
+                                      color:
+                                          WishCategoryDetector.getColorFromTitle(
+                                            wish.title,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                              : Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(16),
+                                  ),
+                                ),
                                 child: Center(
                                   child: Icon(
                                     WishCategoryDetector.getIconFromTitle(
                                       wish.title,
                                     ),
                                     size: 48,
-                                    color:
-                                        WishCategoryDetector.getColorFromTitle(
-                                          wish.title,
-                                        ),
+                                    color: WishCategoryDetector.getColorFromTitle(
+                                      wish.title,
+                                    ),
                                   ),
                                 ),
                               ),
-                            )
-                            : Container(
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(16),
-                                ),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  WishCategoryDetector.getIconFromTitle(
-                                    wish.title,
-                                  ),
-                                  size: 48,
-                                  color: WishCategoryDetector.getColorFromTitle(
-                                    wish.title,
-                                  ),
-                                ),
-                              ),
-                            ),
+                    ),
                   ),
                 ),
                 // Reserved star indicator

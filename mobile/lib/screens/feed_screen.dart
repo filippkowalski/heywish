@@ -256,6 +256,32 @@ class _FeedScreenState extends State<FeedScreen> {
     );
   }
 
+  /// Get currency symbol
+  String _getCurrencySymbol(String currency) {
+    switch (currency.toUpperCase()) {
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      case 'JPY':
+        return '¥';
+      case 'CAD':
+        return 'C\$';
+      case 'AUD':
+        return 'A\$';
+      default:
+        return currency;
+    }
+  }
+
+  /// Format price with currency symbol
+  String _formatPrice(double price, String currency) {
+    final symbol = _getCurrencySymbol(currency);
+    return '$symbol${price.toStringAsFixed(2)}';
+  }
+
   void _shareProfile() {
     final authService = AuthService();
     final username = authService.currentUser?.username ?? '';
@@ -764,22 +790,9 @@ class _FeedScreenState extends State<FeedScreen> {
           child: Row(
             children: [
               // Avatar
-              CircleAvatar(
+              CachedAvatarImage(
+                imageUrl: user.avatarUrl,
                 radius: 24,
-                backgroundColor: AppTheme.primaryAccent.withValues(alpha: 0.1),
-                backgroundImage: user.avatarUrl != null
-                    ? NetworkImage(user.avatarUrl!)
-                    : null,
-                child: user.avatarUrl == null
-                    ? Text(
-                        user.username[0].toUpperCase(),
-                        style: TextStyle(
-                          color: AppTheme.primaryAccent,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 18,
-                        ),
-                      )
-                    : null,
               ),
               const SizedBox(width: 12),
               // User info
@@ -855,33 +868,9 @@ class _FeedScreenState extends State<FeedScreen> {
                       ),
                     );
                   },
-                  child: CircleAvatar(
+                  child: CachedAvatarImage(
+                    imageUrl: item.friendAvatar,
                     radius: 20,
-                    backgroundColor: item.friendAvatar == null
-                        ? Theme.of(context).colorScheme.surfaceContainerHighest
-                        : Colors.transparent,
-                    backgroundImage: item.friendAvatar != null
-                        ? NetworkImage(item.friendAvatar!)
-                        : null,
-                    child: item.friendAvatar == null
-                        ? Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
-                                width: 1,
-                              ),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                Icons.person,
-                                size: 20,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          )
-                        : null,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -951,50 +940,68 @@ class _FeedScreenState extends State<FeedScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Image with price overlay
                 if (item.wishImage != null && item.wishImage!.isNotEmpty)
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-                    child: Image.network(
-                      item.wishImage!,
-                      width: double.infinity,
-                      height: 200,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
+                  Stack(
+                    children: [
+                      Container(
                         width: double.infinity,
                         height: 200,
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        child: Icon(
-                          Icons.image_not_supported,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          size: 40,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+                          child: CachedImageWidget(
+                            imageUrl: item.wishImage,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
-                    ),
+                      // Price badge overlay
+                      if (item.wishPrice != null)
+                        Positioned(
+                          bottom: 12,
+                          left: 12,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.6),
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              _formatPrice(item.wishPrice!, item.wishCurrency ?? 'USD'),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
 
+                // Title only
                 Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.wishTitle,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.primary,
-                            ),
-                      ),
-                      if (item.wishPrice != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          '${item.wishCurrency ?? '\$'}${item.wishPrice!.toStringAsFixed(2)}',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                color: AppTheme.primaryAccent,
-                                fontWeight: FontWeight.w600,
-                              ),
+                  child: Text(
+                    item.wishTitle,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primary,
                         ),
-                      ],
-                    ],
                   ),
                 ),
               ],

@@ -1,0 +1,6 @@
+app_identifier("com.wishlists.gifts")
+apple_id(ENV["FASTLANE_APPLE_ID"])
+team_id("474TK9U3BP")
+
+# App Store Connect API configuration
+api_key_path(ENV["APP_STORE_CONNECT_API_KEY_PATH"] || "#{Dir.home}/.appstoreconnect/private_keys/AuthKey_LW4DRB22XD.p8")

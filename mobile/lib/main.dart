@@ -111,6 +111,8 @@ void main() async {
           Locale('es'), // Spanish
           Locale('fr'), // French
           Locale('pt', 'BR'), // Portuguese (Brazilian)
+          Locale('pl'), // Polish
+          Locale('it'), // Italian
         ],
         path: 'assets/translations',
         fallbackLocale: const Locale('en'),

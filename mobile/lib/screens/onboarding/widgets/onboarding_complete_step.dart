@@ -200,13 +200,13 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
                               ),
                               SizedBox(height: screenHeight * 0.03),
 
-                              // Title with username
+                              // Title
                               SlideTransition(
                                 position: _slideAnimation,
                                 child: FadeTransition(
                                   opacity: _fadeAnimation,
                                   child: Text(
-                                    'You\'re all set, $username!',
+                                    'You\'re all set!',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w700,
                                       color: AppColors.textPrimary,
@@ -237,19 +237,6 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
                                   ),
                                 ),
                               ),
-                              if (onboardingService.shouldSkipUsernameStep)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 12),
-                                  child: Text(
-                                    'onboarding.anonymous_username_hint'.tr(),
-                                    style: const TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 14,
-                                      height: 1.4,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
                               SizedBox(height: screenHeight * 0.04),
 
                               // URL Card
@@ -377,6 +364,20 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
                                   color: AppColors.error,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          if (onboardingService.shouldSkipUsernameStep)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: Text(
+                                'onboarding.anonymous_username_hint'.tr(),
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 14,
+                                  height: 1.4,
+                                  fontWeight: FontWeight.w700,
                                 ),
                                 textAlign: TextAlign.center,
                               ),

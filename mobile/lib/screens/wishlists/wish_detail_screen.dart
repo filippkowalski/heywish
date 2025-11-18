@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../models/wish.dart';
 import '../../services/wishlist_service.dart';
@@ -46,11 +48,20 @@ class WishDetailScreen extends StatefulWidget {
 class _WishDetailScreenState extends State<WishDetailScreen> {
   Wish? wish;
   bool _isLoading = true;
+  int _currentImageIndex = 0;
+  late PageController _imagePageController;
 
   @override
   void initState() {
     super.initState();
+    _imagePageController = PageController();
     _loadWish();
+  }
+
+  @override
+  void dispose() {
+    _imagePageController.dispose();
+    super.dispose();
   }
 
   void _loadWish() async {
@@ -64,10 +75,35 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
     }
   }
 
+  /// Get currency symbol
+  String _getCurrencySymbol(String currency) {
+    switch (currency.toUpperCase()) {
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      case 'JPY':
+        return '¥';
+      case 'CAD':
+        return 'C\$';
+      case 'AUD':
+        return 'A\$';
+      default:
+        return currency;
+    }
+  }
+
+  /// Format price with currency symbol
+  String _formatPrice(double price, String currency) {
+    final symbol = _getCurrencySymbol(currency);
+    return '$symbol${price.toStringAsFixed(2)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
-    final bottomPadding = mediaQuery.viewInsets.bottom;
 
     if (_isLoading) {
       return Material(
@@ -118,94 +154,34 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
         child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header with handle bar and close button
-          GestureDetector(
-            onVerticalDragUpdate: (details) {
-              // If dragging down, dismiss the sheet
-              if (details.primaryDelta! > 0) {
-                Navigator.of(context).pop();
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(24, 12, 12, 12),
-              color: Colors.transparent,
-              child: Row(
-                children: [
-                  // Handle bar
-                  Expanded(
-                    child: Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
+          // Full-width image with overlayed elements
+          if (wish!.images.isNotEmpty)
+            Stack(
+              children: [
+                // Image gallery
+                GestureDetector(
+                  onTap: () => _showFullscreenImage(context),
+                  child: Container(
+                    width: double.infinity,
+                    height: 300,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                     ),
-                  ),
-                  // Menu button
-                  PopupMenuButton<String>(
-                    icon: Icon(Icons.more_vert, color: Colors.grey[600]),
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        _editWish();
-                      } else if (value == 'delete') {
-                        _deleteWish();
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.edit_outlined, size: 20),
-                            const SizedBox(width: 12),
-                            Text('app.edit'.tr()),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                            const SizedBox(width: 12),
-                            Text('Delete', style: TextStyle(color: Colors.red)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Scrollable content
-          Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Image if available
-                  if (wish!.imageUrl != null) ...[
-                    GestureDetector(
-                      onTap: () => _showFullscreenImage(context),
-                      child: Container(
-                        width: double.infinity,
-                        height: 200,
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: Colors.grey.shade100,
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: CachedImageWidget(
-                            imageUrl: wish!.imageUrl,
-                            fit: BoxFit.cover,
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                      child: PageView.builder(
+                        controller: _imagePageController,
+                        onPageChanged: (index) {
+                          setState(() {
+                            _currentImageIndex = index;
+                          });
+                        },
+                        itemCount: wish!.images.length,
+                        itemBuilder: (context, index) {
+                          return CachedImageWidget(
+                            imageUrl: wish!.images[index],
+                            fit: BoxFit.contain,
                             errorWidget: Container(
                               color: Theme.of(context).colorScheme.surfaceContainerHighest,
                               child: Icon(
@@ -214,29 +190,72 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                                 color: WishCategoryDetector.getColorFromTitle(wish!.title),
                               ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
                     ),
-                  ],
-
-                  // Title
-                  Text(
-                    wish!.title,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.primary,
-                      height: 1.2,
+                  ),
+                ),
+                // Menu button overlay (top-right)
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, color: Colors.white, size: 20),
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          _editWish();
+                        } else if (value == 'share') {
+                          _shareWish();
+                        } else if (value == 'delete') {
+                          _deleteWish();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.edit_outlined, size: 20),
+                              const SizedBox(width: 12),
+                              Text('app.edit'.tr()),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'share',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.share_outlined, size: 20),
+                              const SizedBox(width: 12),
+                              Text('app.share'.tr()),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                              const SizedBox(width: 12),
+                              Text('app.delete'.tr(), style: const TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-
-                  const SizedBox(height: 12),
-
-                  // Price and Status badges
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                ),
+                // Price and status badges overlay (bottom-left)
+                Positioned(
+                  bottom: 16,
+                  left: 16,
+                  child: Row(
                     children: [
                       if (wish!.price != null)
                         Container(
@@ -245,18 +264,27 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryAccent.withValues(alpha: 0.1),
+                            color: Colors.black.withValues(alpha: 0.6),
                             borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: Text(
-                            '${wish!.currency ?? 'USD'} ${wish!.price!.toStringAsFixed(2)}',
+                            _formatPrice(wish!.price!, wish!.currency ?? 'USD'),
                             style: const TextStyle(
-                              color: AppTheme.primaryAccent,
+                              color: Colors.white,
                               fontWeight: FontWeight.w600,
                               fontSize: 15,
                             ),
                           ),
                         ),
+                      if (wish!.price != null && wish!.isReserved)
+                        const SizedBox(width: 8),
                       if (wish!.isReserved)
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -264,22 +292,29 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
+                            color: Colors.green[700],
                             borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.bookmark,
                                 size: 14,
-                                color: Colors.green[700],
+                                color: Colors.white,
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'Reserved',
-                                style: TextStyle(
-                                  color: Colors.green[700],
+                                'wish.reserved'.tr(),
+                                style: const TextStyle(
+                                  color: Colors.white,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
                                 ),
@@ -288,6 +323,69 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                           ),
                         ),
                     ],
+                  ),
+                ),
+                // Image indicators (if multiple images)
+                if (wish!.images.length > 1)
+                  Positioned(
+                    bottom: 16,
+                    right: 16,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: wish!.images.length <= 5
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: List.generate(
+                                wish!.images.length,
+                                (index) => Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                                  width: 5,
+                                  height: 5,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: _currentImageIndex == index
+                                        ? Colors.white
+                                        : Colors.white.withValues(alpha: 0.4),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Text(
+                              '${_currentImageIndex + 1} / ${wish!.images.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                    ),
+                  ),
+              ],
+            ),
+
+          // Scrollable content
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 36),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Add top spacing if there's an image
+                  if (wish!.images.isNotEmpty) const SizedBox(height: 16),
+
+                  // Title
+                  Text(
+                    wish!.title,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primary,
+                      height: 1.2,
+                    ),
                   ),
 
                   // Description
@@ -303,36 +401,129 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                     ),
                   ],
 
-                  // URL as a compact link
+                  // Product link card preview
                   if (wish!.url != null) ...[
                     const SizedBox(height: 16),
                     InkWell(
-                      onTap: _openUrl,
-                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        _openUrl();
+                      },
+                      borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey[300]!),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[200]!),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.link, size: 18, color: Colors.grey[600]),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                wish!.url!,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: AppTheme.primaryAccent,
-                                  decoration: TextDecoration.underline,
+                            // Favicon container
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.grey[200]!),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(9),
+                                child: Image.network(
+                                  'https://www.google.com/s2/favicons?domain=${Uri.parse(wish!.url!).host}&sz=64',
+                                  width: 32,
+                                  height: 32,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    // Fallback to globe icon if favicon fails
+                                    return Icon(
+                                      Icons.language,
+                                      size: 24,
+                                      color: AppTheme.primaryAccent,
+                                    );
+                                  },
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Center(
+                                      child: SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          value: loadingProgress.expectedTotalBytes != null
+                                              ? loadingProgress.cumulativeBytesLoaded /
+                                                  loadingProgress.expectedTotalBytes!
+                                              : null,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            Icon(Icons.open_in_new, size: 16, color: Colors.grey[600]),
+                            const SizedBox(width: 12),
+                            // Content
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Domain name
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          _getDomainName(wish!.url!),
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppTheme.primary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.open_in_new,
+                                        size: 16,
+                                        color: Colors.grey[400],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  // Product title
+                                  Text(
+                                    wish!.title,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.grey[800],
+                                      height: 1.3,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  // Short URL
+                                  Text(
+                                    _getShortUrl(wish!.url!),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[500],
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -357,33 +548,6 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
               ),
             ),
           ),
-
-          // Bottom action buttons
-          if (wish!.url != null)
-            Container(
-              padding: EdgeInsets.fromLTRB(24, 16, 24, bottomPadding + 24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(
-                  top: BorderSide(color: Colors.grey[200]!, width: 1),
-                ),
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: FilledButton.icon(
-                  onPressed: _openUrl,
-                  icon: const Icon(Icons.open_in_new, size: 18),
-                  label: const Text('View Product'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.primaryAccent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-            ),
         ],
         ),
       ),
@@ -413,6 +577,45 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
         ],
       ),
     );
+  }
+
+  /// Extract domain name from URL for display
+  String _getDomainName(String url) {
+    try {
+      final uri = Uri.parse(url);
+      String domain = uri.host;
+
+      // Remove www. prefix
+      if (domain.startsWith('www.')) {
+        domain = domain.substring(4);
+      }
+
+      // Capitalize first letter
+      if (domain.isNotEmpty) {
+        domain = domain[0].toUpperCase() + domain.substring(1);
+      }
+
+      return domain;
+    } catch (e) {
+      return 'Website';
+    }
+  }
+
+  /// Get a short display version of the URL
+  String _getShortUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      String shortUrl = uri.host + uri.path;
+
+      // Truncate if too long
+      if (shortUrl.length > 50) {
+        shortUrl = '${shortUrl.substring(0, 47)}...';
+      }
+
+      return shortUrl;
+    } catch (e) {
+      return url.length > 50 ? '${url.substring(0, 47)}...' : url;
+    }
   }
 
   void _openUrl() async {
@@ -474,9 +677,9 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
   void _deleteWish() async {
     final shouldDelete = await ConfirmationBottomSheet.show(
       context: context,
-      title: 'Delete Item',
-      message: 'Are you sure you want to delete "${wish!.title}"?',
-      confirmText: 'Delete',
+      title: 'app.delete'.tr(),
+      message: 'wish.delete_confirmation'.tr(),
+      confirmText: 'app.delete'.tr(),
       confirmColor: Colors.red,
     );
 
@@ -500,55 +703,197 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
   }
 
   void _showFullscreenImage(BuildContext context) {
-    if (wish?.imageUrl == null) return;
+    if (wish?.images.isEmpty ?? true) return;
 
     Navigator.of(context).push(
       NativePageRoute(
-        child: Scaffold(
-          backgroundColor: Colors.black,
-          body: GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
-            child: Stack(
-              children: [
-                // Full screen image
-                Center(
-                  child: GestureDetector(
+        child: _FullscreenImageGallery(
+          images: wish!.images,
+          initialIndex: _currentImageIndex,
+          title: wish!.title,
+        ),
+      ),
+    );
+  }
+
+  void _shareWish() async {
+    if (wish == null) {
+      print('DEBUG: Share failed - wish is null');
+      return;
+    }
+
+    try {
+      // Create share text
+      final shareText = StringBuffer();
+      shareText.writeln(wish!.title);
+
+      if (wish!.description != null && wish!.description!.isNotEmpty) {
+        shareText.writeln('\n${wish!.description}');
+      }
+
+      if (wish!.price != null) {
+        shareText.writeln('\n${wish!.currency ?? 'USD'} ${wish!.price!.toStringAsFixed(2)}');
+      }
+
+      if (wish!.url != null) {
+        shareText.writeln('\n${wish!.url}');
+      }
+
+      final textToShare = shareText.toString();
+      print('DEBUG: Attempting to share: $textToShare');
+
+      // Share using system share sheet
+      final result = await Share.share(
+        textToShare,
+        subject: wish!.title,
+      );
+
+      print('DEBUG: Share result: ${result.status}');
+
+      // Success feedback
+      HapticFeedback.mediumImpact();
+
+      // Show confirmation
+      if (mounted && result.status == ShareResultStatus.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('success.shared'.tr()),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('DEBUG: Share error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to share: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+}
+
+/// Fullscreen image gallery widget with swipe support
+class _FullscreenImageGallery extends StatefulWidget {
+  final List<String> images;
+  final int initialIndex;
+  final String title;
+
+  const _FullscreenImageGallery({
+    required this.images,
+    required this.initialIndex,
+    required this.title,
+  });
+
+  @override
+  State<_FullscreenImageGallery> createState() => _FullscreenImageGalleryState();
+}
+
+class _FullscreenImageGalleryState extends State<_FullscreenImageGallery> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: GestureDetector(
+        onTap: () => Navigator.of(context).pop(),
+        child: Stack(
+          children: [
+            // Full screen image gallery with swipe
+            Center(
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                itemCount: widget.images.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
                     onTap: () {}, // Prevents taps on image from closing
                     child: InteractiveViewer(
                       minScale: 0.5,
                       maxScale: 4.0,
-                      child: CachedImageWidget(
-                        imageUrl: wish!.imageUrl,
-                        fit: BoxFit.contain,
-                        errorWidget: Container(
-                          color: Colors.black,
-                          child: Icon(
-                            WishCategoryDetector.getIconFromTitle(wish!.title),
-                            size: 64,
-                            color: WishCategoryDetector.getColorFromTitle(wish!.title),
+                      child: Center(
+                        child: CachedImageWidget(
+                          imageUrl: widget.images[index],
+                          fit: BoxFit.contain,
+                          errorWidget: Container(
+                            color: Colors.black,
+                            child: Icon(
+                              WishCategoryDetector.getIconFromTitle(widget.title),
+                              size: 64,
+                              color: WishCategoryDetector.getColorFromTitle(widget.title),
+                            ),
                           ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            // Image counter (top center)
+            if (widget.images.length > 1)
+              SafeArea(
+                child: Positioned(
+                  top: 16,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${_currentIndex + 1} / ${widget.images.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
                   ),
                 ),
-                // Close button
-                SafeArea(
-                  child: Positioned(
-                    top: 16,
-                    right: 16,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white, size: 28),
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.black.withValues(alpha: 0.5),
-                      ),
-                    ),
+              ),
+            // Close button
+            SafeArea(
+              child: Positioned(
+                top: 16,
+                right: 16,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black.withValues(alpha: 0.5),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

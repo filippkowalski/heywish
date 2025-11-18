@@ -10,6 +10,7 @@ import '../../services/wishlist_service.dart';
 import '../../services/image_cache_service.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/cached_image.dart';
 
 class EditWishlistScreen extends StatefulWidget {
   final String wishlistId;
@@ -412,17 +413,23 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             color: Colors.grey.shade100,
-            image: _selectedHeaderImage != null
-                ? DecorationImage(
-                    image: FileImage(_selectedHeaderImage!),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: _selectedHeaderImage != null
+                ? Image.file(
+                    _selectedHeaderImage!,
                     fit: BoxFit.cover,
                   )
-                : (_existingCoverImageUrl != null
-                    ? DecorationImage(
-                        image: NetworkImage(_existingCoverImageUrl!),
+                : _existingCoverImageUrl != null
+                    ? CachedImageWidget(
+                        imageUrl: _existingCoverImageUrl,
+                        width: double.infinity,
+                        height: 200,
                         fit: BoxFit.cover,
+                        borderRadius: BorderRadius.circular(12),
                       )
-                    : null),
+                    : const SizedBox(),
           ),
         ),
         const SizedBox(height: 12),

@@ -392,6 +392,8 @@ class SettingsScreen extends StatelessWidget {
       if (locale.languageCode == 'es') return 'Español';
       if (locale.languageCode == 'fr') return 'Français';
       if (locale.languageCode == 'pt') return 'Português';
+      if (locale.languageCode == 'pl') return 'Polski';
+      if (locale.languageCode == 'it') return 'Italiano';
       return 'English';
     }
 
@@ -470,6 +472,18 @@ class SettingsScreen extends StatelessWidget {
         'country': 'BR',
         'name': 'Portuguese',
         'nativeName': 'Português (Brasil)',
+      },
+      {
+        'code': 'pl',
+        'country': null,
+        'name': 'Polish',
+        'nativeName': 'Polski',
+      },
+      {
+        'code': 'it',
+        'country': null,
+        'name': 'Italian',
+        'nativeName': 'Italiano',
       },
     ];
 

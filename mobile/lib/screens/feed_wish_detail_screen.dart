@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../common/navigation/native_page_route.dart';
+import '../widgets/cached_image.dart';
 
 /// Feed wish detail screen - displays wish details from feed items
 class FeedWishDetailScreen extends StatelessWidget {
@@ -135,26 +136,12 @@ class FeedWishDetailScreen extends StatelessWidget {
                         width: double.infinity,
                         height: 200,
                         margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
+                        child: CachedImageWidget(
+                          imageUrl: wishImage,
+                          width: double.infinity,
+                          height: 200,
+                          fit: BoxFit.cover,
                           borderRadius: BorderRadius.circular(12),
-                          color: Colors.grey.shade100,
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            wishImage!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Colors.grey[100],
-                                child: Icon(
-                                  Icons.image_not_supported,
-                                  size: 64,
-                                  color: Colors.grey[400],
-                                ),
-                              );
-                            },
-                          ),
                         ),
                       ),
                     ],
@@ -171,22 +158,18 @@ class FeedWishDetailScreen extends StatelessWidget {
                       child: Row(
                         children: [
                           // Friend avatar
-                          CircleAvatar(
+                          CachedAvatarImage(
+                            imageUrl: friendAvatar,
                             radius: 20,
                             backgroundColor: AppTheme.primaryAccent.withValues(alpha: 0.1),
-                            backgroundImage: friendAvatar != null && friendAvatar!.isNotEmpty
-                                ? NetworkImage(friendAvatar!)
-                                : null,
-                            child: friendAvatar == null || friendAvatar!.isEmpty
-                                ? Text(
-                                    friendName[0].toUpperCase(),
-                                    style: TextStyle(
-                                      color: AppTheme.primaryAccent,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 16,
-                                    ),
-                                  )
-                                : null,
+                            errorWidget: Text(
+                              friendName[0].toUpperCase(),
+                              style: TextStyle(
+                                color: AppTheme.primaryAccent,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 12),
                           // Friend name
