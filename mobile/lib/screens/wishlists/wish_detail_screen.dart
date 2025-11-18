@@ -244,9 +244,11 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Stack(
           children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
             // Full-width image with overlayed elements
             if (wish!.images.isNotEmpty)
               Stack(
@@ -471,79 +473,8 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                   // Add top spacing if there's an image
                   if (wish!.images.isNotEmpty) const SizedBox(height: 16),
 
-                  // Friend info for feed mode
-                  if (widget.isReadOnly && widget.friendName != null) ...[
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[200]!),
-                      ),
-                      child: Row(
-                        children: [
-                          // Friend avatar
-                          CachedAvatarImage(
-                            imageUrl: widget.friendAvatar,
-                            radius: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          // Friend name
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'On ${widget.friendName}\'s wishlist',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  '@${widget.friendUsername}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[500],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-
-                  // Title
-                  Text(
-                    wish!.title,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.primary,
-                      height: 1.2,
-                    ),
-                  ),
-
-                  // Description
-                  if (wish!.description != null && wish!.description!.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      wish!.description!,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[700],
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-
-                  // Product link card preview
+                  // Product link card preview - moved to top (most important)
                   if (wish!.url != null) ...[
-                    const SizedBox(height: 16),
                     InkWell(
                       onTap: () {
                         HapticFeedback.lightImpact();
@@ -668,6 +599,77 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // Title
+                  Text(
+                    wish!.title,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primary,
+                      height: 1.2,
+                    ),
+                  ),
+
+                  // Description
+                  if (wish!.description != null && wish!.description!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      wish!.description!,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[700],
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+
+                  // Friend info for feed mode - moved to bottom
+                  if (widget.isReadOnly && widget.friendName != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          // Friend avatar
+                          CachedAvatarImage(
+                            imageUrl: widget.friendAvatar,
+                            radius: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          // Friend name
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'On ${widget.friendName}\'s wishlist',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  '@${widget.friendUsername}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
 
                   // Additional details
@@ -694,9 +696,9 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
             Container(
               padding: EdgeInsets.fromLTRB(
                 24.0,
-                16.0,
+                12.0,
                 24.0,
-                MediaQuery.of(context).padding.bottom + 16.0,
+                MediaQuery.of(context).padding.bottom + 12.0,
               ),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -710,7 +712,7 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
               ),
               child: SizedBox(
                 width: double.infinity,
-                height: 62,
+                height: 48,
                 child: ElevatedButton.icon(
                   onPressed: _addToMyWishlist,
                   icon: const Icon(Icons.add_circle_outline, size: 20),
@@ -729,6 +731,26 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
+                ),
+              ),
+            ),
+              ],
+            ),
+
+            // Close button - top left corner
+            Positioned(
+              top: 16,
+              left: 16,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                  onPressed: () => Navigator.of(context).pop(),
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(),
                 ),
               ),
             ),

@@ -987,15 +987,32 @@ class _FeedScreenState extends State<FeedScreen> {
                     ],
                   ),
 
-                // Title only
+                // Title and description
                 Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Text(
-                    item.wishTitle,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.primary,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.wishTitle,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.primary,
+                            ),
+                      ),
+                      if (item.wishDescription != null && item.wishDescription!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          item.wishDescription!,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.grey.shade600,
+                                height: 1.4,
+                              ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                      ],
+                    ],
                   ),
                 ),
               ],
