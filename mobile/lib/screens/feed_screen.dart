@@ -1247,12 +1247,7 @@ class _DynamicHeightImage extends StatelessWidget {
                   return Container(
                     width: double.infinity,
                     height: minHeight,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: const BorderRadius.vertical(
-                        bottom: Radius.circular(12),
-                      ),
-                    ),
+                    color: Colors.grey.shade100,
                     child: const Center(
                       child: CircularProgressIndicator(),
                     ),
@@ -1276,22 +1271,12 @@ class _DynamicHeightImage extends StatelessWidget {
                 return Container(
                   width: double.infinity,
                   height: constrainedHeight,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(12),
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(12),
-                    ),
-                    child: Image(
-                      image: imageProvider,
-                      fit: shouldCrop ? BoxFit.cover : BoxFit.contain,
-                      width: double.infinity,
-                      height: constrainedHeight,
-                    ),
+                  color: Colors.grey.shade50,
+                  child: Image(
+                    image: imageProvider,
+                    fit: shouldCrop ? BoxFit.cover : BoxFit.contain,
+                    width: double.infinity,
+                    height: constrainedHeight,
                   ),
                 );
               },
@@ -1300,22 +1285,12 @@ class _DynamicHeightImage extends StatelessWidget {
           placeholder: (context, url) => Container(
             width: double.infinity,
             height: minHeight,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(12),
-              ),
-            ),
+            color: Colors.grey.shade100,
           ),
           errorWidget: (context, url, error) => Container(
             width: double.infinity,
             height: minHeight,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(12),
-              ),
-            ),
+            color: Colors.grey.shade100,
             child: Icon(
               Icons.image_not_supported_outlined,
               color: Colors.grey.shade400,
