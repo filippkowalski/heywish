@@ -577,15 +577,15 @@ class _AccountCreationStepState extends State<AccountCreationStep>
     );
 
     try {
-      // Generate unique username with collision check
+      // Create anonymous Firebase account FIRST (so we have auth token)
+      await authService.signInAnonymously();
+
+      // Generate unique username with collision check (now we have auth token!)
       final username = await _generateUniqueAnonymousUsername(onboarding);
       debugPrint('✅ Generated unique anonymous username: $username');
 
       onboarding.setGeneratedUsername(username);
       onboarding.setSkipUsernameStep(true);
-
-      // Create anonymous Firebase account
-      await authService.signInAnonymously();
 
       // Sync with backend with generated username
       await authService.syncUserWithBackend(

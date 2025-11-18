@@ -11,6 +11,8 @@ class FCMService {
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   String? _currentToken;
+  String? _lastSentToken; // Track last token sent to prevent duplicates
+  StreamSubscription<String>? _tokenRefreshSubscription; // Track subscription to avoid multiple listeners
   final StreamController<RemoteMessage> _notificationTapController =
       StreamController<RemoteMessage>.broadcast();
 
@@ -46,8 +48,11 @@ class FCMService {
         // Send token to backend
         await _sendTokenToBackend(token);
 
-        // Listen for token refresh
-        _messaging.onTokenRefresh.listen(_sendTokenToBackend);
+        // Only subscribe ONCE to token refresh to avoid duplicate listeners
+        if (_tokenRefreshSubscription == null) {
+          _tokenRefreshSubscription = _messaging.onTokenRefresh.listen(_sendTokenToBackend);
+          debugPrint('FCM: Subscribed to token refresh');
+        }
       }
     } catch (e) {
       debugPrint('FCM: Error getting token: $e');
@@ -67,7 +72,14 @@ class FCMService {
         return;
       }
 
+      // Check if this token was already sent to avoid duplicates
+      if (_lastSentToken == token) {
+        debugPrint('FCM: Token unchanged, skipping duplicate registration');
+        return;
+      }
+
       await apiService.updateFCMToken(token);
+      _lastSentToken = token; // Remember the last sent token
       debugPrint('FCM: Token registered with backend');
     } catch (e) {
       debugPrint('FCM: Error sending token to backend: $e');
@@ -78,9 +90,11 @@ class FCMService {
 
   /// Retry sending token after authentication
   Future<void> retryTokenRegistration() async {
-    if (_currentToken != null) {
+    if (_currentToken != null && _lastSentToken != _currentToken) {
       debugPrint('FCM: Retrying token registration after auth');
       await _sendTokenToBackend(_currentToken!);
+    } else if (_lastSentToken == _currentToken) {
+      debugPrint('FCM: Token already registered, skipping retry');
     }
   }
 

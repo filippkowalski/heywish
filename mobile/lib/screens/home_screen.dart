@@ -37,7 +37,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authService = context.read<AuthService>();
-      if (authService.isAuthenticated) {
+      // Only load friends data if authenticated AND auth token is set
+      if (authService.isAuthenticated && authService.apiService.hasAuthToken) {
         _friendsDataLoaded = true;
         context.read<FriendsService>().loadAllData();
       }

@@ -745,6 +745,13 @@ class _AppLifecycleWrapperState extends State<_AppLifecycleWrapper>
 
       if (!mounted) return;
 
+      // Check if user is authenticated with valid token before refreshing
+      final authService = context.read<AuthService>();
+      if (!authService.isAuthenticated || !authService.apiService.hasAuthToken) {
+        debugPrint('⏭️  App resume: Skipping friends refresh, not authenticated or missing auth token');
+        return;
+      }
+
       // Now we have proper access to Provider context!
       final friendsService = context.read<FriendsService>();
 
