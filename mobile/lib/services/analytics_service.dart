@@ -19,7 +19,6 @@ class AnalyticsService {
   bool _isInitialized = false;
 
   /// Mixpanel project token
-  /// TODO: Move this to .env file for production
   static const String _mixpanelToken = '103481a31325fb8226ac6c2d7b377658';
 
   /// Initialize Mixpanel
