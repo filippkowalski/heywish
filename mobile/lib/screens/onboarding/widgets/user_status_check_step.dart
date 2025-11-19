@@ -18,11 +18,11 @@ class UserStatusCheckStep extends StatelessWidget {
           const SizedBox(height: 24),
           RotatingLoadingMessages(
             messages: [
-              'onboarding.checking_profile_messages.0'.tr(),
-              'onboarding.checking_profile_messages.1'.tr(),
-              'onboarding.checking_profile_messages.2'.tr(),
-              'onboarding.checking_profile_messages.3'.tr(),
-              'onboarding.checking_profile_messages.4'.tr(),
+              'onboarding.checking_profile_1'.tr(),
+              'onboarding.checking_profile_2'.tr(),
+              'onboarding.checking_profile_3'.tr(),
+              'onboarding.checking_profile_4'.tr(),
+              'onboarding.checking_profile_5'.tr(),
             ],
             textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: AppColors.textSecondary,
