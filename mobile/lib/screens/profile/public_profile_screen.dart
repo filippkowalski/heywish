@@ -965,18 +965,21 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     final items = wishlist['items'] as List?;
     final itemCount = items?.length ?? 0;
 
-    // Get first item's image for preview (or use icon if no image)
-    String? firstImageUrl;
-    String? firstItemTitle;
+    // Collect up to 4 images from items
+    final List<String> imageUrls = [];
+    final List<String> itemTitles = [];
+
     if (items != null && items.isNotEmpty) {
-      final firstItem = items[0];
-      firstItemTitle = firstItem['title'] ?? '';
-      final images = firstItem['images'];
-      if (images != null) {
-        if (images is List && images.isNotEmpty) {
-          firstImageUrl = images[0];
-        } else if (images is String && images.isNotEmpty) {
-          firstImageUrl = images;
+      for (var i = 0; i < items.length && imageUrls.length < 4; i++) {
+        final item = items[i];
+        itemTitles.add(item['title'] ?? '');
+        final images = item['images'];
+        if (images != null) {
+          if (images is List && images.isNotEmpty) {
+            imageUrls.add(images[0]);
+          } else if (images is String && images.isNotEmpty) {
+            imageUrls.add(images);
+          }
         }
       }
     }
@@ -1015,45 +1018,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Image/Icon section
-            AspectRatio(
-              aspectRatio: 1.0,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                child: firstImageUrl != null
-                    ? CachedImageWidget(
-                        imageUrl: firstImageUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorWidget: Container(
-                          color: Colors.grey.shade100,
-                          child: Center(
-                            child: Icon(
-                              Icons.card_giftcard_outlined,
-                              size: 48,
-                              color: AppTheme.primaryAccent,
-                            ),
-                          ),
-                        ),
-                      )
-                    : Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            firstItemTitle != null
-                                ? WishCategoryDetector.getIconFromTitle(firstItemTitle)
-                                : Icons.card_giftcard_outlined,
-                            size: 48,
-                            color: firstItemTitle != null
-                                ? WishCategoryDetector.getColorFromTitle(firstItemTitle)
-                                : AppTheme.primaryAccent,
-                          ),
-                        ),
-                      ),
-              ),
+            // Dynamic cover image grid
+            _WishlistCoverGrid(
+              imageUrls: imageUrls,
+              itemTitles: itemTitles,
             ),
 
             // Content section
@@ -1080,15 +1048,229 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   Text(
                     '$itemCount ${itemCount == 1 ? 'item' : 'items'}',
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade700,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.grey.shade600,
                     ),
                   ),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Dynamic cover grid widget for wishlist cards
+/// Shows 1-4 images in different grid layouts
+class _WishlistCoverGrid extends StatelessWidget {
+  final List<String> imageUrls;
+  final List<String> itemTitles;
+
+  const _WishlistCoverGrid({
+    required this.imageUrls,
+    required this.itemTitles,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final imageCount = imageUrls.length;
+
+    if (imageCount == 0) {
+      // No images - show fallback icon
+      return AspectRatio(
+        aspectRatio: 1.0,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: Center(
+            child: Icon(
+              itemTitles.isNotEmpty
+                  ? WishCategoryDetector.getIconFromTitle(itemTitles[0])
+                  : Icons.card_giftcard_outlined,
+              size: 48,
+              color: itemTitles.isNotEmpty
+                  ? WishCategoryDetector.getColorFromTitle(itemTitles[0])
+                  : AppTheme.primaryAccent,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (imageCount == 1) {
+      // Single image - full size
+      return AspectRatio(
+        aspectRatio: 1.0,
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: CachedImageWidget(
+            imageUrl: imageUrls[0],
+            fit: BoxFit.cover,
+            width: double.infinity,
+            errorWidget: _buildFallbackIcon(0),
+          ),
+        ),
+      );
+    }
+
+    if (imageCount == 2) {
+      // Two images - side by side
+      return AspectRatio(
+        aspectRatio: 1.0,
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: Row(
+            children: [
+              Expanded(
+                child: CachedImageWidget(
+                  imageUrl: imageUrls[0],
+                  fit: BoxFit.cover,
+                  height: double.infinity,
+                  errorWidget: _buildFallbackIcon(0),
+                ),
+              ),
+              const SizedBox(width: 1),
+              Expanded(
+                child: CachedImageWidget(
+                  imageUrl: imageUrls[1],
+                  fit: BoxFit.cover,
+                  height: double.infinity,
+                  errorWidget: _buildFallbackIcon(1),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (imageCount == 3) {
+      // Three images - one full-height on left, two stacked on right
+      return AspectRatio(
+        aspectRatio: 1.0,
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: Row(
+            children: [
+              // Left side - full height image
+              Expanded(
+                child: CachedImageWidget(
+                  imageUrl: imageUrls[0],
+                  fit: BoxFit.cover,
+                  height: double.infinity,
+                  errorWidget: _buildFallbackIcon(0),
+                ),
+              ),
+              const SizedBox(width: 1),
+              // Right side - two stacked images
+              Expanded(
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: CachedImageWidget(
+                        imageUrl: imageUrls[1],
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorWidget: _buildFallbackIcon(1),
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Expanded(
+                      child: CachedImageWidget(
+                        imageUrl: imageUrls[2],
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorWidget: _buildFallbackIcon(2),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 4+ images - 2x2 grid (capped at 4)
+    return AspectRatio(
+      aspectRatio: 1.0,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        child: Column(
+          children: [
+            // Top row
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: CachedImageWidget(
+                      imageUrl: imageUrls[0],
+                      fit: BoxFit.cover,
+                      height: double.infinity,
+                      errorWidget: _buildFallbackIcon(0),
+                    ),
+                  ),
+                  const SizedBox(width: 1),
+                  Expanded(
+                    child: CachedImageWidget(
+                      imageUrl: imageUrls[1],
+                      fit: BoxFit.cover,
+                      height: double.infinity,
+                      errorWidget: _buildFallbackIcon(1),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 1),
+            // Bottom row
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: CachedImageWidget(
+                      imageUrl: imageUrls[2],
+                      fit: BoxFit.cover,
+                      height: double.infinity,
+                      errorWidget: _buildFallbackIcon(2),
+                    ),
+                  ),
+                  const SizedBox(width: 1),
+                  Expanded(
+                    child: CachedImageWidget(
+                      imageUrl: imageUrls[3],
+                      fit: BoxFit.cover,
+                      height: double.infinity,
+                      errorWidget: _buildFallbackIcon(3),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFallbackIcon(int index) {
+    return Container(
+      color: Colors.grey.shade100,
+      child: Center(
+        child: Icon(
+          index < itemTitles.length
+              ? WishCategoryDetector.getIconFromTitle(itemTitles[index])
+              : Icons.card_giftcard_outlined,
+          size: 32,
+          color: index < itemTitles.length
+              ? WishCategoryDetector.getColorFromTitle(itemTitles[index])
+              : AppTheme.primaryAccent,
         ),
       ),
     );

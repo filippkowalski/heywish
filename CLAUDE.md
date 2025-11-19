@@ -180,6 +180,17 @@ Design
 - When adding new features, always add corresponding strings to the translation file first
 - Use `.tr()` extension on all localization keys
 
+### Image Loading & Caching
+- **ALWAYS use cached image widgets for all network images**
+- **Available widgets**:
+  - `CachedImageWidget` - For general images (wish images, wishlist covers, etc.)
+  - `CachedAvatarImage` - For profile pictures and user avatars
+  - `MasonryWishCard` - Already uses cached images internally
+- **NEVER use `Image.network` or `NetworkImage` directly** - always use `CachedNetworkImage` or the wrapper widgets above
+- **Benefits**: Automatic disk caching, faster loading, reduced network usage, better offline experience
+- **Default cache settings**: 7 days stale period, 30 days max age, 200 files max (automatic cleanup)
+- Located in: `lib/widgets/cached_image.dart`, `lib/common/widgets/masonry_wish_card.dart`
+
 ### Page Transitions & Native Navigation (CRITICAL)
 - **ALWAYS use native transitions for all navigation**
 - **Implementation**: Use the `NativePageRoute` and `NativeTransitions` utilities from `lib/common/navigation/native_page_route.dart`

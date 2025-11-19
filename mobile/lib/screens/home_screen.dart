@@ -74,8 +74,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           // Show add wish bottom sheet with pre-filled image
           await AddWishScreen.show(
             context,
-            // Note: initialImagePath is not currently supported in AddWishScreen
-            // This will need to be added to the AddWishScreen constructor
+            prefilledData: {
+              'image': content.imagePath,
+            },
           );
         }
         break;

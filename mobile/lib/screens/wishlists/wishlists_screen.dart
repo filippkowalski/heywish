@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,8 +14,8 @@ import '../../models/wishlist.dart';
 import '../../models/wish.dart';
 import '../../theme/app_theme.dart';
 import '../../common/widgets/native_refresh_indicator.dart';
+import '../../common/widgets/masonry_wish_card.dart';
 import '../../common/navigation/native_page_route.dart';
-import '../../common/utils/wish_category_detector.dart';
 import 'add_wish_screen.dart';
 import 'edit_wishlist_screen.dart';
 import 'wish_detail_screen.dart';
@@ -579,7 +578,47 @@ class _WishlistsScreenState extends State<WishlistsScreen>
                     wishlist = null;
                   }
                 }
-                return _MasonryWishCard(wish: wish, wishlist: wishlist);
+                return MasonryWishCard(
+                  title: wish.title,
+                  description: wish.description,
+                  imageUrl: wish.imageUrl,
+                  price: wish.price,
+                  currency: wish.currency,
+                  url: wish.url,
+                  isReserved: wish.isReserved,
+                  onTap: () async {
+                    // Show wish detail bottom sheet
+                    final wishlistId = wishlist?.id ?? 'unsorted';
+                    final result = await WishDetailScreen.show(
+                      context,
+                      wishId: wish.id,
+                      wishlistId: wishlistId,
+                    );
+
+                    // Refresh if item was deleted
+                    if (result == true && context.mounted) {
+                      // Small delay to ensure backend has processed the deletion
+                      await Future.delayed(const Duration(milliseconds: 150));
+
+                      if (context.mounted) {
+                        // Trigger refresh via WishlistService
+                        await context.read<WishlistService>().fetchWishlists();
+
+                        // Show success message
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('wish.item_deleted'.tr()),
+                              backgroundColor: Colors.green,
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      }
+                    }
+                  },
+                );
               },
             ),
           ),
@@ -898,202 +937,6 @@ class _WishlistsScreenState extends State<WishlistsScreen>
             username: username,
             wishlists: wishlistService.wishlists,
           ),
-    );
-  }
-}
-
-// Masonry Grid Card Widget
-class _MasonryWishCard extends StatelessWidget {
-  final Wish wish;
-  final Wishlist? wishlist;
-
-  const _MasonryWishCard({required this.wish, this.wishlist});
-
-  String _formatPrice(double price, String? currency) {
-    // Currency symbol mapping
-    final currencySymbols = {
-      'USD': '\$',
-      'EUR': '€',
-      'GBP': '£',
-      'JPY': '¥',
-      'PLN': 'zł',
-      'CAD': 'CA\$',
-      'AUD': 'A\$',
-    };
-
-    final symbol = currencySymbols[currency] ?? currency ?? '\$';
-    final formattedPrice = price.toStringAsFixed(0);
-
-    // For currencies without symbols, show currency code
-    if (!currencySymbols.containsKey(currency)) {
-      return '$currency $formattedPrice';
-    }
-
-    return '$symbol$formattedPrice';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () async {
-        // Show wish detail bottom sheet
-        final wishlistId = wishlist?.id ?? 'unsorted';
-        final result = await WishDetailScreen.show(
-          context,
-          wishId: wish.id,
-          wishlistId: wishlistId,
-        );
-
-        // Refresh if item was deleted
-        if (result == true && context.mounted) {
-          // Small delay to ensure backend has processed the deletion
-          await Future.delayed(const Duration(milliseconds: 150));
-
-          if (context.mounted) {
-            // Trigger refresh via WishlistService
-            await context.read<WishlistService>().fetchWishlists();
-
-            // Show success message
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('wish.item_deleted'.tr()),
-                  backgroundColor: Colors.green,
-                  behavior: SnackBarBehavior.floating,
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            }
-          }
-        }
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.black.withValues(alpha: 0.15),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Image section
-            Stack(
-              children: [
-                _MasonryImageCard(
-                  imageUrl: wish.imageUrl,
-                  wishTitle: wish.title,
-                ),
-                // Price overlay (bottom-left)
-                if (wish.price != null)
-                  Positioned(
-                    bottom: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _formatPrice(wish.price!, wish.currency),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                // Link indicator with favicon (top-left)
-                if (wish.url != null && wish.url!.isNotEmpty)
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: _FaviconIndicator(url: wish.url!),
-                  ),
-                // Reserved star indicator (top-right)
-                if (wish.isReserved)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.star,
-                        color: AppTheme.primaryAccent,
-                        size: 16,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-
-            // Content section
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Title (max 2 lines)
-                  Text(
-                    wish.title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      height: 1.3,
-                      color: Colors.black,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  // Description preview (only if description exists)
-                  if (wish.description != null && wish.description!.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      wish.description!,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                        height: 1.4,
-                        color: Colors.grey.shade600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -1589,237 +1432,6 @@ class _WishlistShareItem extends StatelessWidget {
               ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-/// Widget for masonry grid image cards with dynamic aspect ratios
-class _MasonryImageCard extends StatelessWidget {
-  final String? imageUrl;
-  final String wishTitle;
-
-  const _MasonryImageCard({
-    required this.imageUrl,
-    required this.wishTitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (imageUrl == null || imageUrl!.isEmpty) {
-      // No image - show fallback with square aspect ratio
-      return AspectRatio(
-        aspectRatio: 1.0,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(16),
-            ),
-          ),
-          child: Center(
-            child: Icon(
-              WishCategoryDetector.getIconFromTitle(wishTitle),
-              size: 48,
-              color: WishCategoryDetector.getColorFromTitle(wishTitle),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return CachedNetworkImage(
-      imageUrl: imageUrl!,
-      imageBuilder: (context, imageProvider) {
-        return FutureBuilder<ImageInfo>(
-          future: _getImageInfo(imageProvider),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              // Loading - show square placeholder
-              return AspectRatio(
-                aspectRatio: 1.0,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16),
-                    ),
-                  ),
-                ),
-              );
-            }
-
-            final imageInfo = snapshot.data!;
-            final imageWidth = imageInfo.image.width.toDouble();
-            final imageHeight = imageInfo.image.height.toDouble();
-            var aspectRatio = imageWidth / imageHeight;
-
-            // Constrain aspect ratio for masonry grid
-            // Min: 0.6 (tall/portrait), Max: 1.5 (wide/landscape)
-            aspectRatio = aspectRatio.clamp(0.6, 1.5);
-
-            // Landscape images (wider than tall) should always use contain to show full object
-            final isLandscape = imageWidth >= imageHeight;
-            // Only crop very tall portrait images (aspect ratio < 0.6)
-            final shouldCrop = !isLandscape && (imageWidth / imageHeight) < 0.6;
-
-            return AspectRatio(
-              aspectRatio: aspectRatio,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                  child: Image(
-                    image: imageProvider,
-                    fit: shouldCrop ? BoxFit.cover : BoxFit.contain,
-                    width: double.infinity,
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-      placeholder: (context, url) => AspectRatio(
-        aspectRatio: 1.0,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(16),
-            ),
-          ),
-        ),
-      ),
-      errorWidget: (context, url, error) => AspectRatio(
-        aspectRatio: 1.0,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(16),
-            ),
-          ),
-          child: Center(
-            child: Icon(
-              WishCategoryDetector.getIconFromTitle(wishTitle),
-              size: 48,
-              color: WishCategoryDetector.getColorFromTitle(wishTitle),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<ImageInfo> _getImageInfo(ImageProvider imageProvider) {
-    final completer = Completer<ImageInfo>();
-    final stream = imageProvider.resolve(const ImageConfiguration());
-
-    stream.addListener(
-      ImageStreamListener(
-        (info, _) {
-          if (!completer.isCompleted) {
-            completer.complete(info);
-          }
-        },
-        onError: (exception, stackTrace) {
-          if (!completer.isCompleted) {
-            completer.completeError(exception, stackTrace);
-          }
-        },
-      ),
-    );
-
-    return completer.future;
-  }
-}
-
-/// Widget that displays a favicon for a URL or a fallback link icon
-class _FaviconIndicator extends StatelessWidget {
-  final String url;
-
-  const _FaviconIndicator({required this.url});
-
-  /// Extract domain from URL
-  String? _extractDomain(String url) {
-    try {
-      final uri = Uri.tryParse(url.contains('://') ? url : 'https://$url');
-      return uri?.host;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final domain = _extractDomain(url);
-
-    if (domain == null) {
-      // Fallback to link icon if we can't parse the domain
-      return Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Icon(
-          Icons.link,
-          color: Colors.grey.shade700,
-          size: 14,
-        ),
-      );
-    }
-
-    // Use Google's favicon service
-    final faviconUrl = 'https://www.google.com/s2/favicons?domain=$domain&sz=32';
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: CachedNetworkImage(
-        imageUrl: faviconUrl,
-        width: 18,
-        height: 18,
-        fit: BoxFit.contain,
-        placeholder: (context, url) => SizedBox(
-          width: 18,
-          height: 18,
-          child: Icon(
-            Icons.link,
-            color: Colors.grey.shade400,
-            size: 14,
-          ),
-        ),
-        errorWidget: (context, url, error) => Icon(
-          Icons.link,
-          color: Colors.grey.shade700,
-          size: 14,
-        ),
       ),
     );
   }

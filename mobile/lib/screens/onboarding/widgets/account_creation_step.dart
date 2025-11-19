@@ -417,11 +417,11 @@ class _AccountCreationStepState extends State<AccountCreationStep>
     final dismissLoader = NativeLoadingOverlay.show(
       context,
       messages: [
-        'auth.signing_in_messages.0'.tr(),
-        'auth.signing_in_messages.1'.tr(),
-        'auth.signing_in_messages.2'.tr(),
-        'auth.signing_in_messages.3'.tr(),
-        'auth.signing_in_messages.4'.tr(),
+        'auth.signing_in_1'.tr(),
+        'auth.signing_in_2'.tr(),
+        'auth.signing_in_3'.tr(),
+        'auth.signing_in_4'.tr(),
+        'auth.signing_in_5'.tr(),
       ],
     );
 
@@ -500,11 +500,11 @@ class _AccountCreationStepState extends State<AccountCreationStep>
     final dismissLoader = NativeLoadingOverlay.show(
       context,
       messages: [
-        'auth.signing_in_messages.0'.tr(),
-        'auth.signing_in_messages.1'.tr(),
-        'auth.signing_in_messages.2'.tr(),
-        'auth.signing_in_messages.3'.tr(),
-        'auth.signing_in_messages.4'.tr(),
+        'auth.signing_in_1'.tr(),
+        'auth.signing_in_2'.tr(),
+        'auth.signing_in_3'.tr(),
+        'auth.signing_in_4'.tr(),
+        'auth.signing_in_5'.tr(),
       ],
     );
 
@@ -586,11 +586,11 @@ class _AccountCreationStepState extends State<AccountCreationStep>
     final dismissLoader = NativeLoadingOverlay.show(
       context,
       messages: [
-        'onboarding.creating_account_messages.0'.tr(),
-        'onboarding.creating_account_messages.1'.tr(),
-        'onboarding.creating_account_messages.2'.tr(),
-        'onboarding.creating_account_messages.3'.tr(),
-        'onboarding.creating_account_messages.4'.tr(),
+        'onboarding.creating_account_1'.tr(),
+        'onboarding.creating_account_2'.tr(),
+        'onboarding.creating_account_3'.tr(),
+        'onboarding.creating_account_4'.tr(),
+        'onboarding.creating_account_5'.tr(),
       ],
     );
 

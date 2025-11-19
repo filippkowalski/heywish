@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:intl/intl.dart' as intl;
 import '../../theme/app_theme.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
-import '../../common/widgets/skeleton_loading.dart';
 import '../../common/widgets/native_refresh_indicator.dart';
 import '../../common/widgets/confirmation_bottom_sheet.dart';
+import '../../common/widgets/masonry_wish_card.dart';
 import '../../widgets/cached_image.dart';
 import '../wishlists/add_wish_screen.dart';
 
@@ -227,6 +229,108 @@ class _PublicWishlistDetailScreenState extends State<PublicWishlistDetailScreen>
     }
   }
 
+  Map<String, dynamic> _calculateTotalValuation(List<dynamic> items) {
+    if (items.isEmpty) {
+      return {'total': 0.0, 'currency': 'USD', 'hasAnyPrices': false};
+    }
+
+    // Group items by currency and calculate totals
+    final Map<String, double> currencyTotals = {};
+    bool hasAnyPrices = false;
+
+    for (final item in items) {
+      // Parse price
+      double? price;
+      final priceValue = item['price'];
+      if (priceValue != null) {
+        if (priceValue is num) {
+          price = priceValue.toDouble();
+        } else if (priceValue is String) {
+          price = double.tryParse(priceValue);
+        }
+      }
+
+      if (price != null && price > 0) {
+        hasAnyPrices = true;
+        final currency = item['currency'] ?? 'USD';
+        final quantity = item['quantity'] ?? 1;
+        final totalPrice = price * quantity;
+        currencyTotals[currency] = (currencyTotals[currency] ?? 0.0) + totalPrice;
+      }
+    }
+
+    if (!hasAnyPrices) {
+      return {'total': 0.0, 'currency': 'USD', 'hasAnyPrices': false};
+    }
+
+    // Use the most common currency or USD as default
+    final primaryCurrency = currencyTotals.keys.first;
+    final total = currencyTotals[primaryCurrency] ?? 0.0;
+
+    return {
+      'total': total,
+      'currency': primaryCurrency,
+      'hasAnyPrices': true,
+      'currencyTotals': currencyTotals,
+    };
+  }
+
+  String _formatCurrency(double value, String currency) {
+    final formatter = intl.NumberFormat.currency(
+      symbol: _getCurrencySymbol(currency),
+      decimalDigits: value % 1 == 0 ? 0 : 2,
+    );
+    return formatter.format(value);
+  }
+
+  String _getCurrencySymbol(String currency) {
+    switch (currency.toUpperCase()) {
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      case 'JPY':
+        return '¥';
+      case 'PLN':
+        return 'zł';
+      case 'CAD':
+        return 'C\$';
+      case 'AUD':
+        return 'A\$';
+      default:
+        return currency;
+    }
+  }
+
+  Widget _buildWishlistValuation(List<dynamic> items) {
+    final valuation = _calculateTotalValuation(items);
+    final hasAnyPrices = valuation['hasAnyPrices'] as bool;
+
+    if (!hasAnyPrices) {
+      return const SizedBox.shrink();
+    }
+
+    final total = valuation['total'] as double;
+    final currency = valuation['currency'] as String;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Center(
+        child: Text(
+          '${'wishlist_valuation.total_value'.tr()}: ${_formatCurrency(total, currency)}',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade600,
+            letterSpacing: -0.1,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -254,20 +358,61 @@ class _PublicWishlistDetailScreenState extends State<PublicWishlistDetailScreen>
   }
 
   Widget _buildLoadingState() {
-    return GridView.builder(
-      padding: const EdgeInsets.all(20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.7,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
+    return MasonryGridView.count(
+      padding: const EdgeInsets.all(16.0),
+      crossAxisCount: 2,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
       itemCount: 6,
-      itemBuilder: (context, index) => SkeletonLoading(
-        width: double.infinity,
-        height: double.infinity,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      itemBuilder: (context, index) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image skeleton
+              Container(
+                height: index.isEven ? 180 : 220,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                ),
+              ),
+              // Content skeleton
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 16,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      height: 16,
+                      width: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -339,163 +484,65 @@ class _PublicWishlistDetailScreenState extends State<PublicWishlistDetailScreen>
 
     return NativeRefreshIndicator(
       onRefresh: _loadWishlist,
-      child: GridView.builder(
-        padding: const EdgeInsets.all(20),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.7,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-        ),
-        itemCount: _items.length,
-        itemBuilder: (context, index) {
-          final item = _items[index];
-          return _buildItemCard(item);
-        },
-      ),
-    );
-  }
+      child: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.all(16.0),
+            sliver: SliverMasonryGrid.count(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childCount: _items.length,
+              itemBuilder: (context, index) {
+                final item = _items[index];
 
-  Widget _buildItemCard(Map<String, dynamic> item) {
-    final title = item['title'] ?? '';
-    final isReserved = item['status'] == 'reserved';
+                // Parse price
+                double? price;
+                final priceValue = item['price'];
+                if (priceValue != null) {
+                  if (priceValue is num) {
+                    price = priceValue.toDouble();
+                  } else if (priceValue is String) {
+                    price = double.tryParse(priceValue);
+                  }
+                }
 
-    // Parse price
-    double? price;
-    final priceValue = item['price'];
-    if (priceValue != null) {
-      if (priceValue is num) {
-        price = priceValue.toDouble();
-      } else if (priceValue is String) {
-        price = double.tryParse(priceValue);
-      }
-    }
+                // Get first image
+                String? imageUrl;
+                final images = item['images'];
+                if (images != null) {
+                  if (images is List && images.isNotEmpty) {
+                    imageUrl = images[0];
+                  } else if (images is String && images.isNotEmpty) {
+                    imageUrl = images;
+                  }
+                }
 
-    final currency = item['currency'] ?? 'USD';
+                final isReserved = item['status'] == 'reserved';
 
-    // Get first image
-    String? imageUrl;
-    final images = item['images'];
-    if (images != null) {
-      if (images is List && images.isNotEmpty) {
-        imageUrl = images[0];
-      } else if (images is String && images.isNotEmpty) {
-        imageUrl = images;
-      }
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
+                return MasonryWishCard(
+                  title: item['title'] ?? '',
+                  description: item['description'],
+                  imageUrl: imageUrl,
+                  price: price,
+                  currency: item['currency'],
+                  url: item['url'],
+                  isReserved: isReserved,
+                  onTap: () => _showItemDetail(item),
+                );
+              },
+            ),
           ),
+
+          // Total value at bottom
+          if (_items.isNotEmpty)
+            SliverToBoxAdapter(
+              child: _buildWishlistValuation(_items),
+            ),
+
+          // Extra padding at the bottom
+          const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
         ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showItemDetail(item),
-          borderRadius: BorderRadius.circular(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Image
-              Expanded(
-                child: Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(16),
-                      ),
-                      child: imageUrl != null
-                          ? CachedImageWidget(
-                              imageUrl: imageUrl,
-                              width: double.infinity,
-                              height: double.infinity,
-                              fit: BoxFit.cover,
-                            )
-                          : Container(
-                              width: double.infinity,
-                              height: double.infinity,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
-                              child: Icon(
-                                Icons.card_giftcard,
-                                size: 48,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant
-                                    .withValues(alpha: 0.3),
-                              ),
-                            ),
-                    ),
-                    // Reserved badge
-                    if (isReserved)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade600,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'wish.reserved'.tr(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              // Info
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.primary,
-                          ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (price != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        '$currency${price.toStringAsFixed(2)}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.primaryAccent,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

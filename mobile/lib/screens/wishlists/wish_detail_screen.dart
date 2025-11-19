@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/wish.dart';
 import '../../services/wishlist_service.dart';
 import '../../theme/app_theme.dart';
@@ -508,12 +509,12 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(9),
-                                child: Image.network(
-                                  'https://www.google.com/s2/favicons?domain=${Uri.parse(wish!.url!).host}&sz=64',
+                                child: CachedNetworkImage(
+                                  imageUrl: 'https://www.google.com/s2/favicons?domain=${Uri.parse(wish!.url!).host}&sz=64',
                                   width: 32,
                                   height: 32,
                                   fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) {
+                                  errorWidget: (context, url, error) {
                                     // Fallback to globe icon if favicon fails
                                     return Icon(
                                       Icons.language,
@@ -521,18 +522,14 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                                       color: AppTheme.primaryAccent,
                                     );
                                   },
-                                  loadingBuilder: (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
+                                  placeholder: (context, url) {
                                     return Center(
                                       child: SizedBox(
                                         width: 16,
                                         height: 16,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          value: loadingProgress.expectedTotalBytes != null
-                                              ? loadingProgress.cumulativeBytesLoaded /
-                                                  loadingProgress.expectedTotalBytes!
-                                              : null,
+                                          color: AppTheme.primaryAccent,
                                         ),
                                       ),
                                     );
