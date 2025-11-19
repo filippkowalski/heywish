@@ -91,3 +91,83 @@ platform :ios do
     )
   end
 end
+
+platform :android do
+  desc "Build Android App Bundle and open folder for Google Play upload"
+  desc "Options:"
+  desc "  bump_type: 'major', 'minor', 'patch' to bump version number (optional, defaults to 'minor')"
+  desc "Examples:"
+  desc "  fastlane android release                    # Bump minor version and build AAB"
+  desc "  fastlane android release bump_type:patch    # Bump patch version and build AAB"
+  desc "  fastlane android release bump_type:minor    # Bump minor version and build AAB"
+  desc "  fastlane android release bump_type:major    # Bump major version and build AAB"
+  lane :release do |options|
+    # Get current version from pubspec.yaml
+    pubspec_path = "../pubspec.yaml"
+    pubspec = File.read(pubspec_path)
+    version_line = pubspec.match(/version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)/)
+
+    unless version_line
+      UI.user_error!("Could not find version in pubspec.yaml")
+    end
+
+    major = version_line[1].to_i
+    minor = version_line[2].to_i
+    patch = version_line[3].to_i
+    build_number = version_line[4].to_i
+
+    # Bump version based on bump_type parameter (defaults to 'minor')
+    bump_type = options[:bump_type] || 'minor'
+    if bump_type
+      case bump_type.downcase
+      when 'major'
+        major += 1
+        minor = 0
+        patch = 0
+        UI.success("Bumping MAJOR version")
+      when 'minor'
+        minor += 1
+        patch = 0
+        UI.success("Bumping MINOR version")
+      when 'patch'
+        patch += 1
+        UI.success("Bumping PATCH version")
+      else
+        UI.user_error!("Invalid bump_type: #{bump_type}. Use 'major', 'minor', or 'patch'")
+      end
+    end
+
+    # Always increment build number
+    new_build_number = build_number + 1
+
+    old_version = "#{major}.#{minor}.#{patch}+#{build_number}"
+    new_version = "#{major}.#{minor}.#{patch}+#{new_build_number}"
+
+    UI.message("Current version: #{old_version}")
+    UI.message("New version: #{new_version}")
+
+    # Update pubspec.yaml with new version
+    new_pubspec = pubspec.sub(
+      /version:\s*\d+\.\d+\.\d+\+\d+/,
+      "version: #{new_version}"
+    )
+    File.write(pubspec_path, new_pubspec)
+
+    UI.success("Version bumped to #{new_version}")
+
+    # Build the app bundle
+    sh("cd .. && flutter build appbundle")
+
+    # Get the output directory
+    output_dir = File.expand_path("../build/app/outputs/bundle/release")
+
+    UI.success("✅ App bundle built successfully!")
+    UI.message("📁 Location: #{output_dir}")
+    UI.message("📦 File: app-release.aab")
+
+    # Open the folder in Finder (macOS)
+    sh("open '#{output_dir}'")
+
+    UI.success("🎉 Folder opened! Ready to upload to Google Play Console")
+  end
+end
