@@ -1,5 +1,104 @@
 default_platform(:ios)
 
+desc "Complete release workflow for both iOS and Android"
+desc "Options:"
+desc "  bump_type: 'major', 'minor', 'patch' (defaults to 'minor')"
+desc "This will:"
+desc "  1. Bump version in pubspec.yaml"
+desc "  2. Update CHANGELOG.md with commits since last release"
+desc "  3. Build and upload iOS to App Store"
+desc "  4. Build Android AAB and open folder for Google Play upload"
+lane :release_all do |options|
+  # Get current version from pubspec.yaml
+  pubspec_path = "pubspec.yaml"
+  pubspec = File.read(pubspec_path)
+  version_line = pubspec.match(/version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)/)
+
+  unless version_line
+    UI.user_error!("Could not find version in pubspec.yaml")
+  end
+
+  major = version_line[1].to_i
+  minor = version_line[2].to_i
+  patch = version_line[3].to_i
+  build_number = version_line[4].to_i
+
+  # Bump version based on bump_type parameter (defaults to 'minor')
+  bump_type = options[:bump_type] || 'minor'
+  case bump_type.downcase
+  when 'major'
+    major += 1
+    minor = 0
+    patch = 0
+    UI.success("Bumping MAJOR version")
+  when 'minor'
+    minor += 1
+    patch = 0
+    UI.success("Bumping MINOR version")
+  when 'patch'
+    patch += 1
+    UI.success("Bumping PATCH version")
+  else
+    UI.user_error!("Invalid bump_type: #{bump_type}. Use 'major', 'minor', or 'patch'")
+  end
+
+  # Always increment build number
+  new_build_number = build_number + 1
+
+  old_version = "#{major}.#{minor}.#{patch}+#{build_number}"
+  new_version = "#{major}.#{minor}.#{patch}+#{new_build_number}"
+
+  UI.message("Version: #{old_version} → #{new_version}")
+
+  # Update pubspec.yaml with new version
+  new_pubspec = pubspec.sub(
+    /version:\s*\d+\.\d+\.\d+\+\d+/,
+    "version: #{new_version}"
+  )
+  File.write(pubspec_path, new_pubspec)
+
+  UI.success("✅ Version bumped to #{new_version}")
+
+  # Update CHANGELOG.md with commits since last release
+  UI.message("📝 Updating CHANGELOG.md...")
+  changelog_entry = "## [#{major}.#{minor}.#{patch}] - #{Time.now.strftime('%Y-%m-%d')}\n\n"
+
+  # Get commits since last tag/release
+  commits = sh("git log --pretty=format:'- %s' --no-merges $(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD 2>/dev/null || git log --pretty=format:'- %s' --no-merges -10", error_callback: lambda { |result|
+    UI.message("No previous tag found, using last 10 commits")
+  }).strip
+
+  unless commits.empty?
+    changelog_entry += "### Changes\n#{commits}\n\n"
+  end
+
+  # Prepend to CHANGELOG.md
+  changelog_path = "CHANGELOG.md"
+  if File.exist?(changelog_path)
+    existing_changelog = File.read(changelog_path)
+    File.write(changelog_path, changelog_entry + existing_changelog)
+  else
+    File.write(changelog_path, "# Changelog\n\n" + changelog_entry)
+  end
+
+  UI.success("✅ CHANGELOG.md updated")
+
+  # Build and upload iOS
+  UI.header("📱 Building iOS...")
+  ios :release
+
+  # Build Android
+  UI.header("🤖 Building Android...")
+  sh("flutter build appbundle")
+
+  # Open Android folder
+  output_dir = File.expand_path("build/app/outputs/bundle/release")
+  sh("open '#{output_dir}'")
+
+  UI.success("🎉 Complete! iOS uploaded to App Store, Android folder opened for Google Play upload")
+  UI.message("📦 Android AAB: #{output_dir}/app-release.aab")
+end
+
 platform :ios do
   desc "Build IPA and upload to App Store Connect with metadata"
   desc "Options:"
