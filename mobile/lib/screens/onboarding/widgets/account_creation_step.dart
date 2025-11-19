@@ -413,10 +413,16 @@ class _AccountCreationStepState extends State<AccountCreationStep>
   }
 
   Future<void> _signUpWithGoogle(BuildContext context) async {
-    // Show native loading overlay
+    // Show native loading overlay with rotating messages
     final dismissLoader = NativeLoadingOverlay.show(
       context,
-      message: 'auth.signing_in'.tr(),
+      messages: [
+        'auth.signing_in_messages.0'.tr(),
+        'auth.signing_in_messages.1'.tr(),
+        'auth.signing_in_messages.2'.tr(),
+        'auth.signing_in_messages.3'.tr(),
+        'auth.signing_in_messages.4'.tr(),
+      ],
     );
 
     try {
@@ -490,10 +496,16 @@ class _AccountCreationStepState extends State<AccountCreationStep>
   }
 
   Future<void> _signUpWithApple(BuildContext context) async {
-    // Show native loading overlay
+    // Show native loading overlay with rotating messages
     final dismissLoader = NativeLoadingOverlay.show(
       context,
-      message: 'auth.signing_in'.tr(),
+      messages: [
+        'auth.signing_in_messages.0'.tr(),
+        'auth.signing_in_messages.1'.tr(),
+        'auth.signing_in_messages.2'.tr(),
+        'auth.signing_in_messages.3'.tr(),
+        'auth.signing_in_messages.4'.tr(),
+      ],
     );
 
     try {
@@ -570,10 +582,16 @@ class _AccountCreationStepState extends State<AccountCreationStep>
     final authService = context.read<AuthService>();
     final onboarding = context.read<OnboardingService>();
 
-    // Show native loading overlay
+    // Show native loading overlay with rotating messages
     final dismissLoader = NativeLoadingOverlay.show(
       context,
-      message: 'onboarding.creating_account'.tr(),
+      messages: [
+        'onboarding.creating_account_messages.0'.tr(),
+        'onboarding.creating_account_messages.1'.tr(),
+        'onboarding.creating_account_messages.2'.tr(),
+        'onboarding.creating_account_messages.3'.tr(),
+        'onboarding.creating_account_messages.4'.tr(),
+      ],
     );
 
     try {

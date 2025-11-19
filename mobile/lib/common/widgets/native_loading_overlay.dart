@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'rotating_loading_messages.dart';
 
 /// A native-looking loading overlay that shows a platform-specific loading indicator
 /// above a darkened barrier overlay.
@@ -9,21 +10,37 @@ class NativeLoadingOverlay {
   ///
   /// Returns a function that can be called to dismiss the overlay.
   ///
+  /// If [messages] is provided, it will rotate through multiple messages.
+  /// If only [message] is provided, it will show a single static message.
+  ///
   /// Usage:
   /// ```dart
-  /// final dismiss = NativeLoadingOverlay.show(context);
+  /// // Single message
+  /// final dismiss = NativeLoadingOverlay.show(context, message: 'Loading...');
+  ///
+  /// // Rotating messages
+  /// final dismiss = NativeLoadingOverlay.show(
+  ///   context,
+  ///   messages: ['Message 1...', 'Message 2...', 'Message 3...'],
+  /// );
+  ///
   /// try {
   ///   await someAsyncOperation();
   /// } finally {
   ///   dismiss();
   /// }
   /// ```
-  static VoidCallback show(BuildContext context, {String? message}) {
+  static VoidCallback show(
+    BuildContext context, {
+    String? message,
+    List<String>? messages,
+  }) {
     late OverlayEntry overlayEntry;
 
     overlayEntry = OverlayEntry(
       builder: (context) => _NativeLoadingOverlayWidget(
         message: message,
+        messages: messages,
       ),
     );
 
@@ -37,8 +54,12 @@ class NativeLoadingOverlay {
 
 class _NativeLoadingOverlayWidget extends StatelessWidget {
   final String? message;
+  final List<String>? messages;
 
-  const _NativeLoadingOverlayWidget({this.message});
+  const _NativeLoadingOverlayWidget({
+    this.message,
+    this.messages,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +98,20 @@ class _NativeLoadingOverlayWidget extends StatelessWidget {
                   ),
                 ),
 
-              if (message != null) ...[
+              // Show rotating messages if provided, otherwise single message
+              if (messages != null && messages!.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                RotatingLoadingMessages(
+                  messages: messages!,
+                  textStyle: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF1F2937), // Dark gray
+                  ),
+                  messageDuration: const Duration(seconds: 3),
+                  transitionDuration: const Duration(milliseconds: 500),
+                ),
+              ] else if (message != null) ...[
                 const SizedBox(height: 16),
                 Text(
                   message!,

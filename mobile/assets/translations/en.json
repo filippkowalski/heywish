@@ -61,6 +61,13 @@
     "no_account_message": "Looks like you don't have an account yet. Let's create one for you!",
     "no_account_continue": "Continue to Sign Up",
     "signing_in": "Signing you in...",
+    "signing_in_messages": [
+      "Dusting off your magic lamp...",
+      "Your genie is waking up...",
+      "Rolling out the magic carpet...",
+      "Summoning your wishes...",
+      "Making some magic happen..."
+    ],
     "merge_accounts_title": "Merge Your Accounts?",
     "merge_accounts_message": "You have an existing account with this email. Would you like to merge your current wishlists and data with that account?",
     "merge_accounts_confirm": "Merge Accounts",
@@ -83,7 +90,21 @@
     "benefit_username_title": "Claim Your Unique Username",
     "skip_for_now": "Skip for now",
     "creating_account": "Creating your account...",
+    "creating_account_messages": [
+      "Crafting your personal lamp...",
+      "Sprinkling some wish dust...",
+      "Wrapping up your wishlist...",
+      "Training your personal genie...",
+      "Good things take time (but not much)..."
+    ],
     "checking_profile": "Setting up your profile...",
+    "checking_profile_messages": [
+      "Peeking at your wishes...",
+      "Double-checking the magic...",
+      "Preparing your genie HQ...",
+      "Polishing your profile...",
+      "Almost there, hang tight..."
+    ],
     "username_title": "Choose your username",
     "username_subtitle": "This is your unique username that your friends can find you with",
     "username_placeholder": "username",
