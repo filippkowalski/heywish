@@ -53,7 +53,11 @@ class _WishlistManagementScreenState extends State<WishlistManagementScreen> {
     final confirmed = await ConfirmationBottomSheet.show(
       context: context,
       title: 'wishlist.delete_confirmation'.tr(),
-      message: 'wishlist.delete_warning'.tr(),
+      message: wishlist.wishCount > 0
+          ? 'wishlist.delete_warning_with_items'.tr(namedArgs: {
+              'count': wishlist.wishCount.toString(),
+            })
+          : 'wishlist.delete_warning'.tr(),
       confirmText: 'app.delete'.tr(),
       cancelText: 'app.cancel'.tr(),
       isDestructive: true,

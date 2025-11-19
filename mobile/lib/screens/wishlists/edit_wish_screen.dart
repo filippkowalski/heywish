@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'dart:io';
@@ -188,23 +189,8 @@ class _EditWishScreenState extends State<EditWishScreen> {
       );
 
       if (image != null && mounted) {
-        setState(() {
-          _isCompressingImage = true;
-        });
-
-        final compressedFile = await _imageCacheService.compressAndCacheImage(
-          imageFile: File(image.path),
-          quality: 85,
-          maxWidth: 1920,
-          maxHeight: 1080,
-        );
-
-        setState(() {
-          _selectedImage = compressedFile;
-          _existingImageUrl = null; // Clear existing image URL when new image selected
-          _scrapedImageUrl = null;
-          _isCompressingImage = false;
-        });
+        // Crop the image first, then compress
+        await _cropImage(image.path);
       }
     } catch (e) {
       setState(() {
@@ -216,6 +202,55 @@ class _EditWishScreenState extends State<EditWishScreen> {
           SnackBar(content: Text('wish.failed_to_pick_image'.tr(namedArgs: {'error': e.toString()}))),
         );
       }
+    }
+  }
+
+  Future<void> _cropImage(String imagePath) async {
+    final theme = Theme.of(context);
+    final croppedFile = await ImageCropper().cropImage(
+      sourcePath: imagePath,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'wish.crop_image'.tr(),
+          toolbarColor: theme.colorScheme.surface,
+          toolbarWidgetColor: theme.colorScheme.onSurface,
+          statusBarLight: theme.brightness == Brightness.light,
+          backgroundColor: theme.colorScheme.surface,
+          activeControlsWidgetColor: AppTheme.primaryAccent,
+          lockAspectRatio: false,
+          hideBottomControls: false,
+          showCropGrid: true,
+          dimmedLayerColor: Colors.black.withValues(alpha: 0.8),
+        ),
+        IOSUiSettings(
+          title: 'wish.crop_image'.tr(),
+          aspectRatioLockEnabled: false,
+          resetAspectRatioEnabled: true,
+          aspectRatioPickerButtonHidden: false,
+          rotateButtonsHidden: false,
+          rotateClockwiseButtonHidden: true,
+        ),
+      ],
+    );
+
+    if (croppedFile != null && mounted) {
+      setState(() {
+        _isCompressingImage = true;
+      });
+
+      final compressedFile = await _imageCacheService.compressAndCacheImage(
+        imageFile: File(croppedFile.path),
+        quality: 85,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      );
+
+      setState(() {
+        _selectedImage = compressedFile;
+        _existingImageUrl = null; // Clear existing image URL when new image selected
+        _scrapedImageUrl = null;
+        _isCompressingImage = false;
+      });
     }
   }
 

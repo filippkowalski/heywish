@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'dart:io';
@@ -153,9 +154,24 @@ class _AddWishScreenState extends State<AddWishScreen> {
       }
 
       // Image - validate before setting
+      // Support both local file paths (from sharing) and URLs (from feed copy)
       final imageValue = data['image'];
       if (imageValue != null && imageValue.toString().trim().isNotEmpty) {
-        _scrapedImageUrl = imageValue.toString().trim();
+        final imagePath = imageValue.toString().trim();
+
+        // Check if it's a URL or a local file path
+        if (_isValidUrl(imagePath)) {
+          // It's a URL - use for scraped image
+          _scrapedImageUrl = imagePath;
+        } else {
+          // It's a file path - load as selected image
+          final file = File(imagePath);
+          if (file.existsSync()) {
+            _selectedImage = file;
+          } else {
+            debugPrint('⚠️ Prefilled image file does not exist: $imagePath');
+          }
+        }
         _visibleFields.add('image');
       }
     }
@@ -545,11 +561,8 @@ class _AddWishScreenState extends State<AddWishScreen> {
       );
 
       if (image != null && mounted) {
-        // Image is already compressed by image_picker, just use it directly
-        setState(() {
-          _selectedImage = File(image.path);
-          _visibleFields.add('image');
-        });
+        // Crop the image before using it
+        await _cropImage(image.path);
       }
     } catch (e) {
       if (mounted) {
@@ -581,6 +594,42 @@ class _AddWishScreenState extends State<AddWishScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _cropImage(String imagePath) async {
+    final theme = Theme.of(context);
+    final croppedFile = await ImageCropper().cropImage(
+      sourcePath: imagePath,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'wish.crop_image'.tr(),
+          toolbarColor: theme.colorScheme.surface,
+          toolbarWidgetColor: theme.colorScheme.onSurface,
+          statusBarLight: theme.brightness == Brightness.light,
+          backgroundColor: theme.colorScheme.surface,
+          activeControlsWidgetColor: AppTheme.primaryAccent,
+          lockAspectRatio: false,
+          hideBottomControls: false,
+          showCropGrid: true,
+          dimmedLayerColor: Colors.black.withValues(alpha: 0.8),
+        ),
+        IOSUiSettings(
+          title: 'wish.crop_image'.tr(),
+          aspectRatioLockEnabled: false,
+          resetAspectRatioEnabled: true,
+          aspectRatioPickerButtonHidden: false,
+          rotateButtonsHidden: false,
+          rotateClockwiseButtonHidden: true,
+        ),
+      ],
+    );
+
+    if (croppedFile != null) {
+      setState(() {
+        _selectedImage = File(croppedFile.path);
+        _visibleFields.add('image');
+      });
+    }
   }
 
   Future<void> _saveWish() async {

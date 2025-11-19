@@ -324,6 +324,7 @@
     "reserved_count": "{count} prenotati",
     "delete_confirmation": "Sei sicuro di voler eliminare questa lista dei desideri?",
     "delete_warning": "Questa azione non può essere annullata.",
+    "delete_warning_with_items": "Questo eliminerà permanentemente questa lista dei desideri e tutti i {count} articoli al suo interno. Questa azione non può essere annullata.",
     "shared_successfully": "Lista dei desideri condivisa con successo",
     "create_failed": "Impossibile creare la lista dei desideri",
     "created_successfully": "Lista dei desideri creata con successo",

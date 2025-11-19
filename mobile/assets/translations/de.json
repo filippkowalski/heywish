@@ -324,6 +324,7 @@
     "reserved_count": "{count} reserviert",
     "delete_confirmation": "Möchtest du diese Wunschliste wirklich löschen?",
     "delete_warning": "Diese Aktion kann nicht rückgängig gemacht werden.",
+    "delete_warning_with_items": "Dadurch werden diese Wunschliste und alle {count} darin enthaltenen Artikel dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
     "shared_successfully": "Wunschliste erfolgreich geteilt",
     "create_failed": "Wunschliste konnte nicht erstellt werden",
     "created_successfully": "Wunschliste erfolgreich erstellt",

@@ -324,6 +324,7 @@
     "reserved_count": "{count} reservados",
     "delete_confirmation": "¿Seguro que quieres eliminar esta lista de deseos?",
     "delete_warning": "Esta acción no se puede deshacer.",
+    "delete_warning_with_items": "Esto eliminará permanentemente esta lista de deseos y todos los {count} artículos que contiene. Esta acción no se puede deshacer.",
     "shared_successfully": "Lista de deseos compartida con éxito",
     "create_failed": "Error al crear la lista de deseos",
     "created_successfully": "Lista de deseos creada con éxito",

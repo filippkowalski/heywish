@@ -324,6 +324,7 @@
     "reserved_count": "{count} zarezerwowanych",
     "delete_confirmation": "Czy na pewno chcesz usunąć tę listę życzeń?",
     "delete_warning": "Tej akcji nie można cofnąć.",
+    "delete_warning_with_items": "Spowoduje to trwałe usunięcie tej listy życzeń oraz wszystkich {count} przedmiotów w niej zawartych. Tej akcji nie można cofnąć.",
     "shared_successfully": "Lista życzeń została pomyślnie udostępniona",
     "create_failed": "Nie udało się utworzyć listy życzeń",
     "created_successfully": "Lista życzeń została pomyślnie utworzona",
