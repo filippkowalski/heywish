@@ -1,9 +1,13 @@
-Complete release workflow for both iOS and Android platforms using `cd mobile && fastlane release_all`.
+Complete release workflow for both iOS and Android platforms.
 
-This single command will:
-1. **Bump version** in pubspec.yaml (minor version by default)
-2. **Update CHANGELOG.md** with commits since last release
-3. **Build iOS** and upload to App Store Connect
-4. **Build Android** AAB and open folder for Google Play upload
+**Your tasks:**
+1. **Bump version** in `mobile/pubspec.yaml` (prefer minor version bump, e.g., 1.9.0 → 1.10.0, also increment build number)
+2. **Update CHANGELOG.md** with a well-written summary of commits since the last release (check git history)
+3. **Run** `cd mobile && fastlane release_all` to build and upload both platforms
 
-Both platforms will use the same version number. The Android release folder will automatically open in Finder for easy copy-paste to Google Play Console.
+The fastlane command will:
+- Build iOS IPA and upload to App Store Connect
+- Build Android AAB
+- Open the Android release folder in Finder for easy copy-paste to Google Play Console
+
+Both platforms will use the same version number from pubspec.yaml.
