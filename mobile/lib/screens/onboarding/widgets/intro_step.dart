@@ -85,7 +85,7 @@ class _IntroStepState extends State<IntroStep> with TickerProviderStateMixin {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(25),
                               child: Image.asset(
-                                'assets/images/onboarding/welcome_icon_1.png',
+                                'assets/images/onboarding/welcome_icon_1.webp',
                                 width: 120,
                                 height: 120,
                                 fit: BoxFit.contain,

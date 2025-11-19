@@ -79,7 +79,7 @@ class ScreenshotDetectionService {
           print('✅ Screenshot captured: ${imageBytes.length} bytes');
           // Save screenshot to temporary file
           final directory = await getTemporaryDirectory();
-          final file = File('${directory.path}/jinnie_screenshot_${DateTime.now().millisecondsSinceEpoch}.png');
+          final file = File('${directory.path}/jinnie_screenshot_${DateTime.now().millisecondsSinceEpoch}.webp');
           await file.writeAsBytes(imageBytes);
           print('💾 Screenshot saved to: ${file.path}');
 

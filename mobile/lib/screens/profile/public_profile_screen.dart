@@ -301,7 +301,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
-                      'assets/images/google_logo.png',
+                      'assets/images/google_logo.webp',
                       height: 24,
                       width: 24,
                       errorBuilder: (context, error, stackTrace) =>

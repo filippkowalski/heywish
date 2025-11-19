@@ -42,7 +42,7 @@ class ImageCacheService {
         utf8.encode('${imageFile.path}_$quality\_$maxWidth\_$maxHeight')
       ).toString();
       final extension = path.extension(imageFile.path).toLowerCase();
-      final targetExtension = (extension == '.png' || extension == '.jpg' || extension == '.jpeg')
+      final targetExtension = (extension == '.webp' || extension == '.jpg' || extension == '.jpeg')
           ? extension
           : '.jpg';
       final cachedFileName = '$hash$targetExtension';
@@ -60,7 +60,7 @@ class ImageCacheService {
         minWidth: maxWidth,
         minHeight: maxHeight,
         quality: quality,
-        format: targetExtension == '.png' ? CompressFormat.png : CompressFormat.jpeg,
+        format: targetExtension == '.webp' ? CompressFormat.webp : CompressFormat.jpeg,
       );
 
       if (compressedData == null) {

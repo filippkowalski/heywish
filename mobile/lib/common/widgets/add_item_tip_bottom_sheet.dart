@@ -68,7 +68,7 @@ class AddItemTipBottomSheet extends StatelessWidget {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(16),
                         child: Image.asset(
-                          'assets/images/tip.png',
+                          'assets/images/tip.webp',
                           width: double.infinity,
                           height: 200,
                           fit: BoxFit.contain,

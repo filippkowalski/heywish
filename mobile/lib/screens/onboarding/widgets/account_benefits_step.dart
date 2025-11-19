@@ -28,7 +28,7 @@ class AccountBenefitsStep extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
                   child: Image.asset(
-                    'assets/images/onboarding/account_icon_1.png',
+                    'assets/images/onboarding/account_icon_1.webp',
                     width: 100,
                     height: 100,
                     fit: BoxFit.contain,

@@ -11,8 +11,8 @@ const Set<String> _deepLinkHosts = {'jinnie.app', 'www.jinnie.app'};
 /// Service for handling deep links and universal links
 ///
 /// Supports:
-/// - Universal links: https://jinnie.app/@username/follow
-/// - Custom scheme: jinnie://profile/username
+/// - Universal links: https://jinnie.app/@username, https://jinnie.app/add-wish
+/// - Custom scheme: jinnie://profile/username, jinnie://add-wish
 ///
 /// Usage:
 /// ```dart
@@ -106,6 +106,14 @@ class DeepLinkService {
     }
 
     final firstSegment = segments.first;
+
+    // Handle add-wish deep link
+    if (firstSegment == 'add-wish') {
+      debugPrint('✅ Deep link: Add wish');
+      _navigateToAddWish(uri.queryParameters);
+      return;
+    }
+
     final hasAtSymbol = firstSegment.startsWith('@');
     final username = hasAtSymbol ? firstSegment.substring(1) : firstSegment;
 
@@ -206,6 +214,13 @@ class DeepLinkService {
     final path = uri.path.replaceFirst('/', '');
     debugPrint('   - path (after removing /): $path');
 
+    // Pattern: jinnie://add-wish or com.wishlists.gifts://add-wish
+    if (uri.host == 'add-wish') {
+      debugPrint('✅ Deep link: Add wish (custom scheme)');
+      _navigateToAddWish(uri.queryParameters);
+      return;
+    }
+
     // Pattern: jinnie://profile/username or com.wishlists.gifts://profile/username
     if (uri.host == 'profile' || path.startsWith('profile/')) {
       debugPrint('🔗 Detected profile pattern');
@@ -292,6 +307,74 @@ class DeepLinkService {
       });
     } catch (e) {
       debugPrint('❌ Error during wishlist navigation: $e');
+    }
+  }
+
+  /// Navigate to add wish screen
+  void _navigateToAddWish(Map<String, String> queryParameters) {
+    debugPrint('🔗 _navigateToAddWish called');
+    debugPrint('   - queryParameters: $queryParameters');
+
+    if (_router == null) {
+      debugPrint('❌ Router not initialized');
+      return;
+    }
+
+    try {
+      // Build extras map for navigation
+      final Map<String, dynamic> extras = {};
+
+      // Extract URL parameter
+      final url = queryParameters['url'];
+      if (url != null && url.isNotEmpty) {
+        extras['initialUrl'] = url;
+        debugPrint('   - initialUrl: $url');
+      }
+
+      // Extract wishlist ID parameter
+      final wishlistId = queryParameters['wishlistId'] ?? queryParameters['wishlist_id'];
+      if (wishlistId != null && wishlistId.isNotEmpty) {
+        extras['wishlistId'] = wishlistId;
+        debugPrint('   - wishlistId: $wishlistId');
+      }
+
+      // Extract prefilled data parameters
+      final title = queryParameters['title'];
+      final description = queryParameters['description'];
+      final price = queryParameters['price'];
+      final currency = queryParameters['currency'];
+      final image = queryParameters['image'];
+
+      if (title != null || description != null || price != null || currency != null || image != null) {
+        final Map<String, dynamic> prefilledData = {};
+        if (title != null && title.isNotEmpty) prefilledData['title'] = title;
+        if (description != null && description.isNotEmpty) prefilledData['description'] = description;
+        if (price != null && price.isNotEmpty) prefilledData['price'] = price;
+        if (currency != null && currency.isNotEmpty) prefilledData['currency'] = currency;
+        if (image != null && image.isNotEmpty) prefilledData['image'] = image;
+
+        if (prefilledData.isNotEmpty) {
+          extras['prefilledData'] = prefilledData;
+          debugPrint('   - prefilledData: $prefilledData');
+        }
+      }
+
+      // Navigate to home first to ensure proper back stack
+      debugPrint('📱 Building navigation stack: home -> add-wish');
+      _router!.go('/home');
+
+      // Wait a frame for home to render, then push add wish screen on top
+      Future.delayed(const Duration(milliseconds: 100), () {
+        debugPrint('📱 Pushing add-wish screen on top of home');
+        if (extras.isEmpty) {
+          _router!.push('/add-wish');
+        } else {
+          _router!.push('/add-wish', extra: extras);
+        }
+        debugPrint('📱 ✅ Add wish navigation initiated');
+      });
+    } catch (e) {
+      debugPrint('❌ Error during add wish navigation: $e');
     }
   }
 
@@ -432,6 +515,7 @@ class DeepLinkService {
       'delete-account',
       'w',
       'affiliate-disclosure',
+      'add-wish',
     };
     return reserved.contains(segment.toLowerCase());
   }

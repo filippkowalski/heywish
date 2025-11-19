@@ -82,17 +82,17 @@ class _FeatureHighlightsStepState extends State<FeatureHighlightsStep> {
             onPageChanged: _onPageChanged,
             children: [
               _buildFeaturePage(
-                imagePath: 'assets/images/onboarding/feature_organize.png',
+                imagePath: 'assets/images/onboarding/feature_organize.webp',
                 title: 'onboarding.feature_organize_title'.tr(),
                 subtitle: 'onboarding.feature_organize_subtitle'.tr(),
               ),
               _buildFeaturePage(
-                imagePath: 'assets/images/onboarding/feature_share.png',
+                imagePath: 'assets/images/onboarding/feature_share.webp',
                 title: 'onboarding.feature_share_title'.tr(),
                 subtitle: 'onboarding.feature_share_subtitle'.tr(),
               ),
               _buildFeaturePage(
-                imagePath: 'assets/images/onboarding/feature_gift.png',
+                imagePath: 'assets/images/onboarding/feature_gift.webp',
                 title: 'onboarding.feature_gift_title'.tr(),
                 subtitle: 'onboarding.feature_gift_subtitle'.tr(),
               ),

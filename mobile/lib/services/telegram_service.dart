@@ -88,7 +88,7 @@ ${deviceInfo['osVersion']}
           'image': base64Image,
           'caption': caption,
           'channel': 'jinnie',
-          'filename': 'jinnie_screenshot_${DateTime.now().millisecondsSinceEpoch}.png',
+          'filename': 'jinnie_screenshot_${DateTime.now().millisecondsSinceEpoch}.webp',
           'fallback': true,
         },
       );

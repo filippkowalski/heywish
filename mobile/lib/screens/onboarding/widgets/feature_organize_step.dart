@@ -83,7 +83,7 @@ class _FeatureOrganizeStepState extends State<FeatureOrganizeStep>
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
                   child: Image.asset(
-                    'assets/images/onboarding/feature_organize.png',
+                    'assets/images/onboarding/feature_organize.webp',
                     fit: BoxFit.contain,
                   ),
                 ),

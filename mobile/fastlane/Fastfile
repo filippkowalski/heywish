@@ -7,7 +7,7 @@ desc "  1. Build and upload iOS to App Store"
 desc "  2. Build Android AAB and open folder for Google Play upload"
 lane :release_all do
   # Get current version for display
-  pubspec_path = "pubspec.yaml"
+  pubspec_path = "../pubspec.yaml"
   pubspec = File.read(pubspec_path)
   version_line = pubspec.match(/version:\s*(\d+\.\d+\.\d+\+\d+)/)
 
@@ -15,16 +15,41 @@ lane :release_all do
     UI.message("📦 Building version: #{version_line[1]}")
   end
 
-  # Build and upload iOS
+  # Build and upload iOS (without version bump)
   UI.header("📱 Building iOS...")
-  ios :release
+  build_app(
+    workspace: "ios/Runner.xcworkspace",
+    scheme: "Runner",
+    configuration: "Release",
+    export_method: "app-store",
+    output_directory: "build/ios/ipa",
+    output_name: "jinnie.ipa",
+    destination: "generic/platform=iOS"
+  )
+
+  # Upload to App Store Connect with metadata and submit for review
+  UI.header("📤 Uploading to App Store Connect...")
+  upload_to_app_store(
+    api_key: {
+      key_id: "LW4DRB22XD",
+      issuer_id: "aeefe3dd-9558-4a88-bc16-c02f973fe67e",
+      key_filepath: File.expand_path("~/.appstoreconnect/private_keys/AuthKey_LW4DRB22XD.p8")
+    },
+    skip_screenshots: true,
+    skip_metadata: false,
+    submit_for_review: true,
+    automatic_release: true,
+    force: true,
+    precheck_include_in_app_purchases: false
+  )
+  UI.success("✅ Upload successful and submitted for review!")
 
   # Build Android
   UI.header("🤖 Building Android...")
-  sh("flutter build appbundle")
+  sh("cd .. && flutter build appbundle")
 
   # Open Android folder
-  output_dir = File.expand_path("build/app/outputs/bundle/release")
+  output_dir = File.expand_path("../build/app/outputs/bundle/release")
   sh("open '#{output_dir}'")
 
   UI.success("🎉 Complete! iOS uploaded to App Store, Android folder opened for Google Play upload")
@@ -107,18 +132,18 @@ platform :ios do
     )
 
     # Upload to App Store Connect with metadata
-    api_key = app_store_connect_api_key(
-      key_id: "LW4DRB22XD",
-      issuer_id: "aeefe3dd-9558-4a88-bc16-c02f973fe67e",
-      key_filepath: ENV["APP_STORE_CONNECT_API_KEY_PATH"] || "#{Dir.home}/.appstoreconnect/private_keys/AuthKey_LW4DRB22XD.p8"
-    )
-
     upload_to_app_store(
-      api_key: api_key,
+      api_key: {
+        key_id: "LW4DRB22XD",
+        issuer_id: "aeefe3dd-9558-4a88-bc16-c02f973fe67e",
+        key_filepath: ENV["APP_STORE_CONNECT_API_KEY_PATH"] || File.expand_path("~/.appstoreconnect/private_keys/AuthKey_LW4DRB22XD.p8")
+      },
       skip_screenshots: true,
       skip_metadata: false,
       submit_for_review: false,
-      force: true
+      automatic_release: true,
+      force: true,
+      precheck_include_in_app_purchases: false
     )
   end
 end

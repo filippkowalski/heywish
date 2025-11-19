@@ -192,7 +192,7 @@ class _OnboardingCompleteStepState extends State<OnboardingCompleteStep>
                                   ),
                                   child: ClipOval(
                                     child: Image.asset(
-                                      'assets/images/onboarding_complete_hero.png',
+                                      'assets/images/onboarding_complete_hero.webp',
                                       fit: BoxFit.cover,
                                     ),
                                   ),

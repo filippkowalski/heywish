@@ -83,7 +83,7 @@ class _FeatureShareStepState extends State<FeatureShareStep>
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
                   child: Image.asset(
-                    'assets/images/onboarding/feature_share.png',
+                    'assets/images/onboarding/feature_share.webp',
                     fit: BoxFit.contain,
                   ),
                 ),

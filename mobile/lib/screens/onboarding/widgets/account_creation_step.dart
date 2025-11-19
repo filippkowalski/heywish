@@ -262,7 +262,7 @@ class _AccountCreationStepState extends State<AccountCreationStep>
                       backgroundColor: const Color(0xFFDB4437), // Google red
                       foregroundColor: Colors.white,
                       customIcon: Image.asset(
-                        'assets/icons/google.png',
+                        'assets/icons/google.webp',
                         height: 20,
                         width: 20,
                         errorBuilder: (context, error, stackTrace) {
