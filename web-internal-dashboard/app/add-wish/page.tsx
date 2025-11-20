@@ -348,46 +348,41 @@ export default function AddWishPage() {
   };
 
   const uploadImageToServer = async (imageUrl: string): Promise<string> => {
-    try {
-      // Download the image
-      const response = await fetch(imageUrl);
-      if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
+    // Download the image
+    const response = await fetch(imageUrl);
+    if (!response.ok) throw new Error(`Failed to fetch image from ${imageUrl}: ${response.statusText}`);
 
-      const blob = await response.blob();
-      const contentType = blob.type || 'image/jpeg';
-      const extension = contentType.split('/')[1] || 'jpg';
+    const blob = await response.blob();
+    const contentType = blob.type || 'image/jpeg';
+    const extension = contentType.split('/')[1] || 'jpg';
 
-      // Get presigned upload URL from admin endpoint
-      const uploadUrlResponse = await fetch('/api/proxy?endpoint=' + encodeURIComponent('/admin/upload/wish-image'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          wishlistId: wishlistId,
-          fileExtension: extension,
-          contentType: contentType
-        })
-      });
+    // Get presigned upload URL from admin endpoint
+    const uploadUrlResponse = await fetch('/api/proxy?endpoint=' + encodeURIComponent('/admin/upload/wish-image'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        wishlistId: wishlistId,
+        fileExtension: extension,
+        contentType: contentType
+      })
+    });
 
-      if (!uploadUrlResponse.ok) throw new Error('Failed to get upload URL');
+    if (!uploadUrlResponse.ok) throw new Error('Failed to get upload URL');
 
-      const uploadData = await uploadUrlResponse.json();
+    const uploadData = await uploadUrlResponse.json();
 
-      // Upload to R2
-      const uploadResponse = await fetch(uploadData.uploadUrl, {
-        method: 'PUT',
-        body: blob,
-        headers: {
-          'Content-Type': contentType
-        }
-      });
+    // Upload to R2
+    const uploadResponse = await fetch(uploadData.uploadUrl, {
+      method: 'PUT',
+      body: blob,
+      headers: {
+        'Content-Type': contentType
+      }
+    });
 
-      if (!uploadResponse.ok) throw new Error('Failed to upload image');
+    if (!uploadResponse.ok) throw new Error('Failed to upload image to R2');
 
-      return uploadData.publicUrl;
-    } catch (error) {
-      console.error('Image upload error:', error);
-      return imageUrl; // Return original URL if upload fails
-    }
+    return uploadData.publicUrl;
   };
 
   const toggleWishSelection = (wishId: string) => {
@@ -472,23 +467,36 @@ export default function AddWishPage() {
 
       try {
         let finalWish = { ...wish };
+        let uploadedImageUrls: string[] = [];
+        let imageUploadFailed = false;
 
-        // Step 1: Scrape URL if provided and missing data
-        if (wish.url && (!wish.image_urls || wish.image_urls.length === 0 || !wish.description)) {
+        // Step 1: Try to upload provided image URLs (if any)
+        if (wish.image_urls && wish.image_urls.length > 0) {
+          setImportProgress({ current: i + 1, total: parsedWishes.length, status: `Uploading images for "${wish.title}"...` });
+
+          try {
+            console.log(`[Image Upload] Attempting to upload ${wish.image_urls.length} image(s) for "${wish.title}"`);
+            const uploadPromises = wish.image_urls.map((url: string) => uploadImageToServer(url));
+            uploadedImageUrls = await Promise.all(uploadPromises);
+            console.log(`[Image Upload] Successfully uploaded ${uploadedImageUrls.length} image(s)`);
+          } catch (uploadError: any) {
+            console.warn(`[Image Upload] Failed to upload provided image URLs for "${wish.title}":`, uploadError.message);
+            imageUploadFailed = true;
+            uploadedImageUrls = [];
+          }
+        }
+
+        // Step 2: If no images yet, or upload failed, try scraping the product URL
+        if (wish.url && (uploadedImageUrls.length === 0 || !wish.description)) {
           setImportProgress({ current: i + 1, total: parsedWishes.length, status: `Scraping data for "${wish.title}"...` });
 
           try {
-            console.log(`[Scrape] Starting scrape for: ${wish.title}`);
+            console.log(`[Scrape] Starting scrape for: ${wish.title} (reason: ${imageUploadFailed ? 'image upload failed' : 'missing data'})`);
             console.log(`[Scrape] URL: ${wish.url}`);
 
             const scrapedData = await scrapeUrl(wish.url);
 
             console.log(`[Scrape] Result for "${wish.title}":`, scrapedData);
-
-            // Check if scraping was successful
-            if (scrapedData.success === false || scrapedData.error) {
-              throw new Error(scrapedData.error || 'Scraping failed');
-            }
 
             // Merge scraped data with existing wish data (existing data takes precedence)
             if (scrapedData.title && !finalWish.title) {
@@ -504,38 +512,41 @@ export default function AddWishPage() {
               finalWish.currency = scrapedData.currency;
             }
 
-            // Handle images - support both single image and images array
-            if (!finalWish.image_urls || finalWish.image_urls.length === 0) {
-              if (scrapedData.images && scrapedData.images.length > 0) {
-                finalWish.image_urls = scrapedData.images;
-                console.log(`[Scrape] Added ${scrapedData.images.length} image(s) from images array`);
-              } else if (scrapedData.image) {
-                finalWish.image_urls = [scrapedData.image];
-                console.log(`[Scrape] Added image URL: ${scrapedData.image}`);
-              } else {
-                console.log(`[Scrape] No images found in scraped data`);
+            // Handle scraped images - only use if we don't have uploaded images yet
+            if (uploadedImageUrls.length === 0) {
+              let scrapedImageUrls: string[] = [];
+
+              if (scrapedData.image) {
+                scrapedImageUrls = [scrapedData.image];
+                console.log(`[Scrape] Found image URL: ${scrapedData.image}`);
+              }
+
+              // Try to upload scraped images
+              if (scrapedImageUrls.length > 0) {
+                try {
+                  setImportProgress({ current: i + 1, total: parsedWishes.length, status: `Uploading scraped images for "${wish.title}"...` });
+                  console.log(`[Scrape] Uploading ${scrapedImageUrls.length} scraped image(s)`);
+                  const uploadPromises = scrapedImageUrls.map((url: string) => uploadImageToServer(url));
+                  uploadedImageUrls = await Promise.all(uploadPromises);
+                  console.log(`[Scrape] Successfully uploaded ${uploadedImageUrls.length} scraped image(s)`);
+                } catch (uploadError: any) {
+                  console.warn(`[Scrape] Failed to upload scraped images:`, uploadError.message);
+                  // Continue anyway - wish will be created without images
+                }
               }
             }
           } catch (scrapeError: any) {
             console.error(`[Scrape] Failed to scrape URL for "${wish.title}":`, scrapeError);
             console.error(`[Scrape] Error details:`, scrapeError.message, scrapeError.stack);
 
-            // Show error toast but continue
-            toast.warning(`Scraping failed for "${wish.title}"`, {
-              description: `Could not fetch data from URL: ${scrapeError.message || 'Unknown error'}. Wish will be created with provided data only.`,
-              duration: 4000
-            });
+            // Show warning but continue
+            if (imageUploadFailed) {
+              toast.warning(`Image issues for "${wish.title}"`, {
+                description: `Provided image URLs were invalid and scraping also failed. Wish will be created without images.`,
+                duration: 4000
+              });
+            }
           }
-        } else {
-          console.log(`[Scrape] Skipping scrape for "${wish.title}" - has images or no URL`);
-        }
-
-        // Step 2: Upload images if present
-        let uploadedImageUrls: string[] = [];
-        if (finalWish.image_urls && finalWish.image_urls.length > 0) {
-          setImportProgress({ current: i + 1, total: parsedWishes.length, status: `Uploading images for "${finalWish.title}"...` });
-          const uploadPromises = finalWish.image_urls.map((url: string) => uploadImageToServer(url));
-          uploadedImageUrls = await Promise.all(uploadPromises);
         }
 
         // Step 3: Create the wish
