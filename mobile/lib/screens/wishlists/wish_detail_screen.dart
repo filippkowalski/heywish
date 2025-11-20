@@ -203,6 +203,7 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
       return Material(
         color: Colors.transparent,
         child: Container(
+          width: double.infinity,
           constraints: BoxConstraints(
             maxHeight: mediaQuery.size.height * 0.92,
           ),
@@ -221,6 +222,7 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
       return Material(
         color: Colors.transparent,
         child: Container(
+          width: double.infinity,
           constraints: BoxConstraints(
             maxHeight: mediaQuery.size.height * 0.92,
           ),
@@ -238,6 +240,7 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
     return Material(
       color: Colors.transparent,
       child: Container(
+        width: double.infinity,
         constraints: BoxConstraints(
           maxHeight: mediaQuery.size.height * 0.92,
         ),

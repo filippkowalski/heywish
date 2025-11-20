@@ -75,71 +75,72 @@ class MasonryWishCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Image section
-            Stack(
-              children: [
-                _MasonryImageCard(
-                  imageUrl: imageUrl,
-                  wishTitle: title,
-                ),
-                // Price overlay (bottom-left)
-                if (price != null)
-                  Positioned(
-                    bottom: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _formatPrice(price!, currency),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+            // Image section - only show if image exists
+            if (imageUrl != null && imageUrl!.isNotEmpty)
+              Stack(
+                children: [
+                  _MasonryImageCard(
+                    imageUrl: imageUrl,
+                    wishTitle: title,
+                  ),
+                  // Price overlay (bottom-left)
+                  if (price != null)
+                    Positioned(
+                      bottom: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _formatPrice(price!, currency),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                // Link indicator with favicon (top-left)
-                if (url != null && url!.isNotEmpty)
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: _FaviconIndicator(url: url!),
-                  ),
-                // Reserved star indicator (top-right)
-                if (isReserved)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.star,
-                        color: AppTheme.primaryAccent,
-                        size: 16,
+                  // Link indicator with favicon (top-left)
+                  if (url != null && url!.isNotEmpty)
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: _FaviconIndicator(url: url!),
+                    ),
+                  // Reserved star indicator (top-right)
+                  if (isReserved)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.star,
+                          color: AppTheme.primaryAccent,
+                          size: 16,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
+                ],
+              ),
 
             // Content section
             Padding(
@@ -148,6 +149,49 @@ class MasonryWishCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Metadata row for cards without images
+                  if (imageUrl == null || imageUrl!.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: [
+                          // URL indicator
+                          if (url != null && url!.isNotEmpty)
+                            _FaviconIndicator(url: url!),
+                          if (url != null && url!.isNotEmpty && (price != null || isReserved))
+                            const SizedBox(width: 8),
+                          // Price badge
+                          if (price != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                _formatPrice(price!, currency),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          if (price != null && isReserved)
+                            const SizedBox(width: 8),
+                          // Reserved indicator
+                          if (isReserved)
+                            Icon(
+                              Icons.star,
+                              color: AppTheme.primaryAccent,
+                              size: 16,
+                            ),
+                        ],
+                      ),
+                    ),
+
                   // Title (max 2 lines)
                   Text(
                     title,
@@ -198,26 +242,10 @@ class _MasonryImageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // This widget should only be called when imageUrl is not null/empty
+    // but keep a safety check just in case
     if (imageUrl == null || imageUrl!.isEmpty) {
-      // No image - show fallback with square aspect ratio
-      return AspectRatio(
-        aspectRatio: 1.0,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(16),
-            ),
-          ),
-          child: Center(
-            child: Icon(
-              WishCategoryDetector.getIconFromTitle(wishTitle),
-              size: 48,
-              color: WishCategoryDetector.getColorFromTitle(wishTitle),
-            ),
-          ),
-        ),
-      );
+      return const SizedBox.shrink();
     }
 
     return CachedNetworkImage(
