@@ -255,10 +255,6 @@ export default function AddWishPage() {
         url: "https://www.apple.com/shop/buy-iphone/iphone-15-pro",
         price: 999,
         currency: "USD",
-        image_urls: [
-          "https://example.com/image1.jpg",
-          "https://example.com/image2.jpg"
-        ],
         priority: 5,
         quantity: 1
       },
@@ -268,7 +264,6 @@ export default function AddWishPage() {
         url: "https://www.apple.com/airpods-pro/",
         price: 249,
         currency: "USD",
-        image_urls: ["https://example.com/airpods.jpg"],
         priority: 3,
         quantity: 1
       }
@@ -703,7 +698,7 @@ export default function AddWishPage() {
                 Bulk Import Wishes from JSON
               </CardTitle>
               <CardDescription>
-                Import multiple wishes at once using JSON format. Images will be automatically downloaded and uploaded to our server.
+                Import multiple wishes at once using JSON format. Product images will be automatically scraped from URLs and uploaded to R2.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -730,7 +725,7 @@ export default function AddWishPage() {
                 </pre>
                 <p className="text-xs text-muted-foreground mt-2">
                   <strong>Instructions for LLM:</strong> Generate a JSON object with a "wishes" array. Each wish must have a "title" (required).
-                  Optional fields: "description", "url", "price" (number), "currency" (string, default: USD), "image_urls" (array of strings),
+                  Optional fields: "description", "url" (product URL - images will be scraped automatically), "price" (number), "currency" (string, default: USD),
                   "priority" (1-5, default: 3), "quantity" (number, default: 1). Maximum 50 wishes per import.
                 </p>
               </div>
