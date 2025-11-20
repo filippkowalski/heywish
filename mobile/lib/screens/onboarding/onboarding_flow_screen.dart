@@ -43,14 +43,6 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
             // Track step changes for transition direction
             final currentStep = onboardingService.currentStep;
             final isForward = _isStepForward(currentStep);
-            // Only show full-screen loader for major operations like completing onboarding
-            if (onboardingService.isLoading && onboardingService.currentStep == OnboardingStep.complete) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.primary,
-                ),
-              );
-            }
 
             return Stack(
               children: [
