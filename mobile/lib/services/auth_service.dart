@@ -248,7 +248,8 @@ class AuthService extends ChangeNotifier {
   /// Returns [AuthenticationResult] with navigation action and user state
   ///
   /// Set [checkMerge] to false to skip merge detection (for legacy callers)
-  Future<AuthenticationResult> authenticateWithGoogle({bool checkMerge = true}) async {
+  /// Returns null if authentication fails
+  Future<AuthenticationResult?> authenticateWithGoogle({bool checkMerge = true}) async {
     debugPrint('🔑 AuthService: Starting Google authentication (checkMerge: $checkMerge)');
 
     // Track sign in attempt
@@ -260,8 +261,12 @@ class AuthService extends ChangeNotifier {
       String? anonymousUidForMerge;
       bool requiresMerge = false;
 
-      // Step 1: Get Google credential
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      // Step 1: Get Google credential (with timeout)
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn()
+          .timeout(
+            const Duration(seconds: 45),
+            onTimeout: () => null, // Return null on timeout (treated as cancellation)
+          );
 
       if (googleUser == null) {
         debugPrint('❌ AuthService: Google Sign-In was cancelled by user');
@@ -289,7 +294,13 @@ class AuthService extends ChangeNotifier {
         try {
           // Try to link credential to anonymous account
           debugPrint('🔗 AuthService: Linking Google to anonymous account...');
-          userCredential = await _firebaseUser!.linkWithCredential(credential);
+          userCredential = await _firebaseUser!.linkWithCredential(credential)
+              .timeout(
+                const Duration(seconds: 45),
+                onTimeout: () {
+                  throw Exception('Connection timeout. Please check your internet connection.');
+                },
+              );
           await userCredential.user!.reload();
           _firebaseUser = _firebaseAuth.currentUser;
           debugPrint('✅ Successfully linked Google to anonymous account');
@@ -305,10 +316,22 @@ class AuthService extends ChangeNotifier {
             debugPrint('ℹ️  Provider already linked, signing in...');
           }
           // Sign into existing account
-          userCredential = await _firebaseAuth.signInWithCredential(credential);
+          userCredential = await _firebaseAuth.signInWithCredential(credential)
+              .timeout(
+                const Duration(seconds: 45),
+                onTimeout: () {
+                  throw Exception('Connection timeout. Please check your internet connection.');
+                },
+              );
         }
       } else {
-        userCredential = await _firebaseAuth.signInWithCredential(credential);
+        userCredential = await _firebaseAuth.signInWithCredential(credential)
+            .timeout(
+              const Duration(seconds: 45),
+              onTimeout: () {
+                throw Exception('Connection timeout. Please check your internet connection.');
+              },
+            );
       }
 
       debugPrint('✅ AuthService: Firebase auth successful for: ${userCredential.user?.email}');
@@ -344,7 +367,8 @@ class AuthService extends ChangeNotifier {
       _analyticsService.trackSignInFailure('google', e.toString());
 
       await CrashlyticsLogger.logError(e, StackTrace.current, reason: 'Google authentication failed');
-      rethrow;
+      // Return null for graceful degradation - caller should check for null
+      return null;
     }
   }
 
@@ -353,7 +377,8 @@ class AuthService extends ChangeNotifier {
   /// Returns [AuthenticationResult] with navigation action and user state
   ///
   /// Set [checkMerge] to false to skip merge detection (for legacy callers)
-  Future<AuthenticationResult> authenticateWithApple({bool checkMerge = true}) async {
+  /// Returns null if authentication fails
+  Future<AuthenticationResult?> authenticateWithApple({bool checkMerge = true}) async {
     debugPrint('🍎 AuthService: Starting Apple authentication (checkMerge: $checkMerge)');
 
     // Track sign in attempt
@@ -455,7 +480,8 @@ class AuthService extends ChangeNotifier {
       _analyticsService.trackSignInFailure('apple', e.toString());
 
       await CrashlyticsLogger.logError(e, StackTrace.current, reason: 'Apple authentication failed');
-      rethrow;
+      // Return null for graceful degradation - caller should check for null
+      return null;
     }
   }
 
@@ -527,7 +553,8 @@ class AuthService extends ChangeNotifier {
         reason: 'Account merge failed',
         context: {'anonymous_uid': anonymousFirebaseUid},
       );
-      rethrow;
+      // Don't crash the app - log error and complete silently
+      // Caller should check _lastMergeTimestamp to verify success
     }
   }
 
@@ -796,8 +823,14 @@ class AuthService extends ChangeNotifier {
     try {
       debugPrint('👤 AuthService: Starting anonymous sign-in...');
 
-      // Sign in anonymously with Firebase
-      final userCredential = await _firebaseAuth.signInAnonymously();
+      // Sign in anonymously with Firebase (with timeout to prevent hanging)
+      final userCredential = await _firebaseAuth.signInAnonymously()
+          .timeout(
+            const Duration(seconds: 45),
+            onTimeout: () {
+              throw Exception('Connection timeout. Please check your internet connection.');
+            },
+          );
 
       debugPrint('✅ AuthService: Anonymous auth successful');
       debugPrint('✅ Firebase UID: ${userCredential.user?.uid}');
@@ -809,6 +842,8 @@ class AuthService extends ChangeNotifier {
       _scheduleTokenRefresh();
     } catch (e) {
       debugPrint('❌ AuthService: Error signing in anonymously: $e');
+      // Re-throw so UI can show proper error message to user
+      // The UI has try-catch to handle this gracefully
       rethrow;
     }
   }
@@ -856,6 +891,7 @@ class AuthService extends ChangeNotifier {
       await syncUserWithBackend(signUpMethod: 'google', sendFullName: true);
     } catch (e) {
       debugPrint('❌ AuthService: Error linking with Google: $e');
+      // Re-throw for UI to handle - this is a user action
       rethrow;
     }
   }
@@ -916,6 +952,7 @@ class AuthService extends ChangeNotifier {
       await syncUserWithBackend(signUpMethod: 'apple', sendFullName: true);
     } catch (e) {
       debugPrint('❌ AuthService: Error linking with Apple: $e');
+      // Re-throw for UI to handle - this is a user action
       rethrow;
     }
   }
@@ -966,7 +1003,12 @@ class AuthService extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('❌ AuthService: Error signing out: $e');
-      rethrow;
+      // Don't crash the app - complete silently on failure
+      // Still clear local state even if sign out fails
+      _currentUser = null;
+      _apiService.clearAuthToken();
+      _tokenRefreshTimer?.cancel();
+      notifyListeners();
     }
   }
 

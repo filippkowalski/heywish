@@ -154,7 +154,7 @@ $timestamp''';
       }
     } catch (e) {
       print('❌ Error sending feedback: $e');
-      rethrow;
+      // Don't crash the app - Telegram is optional feature
     }
   }
 

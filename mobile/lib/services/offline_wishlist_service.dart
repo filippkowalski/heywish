@@ -70,7 +70,8 @@ class OfflineWishlistService extends ChangeNotifier {
       debugPrint('✅ OfflineWishlistService: Initialized (online: $_isOnline)');
     } catch (e) {
       debugPrint('❌ OfflineWishlistService: Initialization failed: $e');
-      rethrow;
+      // Don't crash the app - mark as not initialized and continue
+      _isInitialized = false;
     } finally {
       _initializing = null;
     }

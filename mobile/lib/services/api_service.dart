@@ -569,7 +569,8 @@ class ApiService {
       return response as Map<String, dynamic>?;
     } catch (e) {
       debugPrint('❌ API: Error merging accounts: $e');
-      rethrow;
+      // Return null for graceful degradation - caller should check for null
+      return null;
     }
   }
 
@@ -621,6 +622,7 @@ class ApiService {
     // Log API errors to Crashlytics for non-4xx errors (excluding 401/403 which are expected)
     final statusCode = error.response?.statusCode;
     final shouldLogToCrashlytics = error.type != DioExceptionType.cancel &&
+        error.type != DioExceptionType.connectionError && // Don't log expected network errors
         !(statusCode != null && statusCode >= 400 && statusCode < 500 && statusCode != 500);
 
     if (shouldLogToCrashlytics) {
@@ -643,6 +645,10 @@ class ApiService {
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
         return 'errors.timeout'.tr();
+
+      case DioExceptionType.connectionError:
+        // Handle connection errors (no internet, DNS lookup failed, etc.)
+        return 'errors.network_error'.tr();
 
       case DioExceptionType.badResponse:
         final message = error.response?.data?['message'] ?? 'An error occurred';

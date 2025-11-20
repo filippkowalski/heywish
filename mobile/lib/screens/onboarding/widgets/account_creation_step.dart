@@ -432,6 +432,20 @@ class _AccountCreationStepState extends State<AccountCreationStep>
       // Use new consolidated authentication method
       final result = await authService.authenticateWithGoogle();
 
+      if (!mounted) return;
+
+      // Handle authentication failure
+      if (result == null) {
+        dismissLoader();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('errors.network_error'.tr()),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       // Set email in onboarding data
       final email = authService.firebaseUser?.email;
       if (email != null) {
@@ -514,6 +528,20 @@ class _AccountCreationStepState extends State<AccountCreationStep>
 
       // Use new consolidated authentication method
       final result = await authService.authenticateWithApple();
+
+      if (!mounted) return;
+
+      // Handle authentication failure
+      if (result == null) {
+        dismissLoader();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('errors.network_error'.tr()),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
 
       // Set email in onboarding data
       final email = authService.firebaseUser?.email;
@@ -627,12 +655,22 @@ class _AccountCreationStepState extends State<AccountCreationStep>
       debugPrint('❌ Error creating anonymous account: $e');
       // Show error and don't navigate - user can retry
       if (context.mounted) {
+        // Show specific error message if available
+        String errorMessage;
+        if (e.toString().contains('timeout') || e.toString().contains('connection')) {
+          errorMessage = 'errors.network_error'.tr();
+        } else {
+          errorMessage = e.toString().replaceFirst('Exception: ', '');
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('errors.unknown_error'.tr()),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
             action: SnackBarAction(
               label: 'Retry',
+              textColor: Colors.white,
               onPressed: () => _skipAccountCreation(context),
             ),
           ),

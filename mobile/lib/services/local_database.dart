@@ -33,7 +33,8 @@ class LocalDatabase {
     } catch (e) {
       debugPrint('❌ LocalDatabase: Failed to initialize: $e');
       _dbCompleter.completeError(e);
-      rethrow;
+      // Don't crash the app - error is already propagated via _dbCompleter
+      // Callers should handle the error when accessing database
     }
   }
 

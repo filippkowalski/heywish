@@ -121,7 +121,7 @@ class FriendsService extends ChangeNotifier {
   }) async {
     try {
       debugPrint('🔍 FriendsService: Searching users with query: $query');
-      
+
       final response = await _apiService.get(
         '/search/users',
         queryParameters: {
@@ -133,12 +133,14 @@ class FriendsService extends ChangeNotifier {
 
       final List<dynamic> usersData = response['users'] ?? [];
       final users = usersData.map((userData) => UserSearchResult.fromJson(userData)).toList();
-      
+
       debugPrint('🔍 FriendsService: Found ${users.length} users');
       return users;
     } catch (e) {
       debugPrint('❌ FriendsService: Error searching users: $e');
-      rethrow;
+      _updateState(error: e.toString());
+      // Return empty list for graceful degradation
+      return [];
     }
   }
 
@@ -195,7 +197,7 @@ class FriendsService extends ChangeNotifier {
 
     try {
       debugPrint('👥 FriendsService: Getting friends list');
-      
+
       final response = await _apiService.get(
         '/friends',
         queryParameters: {
@@ -218,14 +220,16 @@ class FriendsService extends ChangeNotifier {
       final stillLoading = _friendsLoadingKeys.isNotEmpty;
       _updateState(isLoadingFriends: stillLoading, error: e.toString());
       debugPrint('❌ FriendsService: Error getting friends: $e');
-      rethrow;
+      // Return cached data or empty list for graceful degradation
+      // Don't rethrow - network errors are expected, not exceptional
+      return _friends.isNotEmpty ? _friends : [];
     } finally {
       _friendsRequestsInFlight.remove(requestKey);
     }
   }
 
   // Send friend request
-  Future<void> sendFriendRequest(String userId) async {
+  Future<bool> sendFriendRequest(String userId) async {
     try {
       debugPrint('📤 FriendsService: Sending friend request to user: $userId');
 
@@ -234,39 +238,51 @@ class FriendsService extends ChangeNotifier {
       });
 
       debugPrint('📤 FriendsService: Friend request sent successfully');
+      _updateState(error: null);
+      return true;
     } catch (e) {
       debugPrint('❌ FriendsService: Error sending friend request: $e');
-      rethrow;
+      _updateState(error: e.toString());
+      // Don't crash the app - return false to indicate failure
+      return false;
     }
   }
 
   // Cancel friend request
-  Future<void> cancelFriendRequest(String userId) async {
+  Future<bool> cancelFriendRequest(String userId) async {
     try {
       debugPrint('🗑️ FriendsService: Cancelling friend request to user: $userId');
 
       await _apiService.delete('/friends/request/$userId');
 
       debugPrint('🗑️ FriendsService: Friend request cancelled successfully');
+      _updateState(error: null);
+      return true;
     } catch (e) {
       debugPrint('❌ FriendsService: Error cancelling friend request: $e');
-      rethrow;
+      _updateState(error: e.toString());
+      // Don't crash the app - return false to indicate failure
+      return false;
     }
   }
 
   // Respond to friend request
-  Future<void> respondToFriendRequest(String requestId, String action) async {
+  Future<bool> respondToFriendRequest(String requestId, String action) async {
     try {
       debugPrint('📩 FriendsService: Responding to friend request $requestId with action: $action');
-      
+
       await _apiService.post('/friends/requests/$requestId/respond', {
         'action': action,
       });
-      
+
       debugPrint('📩 FriendsService: Friend request response sent successfully');
+      _updateState(error: null);
+      return true;
     } catch (e) {
       debugPrint('❌ FriendsService: Error responding to friend request: $e');
-      rethrow;
+      _updateState(error: e.toString());
+      // Don't crash the app - return false to indicate failure
+      return false;
     }
   }
 
@@ -323,10 +339,10 @@ class FriendsService extends ChangeNotifier {
   }) async {
     _friendRequestLoadingKeys.add(requestKey);
     _updateState(isLoadingRequests: true, error: null);
-    
+
     try {
       debugPrint('📬 FriendsService: Getting $type friend requests');
-      
+
       final response = await _apiService.get(
         '/friends/requests',
         queryParameters: {
@@ -355,7 +371,11 @@ class FriendsService extends ChangeNotifier {
       final stillLoading = _friendRequestLoadingKeys.isNotEmpty;
       _updateState(isLoadingRequests: stillLoading, error: e.toString());
       debugPrint('❌ FriendsService: Error getting friend requests: $e');
-      rethrow;
+      // Return cached data or empty list for graceful degradation
+      // Don't rethrow - network errors are expected, not exceptional
+      return type == 'received'
+          ? (_friendRequests.isNotEmpty ? _friendRequests : [])
+          : (_sentRequests.isNotEmpty ? _sentRequests : []);
     } finally {
       _friendRequestsInFlight.remove(requestKey);
     }
@@ -369,7 +389,7 @@ class FriendsService extends ChangeNotifier {
   }) async {
     try {
       debugPrint('📰 FriendsService: Getting activity feed with filter: $filter');
-      
+
       final response = await _apiService.get(
         '/feed',
         queryParameters: {
@@ -381,44 +401,50 @@ class FriendsService extends ChangeNotifier {
 
       final List<dynamic> activitiesData = response['activities'] ?? [];
       final activities = activitiesData.map((activityData) => Activity.fromJson(activityData)).toList();
-      
+
       debugPrint('📰 FriendsService: Found ${activities.length} activities');
+      _updateState(error: null);
       return activities;
     } catch (e) {
       debugPrint('❌ FriendsService: Error getting activity feed: $e');
-      rethrow;
+      _updateState(error: e.toString());
+      // Return empty list for graceful degradation
+      return [];
     }
   }
 
   // Get user profile
-  Future<UserProfile> getUserProfile(String userId) async {
+  Future<UserProfile?> getUserProfile(String userId) async {
     try {
       debugPrint('👤 FriendsService: Getting user profile for: $userId');
-      
+
       final response = await _apiService.get('/users/$userId');
       final userData = response['user'];
-      
+
       final profile = UserProfile.fromJson(userData);
       debugPrint('👤 FriendsService: Got profile for: ${profile.username}');
+      _updateState(error: null);
       return profile;
     } catch (e) {
       debugPrint('❌ FriendsService: Error getting user profile: $e');
-      rethrow;
+      _updateState(error: e.toString());
+      // Return null for graceful degradation - caller should check for null
+      return null;
     }
   }
 
   // Accept friend request
-  Future<void> acceptFriendRequest(String requestId) async {
-    await respondToFriendRequest(requestId, 'accept');
+  Future<bool> acceptFriendRequest(String requestId) async {
+    return await respondToFriendRequest(requestId, 'accept');
   }
 
   // Decline friend request
-  Future<void> declineFriendRequest(String requestId) async {
-    await respondToFriendRequest(requestId, 'decline');
+  Future<bool> declineFriendRequest(String requestId) async {
+    return await respondToFriendRequest(requestId, 'decline');
   }
 
   // Block friend request
-  Future<void> blockFriendRequest(String requestId) async {
-    await respondToFriendRequest(requestId, 'block');
+  Future<bool> blockFriendRequest(String requestId) async {
+    return await respondToFriendRequest(requestId, 'block');
   }
 }

@@ -46,6 +46,15 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
 
       if (!mounted) return;
 
+      // Handle authentication failure
+      if (result == null) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'errors.network_error'.tr();
+        });
+        return;
+      }
+
       // Handle merge scenario
       if (result.action == NavigationAction.showMergeDialog) {
         setState(() => _isLoading = false);
@@ -116,6 +125,15 @@ class _SignInBottomSheetContentState extends State<_SignInBottomSheetContent> {
       final result = await authService.authenticateWithApple();
 
       if (!mounted) return;
+
+      // Handle authentication failure
+      if (result == null) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'errors.network_error'.tr();
+        });
+        return;
+      }
 
       // Handle merge scenario
       if (result.action == NavigationAction.showMergeDialog) {

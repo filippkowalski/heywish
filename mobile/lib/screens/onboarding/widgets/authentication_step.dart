@@ -105,6 +105,19 @@ class AuthenticationStep extends StatelessWidget {
     try {
       final result = await authService.authenticateWithGoogle();
 
+      if (!context.mounted) return;
+
+      // Handle authentication failure
+      if (result == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('errors.network_error'.tr()),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       // Store auth method for analytics
       onboardingService.setAuthMethod('google');
 
@@ -151,6 +164,19 @@ class AuthenticationStep extends StatelessWidget {
   Future<void> _handleAppleSignIn(BuildContext context, AuthService authService, OnboardingService onboardingService) async {
     try {
       final result = await authService.authenticateWithApple();
+
+      if (!context.mounted) return;
+
+      // Handle authentication failure
+      if (result == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('errors.network_error'.tr()),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
 
       // Store auth method for analytics
       onboardingService.setAuthMethod('apple');
