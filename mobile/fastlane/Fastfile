@@ -34,7 +34,7 @@ lane :release_all do
   app_store_connect_api_key(
     key_id: "LW4DRB22XD",
     issuer_id: "aeefe3dd-9558-4a88-bc16-c02f973fe67e",
-    key_filepath: File.expand_path("~/.appstoreconnect/private_keys/AuthKey_LW4DRB22XD.p8"),
+    key_filepath: "#{Dir.home}/.appstoreconnect/private_keys/AuthKey_LW4DRB22XD.p8",
     duration: 1200,
     in_house: false
   )
