@@ -316,7 +316,10 @@ class _WishlistsScreenState extends State<WishlistsScreen>
                   opacity: _isFabVisible ? 1.0 : 0.0,
                   child: FloatingActionButton(
                     onPressed: () async {
-                      final result = await AddWishScreen.show(context);
+                      final result = await AddWishScreen.show(
+                        context,
+                        source: 'homepage',
+                      );
                       // Refresh if wish was added successfully
                       if (result == true && mounted) {
                         await _loadWishlists();
@@ -837,7 +840,10 @@ class _WishlistsScreenState extends State<WishlistsScreen>
             const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: () async {
-                final result = await AddWishScreen.show(context);
+                final result = await AddWishScreen.show(
+                  context,
+                  source: 'homepage',
+                );
                 // Refresh if wish was added successfully
                 if (result == true && mounted) {
                   await _loadWishlists();

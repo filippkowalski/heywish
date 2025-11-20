@@ -19,37 +19,26 @@ class AddWishScreen extends StatefulWidget {
   final String? wishlistId;
   final String? initialUrl;
   final Map<String, dynamic>? prefilledData;
+  final String? source; // Track source: 'homepage' or 'inspo'
 
   const AddWishScreen({
     super.key,
     this.wishlistId,
     this.initialUrl,
     this.prefilledData,
+    this.source,
   });
 
-  /// Show as bottom sheet (with optional first-time tip)
+  /// Show as bottom sheet
   static Future<bool?> show(
     BuildContext context, {
     String? wishlistId,
     String? initialUrl,
     Map<String, dynamic>? prefilledData,
+    String? source,
   }) async {
-    // Check if we should show the tip first
-    final preferencesService = PreferencesService();
-
-    if (!preferencesService.hasSeenAddItemTip) {
-      // Mark as seen first
-      await preferencesService.setHasSeenAddItemTip(true);
-
-      // Show the tip and wait for it to be dismissed
-      await AddItemTipBottomSheet.show(context);
-
-      // Check if context is still valid after tip dismissal
-      if (!context.mounted) return null;
-    }
-
-    // Now show the add item screen
-    return NativeTransitions.showNativeModalBottomSheet<bool>(
+    // Show the add item screen
+    final result = await NativeTransitions.showNativeModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       isDismissible: true,
@@ -57,8 +46,28 @@ class AddWishScreen extends StatefulWidget {
         wishlistId: wishlistId,
         initialUrl: initialUrl,
         prefilledData: prefilledData,
+        source: source,
       ),
     );
+
+    // If successful save from homepage and user hasn't seen tip, show it
+    if (result == true &&
+        source == 'homepage' &&
+        context.mounted) {
+      final preferencesService = PreferencesService();
+
+      if (!preferencesService.hasSeenAddItemTip) {
+        // Mark as seen
+        await preferencesService.setHasSeenAddItemTip(true);
+
+        // Show the tip after successful save
+        if (context.mounted) {
+          await AddItemTipBottomSheet.show(context);
+        }
+      }
+    }
+
+    return result;
   }
 
   @override

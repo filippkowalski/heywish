@@ -62,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       case SharedContentType.url:
         if (content.url != null) {
           // Show add wish bottom sheet with pre-filled URL
+          // Don't pass source - user already used share, no need for tip
           await AddWishScreen.show(
             context,
             initialUrl: content.url,
@@ -72,6 +73,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       case SharedContentType.image:
         if (content.imagePath != null) {
           // Show add wish bottom sheet with pre-filled image
+          // Don't pass source - user already used share, no need for tip
           await AddWishScreen.show(
             context,
             prefilledData: {
