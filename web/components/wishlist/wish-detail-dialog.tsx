@@ -87,7 +87,7 @@ export function WishDetailDialog({
   shareToken,
 }: WishDetailDialogProps) {
   const { backendUser } = useAuth();
-  const apiAuth = useApiAuth();
+  const { getMyWishlists } = useApiAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showReservationForm, setShowReservationForm] = useState(false);
   const [formValues, setFormValues] = useState({ name: "", email: "", message: "" });
@@ -127,7 +127,7 @@ export function WishDetailDialog({
     const loadWishlists = async () => {
       if (backendUser) {
         try {
-          const userWishlists = await apiAuth.getMyWishlists();
+          const userWishlists = await getMyWishlists();
           setWishlists(userWishlists);
         } catch (error) {
           console.error('Failed to load wishlists:', error);
@@ -136,7 +136,7 @@ export function WishDetailDialog({
     };
 
     loadWishlists();
-  }, [backendUser, apiAuth]);
+  }, [backendUser, getMyWishlists]);
 
   // Open add wish modal after successful sign-in
   useEffect(() => {

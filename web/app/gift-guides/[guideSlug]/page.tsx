@@ -20,7 +20,7 @@ export default function GuideDetailPage() {
   const params = useParams();
   const guideSlug = params?.guideSlug as string;
   const { user, backendUser } = useAuth();
-  const api = useApiAuth();
+  const { getMyWishlists } = useApiAuth();
   const isLoggedIn = !!user && !!backendUser;
 
   // State management
@@ -44,7 +44,7 @@ export default function GuideDetailPage() {
     if (isLoggedIn) {
       const fetchWishlists = async () => {
         try {
-          const data = await api.getMyWishlists();
+          const data = await getMyWishlists();
           setWishlists(data);
         } catch (error) {
           console.error('Failed to fetch wishlists:', error);
@@ -53,7 +53,7 @@ export default function GuideDetailPage() {
 
       fetchWishlists();
     }
-  }, [isLoggedIn, api]);
+  }, [isLoggedIn, getMyWishlists]);
 
   // Handle save button click
   const handleSaveItem = (item: GuideItem) => {

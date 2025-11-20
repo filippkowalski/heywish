@@ -13,7 +13,7 @@ import { Sparkles } from 'lucide-react';
 
 export default function InspoPage() {
   const { user, backendUser } = useAuth();
-  const api = useApiAuth();
+  const { getMyWishlists } = useApiAuth();
   const isLoggedIn = !!user && !!backendUser;
 
   // State management
@@ -28,7 +28,7 @@ export default function InspoPage() {
     if (isLoggedIn) {
       const fetchWishlists = async () => {
         try {
-          const data = await api.getMyWishlists();
+          const data = await getMyWishlists();
           setWishlists(data);
         } catch (error) {
           console.error('Failed to fetch wishlists:', error);
@@ -37,7 +37,7 @@ export default function InspoPage() {
 
       fetchWishlists();
     }
-  }, [isLoggedIn, api]);
+  }, [isLoggedIn, getMyWishlists]);
 
   // Filter items by category
   const filteredItems = useMemo(() => {
