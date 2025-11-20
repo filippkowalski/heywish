@@ -5,6 +5,27 @@ All notable changes to Jinnie will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.1] - 2025-11-20
+
+### Mobile App - Fixed
+- **Wish Detail UI**: Fixed menu button not appearing for wishes without images - menu and close buttons now properly display in the same row for all wishes
+- **Share Tip Display**: Resolved issue where first-time share extension tip wasn't showing after adding first wish from homepage
+- **Context Stability**: Added proper timing delay to ensure UI context is stable when showing bottom sheets after navigation
+- **Button Spacing**: Increased top spacing in wish detail sheets to prevent buttons from overlaying title text
+- **Error Handling**: Improved app stability with better error handling to prevent crashes during wish operations
+
+### Mobile App - Improved
+- **Wish Detail Layout**: Enhanced layout for wishes without images with proper minimum height (140px) and spacing (80px top margin)
+- **Share Tip UX**: Share extension tip now appears reliably after first successful wish creation with improved context checking
+- **Debug Logging**: Added comprehensive debug logging for troubleshooting share tip and UI issues
+- **UI Polish**: Refined wish card and detail screen UI for better visual consistency
+
+### Build System - Fixed
+- **Fastlane Configuration**: Fixed App Store Connect API key handling in iOS release pipeline
+- **CI/CD**: Improved lane context management for more reliable automated builds
+
+---
+
 ## [1.12.0] - 2025-11-19
 
 ### Mobile App - Added
