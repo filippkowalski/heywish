@@ -51,20 +51,36 @@ class AddWishScreen extends StatefulWidget {
     );
 
     // If successful save from homepage and user hasn't seen tip, show it
-    if (result == true &&
-        source == 'homepage' &&
-        context.mounted) {
+    if (result == true && source == 'homepage') {
       final preferencesService = PreferencesService();
 
+      debugPrint('🎯 AddWishScreen: Checking share tip conditions...');
+      debugPrint('  - Result: $result');
+      debugPrint('  - Source: $source');
+      debugPrint('  - Has seen tip: ${preferencesService.hasSeenAddItemTip}');
+
       if (!preferencesService.hasSeenAddItemTip) {
+        debugPrint('✅ Showing share tip bottom sheet');
         // Mark as seen
         await preferencesService.setHasSeenAddItemTip(true);
 
+        // Wait a brief moment for context to stabilize after bottom sheet dismissal
+        await Future.delayed(const Duration(milliseconds: 100));
+
         // Show the tip after successful save
         if (context.mounted) {
+          debugPrint('✅ Context is mounted, showing tip');
           await AddItemTipBottomSheet.show(context);
+        } else {
+          debugPrint('⚠️ Context not mounted, cannot show tip');
         }
+      } else {
+        debugPrint('⏭️ User has already seen share tip, skipping');
       }
+    } else {
+      debugPrint('❌ Share tip conditions not met:');
+      debugPrint('  - Result: $result');
+      debugPrint('  - Source: $source');
     }
 
     return result;

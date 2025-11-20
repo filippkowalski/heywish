@@ -295,62 +295,6 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                     ),
                   ),
                 ),
-                // Menu button overlay (top-right) - only show if not read-only
-                if (!widget.isReadOnly)
-                  Positioned(
-                    top: 16,
-                    right: 16,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, color: Colors.white, size: 20),
-                        onSelected: (value) {
-                          if (value == 'edit') {
-                            _editWish();
-                          } else if (value == 'share') {
-                            _shareWish();
-                          } else if (value == 'delete') {
-                            _deleteWish();
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                const Icon(Icons.edit_outlined, size: 20),
-                                const SizedBox(width: 12),
-                                Text('app.edit'.tr()),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: 'share',
-                            child: Row(
-                              children: [
-                                const Icon(Icons.share_outlined, size: 20),
-                                const SizedBox(width: 12),
-                                Text('app.share'.tr()),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                                const SizedBox(width: 12),
-                                Text('app.delete'.tr(), style: const TextStyle(color: Colors.red)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 // Price and status badges overlay (bottom-left)
                 Positioned(
                   bottom: 16,
@@ -471,11 +415,19 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
           Flexible(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 36),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Add top spacing if there's an image
-                  if (wish!.images.isNotEmpty) const SizedBox(height: 16),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  // Ensure minimum height when no images (space for buttons)
+                  minHeight: wish!.images.isEmpty ? 140 : 0,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Add top spacing
+                    if (wish!.images.isNotEmpty)
+                      const SizedBox(height: 16)
+                    else
+                      const SizedBox(height: 80), // Extra space for close/menu buttons when no image
 
                   // Product link card preview - moved to top (most important)
                   if (wish!.url != null) ...[
@@ -686,7 +638,8 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                       ],
                     ),
                   ],
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -754,6 +707,65 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
                 ),
               ),
             ),
+
+            // Menu button - top right corner (only show if not read-only)
+            if (!widget.isReadOnly)
+              Positioned(
+                top: 16,
+                right: 16,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, color: Colors.white, size: 20),
+                    padding: const EdgeInsets.all(8),
+                    constraints: const BoxConstraints(),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _editWish();
+                      } else if (value == 'share') {
+                        _shareWish();
+                      } else if (value == 'delete') {
+                        _deleteWish();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.edit_outlined, size: 20),
+                            const SizedBox(width: 12),
+                            Text('app.edit'.tr()),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'share',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.share_outlined, size: 20),
+                            const SizedBox(width: 12),
+                            Text('app.share'.tr()),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                            const SizedBox(width: 12),
+                            Text('app.delete'.tr(), style: const TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
       ),

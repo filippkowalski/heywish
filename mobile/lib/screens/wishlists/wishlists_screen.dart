@@ -905,7 +905,10 @@ class _WishlistsScreenState extends State<WishlistsScreen>
 
                     ElevatedButton.icon(
                       onPressed: () async {
-                        final result = await AddWishScreen.show(context);
+                        final result = await AddWishScreen.show(
+                          context,
+                          source: 'homepage',
+                        );
                         // Refresh if wish was added successfully
                         if (result == true && mounted) {
                           await _loadWishlists();
