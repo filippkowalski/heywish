@@ -656,5 +656,8 @@
   "wishlist_valuation": {
     "total_value": "Valeur Totale",
     "no_prices": "Aucun prix fixé"
+  },
+  "add_wish": {
+    "paste": "Coller"
   }
 }

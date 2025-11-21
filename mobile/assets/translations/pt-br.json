@@ -656,5 +656,8 @@
   "wishlist_valuation": {
     "total_value": "Valor Total",
     "no_prices": "Sem preços definidos"
+  },
+  "add_wish": {
+    "paste": "Colar"
   }
 }

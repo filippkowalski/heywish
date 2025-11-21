@@ -657,5 +657,8 @@
   "wishlist_valuation": {
     "total_value": "Total Value",
     "no_prices": "No prices set"
+  },
+  "add_wish": {
+    "paste": "Paste"
   }
 }
