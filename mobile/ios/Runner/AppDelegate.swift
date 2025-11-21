@@ -26,11 +26,22 @@ import FirebaseMessaging
 
     // Set up share extension method channel
     if let controller = window?.rootViewController as? FlutterViewController {
-      let channel = FlutterMethodChannel(name: "com.wishlists.gifts/share",
+      let shareChannel = FlutterMethodChannel(name: "com.wishlists.gifts/share",
                                         binaryMessenger: controller.binaryMessenger)
-      channel.setMethodCallHandler { [weak self] (call, result) in
+      shareChannel.setMethodCallHandler { [weak self] (call, result) in
         if call.method == "getSharedContent" {
           self?.getSharedContent(result: result)
+        } else {
+          result(FlutterMethodNotImplemented)
+        }
+      }
+
+      // Set up clipboard method channel
+      let clipboardChannel = FlutterMethodChannel(name: "com.wishlists.gifts/clipboard",
+                                        binaryMessenger: controller.binaryMessenger)
+      clipboardChannel.setMethodCallHandler { [weak self] (call, result) in
+        if call.method == "getClipboardImage" {
+          self?.getClipboardImage(result: result)
         } else {
           result(FlutterMethodNotImplemented)
         }
@@ -61,6 +72,35 @@ import FirebaseMessaging
     userDefaults.synchronize()
 
     result(sharedData)
+  }
+
+  private func getClipboardImage(result: FlutterResult) {
+    // Check if clipboard has an image
+    guard let image = UIPasteboard.general.image else {
+      print("⚠️ No image in clipboard")
+      result(nil)
+      return
+    }
+
+    // Save image to temporary directory
+    let fileName = "clipboard_\(Date().timeIntervalSince1970).jpg"
+    let tempDir = FileManager.default.temporaryDirectory
+    let fileURL = tempDir.appendingPathComponent(fileName)
+
+    guard let imageData = image.jpegData(compressionQuality: 0.85) else {
+      print("❌ Failed to convert image to JPEG")
+      result(nil)
+      return
+    }
+
+    do {
+      try imageData.write(to: fileURL)
+      print("✅ Clipboard image saved to: \(fileURL.path)")
+      result(fileURL.path)
+    } catch {
+      print("❌ Error saving clipboard image: \(error)")
+      result(nil)
+    }
   }
 
   // Handle APNs token registration

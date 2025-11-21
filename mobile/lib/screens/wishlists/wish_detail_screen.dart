@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -5,6 +6,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 import '../../models/wish.dart';
 import '../../services/wishlist_service.dart';
 import '../../theme/app_theme.dart';
@@ -963,7 +967,7 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
 
   void _shareWish() async {
     if (wish == null) {
-      print('DEBUG: Share failed - wish is null');
+      debugPrint('DEBUG: Share failed - wish is null');
       return;
     }
 
@@ -985,15 +989,43 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
       }
 
       final textToShare = shareText.toString();
-      print('DEBUG: Attempting to share: $textToShare');
+      debugPrint('DEBUG: Attempting to share: $textToShare');
 
-      // Share using system share sheet
-      final result = await Share.share(
-        textToShare,
-        subject: wish!.title,
-      );
+      ShareResult? result;
 
-      print('DEBUG: Share result: ${result.status}');
+      // Check if there's an image to share
+      if (wish!.imageUrl != null && wish!.imageUrl!.isNotEmpty) {
+        debugPrint('DEBUG: Downloading image for sharing: ${wish!.imageUrl}');
+
+        // Download image to temporary file
+        final imageFile = await _downloadImageForSharing(wish!.imageUrl!);
+
+        if (imageFile != null) {
+          debugPrint('DEBUG: Image downloaded successfully, sharing with image');
+          // Share with image using shareXFiles
+          result = await Share.shareXFiles(
+            [XFile(imageFile.path)],
+            text: textToShare,
+            subject: wish!.title,
+          );
+        } else {
+          debugPrint('DEBUG: Failed to download image, sharing text only');
+          // Fall back to text-only share
+          result = await Share.share(
+            textToShare,
+            subject: wish!.title,
+          );
+        }
+      } else {
+        debugPrint('DEBUG: No image to share, sharing text only');
+        // Share text only
+        result = await Share.share(
+          textToShare,
+          subject: wish!.title,
+        );
+      }
+
+      debugPrint('DEBUG: Share result: ${result.status}');
 
       // Success feedback
       HapticFeedback.mediumImpact();
@@ -1009,7 +1041,7 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
         );
       }
     } catch (e) {
-      print('DEBUG: Share error: $e');
+      debugPrint('DEBUG: Share error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1018,6 +1050,45 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
           ),
         );
       }
+    }
+  }
+
+  /// Download image to temporary directory for sharing
+  Future<File?> _downloadImageForSharing(String imageUrl) async {
+    try {
+      // Get temporary directory
+      final tempDir = await getTemporaryDirectory();
+
+      // Extract filename from URL or generate one
+      final fileName = path.basename(Uri.parse(imageUrl).path);
+      final extension = path.extension(fileName).isNotEmpty
+          ? path.extension(fileName)
+          : '.jpg'; // Default to .jpg if no extension
+
+      final filePath = path.join(
+        tempDir.path,
+        'share_${DateTime.now().millisecondsSinceEpoch}$extension',
+      );
+
+      debugPrint('DEBUG: Downloading image from: $imageUrl');
+      debugPrint('DEBUG: Saving to: $filePath');
+
+      // Download image
+      final response = await http.get(Uri.parse(imageUrl));
+
+      if (response.statusCode == 200) {
+        // Write to file
+        final file = File(filePath);
+        await file.writeAsBytes(response.bodyBytes);
+        debugPrint('DEBUG: Image downloaded successfully: ${file.lengthSync()} bytes');
+        return file;
+      } else {
+        debugPrint('DEBUG: Failed to download image: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('DEBUG: Error downloading image for sharing: $e');
+      return null;
     }
   }
 }

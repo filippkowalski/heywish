@@ -30,17 +30,18 @@ lane :release_all do
   # Upload to App Store Connect with metadata and submit for review
   UI.header("📤 Uploading to App Store Connect...")
 
-  # Set up API key (will be automatically used by upload_to_app_store)
-  app_store_connect_api_key(
+  # Set up API key and pass directly to upload_to_app_store
+  api_key = app_store_connect_api_key(
     key_id: "LW4DRB22XD",
     issuer_id: "aeefe3dd-9558-4a88-bc16-c02f973fe67e",
-    key_filepath: "#{Dir.home}/.appstoreconnect/private_keys/AuthKey_LW4DRB22XD.p8",
+    key_filepath: "AuthKey_LW4DRB22XD.p8",
     duration: 1200,
     in_house: false
   )
 
-  # Upload - automatically uses API key from lane context
+  # Upload - pass API key explicitly
   upload_to_app_store(
+    api_key: api_key,
     skip_screenshots: true,
     skip_metadata: false,
     submit_for_review: true,

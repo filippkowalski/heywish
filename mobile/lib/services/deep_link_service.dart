@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../screens/wishlists/add_wish_screen.dart';
 import 'api_service.dart';
 
 const Set<String> _deepLinkHosts = {'jinnie.app', 'www.jinnie.app'};
@@ -311,7 +312,7 @@ class DeepLinkService {
   }
 
   /// Navigate to add wish screen
-  void _navigateToAddWish(Map<String, String> queryParameters) {
+  void _navigateToAddWish(Map<String, String> queryParameters) async {
     debugPrint('🔗 _navigateToAddWish called');
     debugPrint('   - queryParameters: $queryParameters');
 
@@ -321,20 +322,15 @@ class DeepLinkService {
     }
 
     try {
-      // Build extras map for navigation
-      final Map<String, dynamic> extras = {};
-
       // Extract URL parameter
       final url = queryParameters['url'];
       if (url != null && url.isNotEmpty) {
-        extras['initialUrl'] = url;
         debugPrint('   - initialUrl: $url');
       }
 
       // Extract wishlist ID parameter
       final wishlistId = queryParameters['wishlistId'] ?? queryParameters['wishlist_id'];
       if (wishlistId != null && wishlistId.isNotEmpty) {
-        extras['wishlistId'] = wishlistId;
         debugPrint('   - wishlistId: $wishlistId');
       }
 
@@ -345,8 +341,9 @@ class DeepLinkService {
       final currency = queryParameters['currency'];
       final image = queryParameters['image'];
 
+      Map<String, dynamic>? prefilledData;
       if (title != null || description != null || price != null || currency != null || image != null) {
-        final Map<String, dynamic> prefilledData = {};
+        prefilledData = {};
         if (title != null && title.isNotEmpty) prefilledData['title'] = title;
         if (description != null && description.isNotEmpty) prefilledData['description'] = description;
         if (price != null && price.isNotEmpty) prefilledData['price'] = price;
@@ -354,24 +351,34 @@ class DeepLinkService {
         if (image != null && image.isNotEmpty) prefilledData['image'] = image;
 
         if (prefilledData.isNotEmpty) {
-          extras['prefilledData'] = prefilledData;
           debugPrint('   - prefilledData: $prefilledData');
+        } else {
+          prefilledData = null;
         }
       }
 
       // Navigate to home first to ensure proper back stack
-      debugPrint('📱 Building navigation stack: home -> add-wish');
+      debugPrint('📱 Building navigation stack: home -> add-wish bottom sheet');
       _router!.go('/home');
 
-      // Wait a frame for home to render, then push add wish screen on top
-      Future.delayed(const Duration(milliseconds: 100), () {
-        debugPrint('📱 Pushing add-wish screen on top of home');
-        if (extras.isEmpty) {
-          _router!.push('/add-wish');
-        } else {
-          _router!.push('/add-wish', extra: extras);
+      // Wait for home to render, then show add wish as bottom sheet
+      Future.delayed(const Duration(milliseconds: 300), () async {
+        final context = _router!.routerDelegate.navigatorKey.currentContext;
+        if (context == null) {
+          debugPrint('❌ No context available for showing bottom sheet');
+          return;
         }
-        debugPrint('📱 ✅ Add wish navigation initiated');
+
+        debugPrint('📱 Showing add-wish as bottom sheet');
+        // Import AddWishScreen to use its show method
+        await AddWishScreen.show(
+          context,
+          wishlistId: wishlistId,
+          initialUrl: url,
+          prefilledData: prefilledData,
+          source: 'deeplink',
+        );
+        debugPrint('📱 ✅ Add wish bottom sheet displayed');
       });
     } catch (e) {
       debugPrint('❌ Error during add wish navigation: $e');

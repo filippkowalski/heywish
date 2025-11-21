@@ -32,32 +32,20 @@ class ShareViewController: UIViewController {
     }
 
     private func handleAttachments(_ attachments: [NSItemProvider]) {
-        // Priority order: URL > Image > Text
+        // Priority order: Image > URL > Text
+        // Changed to prioritize images so that when sharing from Photos app,
+        // we get the actual image file instead of the file:// URL
 
-        // 1. Check for URLs first (most common for wish items)
-        for provider in attachments {
-            if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
-                provider.loadItem(forTypeIdentifier: UTType.url.identifier, options: nil) { [weak self] (item, error) in
-                    if let url = item as? URL {
-                        self?.saveSharedData(url: url.absoluteString)
-                    } else if let data = item as? Data, let urlString = String(data: data, encoding: .utf8) {
-                        self?.saveSharedData(url: urlString)
-                    }
-                    self?.completeRequest()
-                }
-                return
-            }
-        }
-
-        // 2. Check for Images
+        // 1. Check for Images first
         for provider in attachments {
             if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
                 provider.loadItem(forTypeIdentifier: UTType.image.identifier, options: nil) { [weak self] (item, error) in
                     var imagePath: String?
 
                     if let url = item as? URL {
-                        // Image file URL
-                        imagePath = url.path
+                        // Image file URL - copy to app's temp directory
+                        // This ensures the file persists after the share extension closes
+                        imagePath = self?.copyImageToTemp(from: url)
                     } else if let image = item as? UIImage {
                         // UIImage object - save to temp directory
                         imagePath = self?.saveImageToTemp(image)
@@ -67,7 +55,27 @@ class ShareViewController: UIViewController {
                     }
 
                     if let path = imagePath {
+                        print("✅ Processed image: \(path)")
                         self?.saveSharedData(imagePath: path)
+                    } else {
+                        print("⚠️ Failed to process image")
+                    }
+                    self?.completeRequest()
+                }
+                return
+            }
+        }
+
+        // 2. Check for URLs (for web links)
+        for provider in attachments {
+            if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
+                provider.loadItem(forTypeIdentifier: UTType.url.identifier, options: nil) { [weak self] (item, error) in
+                    if let url = item as? URL {
+                        print("✅ Processed URL: \(url.absoluteString)")
+                        self?.saveSharedData(url: url.absoluteString)
+                    } else if let data = item as? Data, let urlString = String(data: data, encoding: .utf8) {
+                        print("✅ Processed URL from data: \(urlString)")
+                        self?.saveSharedData(url: urlString)
                     }
                     self?.completeRequest()
                 }
@@ -82,8 +90,10 @@ class ShareViewController: UIViewController {
                     if let text = item as? String {
                         // Check if text is a URL
                         if let url = URL(string: text), url.scheme != nil {
+                            print("✅ Processed text as URL: \(text)")
                             self?.saveSharedData(url: text)
                         } else {
+                            print("✅ Processed text: \(text)")
                             self?.saveSharedData(text: text)
                         }
                     }
@@ -94,7 +104,29 @@ class ShareViewController: UIViewController {
         }
 
         // Nothing matched
+        print("⚠️ No matching attachment types found")
         completeRequest()
+    }
+
+    private func copyImageToTemp(from sourceURL: URL) -> String? {
+        let fileName = "jinnie_shared_\(Date().timeIntervalSince1970).\(sourceURL.pathExtension)"
+        let tempDir = FileManager.default.temporaryDirectory
+        let destURL = tempDir.appendingPathComponent(fileName)
+
+        do {
+            // Copy the file to our temp directory
+            // Use .copy to ensure the file persists after share extension closes
+            try FileManager.default.copyItem(at: sourceURL, to: destURL)
+            print("✅ Copied image file: \(sourceURL.path) -> \(destURL.path)")
+            return destURL.path
+        } catch {
+            print("❌ Error copying image file: \(error)")
+            // Fallback: Try to load and save as UIImage
+            if let image = UIImage(contentsOfFile: sourceURL.path) {
+                return saveImageToTemp(image)
+            }
+            return nil
+        }
     }
 
     private func saveImageToTemp(_ image: UIImage) -> String? {
@@ -108,6 +140,7 @@ class ShareViewController: UIViewController {
 
         do {
             try data.write(to: fileURL)
+            print("✅ Saved UIImage to temp: \(fileURL.path)")
             return fileURL.path
         } catch {
             print("❌ Error saving shared image: \(error)")

@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:http/http.dart' as http;
 import 'dart:io';
 import '../../services/wishlist_service.dart';
 import '../../services/api_service.dart';
@@ -91,6 +92,9 @@ class AddWishScreen extends StatefulWidget {
 }
 
 class _AddWishScreenState extends State<AddWishScreen> {
+  // Platform channel for clipboard
+  static const platform = MethodChannel('com.wishlists.gifts/clipboard');
+
   // Form controllers
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -200,16 +204,41 @@ class _AddWishScreenState extends State<AddWishScreen> {
         _visibleFields.add('image');
       }
     }
-    // Otherwise pre-fill URL if provided from clipboard
+    // Otherwise pre-fill URL if provided from share or clipboard
     else if (widget.initialUrl != null) {
-      _urlController.text = widget.initialUrl!;
-      _visibleFields.add('url');
-      // Trigger scraping after a short delay to allow UI to settle
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          _scrapeUrl(widget.initialUrl!);
-        }
-      });
+      // Check if the URL is an image URL (pattern matching)
+      if (_isImageUrl(widget.initialUrl!)) {
+        // It's an image URL, treat as image
+        _scrapedImageUrl = widget.initialUrl!;
+        _visibleFields.add('image');
+      } else {
+        // Check if it's an image via HTTP Content-Type
+        Future.delayed(const Duration(milliseconds: 100), () async {
+          if (!mounted) return;
+
+          final isImage = await _checkIfUrlIsImage(widget.initialUrl!);
+
+          if (mounted && isImage) {
+            // It's an image, set as image
+            setState(() {
+              _scrapedImageUrl = widget.initialUrl!;
+              _visibleFields.add('image');
+            });
+          } else if (mounted) {
+            // Regular URL, add to URL field and trigger scraping
+            setState(() {
+              _urlController.text = widget.initialUrl!;
+              _visibleFields.add('url');
+            });
+            // Trigger scraping after a short delay
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (mounted) {
+                _scrapeUrl(widget.initialUrl!);
+              }
+            });
+          }
+        });
+      }
     }
 
     // Pre-select wishlist with priority:
@@ -331,18 +360,76 @@ class _AddWishScreenState extends State<AddWishScreen> {
     }
   }
 
-  /// Paste URL from clipboard
+  /// Smart paste from clipboard - handles images, URLs, and text
   Future<void> _pasteFromClipboard() async {
     try {
+      // 1. Check for image in clipboard (via platform channel)
+      final imagePath = await _getClipboardImage();
+
+      // 2. Get text from clipboard
       final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
       final text = clipboardData?.text?.trim();
 
-      if (text != null && text.isNotEmpty) {
-        _urlController.text = text;
+      // 3. Handle based on what we found
 
-        // Show URL field if not visible
-        if (!_visibleFields.contains('url')) {
+      // If both image and text/URL exist, prefill both
+      if (imagePath != null && text != null && text.isNotEmpty) {
+        setState(() {
+          // Set the image
+          _selectedImage = File(imagePath);
+          _visibleFields.add('image');
+
+          // Set the URL/text
+          if (_isValidUrl(text)) {
+            _urlController.text = text;
+            _visibleFields.add('url');
+            // Trigger scraping
+            _scrapeUrl(text);
+          } else if (_titleController.text.isEmpty) {
+            // Plain text → title
+            _titleController.text = text;
+          }
+        });
+        return;
+      }
+
+      // Only image found
+      if (imagePath != null) {
+        setState(() {
+          _selectedImage = File(imagePath);
+          _visibleFields.add('image');
+        });
+        return;
+      }
+
+      // Only text found
+      if (text != null && text.isNotEmpty) {
+        // Check if it's an image URL
+        if (_isImageUrl(text)) {
           setState(() {
+            _scrapedImageUrl = text;
+            _visibleFields.add('image');
+          });
+          return;
+        }
+
+        // Check if it's a valid URL
+        if (_isValidUrl(text)) {
+          // Try to detect if it's an image by checking HTTP headers
+          final isImage = await _checkIfUrlIsImage(text);
+
+          if (isImage) {
+            // It's an image, set as image URL only
+            setState(() {
+              _scrapedImageUrl = text;
+              _visibleFields.add('image');
+            });
+            return;
+          }
+
+          // Not an image, treat as regular URL for scraping
+          setState(() {
+            _urlController.text = text;
             _visibleFields.add('url');
           });
           // Request focus after adding field
@@ -351,32 +438,112 @@ class _AddWishScreenState extends State<AddWishScreen> {
               _urlFocusNode.requestFocus();
             }
           });
-        }
-
-        // Trigger scraping if it's a valid URL
-        if (_isValidUrl(text)) {
+          // Trigger scraping
           _scrapeUrl(text);
+          return;
         }
 
-        // Show feedback
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.content_paste, color: Colors.white, size: 20),
-                  const SizedBox(width: 8),
-                  const Text('Link pasted'),
-                ],
-              ),
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 1),
-            ),
-          );
+        // Plain text → title (if empty)
+        if (_titleController.text.isEmpty) {
+          setState(() {
+            _titleController.text = text;
+          });
         }
       }
     } catch (e) {
       debugPrint('Error pasting from clipboard: $e');
+    }
+  }
+
+  /// Get image from clipboard via platform channel
+  Future<String?> _getClipboardImage() async {
+    try {
+      final result = await platform.invokeMethod<String>('getClipboardImage');
+      if (result != null && result.isNotEmpty) {
+        debugPrint('✅ Got image from clipboard: $result');
+        return result;
+      }
+    } catch (e) {
+      debugPrint('Error getting clipboard image: $e');
+    }
+    return null;
+  }
+
+  /// Check if URL is an image by fetching HTTP headers
+  Future<bool> _checkIfUrlIsImage(String url) async {
+    try {
+      // Make a HEAD request to check Content-Type without downloading the full file
+      final response = await http.head(Uri.parse(url)).timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          return http.Response('', 408); // Request timeout
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final contentType = response.headers['content-type']?.toLowerCase() ?? '';
+        debugPrint('Content-Type for $url: $contentType');
+
+        // Check if it's an image MIME type
+        if (contentType.startsWith('image/')) {
+          return true;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking if URL is image: $e');
+    }
+    return false;
+  }
+
+  /// Check if text is an image URL
+  bool _isImageUrl(String text) {
+    try {
+      final uri = Uri.parse(text);
+      final host = uri.host.toLowerCase();
+      final path = uri.path.toLowerCase();
+
+      // Check for direct image file extensions
+      if (path.endsWith('.jpg') ||
+          path.endsWith('.jpeg') ||
+          path.endsWith('.png') ||
+          path.endsWith('.gif') ||
+          path.endsWith('.webp') ||
+          path.endsWith('.bmp')) {
+        return true;
+      }
+
+      // Check for known image hosting domains
+      final imageHosts = [
+        'gstatic.com',           // Google Images CDN
+        'googleusercontent.com', // Google User Content
+        'imgur.com',             // Imgur
+        'i.imgur.com',           // Imgur direct
+        'ibb.co',                // ImgBB
+        'imgbb.com',             // ImgBB
+        'postimg.cc',            // PostImage
+        'flickr.com',            // Flickr
+        'staticflickr.com',      // Flickr CDN
+        'pinimg.com',            // Pinterest
+        'cloudinary.com',        // Cloudinary CDN
+        'amazonaws.com',         // AWS S3 (common for images)
+      ];
+
+      for (final imageHost in imageHosts) {
+        if (host.contains(imageHost)) {
+          return true;
+        }
+      }
+
+      // Check query parameters for image indicators
+      if (path.contains('/image') ||
+          path.contains('/img') ||
+          path.contains('/photo')) {
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      return false;
     }
   }
 
@@ -849,7 +1016,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
                               setState(() {
                                 _visibleFields.remove('url');
                                 _urlController.clear();
-                                _scrapedImageUrl = null;
+                                // Don't clear _scrapedImageUrl - image and URL are independent
                               });
                             },
                           ),
@@ -1036,16 +1203,16 @@ class _AddWishScreenState extends State<AddWishScreen> {
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.content_paste, size: 16, color: AppTheme.primary),
                           const SizedBox(width: 6),
                           Text(
-                            'Paste\nLink',
-                            textAlign: TextAlign.center,
+                            'add_wish.paste'.tr(),
                             style: TextStyle(
-                              fontSize: 12,
-                              height: 1.2,
+                              fontSize: 13,
                               color: AppTheme.primary,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],

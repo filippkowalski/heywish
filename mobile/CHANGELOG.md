@@ -36,15 +36,80 @@ When adding entries to this changelog:
 
 ## [Unreleased]
 
+---
+
+## [1.13.0+30] - 2025-11-21
+
 ### 🎉 New Features
+
+**Smart Clipboard Paste** (2025-01-21)
+- Unified "Paste" button intelligently detects content type (images, URLs, text)
+- Automatically identifies image URLs from Google Images, Imgur, Flickr, and other hosting services
+- HTTP Content-Type checking for reliable image detection
+- Supports pasting actual clipboard images on both iOS and Android
+- Silent, seamless operation with no feedback messages
+
+**iOS Share Extension Improvements** (2025-01-21)
+- Share images from Photos and other apps directly to Jinnie
+- Prioritized image handling over URL references
+- Proper image file persistence after share extension closes
+- Seamless integration with system share sheet
+
+### ✨ Improvements
+
+**Enhanced Image Sharing** (2025-01-21)
+- Share wishes with images from within the app
+- Downloads and shares actual image files, not just URLs
+- Works consistently on both iOS and Android
+- Graceful fallback to text-only sharing if image fails
+
+**Bottom Sheet Navigation** (2025-01-21)
+- Fixed AddWishScreen to consistently show as bottom sheet
+- Improved deeplink handling to show bottom sheet instead of full-page route
+- Share extension now shows bottom sheet for consistent UX
+- Better navigation stack management
+
+**Wish Detail Screen** (2025-01-21)
+- Fixed menu button visibility for wishes without images
+- Improved layout spacing and touch targets
+- Better visual hierarchy with consistent button placement
+
+### 🐛 Bug Fixes
+
+**Onboarding Flow** (2025-01-21)
+- Removed redundant loader in flow screen
+- Smoother transition between onboarding steps
+
+**Web Dashboard** (2025-01-21)
+- Prevent infinite wishlists fetch loop
+- Improved bulk wish import with smart image fallback
+- Better error handling for image URLs
+
+**Fastlane iOS Upload** (2025-01-21)
+- Fixed API key path resolution for iOS upload
+- Improved authentication handling
+
+### 🔧 Technical
+
+**Clipboard Integration** (2025-01-21)
+- Added platform-specific method channels for clipboard image access
+- iOS: UIPasteboard integration with proper temp file handling
+- Android: ClipboardManager integration with image URI support
+- No permission dialogs - user-initiated actions only
+
+**Image URL Detection** (2025-01-21)
+- Pattern matching for known image hosting domains
+- HTTP HEAD requests for Content-Type verification
+- 3-second timeout for fast response
+- Comprehensive support for image formats (JPG, PNG, GIF, WebP, BMP)
+
+### 🎉 Previous Features from Earlier Builds
 
 **Automatic Data Refresh After Account Merge** (2025-01-05)
 - App now automatically refreshes wishlists and wishes after successful account merge
 - Users see merged content immediately without manual refresh
 - Implemented using reactive timestamp-based detection pattern
 - See `AUTHENTICATION.md` for detailed technical documentation
-
-### ✨ Improvements
 
 **Enhanced Merge Detection** (2025-01-05)
 - Hybrid merge detection: checks server API first, falls back to local SQLite
@@ -59,26 +124,21 @@ When adding entries to this changelog:
 - Profile completion tracking with customizable user properties
 - Shopping interests and notification preference tracking
 
-### 🐛 Bug Fixes
-
-**Apple Sign-In OAuth Credential** (2025-01-05)
+**Apple Sign-In Fix** (2025-01-05)
 - Fixed "Invalid OAuth response from apple.com" error
 - Added missing `accessToken` parameter to OAuth credential
 - Apple Sign-In now works reliably on both iOS devices and simulator
 
-**Anonymous Wish Data Loss** (2025-01-05)
+**Anonymous Wish Data Loss Fix** (2025-01-05)
 - Fixed issue where anonymous wishes disappeared after signing into existing account
 - Merge detection now queries server while still authenticated as anonymous user
 - Offline fallback ensures local-only data is also detected for merge
-
-### 📚 Documentation
 
 **Authentication System Documentation** (2025-01-05)
 - Created comprehensive `AUTHENTICATION.md` documentation
 - Covers all authentication flows, account merging, and data refresh
 - Includes technical implementation details and troubleshooting guide
 - Documents hybrid merge detection algorithm and design decisions
-- See `AUTHENTICATION.md` in project root
 
 ---
 

@@ -331,41 +331,50 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
 
     debugPrint('✅ Processing shared $type: $value');
 
-    // Navigate to add wish screen with the shared URL
+    // Show add wish bottom sheet with the shared content
     // Wait a moment to ensure home screen is loaded
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 500), () async {
       final context = _router.routerDelegate.navigatorKey.currentContext;
-      if (context == null) return;
+      if (context == null) {
+        debugPrint('⚠️ No context available for share handler');
+        return;
+      }
+
+      // Navigate to home first to ensure proper navigation stack
+      _router.go('/home');
+
+      // Wait for home to render
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      final homeContext = _router.routerDelegate.navigatorKey.currentContext;
+      if (homeContext == null) {
+        debugPrint('⚠️ No context available after navigating to home');
+        return;
+      }
 
       if (type == 'url') {
-        Navigator.of(context).push(
-          NativePageRoute(
-            child: AddWishScreen(
-              initialUrl: value,
-            ),
-          ),
+        await AddWishScreen.show(
+          homeContext,
+          initialUrl: value,
+          source: 'share',
         );
       } else if (type == 'image') {
         // Handle image sharing - use prefilledData for image path
-        Navigator.of(context).push(
-          NativePageRoute(
-            child: AddWishScreen(
-              prefilledData: {
-                'image': value,
-              },
-            ),
-          ),
+        await AddWishScreen.show(
+          homeContext,
+          prefilledData: {
+            'image': value,
+          },
+          source: 'share',
         );
       } else if (type == 'text') {
         // Handle text sharing - use prefilledData for title
-        Navigator.of(context).push(
-          NativePageRoute(
-            child: AddWishScreen(
-              prefilledData: {
-                'title': value,
-              },
-            ),
-          ),
+        await AddWishScreen.show(
+          homeContext,
+          prefilledData: {
+            'title': value,
+          },
+          source: 'share',
         );
       }
     });
@@ -601,24 +610,6 @@ final _router = GoRouter(
         arguments: state.extra,
         restorationId: state.pageKey.value,
       ),
-    ),
-    GoRoute(
-      path: '/add-wish',
-      pageBuilder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>?;
-        final initialUrl = extra?['initialUrl'] as String?;
-        final prefilledData = extra?['prefilledData'] as Map<String, dynamic>?;
-        return NativeTransitions.page(
-          child: AddWishScreen(
-            initialUrl: initialUrl,
-            prefilledData: prefilledData,
-          ),
-          key: state.pageKey,
-          name: state.name,
-          arguments: state.extra,
-          restorationId: state.pageKey.value,
-        );
-      },
     ),
     GoRoute(
       path: '/wishlists/:id/add-item',

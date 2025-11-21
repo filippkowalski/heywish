@@ -2,7 +2,7 @@ name: jinnie
 description: "Social wishlist platform for  modern gift-giving"
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 1.12.1+28
+version: 1.13.0+30
 
 environment:
   sdk: ^3.7.2
@@ -24,7 +24,7 @@ dependencies:
   
   # Social Authentication
   google_sign_in: ^6.2.1
-  sign_in_with_apple: ^6.1.2
+  sign_in_with_apple: ^7.0.1
   
   # State Management
   provider: ^6.1.2
