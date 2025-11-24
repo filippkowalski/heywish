@@ -1050,23 +1050,28 @@ export default function AddWishPage() {
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
-                        variant="ghost"
+                        variant="outline"
                         onClick={() => router.push(`/wishes/${wish.id}/edit`)}
                         disabled={isDeleting !== null || isBulkDeleting}
+                        className="gap-1.5"
                       >
                         <Edit className="h-4 w-4" />
+                        <span>Edit</span>
                       </Button>
                       <Button
                         size="sm"
-                        variant="ghost"
+                        variant="outline"
                         onClick={() => handleDeleteWish(wish.id, wish.title)}
                         disabled={isDeleting !== null || isBulkDeleting}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5"
                       >
                         {isDeleting === wish.id ? (
                           <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                         ) : (
-                          <Trash2 className="h-4 w-4" />
+                          <>
+                            <Trash2 className="h-4 w-4" />
+                            <span>Delete</span>
+                          </>
                         )}
                       </Button>
                     </div>
