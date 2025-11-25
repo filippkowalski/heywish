@@ -16,12 +16,14 @@ async function resolveWishlist(username: string, slugParam: string) {
     );
 
     if (!wishlist) {
-      return null;
+      // Profile exists but wishlist not found - return profile for redirect
+      return { profile, wishlist: null } as const;
     }
 
     return { profile, wishlist } as const;
   } catch (error) {
     console.error("Error fetching profile for wishlist route:", error);
+    // Profile doesn't exist - return null for 404
     return null;
   }
 }
@@ -41,6 +43,16 @@ export async function generateMetadata({
   }
 
   const { profile, wishlist } = resolved;
+
+  // Wishlist not found - return profile metadata for redirect
+  if (!wishlist) {
+    const ownerName = profile.user.fullName?.trim() || `@${profile.user.username}`;
+    return {
+      title: `${ownerName} · Jinnie`,
+      description: `View ${ownerName}'s wishlists on Jinnie`,
+    };
+  }
+
   const ownerName = profile.user.fullName?.trim() || `@${profile.user.username}`;
   const usernameDisplay = `@${profile.user.username}`;
 
@@ -108,11 +120,17 @@ export default async function WishlistBySlugPage({
   const { username, wishlist: slugParam } = await params;
   const resolved = await resolveWishlist(username, slugParam);
 
+  // User doesn't exist - show 404
   if (!resolved) {
     notFound();
   }
 
   const { wishlist } = resolved;
+
+  // Wishlist not found but user exists - redirect to user profile
+  if (!wishlist) {
+    redirect(`/${username}`);
+  }
 
   // Redirect to profile page with wishlist filter using slug
   const slug = getWishlistSlug({
