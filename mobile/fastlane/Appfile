@@ -1,3 +1,0 @@
-app_identifier("com.wishlists.gifts")
-apple_id(ENV["FASTLANE_APPLE_ID"])
-team_id("474TK9U3BP")

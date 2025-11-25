@@ -54,6 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Track previous user state to detect sign in/out
   const prevUserRef = useRef<User | null>(null);
+  // Track if this is the initial auth load
+  const isInitialLoadRef = useRef(true);
 
   // Listen to Firebase auth state changes
   useEffect(() => {
@@ -153,6 +155,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsReservationSession(false);
       }
       setLoading(false);
+
+      // Mark initial load as complete
+      isInitialLoadRef.current = false;
     });
 
     return () => unsubscribe();
@@ -169,6 +174,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Refresh page when auth state changes (sign in/out) to update server-rendered content
   useEffect(() => {
     if (loading) return; // Don't refresh during initial load
+
+    // Skip refresh on initial auth load (when user was already logged in)
+    if (isInitialLoadRef.current) return;
 
     const prevUser = prevUserRef.current;
     const userChanged = (prevUser === null && user !== null) || (prevUser !== null && user === null);
