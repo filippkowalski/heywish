@@ -41,6 +41,7 @@ import 'screens/friends/friends_screen.dart';
 import 'screens/profile/public_profile_screen.dart';
 import 'screens/profile/public_wishlist_detail_screen.dart';
 import 'common/navigation/native_page_route.dart';
+import 'common/widgets/in_app_notification_banner.dart';
 
 void main() async {
   // Wrap everything in runZonedGuarded to ensure all initialization
@@ -138,6 +139,7 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
   final DeepLinkService _deepLinkService = DeepLinkService();
   static const platform = MethodChannel('com.wishlists.gifts/share');
   StreamSubscription<RemoteMessage>? _fcmTapSubscription;
+  StreamSubscription<RemoteMessage>? _fcmForegroundSubscription;
 
   // Store initial deep link that was intercepted by GoRouter redirect
   static String? _pendingDeepLink;
@@ -200,6 +202,10 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
 
     _fcmTapSubscription =
         FCMService().notificationTapStream.listen(_handleNotificationTap);
+
+    _fcmForegroundSubscription = FCMService()
+        .foregroundNotificationStream
+        .listen(_handleForegroundNotification);
   }
 
   void _initializeShareHandler() {
@@ -298,6 +304,27 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
       );
       return;
     }
+  }
+
+  void _handleForegroundNotification(RemoteMessage message) {
+    final rootContext = _router.routerDelegate.navigatorKey.currentContext;
+    if (rootContext == null) {
+      return;
+    }
+
+    final title = message.notification?.title ?? 'Notification';
+    final body = message.notification?.body ?? '';
+    final type = message.data['type'] as String? ?? '';
+
+    InAppNotificationBanner.show(
+      context: rootContext,
+      title: title,
+      body: body,
+      type: type,
+      onTap: () {
+        _handleNotificationTap(message);
+      },
+    );
   }
 
   void _handleSharedContent(dynamic arguments) {
@@ -418,6 +445,7 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _fcmTapSubscription?.cancel();
+    _fcmForegroundSubscription?.cancel();
     _deepLinkService.dispose();
     ScreenshotDetectionService.instance.dispose();
     super.dispose();

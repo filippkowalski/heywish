@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'api_service.dart';
+import 'friends_service.dart';
+import 'wishlist_service.dart';
 
 /// Service for handling Firebase Cloud Messaging (FCM) push notifications
 class FCMService {
@@ -15,9 +17,14 @@ class FCMService {
   StreamSubscription<String>? _tokenRefreshSubscription; // Track subscription to avoid multiple listeners
   final StreamController<RemoteMessage> _notificationTapController =
       StreamController<RemoteMessage>.broadcast();
+  final StreamController<RemoteMessage> _foregroundNotificationController =
+      StreamController<RemoteMessage>.broadcast();
 
   Stream<RemoteMessage> get notificationTapStream =>
       _notificationTapController.stream;
+
+  Stream<RemoteMessage> get foregroundNotificationStream =>
+      _foregroundNotificationController.stream;
 
   /// Initialize FCM (setup handlers only, don't request permissions)
   Future<void> initialize() async {
@@ -107,7 +114,6 @@ class FCMService {
       debugPrint('Body: ${message.notification?.body}');
       debugPrint('Data: ${message.data}');
 
-      // TODO: Show in-app notification or update UI
       _handleMessage(message);
     });
 
@@ -128,33 +134,34 @@ class FCMService {
 
   /// Handle incoming message (foreground)
   void _handleMessage(RemoteMessage message) {
-    // TODO: Show local notification or update UI based on message type
+    // Emit message to stream for UI to display banner
+    _foregroundNotificationController.add(message);
+
+    // Trigger data refresh based on notification type
     final type = message.data['type'];
 
     switch (type) {
       case 'friend_request':
-        // Could show a snackbar or update friends screen
-        break;
       case 'friend_accepted':
-        // Update friends list
+        // Refresh friends data
+        FriendsService().loadAllData(forceRefresh: true);
         break;
       case 'wish_reserved':
       case 'wish_purchased':
-        // Update wishlist
+        // Refresh wishlist data
+        WishlistService().fetchWishlists();
         break;
     }
   }
 
   /// Handle notification tap
   void _handleMessageTap(RemoteMessage message) {
-    // TODO: Navigate to appropriate screen based on message data
     final type = message.data['type'];
     final screen = message.data['screen'];
 
     debugPrint('FCM: Navigate to screen: $screen (type: $type)');
 
-    // Navigation will be handled by the app's router
-    // You can use a stream or callback to notify the app
+    // Emit to stream for navigation handling in main.dart
     _notificationTapController.add(message);
   }
 
