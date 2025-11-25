@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.13.1+31] - 2025-11-25
+
+### Added
+- add in-app notification banner for foreground FCM notifications
+- improve edit/delete button visibility in add wish page
+- smart clipboard paste, iOS share extension, and bug fixes
+- improve share tip timing - show after first successful add
+
+### Changed
+- remove grid/list view toggle from profile page
+
+### Fixed
+- add middleware to redirect broken multi-segment wishlist URLs
+- prevent infinite refresh loop on authenticated page visits
+- redirect to profile instead of 404 for invalid wishlist URLs
+- prevent Apple Private Relay emails as usernames
+- remove Center wrapper causing 'New List' button text truncation
+- properly slugify wishlist names in share URLs
+- prevent infinite wishlists fetch loop
+- improve bulk wish import with smart image fallback
+- Fix onboarding glitch: remove redundant loader in flow screen
+- fix API key path resolution for iOS upload
+- fix wish detail layout and share tip display issues
+- improve error handling and prevent app crashes
+
+
 All notable changes to Jinnie will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),

@@ -1048,16 +1048,15 @@ export default function AddWishPage() {
 
                     {/* Action Buttons */}
                     <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => router.push(`/wishes/${wish.id}/edit`)}
-                        disabled={isDeleting !== null || isBulkDeleting}
-                        className="gap-1.5"
+                      <a
+                        href={`/wishes/${wish.id}/edit`}
+                        className={`inline-flex items-center justify-center gap-1.5 rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 ${
+                          isDeleting !== null || isBulkDeleting ? 'pointer-events-none opacity-50' : ''
+                        }`}
                       >
                         <Edit className="h-4 w-4" />
                         <span>Edit</span>
-                      </Button>
+                      </a>
                       <Button
                         size="sm"
                         variant="outline"

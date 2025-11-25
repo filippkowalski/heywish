@@ -2,7 +2,7 @@ name: jinnie
 description: "Social wishlist platform for  modern gift-giving"
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 1.13.0+30
+version: 1.13.1+31
 
 environment:
   sdk: ^3.7.2
