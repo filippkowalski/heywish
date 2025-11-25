@@ -15,6 +15,11 @@ export function UsernameStep() {
   // Pre-fill from email if available (only on initial mount)
   useEffect(() => {
     if (!username && !data.username && user?.email) {
+      // Skip autopopulation for Apple Private Relay emails (align with mobile behavior)
+      if (user.email.includes('@privaterelay.appleid.com')) {
+        return;
+      }
+
       const emailPrefix = user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9._]/g, '');
       if (emailPrefix.length >= 3) {
         setUsername(emailPrefix);
@@ -34,10 +39,11 @@ export function UsernameStep() {
   }, [username, checkUsernameAvailability]);
 
   const handleUsernameChange = (value: string) => {
-    // Auto-convert to lowercase
-    const lowerValue = value.toLowerCase();
-    setUsername(lowerValue);
-    updateData('username', lowerValue);
+    // Auto-convert to lowercase and filter out invalid characters
+    // Only allow: lowercase letters, numbers, dots, underscores (align with mobile behavior)
+    const filtered = value.toLowerCase().replace(/[^a-z0-9._]/g, '');
+    setUsername(filtered);
+    updateData('username', filtered);
   };
 
   const handleContinue = async () => {
