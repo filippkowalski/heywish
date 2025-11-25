@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../screens/wishlists/add_wish_screen.dart';
+import '../utils/string_utils.dart' as string_utils;
 import 'api_service.dart';
 
 const Set<String> _deepLinkHosts = {'jinnie.app', 'www.jinnie.app'};
@@ -474,7 +475,7 @@ class DeepLinkService {
     }
 
     final name = _stringValue(data['name']);
-    if (name != null && _slugify(name) == normalizedParam) {
+    if (name != null && string_utils.slugify(name) == normalizedParam) {
       return true;
     }
 
@@ -489,13 +490,6 @@ class DeepLinkService {
     }
 
     return false;
-  }
-
-  String _slugify(String value) {
-    final lower = value.toLowerCase();
-    final sanitized = lower.replaceAll(RegExp(r'[^a-z0-9]+'), '-');
-    final collapsed = sanitized.replaceAll(RegExp(r'-{2,}'), '-');
-    return collapsed.replaceAll(RegExp(r'^-+|-+$'), '');
   }
 
   String? _stringValue(dynamic value) {

@@ -16,6 +16,7 @@ import '../../theme/app_theme.dart';
 import '../../common/widgets/native_refresh_indicator.dart';
 import '../../common/widgets/masonry_wish_card.dart';
 import '../../common/navigation/native_page_route.dart';
+import '../../utils/string_utils.dart';
 import 'add_wish_screen.dart';
 import 'edit_wishlist_screen.dart';
 import 'wish_detail_screen.dart';
@@ -1213,7 +1214,7 @@ class _ShareBottomSheetState extends State<_ShareBottomSheet> {
                       // Wishlist Items (filter out synthetic "All Wishes" wishlist)
                       ...widget.wishlists.where((w) => !w.isSynthetic).map((wishlist) {
                         final wishlistUrl =
-                            'jinnie.co/${widget.username}/${wishlist.name.toLowerCase().replaceAll(' ', '-')}';
+                            'jinnie.co/${widget.username}/${slugify(wishlist.name)}';
                         final isPrivate = wishlist.visibility == 'private';
                         final isUpdating =
                             _updatingVisibility[wishlist.id] ?? false;
