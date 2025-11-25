@@ -13,7 +13,7 @@ import { WishlistFilter } from "./wishlist-filter";
 import { ShareButton } from "./share-button";
 import { useOwnership } from "./ProfileOwnershipWrapper.client";
 import { getWishlistSlug, matchesWishlistSlug } from "@/lib/slug";
-import { Gift, LayoutGrid, List, Pencil, Trash2 } from "lucide-react";
+import { Gift, Pencil, Trash2 } from "lucide-react";
 
 interface WishlistGridProps {
   wishlists: Wishlist[];
@@ -116,76 +116,6 @@ function WishPreviewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
   );
 }
 
-function WishListViewCard({ wish, wishlist, onSelect }: WishPreviewCardProps) {
-  const coverImage = wish.images?.[0];
-  const [imageFailed, setImageFailed] = useState(false);
-  useEffect(() => {
-    setImageFailed(false);
-  }, [coverImage]);
-  const price = formatPrice(wish.price, wish.currency);
-  const isReserved = wish.status === "reserved";
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      onSelect();
-    }
-  };
-  const showImage = Boolean(coverImage && !imageFailed);
-
-  return (
-    <Card
-      role="button"
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={handleKeyDown}
-      className="group/card mb-3 gap-0 overflow-hidden border border-black/10 bg-card p-0 transition-all hover:border-black/20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-    >
-      <div className="flex gap-4 p-4">
-        {showImage ? (
-          <div className="relative w-24 h-24 flex-shrink-0 bg-muted rounded-md overflow-hidden">
-            <Image
-              src={coverImage!}
-              alt={wish.title}
-              fill
-              className="object-cover"
-              sizes="96px"
-              onError={() => setImageFailed(true)}
-            />
-          </div>
-        ) : null}
-
-        <div className="flex-1 flex flex-col gap-2 min-w-0">
-          <div className="space-y-1">
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="text-base font-semibold leading-tight line-clamp-2 group-hover/card:underline">
-                {wish.title}
-              </h3>
-              {isReserved && (
-                <Badge variant="secondary" className="bg-black/70 text-white border-0 px-2 py-0.5 text-[10px] uppercase flex-shrink-0">
-                  Reserved
-                </Badge>
-              )}
-            </div>
-            {wish.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {wish.description}
-              </p>
-            )}
-          </div>
-          <div className="mt-auto flex items-end justify-between gap-2">
-            <span className="text-base font-semibold text-foreground">
-              {price ?? ""}
-            </span>
-            <span className="text-xs font-medium text-muted-foreground text-right truncate">
-              {wishlist.name}
-            </span>
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
 export function WishlistGrid({ wishlists, username, initialWishlistId }: WishlistGridProps) {
   const searchParams = useSearchParams();
   const ownership = useOwnership();
@@ -198,7 +128,6 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
   const [selectedFilter, setSelectedFilter] = useState<string | null>(defaultSelection);
   const [detailOpen, setDetailOpen] = useState(false);
   const [activePreview, setActivePreview] = useState<{ wish: Wish; wishlist: Wishlist } | null>(null);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Sync URL parameter with filter state
   useEffect(() => {
@@ -305,35 +234,7 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
       />
 
       <div className="container mx-auto px-4 py-6 md:px-6">
-        <div className="flex items-center justify-between gap-2 mb-4">
-          {/* View Toggle */}
-          <div className="flex items-center gap-1 border border-border rounded-lg p-1 flex-shrink-0">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-2 rounded transition-colors ${
-                viewMode === "grid"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-              aria-label="Grid view"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`p-2 rounded transition-colors ${
-                viewMode === "list"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-              aria-label="List view"
-            >
-              <List className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Right side: Total Value + Share Button */}
-          <div className="flex items-center gap-2 min-w-0 flex-shrink">
+        <div className="flex items-center justify-end gap-2 mb-4">
             {/* Total Value Display */}
             {Object.keys(totalValues).length > 0 && (
               <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-lg border border-black/5 min-w-0">
@@ -348,12 +249,11 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
               </div>
             )}
 
-            <ShareButton
-              path={sharePath}
-              label={selectedFilter ? "Copy wishlist link" : `jinnie.co/${username}`}
-              className="flex-shrink-0"
-            />
-          </div>
+          <ShareButton
+            path={sharePath}
+            label={selectedFilter ? "Copy wishlist link" : `jinnie.co/${username}`}
+            className="flex-shrink-0"
+          />
         </div>
 
         {filteredWishes.length === 0 ? (
@@ -378,24 +278,10 @@ export function WishlistGrid({ wishlists, username, initialWishlistId }: Wishlis
               )}
             </CardContent>
           </Card>
-        ) : viewMode === "grid" ? (
+        ) : (
           <div className="columns-2 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-3">
             {filteredWishes.map(({ wish, wishlist }) => (
               <WishPreviewCard
-                key={wish.id}
-                wish={wish}
-                wishlist={wishlist}
-                onSelect={() => {
-                  setActivePreview({ wish, wishlist });
-                  setDetailOpen(true);
-                }}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="max-w-4xl mx-auto">
-            {filteredWishes.map(({ wish, wishlist }) => (
-              <WishListViewCard
                 key={wish.id}
                 wish={wish}
                 wishlist={wishlist}
