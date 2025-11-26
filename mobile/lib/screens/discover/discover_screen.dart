@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../services/gift_guide_service.dart';
-import '../../models/gift_guide_category.dart';
-import 'guide_list_screen.dart';
-import 'all_categories_screen.dart';
+import '../../models/gift_guide.dart';
+import '../../common/widgets/vertical_guide_card.dart';
+import 'guide_detail_screen.dart';
+import 'all_guides_screen.dart';
 import '../../common/navigation/native_page_route.dart';
 
-/// Main discover screen with horizontal scrollable category previews
+/// Main discover screen with horizontal scrollable guide previews
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
 
@@ -19,26 +20,28 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   @override
   void initState() {
     super.initState();
-    // Load categories on mount
+    // Load both categories (for mapping) and guides on mount
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<GiftGuideService>().loadCategories();
+      final service = context.read<GiftGuideService>();
+      service.loadCategories();
+      service.loadAllGuides();
     });
   }
 
-  /// Get rotated subset of categories based on current day
-  /// Shows 6-8 categories per section, rotates daily
-  List<GiftGuideCategory> _getRotatedCategories(
-    List<GiftGuideCategory> categories,
+  /// Get rotated subset of guides based on current day
+  /// Shows maxVisible guides per section, rotates daily
+  List<GiftGuide> _getRotatedGuides(
+    List<GiftGuide> guides,
     int maxVisible,
   ) {
-    if (categories.length <= maxVisible) return categories;
+    if (guides.length <= maxVisible) return guides;
 
     // Use day of year for rotation
     final dayOfYear = DateTime.now().difference(DateTime(DateTime.now().year, 1, 1)).inDays;
-    final offset = dayOfYear % categories.length;
+    final offset = dayOfYear % guides.length;
 
     // Rotate and take maxVisible items
-    final rotated = [...categories.sublist(offset), ...categories.sublist(0, offset)];
+    final rotated = [...guides.sublist(offset), ...guides.sublist(0, offset)];
     return rotated.take(maxVisible).toList();
   }
 
@@ -54,8 +57,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       backgroundColor: const Color(0xFFF5F5F7),
       body: Consumer<GiftGuideService>(
         builder: (context, service, child) {
-          // Loading state
-          if (service.isLoading && service.categoriesGrouped == null) {
+          // Loading state - need both categories and guides
+          if (service.isLoading &&
+              (service.guidesGroupedBySection == null || service.categoriesGrouped == null)) {
             return _buildLoadingState();
           }
 
@@ -64,46 +68,47 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             return _buildErrorState(service.error!, () {
               service.clearError();
               service.loadCategories(forceRefresh: true);
+              service.loadAllGuides(forceRefresh: true);
             });
           }
 
-          // Categories loaded
-          final categoriesGrouped = service.categoriesGrouped;
-          if (categoriesGrouped == null || categoriesGrouped.isEmpty) {
+          // Guides loaded
+          final guidesGrouped = service.guidesGroupedBySection;
+          if (guidesGrouped == null || guidesGrouped.isEmpty) {
             return _buildEmptyState();
           }
 
-          return _buildCategoryPreviews(categoriesGrouped);
+          return _buildGuidePreviews(guidesGrouped);
         },
       ),
     );
   }
 
-  Widget _buildCategoryPreviews(Map<String, List<GiftGuideCategory>> grouped) {
+  Widget _buildGuidePreviews(Map<String, List<GiftGuide>> grouped) {
     // Reordered sections: Price/Style → Recipient → Shopping → Occasion
     final sections = [
       {
         'key': 'price_style',
         'title': 'discover.section_price_style'.tr(),
-        'categories': grouped['price_style'] ?? [],
+        'guides': grouped['price_style'] ?? [],
         'maxVisible': 6,
       },
       {
         'key': 'recipient',
         'title': 'discover.section_recipient'.tr(),
-        'categories': grouped['recipient'] ?? [],
+        'guides': grouped['recipient'] ?? [],
         'maxVisible': 5,
       },
       {
         'key': 'shopping',
         'title': 'discover.section_shopping'.tr(),
-        'categories': grouped['shopping'] ?? [],
+        'guides': grouped['shopping'] ?? [],
         'maxVisible': 8,
       },
       {
         'key': 'occasion',
         'title': 'discover.section_occasion'.tr(),
-        'categories': grouped['occasion'] ?? [],
+        'guides': grouped['occasion'] ?? [],
         'maxVisible': 6,
       },
     ];
@@ -114,13 +119,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         children: [
           const SizedBox(height: 16),
           for (var section in sections)
-            if ((section['categories'] as List).isNotEmpty)
-              _buildHorizontalSection(
+            if ((section['guides'] as List).isNotEmpty)
+              _buildHorizontalGuideSection(
                 section['title'] as String,
-                section['categories'] as List<GiftGuideCategory>,
+                section['guides'] as List<GiftGuide>,
                 section['maxVisible'] as int,
                 section['key'] as String,
-                grouped,
               ),
           const SizedBox(height: 20),
         ],
@@ -128,15 +132,14 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  Widget _buildHorizontalSection(
+  Widget _buildHorizontalGuideSection(
     String title,
-    List<GiftGuideCategory> allCategories,
+    List<GiftGuide> allGuides,
     int maxVisible,
     String groupKey,
-    Map<String, List<GiftGuideCategory>> allGrouped,
   ) {
-    final displayCategories = _getRotatedCategories(allCategories, maxVisible);
-    final hasMore = allCategories.length > maxVisible;
+    final displayGuides = _getRotatedGuides(allGuides, maxVisible);
+    final hasMore = allGuides.length > maxVisible;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,23 +161,23 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 ),
               ),
               TextButton(
-                onPressed: () => _navigateToAllCategories(groupKey, title, allGrouped),
+                onPressed: () => _navigateToAllGuides(groupKey, title, allGuides),
                 style: TextButton.styleFrom(
                   foregroundColor: const Color(0xFFE91E63),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: [
+                  children: const [
                     Text(
                       'View All',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.arrow_forward, size: 16),
+                    SizedBox(width: 4),
+                    Icon(Icons.arrow_forward, size: 16),
                   ],
                 ),
               ),
@@ -183,33 +186,33 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         ),
         const SizedBox(height: 12),
 
-        // Horizontal scrollable category list
+        // Horizontal scrollable guide list
         SizedBox(
-          height: 120,
+          height: 300, // Taller for vertical cards (200px image + ~100px content + padding)
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: displayCategories.length,
+            itemCount: displayGuides.length,
             itemBuilder: (context, index) {
               return Padding(
                 padding: EdgeInsets.only(
-                  right: index == displayCategories.length - 1 ? 0 : 12,
+                  right: index == displayGuides.length - 1 ? 0 : 12,
                 ),
-                child: _HorizontalCategoryCard(
-                  category: displayCategories[index],
-                  onTap: () => _navigateToGuideList(displayCategories[index]),
+                child: VerticalGuideCard(
+                  guide: displayGuides[index],
+                  onTap: () => _navigateToGuideDetail(displayGuides[index]),
                 ),
               );
             },
           ),
         ),
 
-        // Daily rotation hint (only if has more categories)
+        // Daily rotation hint (only if has more guides)
         if (hasMore)
           Padding(
             padding: const EdgeInsets.only(left: 20, top: 8, right: 20),
             child: Text(
-              'Categories rotate daily • Showing ${displayCategories.length} of ${allCategories.length}',
+              'Guides rotate daily • Showing ${displayGuides.length} of ${allGuides.length}',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey.shade500,
@@ -223,22 +226,22 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  void _navigateToGuideList(GiftGuideCategory category) {
+  void _navigateToGuideDetail(GiftGuide guide) {
     context.pushNative(
-      GuideListScreen(category: category),
+      GuideDetailScreen(guideSlug: guide.slug),
     );
   }
 
-  void _navigateToAllCategories(
+  void _navigateToAllGuides(
     String groupKey,
     String groupTitle,
-    Map<String, List<GiftGuideCategory>> allGrouped,
+    List<GiftGuide> guides,
   ) {
     context.pushNative(
-      AllCategoriesScreen(
+      AllGuidesScreen(
         groupKey: groupKey,
         groupTitle: groupTitle,
-        categories: allGrouped[groupKey] ?? [],
+        guides: guides,
       ),
     );
   }
@@ -362,80 +365,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 color: Colors.grey.shade600,
               ),
               textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Horizontal category card widget (wider, horizontal layout)
-class _HorizontalCategoryCard extends StatelessWidget {
-  final GiftGuideCategory category;
-  final VoidCallback onTap;
-
-  const _HorizontalCategoryCard({
-    required this.category,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 160,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.black.withValues(alpha: 0.15),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Emoji
-            Text(
-              category.emoji,
-              style: const TextStyle(fontSize: 40),
-            ),
-            const SizedBox(height: 8),
-
-            // Label
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text(
-                category.name,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-              ),
-            ),
-
-            // Colored indicator line
-            const SizedBox(height: 8),
-            Container(
-              height: 3,
-              width: 40,
-              decoration: BoxDecoration(
-                color: category.color,
-                borderRadius: BorderRadius.circular(2),
-              ),
             ),
           ],
         ),
