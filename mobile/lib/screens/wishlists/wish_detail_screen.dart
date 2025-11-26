@@ -912,6 +912,9 @@ class _WishDetailScreenState extends State<WishDetailScreen> {
     );
 
     if (shouldDelete == true && mounted) {
+      // Haptic feedback when delete is confirmed
+      HapticFeedback.mediumImpact();
+
       // Close the detail sheet immediately before starting deletion
       Navigator.of(context).pop(true);
 

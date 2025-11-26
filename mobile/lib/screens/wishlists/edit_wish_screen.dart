@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -261,6 +262,9 @@ class _EditWishScreenState extends State<EditWishScreen> {
       );
       return;
     }
+
+    // Haptic feedback when save is triggered
+    HapticFeedback.mediumImpact();
 
     setState(() {
       _isLoading = true;

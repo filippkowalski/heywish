@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../services/friends_service.dart';
@@ -143,6 +144,9 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       _showCreateAccountPrompt();
       return;
     }
+
+    // Light haptic feedback for sending request
+    HapticFeedback.lightImpact();
 
     try {
       await context.read<FriendsService>().sendFriendRequest(user.id);
@@ -401,6 +405,9 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   }
 
   Future<void> _respondToRequest(FriendRequest request, String action) async {
+    // Haptic feedback for accept/decline action
+    HapticFeedback.mediumImpact();
+
     try {
       final friendsService = context.read<FriendsService>();
       await friendsService.respondToFriendRequest(request.id, action);
@@ -429,6 +436,9 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   }
 
   Future<void> _cancelFriendRequest(UserSearchResult user) async {
+    // Light haptic feedback for cancel action
+    HapticFeedback.lightImpact();
+
     try {
       final friendsService = context.read<FriendsService>();
       await friendsService.cancelFriendRequest(user.id);
@@ -471,6 +481,9 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
 
   Future<void> _cancelSentRequest(FriendRequest request) async {
     if (request.addresseeId == null) return;
+
+    // Light haptic feedback for cancel action
+    HapticFeedback.lightImpact();
 
     try {
       final friendsService = context.read<FriendsService>();

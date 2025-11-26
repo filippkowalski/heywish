@@ -362,6 +362,9 @@ class _AddWishScreenState extends State<AddWishScreen> {
 
   /// Smart paste from clipboard - handles images, URLs, and text
   Future<void> _pasteFromClipboard() async {
+    // Light haptic feedback when paste is triggered
+    HapticFeedback.lightImpact();
+
     try {
       // 1. Check for image in clipboard (via platform channel)
       final imagePath = await _getClipboardImage();
@@ -592,6 +595,9 @@ class _AddWishScreenState extends State<AddWishScreen> {
         }
 
         setState(() {});
+
+        // Haptic feedback when scraping completes successfully
+        HapticFeedback.selectionClick();
 
         // Show success message
         if (mounted) {
@@ -829,6 +835,9 @@ class _AddWishScreenState extends State<AddWishScreen> {
       _showErrorMessage('wish.title_required'.tr());
       return;
     }
+
+    // Haptic feedback when save is triggered
+    HapticFeedback.mediumImpact();
 
     setState(() {
       _isLoading = true;
