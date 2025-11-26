@@ -659,5 +659,31 @@
   },
   "add_wish": {
     "paste": "Wklej"
+  },
+  "share": {
+    "your_links": "Twoje Linki",
+    "share_description": "Udostępnij swój profil lub konkretne listy życzeń znajomym i rodzinie",
+    "profile_section": "PROFIL",
+    "wishlists_section": "LISTY ŻYCZEŃ",
+    "your_profile": "Twój Profil",
+    "profile_desc": "Udostępnij wszystkie swoje publiczne listy życzeń",
+    "copy_link": "Kopiuj Link",
+    "open": "Otwórz",
+    "copy": "Kopiuj",
+    "private_notice": "Zmień widoczność, aby udostępnić tę listę",
+    "choose_visibility": "Wybierz Widoczność",
+    "visibility_description": "Kontroluj, kto może zobaczyć tę listę życzeń",
+    "visibility_public_title": "Publiczna",
+    "visibility_public_desc": "Każdy z linkiem może zobaczyć tę listę i zarezerwować przedmioty",
+    "visibility_friends_title": "Tylko Znajomi",
+    "visibility_friends_desc": "Tylko osoby, które dodałeś jako znajomych, mogą zobaczyć tę listę",
+    "visibility_private_title": "Prywatna",
+    "visibility_private_desc": "Tylko Ty możesz zobaczyć tę listę. Idealna do planowania lub szkiców",
+    "link_copied_title": "Link Skopiowany!",
+    "link_copied_description": "Udostępnij znajomym, by zobaczyli Twoje życzenia",
+    "benefit_no_app": "Bez aplikacji - działa w każdej przeglądarce",
+    "benefit_view_reserve": "Znajomi mogą przeglądać przedmioty i rezerwować prezenty",
+    "benefit_easy_share": "Łatwo udostępnić przez wiadomość, e-mail lub media społecznościowe",
+    "got_it": "Rozumiem!"
   }
 }

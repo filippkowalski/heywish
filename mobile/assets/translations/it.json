@@ -659,5 +659,31 @@
   },
   "add_wish": {
     "paste": "Incolla"
+  },
+  "share": {
+    "your_links": "I Tuoi Link",
+    "share_description": "Condividi il tuo profilo o liste dei desideri specifiche con amici e familiari",
+    "profile_section": "PROFILO",
+    "wishlists_section": "LISTE DEI DESIDERI",
+    "your_profile": "Il Tuo Profilo",
+    "profile_desc": "Condividi tutte le tue liste dei desideri pubbliche",
+    "copy_link": "Copia Link",
+    "open": "Apri",
+    "copy": "Copia",
+    "private_notice": "Cambia la visibilità per condividere questa lista",
+    "choose_visibility": "Scegli Visibilità",
+    "visibility_description": "Controlla chi può vedere questa lista dei desideri",
+    "visibility_public_title": "Pubblico",
+    "visibility_public_desc": "Chiunque abbia il link può vedere questa lista e prenotare articoli",
+    "visibility_friends_title": "Solo Amici",
+    "visibility_friends_desc": "Solo le persone che hai aggiunto come amici possono vedere questa lista",
+    "visibility_private_title": "Privato",
+    "visibility_private_desc": "Solo tu puoi vedere questa lista. Perfetto per pianificare o bozze",
+    "link_copied_title": "Link Copiato!",
+    "link_copied_description": "Condividi con amici per mostrare i tuoi desideri",
+    "benefit_no_app": "Nessuna app necessaria - funziona in qualsiasi browser",
+    "benefit_view_reserve": "Gli amici possono vedere gli articoli e prenotare regali",
+    "benefit_easy_share": "Facile da condividere tramite messaggio, email o social media",
+    "got_it": "Capito!"
   }
 }

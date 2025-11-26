@@ -320,6 +320,8 @@
     "your_profile": "Seu Perfil",
     "your_lists": "Suas listas",
     "copy_link": "Copiar Link",
+    "open": "Abrir",
+    "copy": "Copiar",
     "copy_profile_link": "Copiar Link do Perfil",
     "copy_wishlist_link": "Copiar Link da Lista de Desejos",
     "make_public": "Tornar Pública",
@@ -659,5 +661,31 @@
   },
   "add_wish": {
     "paste": "Colar"
+  },
+  "share": {
+    "your_links": "Seus Links",
+    "share_description": "Compartilhe seu perfil ou listas de desejos específicas com amigos e família",
+    "profile_section": "PERFIL",
+    "wishlists_section": "LISTAS DE DESEJOS",
+    "your_profile": "Seu Perfil",
+    "profile_desc": "Compartilhe todas as suas listas de desejos públicas",
+    "copy_link": "Copiar Link",
+    "open": "Abrir",
+    "copy": "Copiar",
+    "private_notice": "Altere a visibilidade para compartilhar esta lista",
+    "choose_visibility": "Escolher Visibilidade",
+    "visibility_description": "Controle quem pode ver esta lista de desejos",
+    "visibility_public_title": "Público",
+    "visibility_public_desc": "Qualquer pessoa com o link pode ver esta lista e reservar itens",
+    "visibility_friends_title": "Apenas Amigos",
+    "visibility_friends_desc": "Apenas pessoas que você adicionou como amigos podem ver esta lista",
+    "visibility_private_title": "Privado",
+    "visibility_private_desc": "Apenas você pode ver esta lista. Perfeito para planejamento ou rascunhos",
+    "link_copied_title": "Link Copiado!",
+    "link_copied_description": "Compartilhe com amigos para que vejam seus desejos",
+    "benefit_no_app": "Sem app necessário - funciona em qualquer navegador",
+    "benefit_view_reserve": "Amigos podem ver itens e reservar presentes",
+    "benefit_easy_share": "Fácil de compartilhar por mensagem, e-mail ou redes sociais",
+    "got_it": "Entendi!"
   }
 }

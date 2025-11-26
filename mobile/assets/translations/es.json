@@ -659,5 +659,31 @@
   },
   "add_wish": {
     "paste": "Pegar"
+  },
+  "share": {
+    "your_links": "Tus Enlaces",
+    "share_description": "Comparte tu perfil o listas de deseos específicas con amigos y familiares",
+    "profile_section": "PERFIL",
+    "wishlists_section": "LISTAS DE DESEOS",
+    "your_profile": "Tu Perfil",
+    "profile_desc": "Comparte todas tus listas de deseos públicas",
+    "copy_link": "Copiar Enlace",
+    "open": "Abrir",
+    "copy": "Copiar",
+    "private_notice": "Cambia la visibilidad para compartir esta lista",
+    "choose_visibility": "Elegir Visibilidad",
+    "visibility_description": "Controla quién puede ver esta lista de deseos",
+    "visibility_public_title": "Público",
+    "visibility_public_desc": "Cualquier persona con el enlace puede ver esta lista y reservar artículos",
+    "visibility_friends_title": "Solo Amigos",
+    "visibility_friends_desc": "Solo las personas que has añadido como amigos pueden ver esta lista",
+    "visibility_private_title": "Privado",
+    "visibility_private_desc": "Solo tú puedes ver esta lista. Perfecto para planificar o borradores",
+    "link_copied_title": "¡Enlace Copiado!",
+    "link_copied_description": "Comparte con amigos para que vean tus deseos",
+    "benefit_no_app": "Sin necesidad de app - funciona en cualquier navegador",
+    "benefit_view_reserve": "Los amigos pueden ver artículos y reservar regalos",
+    "benefit_easy_share": "Fácil de compartir por mensaje, correo o redes sociales",
+    "got_it": "¡Entendido!"
   }
 }

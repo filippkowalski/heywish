@@ -1215,53 +1215,39 @@ class _ShareBottomSheetState extends State<_ShareBottomSheet> {
               ),
             ),
 
-            // Content - compact list
+            // Content - clean list
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Profile row
-                    _CompactShareRow(
-                      icon: Icons.person_outline,
-                      title: 'share.your_profile'.tr(),
+                    // Profile row - featured
+                    _ProfileLinkRow(
                       url: profileUrl,
                       onOpenLink: () => _launchExternalLink(context, 'https://$profileUrl'),
                       onCopyLink: () => _copyLinkToClipboard(profileUrl),
                     ),
 
-                    // Wishlists section
+                    // Wishlists
                     if (nonSyntheticWishlists.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(top: 20, bottom: 8, left: 2),
-                        child: Text(
-                          'share.wishlists_section'.tr(),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade500,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
+                      Divider(height: 1, color: Colors.grey.shade200),
                       ...nonSyntheticWishlists.map((wishlist) {
                         final wishlistUrl = 'jinnie.co/${widget.username}/${slugify(wishlist.name)}';
                         final isUpdating = _updatingVisibility[wishlist.id] ?? false;
 
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: _CompactWishlistRow(
-                            wishlist: wishlist,
-                            url: wishlistUrl,
-                            isUpdating: isUpdating,
-                            onOpenLink: () => _launchExternalLink(context, 'https://$wishlistUrl'),
-                            onCopyLink: () => _copyLinkToClipboard(wishlistUrl),
-                            onChangeVisibility: () => _showVisibilitySelector(wishlist),
-                          ),
+                        return _WishlistLinkRow(
+                          wishlist: wishlist,
+                          url: wishlistUrl,
+                          isUpdating: isUpdating,
+                          onOpenLink: () => _launchExternalLink(context, 'https://$wishlistUrl'),
+                          onCopyLink: () => _copyLinkToClipboard(wishlistUrl),
+                          onChangeVisibility: () => _showVisibilitySelector(wishlist),
                         );
                       }),
                     ],
+
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
@@ -1273,17 +1259,13 @@ class _ShareBottomSheetState extends State<_ShareBottomSheet> {
   }
 }
 
-// Profile share row - featured with accent styling
-class _CompactShareRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
+// Profile link row - clean, native style
+class _ProfileLinkRow extends StatelessWidget {
   final String url;
   final VoidCallback onOpenLink;
   final VoidCallback onCopyLink;
 
-  const _CompactShareRow({
-    required this.icon,
-    required this.title,
+  const _ProfileLinkRow({
     required this.url,
     required this.onOpenLink,
     required this.onCopyLink,
@@ -1291,83 +1273,74 @@ class _CompactShareRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.primaryAccent.withValues(alpha: 0.1),
-            AppTheme.primaryAccent.withValues(alpha: 0.04),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.primaryAccent.withValues(alpha: 0.25)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title row with icon badge
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryAccent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, size: 18, color: Colors.white),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                    ),
-                    Text(
-                      'share.profile_desc'.tr(),
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          Text(
+            'share.your_profile'.tr(),
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'share.profile_desc'.tr(),
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 12),
-          // URL + actions row
+          // Link row
           Row(
             children: [
               Expanded(
                 child: GestureDetector(
                   onTap: onOpenLink,
-                  child: Text(
-                    url,
-                    style: TextStyle(
-                      color: AppTheme.primaryAccent,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Row(
+                    children: [
+                      Icon(Icons.link, size: 16, color: AppTheme.primaryAccent),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          url,
+                          style: TextStyle(
+                            color: AppTheme.primaryAccent,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              _ActionButton(
-                icon: Icons.open_in_new,
+              const SizedBox(width: 16),
+              GestureDetector(
                 onTap: onOpenLink,
-                isPrimary: true,
+                child: Text(
+                  'share.open'.tr(),
+                  style: TextStyle(
+                    color: AppTheme.primaryAccent,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-              const SizedBox(width: 6),
-              _ActionButton(
-                icon: Icons.copy,
+              const SizedBox(width: 16),
+              GestureDetector(
                 onTap: onCopyLink,
-                isPrimary: true,
+                child: Text(
+                  'share.copy'.tr(),
+                  style: TextStyle(
+                    color: AppTheme.primaryAccent,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
@@ -1377,8 +1350,8 @@ class _CompactShareRow extends StatelessWidget {
   }
 }
 
-// Compact wishlist row
-class _CompactWishlistRow extends StatelessWidget {
+// Wishlist link row - native list style
+class _WishlistLinkRow extends StatelessWidget {
   final Wishlist wishlist;
   final String url;
   final bool isUpdating;
@@ -1386,7 +1359,7 @@ class _CompactWishlistRow extends StatelessWidget {
   final VoidCallback onCopyLink;
   final VoidCallback onChangeVisibility;
 
-  const _CompactWishlistRow({
+  const _WishlistLinkRow({
     required this.wishlist,
     required this.url,
     required this.isUpdating,
@@ -1394,6 +1367,17 @@ class _CompactWishlistRow extends StatelessWidget {
     required this.onCopyLink,
     required this.onChangeVisibility,
   });
+
+  String _getVisibilityLabel() {
+    switch (wishlist.visibility) {
+      case 'public':
+        return 'wishlist.visibility_public'.tr();
+      case 'friends':
+        return 'wishlist.visibility_friends'.tr();
+      default:
+        return 'wishlist.visibility_private'.tr();
+    }
+  }
 
   IconData _getVisibilityIcon() {
     switch (wishlist.visibility) {
@@ -1421,143 +1405,134 @@ class _CompactWishlistRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPrivate = wishlist.visibility == 'private';
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title row with visibility badge
-          Row(
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.list_alt_outlined, size: 18, color: AppTheme.primaryAccent),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  wishlist.name,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              // Visibility badge
-              GestureDetector(
-                onTap: isUpdating ? null : onChangeVisibility,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _getVisibilityColor().withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (isUpdating)
-                        SizedBox(
-                          width: 12,
-                          height: 12,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 1.5,
-                            valueColor: AlwaysStoppedAnimation(_getVisibilityColor()),
-                          ),
-                        )
-                      else
-                        Icon(_getVisibilityIcon(), size: 14, color: _getVisibilityColor()),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.keyboard_arrow_down,
-                        size: 14,
-                        color: _getVisibilityColor(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (!isPrivate) ...[
-            const SizedBox(height: 10),
-            // URL + actions row
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: onOpenLink,
+              // Name + visibility row
+              Row(
+                children: [
+                  Expanded(
                     child: Text(
-                      url,
-                      style: TextStyle(
-                        color: AppTheme.primaryAccent,
-                        fontSize: 13,
+                      wishlist.name,
+                      style: const TextStyle(
+                        fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  // Visibility badge with label
+                  GestureDetector(
+                    onTap: isUpdating ? null : onChangeVisibility,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isUpdating)
+                          SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1.5,
+                              valueColor: AlwaysStoppedAnimation(_getVisibilityColor()),
+                            ),
+                          )
+                        else ...[
+                          Icon(_getVisibilityIcon(), size: 15, color: _getVisibilityColor()),
+                          const SizedBox(width: 4),
+                          Text(
+                            _getVisibilityLabel(),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: _getVisibilityColor(),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(width: 2),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 18,
+                          color: Colors.grey.shade400,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (!isPrivate) ...[
+                const SizedBox(height: 8),
+                // Link row
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: onOpenLink,
+                        child: Row(
+                          children: [
+                            Icon(Icons.link, size: 14, color: Colors.grey.shade500),
+                            const SizedBox(width: 5),
+                            Expanded(
+                              child: Text(
+                                url,
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 13,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    GestureDetector(
+                      onTap: onOpenLink,
+                      child: Text(
+                        'share.open'.tr(),
+                        style: TextStyle(
+                          color: AppTheme.primaryAccent,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    GestureDetector(
+                      onTap: onCopyLink,
+                      child: Text(
+                        'share.copy'.tr(),
+                        style: TextStyle(
+                          color: AppTheme.primaryAccent,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                _ActionButton(
-                  icon: Icons.open_in_new,
-                  onTap: onOpenLink,
-                ),
-                const SizedBox(width: 6),
-                _ActionButton(
-                  icon: Icons.copy,
-                  onTap: onCopyLink,
+              ] else ...[
+                const SizedBox(height: 4),
+                Text(
+                  'share.private_notice'.tr(),
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 12,
+                  ),
                 ),
               ],
-            ),
-          ] else ...[
-            const SizedBox(height: 8),
-            Text(
-              'share.private_notice'.tr(),
-              style: TextStyle(
-                color: Colors.grey.shade500,
-                fontSize: 12,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// Small action button with optional primary styling
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool isPrimary;
-
-  const _ActionButton({
-    required this.icon,
-    required this.onTap,
-    this.isPrimary = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: isPrimary ? AppTheme.primaryAccent.withValues(alpha: 0.15) : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isPrimary
-                ? AppTheme.primaryAccent.withValues(alpha: 0.3)
-                : Colors.grey.shade300,
+            ],
           ),
         ),
-        child: Icon(icon, size: 16, color: AppTheme.primaryAccent),
-      ),
+        Divider(height: 1, indent: 20, endIndent: 20, color: Colors.grey.shade200),
+      ],
     );
   }
 }
