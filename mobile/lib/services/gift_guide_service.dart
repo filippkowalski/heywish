@@ -9,6 +9,7 @@ class GiftGuideService extends ChangeNotifier {
 
   // State
   List<GiftGuideCategory>? _categories;
+  List<GiftGuide>? _allGuides;
   final Map<String, List<GiftGuide>> _guidesByCategory = {};
   final Map<String, GiftGuide> _guideDetails = {};
 
@@ -17,6 +18,7 @@ class GiftGuideService extends ChangeNotifier {
 
   // Getters
   List<GiftGuideCategory>? get categories => _categories;
+  List<GiftGuide>? get allGuides => _allGuides;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -34,6 +36,37 @@ class GiftGuideService extends ChangeNotifier {
     for (final category in _categories!) {
       if (grouped.containsKey(category.group)) {
         grouped[category.group]!.add(category);
+      }
+    }
+
+    return grouped;
+  }
+
+  /// Get guides grouped by category section
+  /// Returns guides organized by the 4 main sections
+  Map<String, List<GiftGuide>>? get guidesGroupedBySection {
+    if (_allGuides == null || _categories == null) return null;
+
+    // Create category slug → group mapping
+    final Map<String, String> categoryToGroup = {};
+    for (final category in _categories!) {
+      categoryToGroup[category.slug] = category.group;
+    }
+
+    // Group guides by section
+    final Map<String, List<GiftGuide>> grouped = {
+      'shopping': [],
+      'occasion': [],
+      'recipient': [],
+      'price_style': [],
+    };
+
+    for (final guide in _allGuides!) {
+      final group = categoryToGroup[guide.categorySlug];
+      if (group != null && grouped.containsKey(group)) {
+        grouped[group]!.add(guide);
+      } else if (group == null) {
+        debugPrint('⚠️ Guide "${guide.title}" has unmapped category: ${guide.categorySlug}');
       }
     }
 
@@ -78,6 +111,30 @@ class GiftGuideService extends ChangeNotifier {
     } catch (e) {
       _error = 'Error loading categories: $e';
       debugPrint('❌ GiftGuideService: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Load all guides (no category filter)
+  Future<void> loadAllGuides({bool forceRefresh = false}) async {
+    // Return cached if available
+    if (_allGuides != null && !forceRefresh) {
+      return;
+    }
+
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final guides = await loadGuidesByCategory(null, forceRefresh: forceRefresh);
+      _allGuides = guides;
+      _error = null;
+    } catch (e) {
+      _error = 'Error loading guides: $e';
+      debugPrint('❌ GiftGuideService.loadAllGuides: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -179,6 +236,7 @@ class GiftGuideService extends ChangeNotifier {
   /// Clear all cached data
   void clearCache() {
     _categories = null;
+    _allGuides = null;
     _guidesByCategory.clear();
     _guideDetails.clear();
     _error = null;

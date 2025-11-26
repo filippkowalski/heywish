@@ -112,6 +112,34 @@ class WishDetailScreen extends StatefulWidget {
     );
   }
 
+  /// Show as bottom sheet - Gift Guide mode (direct data, read-only, for gift guide items)
+  static Future<void> showGiftGuideItem(
+    BuildContext context, {
+    required String title,
+    String? image,
+    double? price,
+    String? currency,
+    required String url,
+    String? description,
+  }) {
+    return NativeTransitions.showNativeModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      child: WishDetailScreen(
+        directWishTitle: title,
+        directWishImages: image != null ? [image] : null,
+        directWishPrice: price,
+        directWishCurrency: currency ?? 'USD',
+        directWishUrl: url,
+        directWishDescription: description,
+        directWishIsReserved: false,
+        isReadOnly: true,
+      ),
+    );
+  }
+
   @override
   State<WishDetailScreen> createState() => _WishDetailScreenState();
 }

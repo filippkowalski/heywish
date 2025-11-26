@@ -8,6 +8,8 @@ import '../../services/gift_guide_service.dart';
 import '../../models/gift_guide.dart';
 import '../../models/gift_guide_item.dart';
 import '../../common/widgets/masonry_wish_card.dart';
+import '../../common/widgets/skeleton_loading.dart';
+import '../wishlists/wish_detail_screen.dart';
 
 /// Guide detail screen - shows guide with items in masonry grid
 class GuideDetailScreen extends StatefulWidget {
@@ -60,31 +62,16 @@ class _GuideDetailScreenState extends State<GuideDetailScreen> {
     }
   }
 
-  Future<void> _openLink(String url) async {
-    try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Could not open link: $url'),
-              backgroundColor: Colors.red.shade700,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error opening link: $e'),
-            backgroundColor: Colors.red.shade700,
-          ),
-        );
-      }
-    }
+  Future<void> _showItemDetail(GiftGuideItem item) async {
+    await WishDetailScreen.showGiftGuideItem(
+      context,
+      title: item.title,
+      image: item.image,
+      price: item.price,
+      currency: item.currency,
+      url: item.url,
+      description: item.description,
+    );
   }
 
   @override
@@ -131,12 +118,11 @@ class _GuideDetailScreenState extends State<GuideDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hero section
-          _buildHeroSection(),
+          const SizedBox(height: 20),
 
           // Description
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
               _guide!.description,
               style: TextStyle(
@@ -144,8 +130,12 @@ class _GuideDetailScreenState extends State<GuideDetailScreen> {
                 color: Colors.grey.shade700,
                 height: 1.5,
               ),
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
+
+          const SizedBox(height: 20),
 
           // Items masonry grid
           if (_guide!.items != null && _guide!.items!.isNotEmpty)
@@ -157,71 +147,6 @@ class _GuideDetailScreenState extends State<GuideDetailScreen> {
     );
   }
 
-  Widget _buildHeroSection() {
-    return Stack(
-      children: [
-        // Hero image
-        CachedNetworkImage(
-          imageUrl: _guide!.heroImage,
-          width: double.infinity,
-          height: 200,
-          fit: BoxFit.cover,
-          placeholder: (context, url) => Container(
-            color: Colors.grey.shade200,
-            height: 200,
-            child: const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFFE91E63),
-              ),
-            ),
-          ),
-          errorWidget: (context, url, error) => Container(
-            color: Colors.grey.shade200,
-            height: 200,
-            child: Icon(
-              Icons.image_outlined,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-          ),
-        ),
-
-        // Gradient overlay
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: 0.7),
-                ],
-              ),
-            ),
-          ),
-        ),
-
-        // Title overlay
-        Positioned(
-          left: 20,
-          right: 20,
-          bottom: 20,
-          child: Text(
-            _guide!.title,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-              height: 1.3,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildItemsGrid() {
     final items = _guide!.items!;
@@ -245,7 +170,7 @@ class _GuideDetailScreenState extends State<GuideDetailScreen> {
             currency: item.currency,
             url: item.url,
             isReserved: false,
-            onTap: () => _openLink(item.url),
+            onTap: () => _showItemDetail(item),
           );
         },
       ),
@@ -253,21 +178,48 @@ class _GuideDetailScreenState extends State<GuideDetailScreen> {
   }
 
   Widget _buildLoadingState() {
-    return Center(
+    return SingleChildScrollView(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CircularProgressIndicator(
-            color: Color(0xFFE91E63),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'discover.loading'.tr(),
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey.shade600,
+          const SizedBox(height: 20),
+
+          // Description skeleton
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: SkeletonText(
+              lines: 4,
+              height: 15,
+              spacing: 10,
+              width: double.infinity,
             ),
           ),
+
+          const SizedBox(height: 20),
+
+          // Items grid skeleton
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: MasonryGridView.count(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 6,
+              itemBuilder: (context, index) {
+                // Alternate heights for masonry effect
+                final height = index % 2 == 0 ? 280.0 : 320.0;
+                return SkeletonLoading(
+                  width: double.infinity,
+                  height: height,
+                  borderRadius: BorderRadius.circular(16),
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 20),
         ],
       ),
     );

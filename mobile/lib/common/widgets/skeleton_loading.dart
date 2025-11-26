@@ -50,7 +50,7 @@ class _SkeletonLoadingState extends State<SkeletonLoading>
   Widget build(BuildContext context) {
     final baseColor = widget.baseColor ?? Colors.grey.shade200;
     final highlightColor = widget.highlightColor ?? Colors.grey.shade50;
-    
+
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
@@ -64,15 +64,18 @@ class _SkeletonLoadingState extends State<SkeletonLoading>
               end: Alignment.centerRight,
               colors: [
                 baseColor,
+                baseColor,
                 highlightColor,
+                baseColor,
                 baseColor,
               ],
               stops: [
                 0.0,
+                _animation.value.clamp(0.0, 0.3),
                 _animation.value.clamp(0.0, 1.0),
+                _animation.value.clamp(0.7, 1.0),
                 1.0,
               ],
-              transform: GradientRotation(_animation.value * 0.5),
             ),
           ),
         );

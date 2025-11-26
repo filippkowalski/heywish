@@ -5,7 +5,6 @@ import '../../services/gift_guide_service.dart';
 import '../../models/gift_guide.dart';
 import '../../common/widgets/vertical_guide_card.dart';
 import 'guide_detail_screen.dart';
-import 'all_guides_screen.dart';
 import '../../common/navigation/native_page_route.dart';
 
 /// Main discover screen with horizontal scrollable guide previews
@@ -144,51 +143,23 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section header with "View All" button
+        // Section header
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () => _navigateToAllGuides(groupKey, title, allGuides),
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFFE91E63),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Text(
-                      'View All',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(width: 4),
-                    Icon(Icons.arrow_forward, size: 16),
-                  ],
-                ),
-              ),
-            ],
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
           ),
         ),
         const SizedBox(height: 12),
 
         // Horizontal scrollable guide list
         SizedBox(
-          height: 300, // Taller for vertical cards (200px image + ~100px content + padding)
+          height: 250, // Matches card height with text overlay
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -229,20 +200,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   void _navigateToGuideDetail(GiftGuide guide) {
     context.pushNative(
       GuideDetailScreen(guideSlug: guide.slug),
-    );
-  }
-
-  void _navigateToAllGuides(
-    String groupKey,
-    String groupTitle,
-    List<GiftGuide> guides,
-  ) {
-    context.pushNative(
-      AllGuidesScreen(
-        groupKey: groupKey,
-        groupTitle: groupTitle,
-        guides: guides,
-      ),
     );
   }
 
