@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,11 @@ import { createWish, listUsers, deleteWish, browseWishes, bulkDeleteWishes, scra
 import { Plus, Search, CheckCircle, User, Edit, Trash2, Upload, FileJson, Download, Loader2 } from 'lucide-react';
 import useSWR from 'swr';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function AddWishPage() {
+function AddWishContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   // Form state
   const [username, setUsername] = useState('');
   const [wishlistId, setWishlistId] = useState('');
@@ -61,8 +62,28 @@ export default function AddWishPage() {
     { refreshInterval: 10000 }
   );
 
+  // Load username from URL params on mount
+  useEffect(() => {
+    const usernameFromUrl = searchParams.get('username');
+    if (usernameFromUrl && !userFound) {
+      setUsername(usernameFromUrl);
+      searchUser(usernameFromUrl);
+    }
+  }, []); // Only run on mount
+
+  const updateUrlWithUsername = (newUsername: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (newUsername) {
+      params.set('username', newUsername);
+    } else {
+      params.delete('username');
+    }
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
+
   const selectFakeUser = (fakeUsername: string) => {
     setUsername(fakeUsername);
+    updateUrlWithUsername(fakeUsername);
     searchUser(fakeUsername);
   };
 
@@ -101,6 +122,7 @@ export default function AddWishPage() {
           setWishlists(data.wishlists);
           setWishlistId(data.wishlists[0].id); // Auto-select first wishlist
           setUserFound(true);
+          updateUrlWithUsername(searchUsername); // Update URL with selected username
           toast.success(`User found`, {
             description: `@${searchUsername} has ${data.wishlists.length} wishlist(s).`
           });
@@ -244,6 +266,7 @@ export default function AddWishPage() {
     setUserFound(false);
     setError('');
     setSuccess('');
+    updateUrlWithUsername(''); // Clear URL parameter
   };
 
   // JSON Schema for bulk import
@@ -1139,5 +1162,19 @@ export default function AddWishPage() {
         </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function AddWishPage() {
+  return (
+    <Suspense fallback={
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </DashboardLayout>
+    }>
+      <AddWishContent />
+    </Suspense>
   );
 }

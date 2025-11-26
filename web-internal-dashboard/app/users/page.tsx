@@ -208,15 +208,17 @@ export default function UsersPage() {
                           </div>
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex-shrink-0">
-                          <Link href={`/users/${user.id}/edit`}>
-                            <Button variant="outline" size="sm">
-                              <Edit className="h-4 w-4 mr-1" />
-                              Edit
-                            </Button>
-                          </Link>
-                        </div>
+                        {/* Actions - Only show Edit for fake users */}
+                        {user.is_fake && (
+                          <div className="flex-shrink-0">
+                            <Link href={`/users/${user.id}/edit`}>
+                              <Button variant="outline" size="sm">
+                                <Edit className="h-4 w-4 mr-1" />
+                                Edit
+                              </Button>
+                            </Link>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

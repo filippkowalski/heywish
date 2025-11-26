@@ -174,24 +174,31 @@ export default function EditUserPage() {
                 </Button>
               </Link>
             </div>
-            <h1 className="text-3xl font-bold">Edit User</h1>
+            <h1 className="text-3xl font-bold">{user?.is_fake ? 'Edit User' : 'View User'}</h1>
             <p className="text-gray-500 mt-1">
-              Editing @{user?.username}
-              {user?.is_fake && (
+              {user?.is_fake ? 'Editing' : 'Viewing'} @{user?.username}
+              {user?.is_fake ? (
                 <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-800 rounded">
                   Fake User
+                </span>
+              ) : (
+                <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 rounded">
+                  Real User
                 </span>
               )}
             </p>
           </div>
-          <Button
-            variant="destructive"
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={isDeleting}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete User
-          </Button>
+          {/* Only show Delete button for fake users */}
+          {user?.is_fake && (
+            <Button
+              variant="destructive"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={isDeleting}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete User
+            </Button>
+          )}
         </div>
 
         {/* Success/Error Messages */}
@@ -208,8 +215,8 @@ export default function EditUserPage() {
           </div>
         )}
 
-        {/* Delete Confirmation */}
-        {showDeleteConfirm && (
+        {/* Delete Confirmation - Only for fake users */}
+        {showDeleteConfirm && user?.is_fake && (
           <Card className="border-red-200 bg-red-50">
             <CardHeader>
               <CardTitle className="text-red-800">Confirm Deletion</CardTitle>
@@ -238,6 +245,17 @@ export default function EditUserPage() {
           </Card>
         )}
 
+        {/* Read-only notice for real users */}
+        {!user?.is_fake && (
+          <Card className="border-blue-200 bg-blue-50">
+            <CardContent className="py-4">
+              <p className="text-blue-800 text-sm">
+                <strong>View Only:</strong> Real user accounts cannot be edited or deleted through the admin dashboard for security reasons.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* User Edit Form */}
         <Card>
           <CardHeader>
@@ -246,7 +264,7 @@ export default function EditUserPage() {
               User Information
             </CardTitle>
             <CardDescription>
-              Update the user details below.
+              {user?.is_fake ? 'Update the user details below.' : 'View user details (read-only).'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -254,14 +272,15 @@ export default function EditUserPage() {
               {/* Username - Required */}
               <div className="space-y-2">
                 <Label htmlFor="username">
-                  Username <span className="text-red-500">*</span>
+                  Username {user?.is_fake && <span className="text-red-500">*</span>}
                 </Label>
                 <Input
                   id="username"
                   placeholder="johndoe"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  required
+                  required={user?.is_fake}
+                  disabled={!user?.is_fake}
                 />
               </div>
 
@@ -274,6 +293,7 @@ export default function EditUserPage() {
                   placeholder="john@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={!user?.is_fake}
                 />
               </div>
 
@@ -285,6 +305,7 @@ export default function EditUserPage() {
                   placeholder="John Doe"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
+                  disabled={!user?.is_fake}
                 />
               </div>
 
@@ -296,6 +317,7 @@ export default function EditUserPage() {
                   placeholder="https://example.com/avatar.jpg"
                   value={avatarUrl}
                   onChange={(e) => setAvatarUrl(e.target.value)}
+                  disabled={!user?.is_fake}
                 />
                 {avatarUrl && (
                   <div className="mt-2">
@@ -319,6 +341,7 @@ export default function EditUserPage() {
                   placeholder="A short bio about the user"
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
+                  disabled={!user?.is_fake}
                 />
               </div>
 
@@ -330,6 +353,7 @@ export default function EditUserPage() {
                   placeholder="San Francisco, CA"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
+                  disabled={!user?.is_fake}
                 />
               </div>
 
@@ -343,6 +367,7 @@ export default function EditUserPage() {
                     type="date"
                     value={birthdate}
                     onChange={(e) => setBirthdate(e.target.value)}
+                    disabled={!user?.is_fake}
                   />
                 </div>
 
@@ -353,7 +378,8 @@ export default function EditUserPage() {
                     id="gender"
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
-                    className="w-full px-3 py-2 border border-zinc-700 rounded-md bg-zinc-800 text-white"
+                    className="w-full px-3 py-2 border border-zinc-700 rounded-md bg-zinc-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!user?.is_fake}
                   >
                     <option value="">Select gender</option>
                     <option value="male">Male</option>
@@ -393,14 +419,16 @@ export default function EditUserPage() {
                 </div>
               </div>
 
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={isSaving || !username}
-                className="w-full"
-              >
-                {isSaving ? 'Saving Changes...' : 'Save Changes'}
-              </Button>
+              {/* Submit Button - Only for fake users */}
+              {user?.is_fake && (
+                <Button
+                  type="submit"
+                  disabled={isSaving || !username}
+                  className="w-full"
+                >
+                  {isSaving ? 'Saving Changes...' : 'Save Changes'}
+                </Button>
+              )}
             </form>
           </CardContent>
         </Card>
