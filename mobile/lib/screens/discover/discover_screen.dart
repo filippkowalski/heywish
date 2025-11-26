@@ -4,9 +4,10 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../services/gift_guide_service.dart';
 import '../../models/gift_guide_category.dart';
 import 'guide_list_screen.dart';
+import 'all_categories_screen.dart';
 import '../../common/navigation/native_page_route.dart';
 
-/// Main discover screen with category grid
+/// Main discover screen with horizontal scrollable category previews
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
 
@@ -22,6 +23,23 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<GiftGuideService>().loadCategories();
     });
+  }
+
+  /// Get rotated subset of categories based on current day
+  /// Shows 6-8 categories per section, rotates daily
+  List<GiftGuideCategory> _getRotatedCategories(
+    List<GiftGuideCategory> categories,
+    int maxVisible,
+  ) {
+    if (categories.length <= maxVisible) return categories;
+
+    // Use day of year for rotation
+    final dayOfYear = DateTime.now().difference(DateTime(DateTime.now().year, 1, 1)).inDays;
+    final offset = dayOfYear % categories.length;
+
+    // Rotate and take maxVisible items
+    final rotated = [...categories.sublist(offset), ...categories.sublist(0, offset)];
+    return rotated.take(maxVisible).toList();
   }
 
   @override
@@ -55,94 +73,152 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             return _buildEmptyState();
           }
 
-          return _buildCategoryGrid(categoriesGrouped);
+          return _buildCategoryPreviews(categoriesGrouped);
         },
       ),
     );
   }
 
-  Widget _buildCategoryGrid(Map<String, List<GiftGuideCategory>> grouped) {
+  Widget _buildCategoryPreviews(Map<String, List<GiftGuideCategory>> grouped) {
+    // Reordered sections: Price/Style → Recipient → Shopping → Occasion
+    final sections = [
+      {
+        'key': 'price_style',
+        'title': 'discover.section_price_style'.tr(),
+        'categories': grouped['price_style'] ?? [],
+        'maxVisible': 6,
+      },
+      {
+        'key': 'recipient',
+        'title': 'discover.section_recipient'.tr(),
+        'categories': grouped['recipient'] ?? [],
+        'maxVisible': 5,
+      },
+      {
+        'key': 'shopping',
+        'title': 'discover.section_shopping'.tr(),
+        'categories': grouped['shopping'] ?? [],
+        'maxVisible': 8,
+      },
+      {
+        'key': 'occasion',
+        'title': 'discover.section_occasion'.tr(),
+        'categories': grouped['occasion'] ?? [],
+        'maxVisible': 6,
+      },
+    ];
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSection(
-            'discover.section_shopping'.tr(),
-            grouped['shopping'] ?? [],
-          ),
-          const SizedBox(height: 32),
-          _buildSection(
-            'discover.section_occasion'.tr(),
-            grouped['occasion'] ?? [],
-          ),
-          const SizedBox(height: 32),
-          _buildSection(
-            'discover.section_recipient'.tr(),
-            grouped['recipient'] ?? [],
-          ),
-          const SizedBox(height: 32),
-          _buildSection(
-            'discover.section_price_style'.tr(),
-            grouped['price_style'] ?? [],
-          ),
+          const SizedBox(height: 16),
+          for (var section in sections)
+            if ((section['categories'] as List).isNotEmpty)
+              _buildHorizontalSection(
+                section['title'] as String,
+                section['categories'] as List<GiftGuideCategory>,
+                section['maxVisible'] as int,
+                section['key'] as String,
+                grouped,
+              ),
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _buildSection(String title, List<GiftGuideCategory> categories) {
-    if (categories.isEmpty) return const SizedBox.shrink();
+  Widget _buildHorizontalSection(
+    String title,
+    List<GiftGuideCategory> allCategories,
+    int maxVisible,
+    String groupKey,
+    Map<String, List<GiftGuideCategory>> allGrouped,
+  ) {
+    final displayCategories = _getRotatedCategories(allCategories, maxVisible);
+    final hasMore = allCategories.length > maxVisible;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section header
+        // Section header with "View All" button
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
-              Container(
-                height: 1,
-                color: Colors.grey.shade200,
+              TextButton(
+                onPressed: () => _navigateToAllCategories(groupKey, title, allGrouped),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFFE91E63),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'View All',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_forward, size: 16),
+                  ],
+                ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
-        // Category grid
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 2.5, // Wider cards
-            ),
-            itemCount: categories.length,
+        // Horizontal scrollable category list
+        SizedBox(
+          height: 120,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: displayCategories.length,
             itemBuilder: (context, index) {
-              return _CategoryCard(
-                category: categories[index],
-                onTap: () => _navigateToGuideList(categories[index]),
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index == displayCategories.length - 1 ? 0 : 12,
+                ),
+                child: _HorizontalCategoryCard(
+                  category: displayCategories[index],
+                  onTap: () => _navigateToGuideList(displayCategories[index]),
+                ),
               );
             },
           ),
         ),
+
+        // Daily rotation hint (only if has more categories)
+        if (hasMore)
+          Padding(
+            padding: const EdgeInsets.only(left: 20, top: 8, right: 20),
+            child: Text(
+              'Categories rotate daily • Showing ${displayCategories.length} of ${allCategories.length}',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade500,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+
+        const SizedBox(height: 24),
       ],
     );
   }
@@ -150,6 +226,20 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   void _navigateToGuideList(GiftGuideCategory category) {
     context.pushNative(
       GuideListScreen(category: category),
+    );
+  }
+
+  void _navigateToAllCategories(
+    String groupKey,
+    String groupTitle,
+    Map<String, List<GiftGuideCategory>> allGrouped,
+  ) {
+    context.pushNative(
+      AllCategoriesScreen(
+        groupKey: groupKey,
+        groupTitle: groupTitle,
+        categories: allGrouped[groupKey] ?? [],
+      ),
     );
   }
 
@@ -280,12 +370,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 }
 
-/// Category card widget
-class _CategoryCard extends StatelessWidget {
+/// Horizontal category card widget (wider, horizontal layout)
+class _HorizontalCategoryCard extends StatelessWidget {
   final GiftGuideCategory category;
   final VoidCallback onTap;
 
-  const _CategoryCard({
+  const _HorizontalCategoryCard({
     required this.category,
     required this.onTap,
   });
@@ -295,6 +385,7 @@ class _CategoryCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        width: 160,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -310,51 +401,40 @@ class _CategoryCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Stack(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Colored accent bar on left
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              child: Container(
-                width: 4,
-                decoration: BoxDecoration(
-                  color: category.color,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                  ),
+            // Emoji
+            Text(
+              category.emoji,
+              style: const TextStyle(fontSize: 40),
+            ),
+            const SizedBox(height: 8),
+
+            // Label
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                category.name,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
             ),
 
-            // Content
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  // Emoji
-                  Text(
-                    category.emoji,
-                    style: const TextStyle(fontSize: 32),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Label
-                  Expanded(
-                    child: Text(
-                      category.name,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+            // Colored indicator line
+            const SizedBox(height: 8),
+            Container(
+              height: 3,
+              width: 40,
+              decoration: BoxDecoration(
+                color: category.color,
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
           ],
