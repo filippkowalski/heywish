@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'wishlists/wishlists_screen.dart';
 import 'wishlists/add_wish_screen.dart';
 import 'feed_screen.dart';
+import 'discover/discover_screen.dart';
 import 'profile/profile_screen.dart';
 import '../services/share_handler_service.dart';
 import '../services/auth_service.dart';
@@ -163,6 +164,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final screens = [
       const WishlistsScreen(),
       const FeedScreen(),
+      const DiscoverScreen(),
       ProfileScreen(onNavigateToSearch: () => _navigateToTab(1)),
     ];
 
@@ -204,6 +206,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               icon: Icon(Icons.dynamic_feed_outlined),
               selectedIcon: Icon(Icons.dynamic_feed),
               label: 'navigation.feed'.tr(),
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.explore_outlined),
+              selectedIcon: Icon(Icons.explore),
+              label: 'navigation.discover'.tr(),
             ),
             NavigationDestination(
               icon: _buildProfileIcon(

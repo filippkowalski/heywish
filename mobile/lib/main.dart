@@ -25,6 +25,7 @@ import 'services/onboarding_service.dart';
 import 'services/api_service.dart';
 import 'services/fcm_service.dart';
 import 'services/screenshot_detection_service.dart';
+import 'services/gift_guide_service.dart';
 import 'services/deep_link_service.dart';
 import 'services/review_service.dart';
 import 'services/analytics_service.dart';
@@ -482,6 +483,11 @@ class _JinnieAppState extends State<JinnieApp> with WidgetsBindingObserver {
         ChangeNotifierProvider<FriendsService>(
           create: (context) => FriendsService(
             apiService: context.read<ApiService>(),
+          ),
+        ),
+        ChangeNotifierProvider<GiftGuideService>(
+          create: (context) => GiftGuideService(
+            context.read<ApiService>(),
           ),
         ),
         ChangeNotifierProvider.value(value: PreferencesService()),

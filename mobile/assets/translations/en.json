@@ -164,6 +164,7 @@
   "navigation": {
     "home": "Home",
     "feed": "Inspo",
+    "discover": "Discover",
     "profile": "Profile"
   },
   "home": {
@@ -660,5 +661,23 @@
   },
   "add_wish": {
     "paste": "Paste"
+  },
+  "discover": {
+    "title": "Discover",
+    "search_placeholder": "Search gift ideas...",
+    "section_shopping": "Shop by Interest",
+    "section_occasion": "Shop by Occasion",
+    "section_recipient": "Shop by Recipient",
+    "section_price_style": "Shop by Price & Style",
+    "no_guides_title": "No guides yet",
+    "no_guides_subtitle": "Check back soon for gift ideas!",
+    "items_count": "{count} items",
+    "similar_guides": "You might also like",
+    "featured": "Featured",
+    "loading": "Loading gift ideas...",
+    "error_loading_categories": "Failed to load categories",
+    "error_loading_guides": "Failed to load guides",
+    "retry": "Retry",
+    "open_link": "View Product"
   }
 }

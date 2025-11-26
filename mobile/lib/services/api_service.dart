@@ -853,6 +853,72 @@ class ApiService {
       return false;
     }
   }
+
+  // ============================================================================
+  // GIFT GUIDES API
+  // ============================================================================
+
+  /// Get all gift guide categories grouped by section
+  Future<Map<String, List<Map<String, dynamic>>>?> getGiftGuideCategories() async {
+    try {
+      final response = await get('/gift-guides/categories');
+      if (response != null && response['categories'] != null) {
+        return {
+          'shopping': List<Map<String, dynamic>>.from(
+            response['categories']['shopping'] ?? [],
+          ),
+          'occasion': List<Map<String, dynamic>>.from(
+            response['categories']['occasion'] ?? [],
+          ),
+          'recipient': List<Map<String, dynamic>>.from(
+            response['categories']['recipient'] ?? [],
+          ),
+          'price_style': List<Map<String, dynamic>>.from(
+            response['categories']['price_style'] ?? [],
+          ),
+        };
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ API: Error fetching gift guide categories: $e');
+      return null;
+    }
+  }
+
+  /// Get gift guides list (optionally filtered by category)
+  Future<List<Map<String, dynamic>>?> getGiftGuides({
+    String? categorySlug,
+  }) async {
+    try {
+      final queryParams = categorySlug != null
+          ? {'category_slug': categorySlug}
+          : null;
+
+      final path = queryParams != null
+          ? '/gift-guides?${Uri(queryParameters: queryParams).query}'
+          : '/gift-guides';
+
+      final response = await get(path);
+      if (response != null && response['guides'] != null) {
+        return List<Map<String, dynamic>>.from(response['guides']);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ API: Error fetching gift guides: $e');
+      return null;
+    }
+  }
+
+  /// Get full gift guide details including all items
+  Future<Map<String, dynamic>?> getGiftGuideDetails(String slug) async {
+    try {
+      final response = await get('/gift-guides/$slug');
+      return response;
+    } catch (e) {
+      debugPrint('❌ API: Error fetching gift guide details: $e');
+      return null;
+    }
+  }
 }
 
 /// Response model for URL scraping
