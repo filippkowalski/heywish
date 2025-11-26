@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.13.2+32] - 2025-11-26
+
+### Added
+- redesign gift guides with Pinterest-style cards and modal view
+- redesign share links bottom sheet with cleaner native UI
+- add haptic feedback for improved user experience
+- enhance discover screen with horizontal scrolling and daily rotation
+- add Discover tab with gift guide browsing
+
+### Changed
+- Internal: removed option to remove real data
+
+### Fixed
+- increase horizontal list height to prevent overflow
+- resolve BoxParentData crash in InAppNotificationBanner
+- convert edit button to link for multi-tab support
+
+
 ## [1.13.1+31] - 2025-11-25
 
 ### Added
