@@ -10,6 +10,7 @@ import '../../services/onboarding_service.dart';
 import '../../theme/app_theme.dart';
 import '../../common/widgets/confirmation_bottom_sheet.dart';
 import '../../common/navigation/native_page_route.dart';
+import '../../common/widgets/in_app_notification_banner.dart';
 import '../feedback/feedback_sheet_page.dart';
 import '../onboarding/widgets/onboarding_complete_step.dart';
 import 'privacy_settings_screen.dart';
@@ -312,53 +313,106 @@ class SettingsScreen extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => _showOnboardingCompletePage(context),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 11,
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.celebration_outlined,
-                      color: AppTheme.primaryAccent,
-                      size: 24,
+          child: Column(
+            children: [
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _showOnboardingCompletePage(context),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 11,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Preview Onboarding Complete',
-                            style: TextStyle(
-                              fontSize: 17,
-                              color: Colors.black,
-                            ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.celebration_outlined,
+                          color: AppTheme.primaryAccent,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'Preview Onboarding Complete',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              Text(
+                                'Test the onboarding completion page',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF8E8E93), // iOS gray
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            'Test the onboarding completion page',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF8E8E93), // iOS gray
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right,
+                          color: Color(0xFFC7C7CC), // iOS chevron color
+                          size: 20,
+                        ),
+                      ],
                     ),
-                    const Icon(
-                      Icons.chevron_right,
-                      color: Color(0xFFC7C7CC), // iOS chevron color
-                      size: 20,
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              _buildMenuDivider(),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _showTestNotificationBanner(context),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 11,
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.notifications_active_outlined,
+                          color: AppTheme.primaryAccent,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'Test Notification Banner',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              Text(
+                                'Show in-app notification banner',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF8E8E93), // iOS gray
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right,
+                          color: Color(0xFFC7C7CC), // iOS chevron color
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -370,6 +424,172 @@ class SettingsScreen extends StatelessWidget {
       NativePageRoute(
         child: Scaffold(
           body: const OnboardingCompleteStep(),
+        ),
+      ),
+    );
+  }
+
+  void _showTestNotificationBanner(BuildContext context) {
+    final notificationTypes = [
+      {
+        'type': 'friend_request',
+        'title': 'New Friend Request',
+        'body': 'John Doe wants to be your friend',
+        'icon': Icons.person_add,
+      },
+      {
+        'type': 'friend_accepted',
+        'title': 'Friend Request Accepted',
+        'body': 'Jane Smith accepted your friend request',
+        'icon': Icons.people,
+      },
+      {
+        'type': 'wish_reserved',
+        'title': 'Wish Reserved',
+        'body': 'Someone reserved "iPhone 15 Pro" from your wishlist',
+        'icon': Icons.bookmark,
+      },
+      {
+        'type': 'wish_purchased',
+        'title': 'Wish Purchased',
+        'body': 'A wish was marked as purchased!',
+        'icon': Icons.check_circle,
+      },
+      {
+        'type': 'general',
+        'title': 'General Notification',
+        'body': 'This is a general notification message',
+        'icon': Icons.notifications,
+      },
+    ];
+
+    NativeTransitions.showNativeModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      child: Container(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          20,
+          24,
+          24 + MediaQuery.of(context).padding.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 36,
+                height: 5,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE5E5EA),
+                  borderRadius: BorderRadius.circular(2.5),
+                ),
+              ),
+            ),
+
+            // Title
+            const Text(
+              'Test Notification Banner',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            const Text(
+              'Select a notification type to test',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF8E8E93),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Notification type options
+            ...notificationTypes.map((notif) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.pop(context);
+                      InAppNotificationBanner.show(
+                        context: context,
+                        title: notif['title'] as String,
+                        body: notif['body'] as String,
+                        type: notif['type'] as String,
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Notification tapped!'),
+                              duration: Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.grey.withValues(alpha: 0.2),
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            notif['icon'] as IconData,
+                            color: AppTheme.primaryAccent,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  notif['title'] as String,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                Text(
+                                  notif['type'] as String,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF8E8E93),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios,
+                            color: Color(0xFFC7C7CC),
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
         ),
       ),
     );

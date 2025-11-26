@@ -140,109 +140,116 @@ class _InAppNotificationBannerState extends State<InAppNotificationBanner>
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
 
-    return Positioned(
-      top: topPadding + 8,
-      left: 16,
-      right: 16,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: GestureDetector(
-          onTap: widget.onTap != null ? _handleTap : null,
-          onVerticalDragUpdate: (details) {
-            setState(() {
-              _dragDistance += details.delta.dy;
-              if (_dragDistance < 0) {
-                // Only allow upward drag
-                final progress = (-_dragDistance / 100).clamp(0.0, 1.0);
-                _controller.value = 1.0 - progress;
+    // Wrap in our own Stack so Positioned works correctly
+    // (Overlay's internal _Theatre doesn't provide StackParentData)
+    return Stack(
+      children: [
+        Positioned(
+          top: topPadding + 8,
+          left: 16,
+          right: 16,
+          child: SlideTransition(
+          position: _slideAnimation,
+          child: GestureDetector(
+            onTap: widget.onTap != null ? _handleTap : null,
+            onVerticalDragUpdate: (details) {
+              setState(() {
+                _dragDistance += details.delta.dy;
+                if (_dragDistance < 0) {
+                  // Only allow upward drag
+                  final progress = (-_dragDistance / 100).clamp(0.0, 1.0);
+                  _controller.value = 1.0 - progress;
+                }
+              });
+            },
+            onVerticalDragEnd: (details) {
+              if (_dragDistance < -50) {
+                // Dismiss if dragged up more than 50 pixels
+                _dismiss();
+              } else {
+                // Reset position
+                _controller.forward();
               }
-            });
-          },
-          onVerticalDragEnd: (details) {
-            if (_dragDistance < -50) {
-              // Dismiss if dragged up more than 50 pixels
-              _dismiss();
-            } else {
-              // Reset position
-              _controller.forward();
-            }
-            _dragDistance = 0;
-          },
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  // Icon
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: _getIconBackgroundColor(),
-                      shape: BoxShape.circle,
+              _dragDistance = 0;
+            },
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                    child: Icon(
-                      _getIcon(),
-                      color: Colors.white,
-                      size: 20,
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    // Icon
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: _getIconBackgroundColor(),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _getIcon(),
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Text content
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.title,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF111827),
+                    const SizedBox(width: 12),
+                    // Text content
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.title,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF111827),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          widget.body,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: Color(0xFF6B7280),
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.body,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF6B7280),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  // Close button
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 18),
-                    color: const Color(0xFF9CA3AF),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    onPressed: _dismiss,
-                  ),
-                ],
+                    // Close button
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      color: const Color(0xFF9CA3AF),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: _dismiss,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
+        ),
+      ],
     );
   }
 }
