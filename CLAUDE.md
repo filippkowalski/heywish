@@ -62,6 +62,7 @@ Jinnie combines wishlist management, social features, and gift coordination acro
 - **Profile View**: Read-only public profile page showing published wishlists (`/[username]`).
 - **Wishlist View**: Public wishlist detail with reservation dialog (`/[username]/[wishlist]`, legacy share links: `/w/[token]`).
 - **Email Verify**: Magic-link completion page for reservations (`/verify-reservation`).
+- **Dynamic OG Images**: Personalized social sharing previews generated at `/api/og/profile/[username]`. Shows user avatar, wish images as floating bubbles, and custom messaging. See `web/docs/OG_IMAGE_IMPLEMENTATION.md` for details.
 - **Scope**: Web is presently read-only—creation and editing remain mobile-only.
 
 ### General Features (Cross-Platform)
@@ -99,6 +100,7 @@ Review these files for context:
 - `docs/API_SPECIFICATION.md` - Detailed description of the REST API.
 - `docs/TECHNICAL_SPEC.md` - Database schema and technical details.
 - `mobile/AUTHENTICATION.md` - **Comprehensive authentication system documentation** including authentication flows, account merging, data refresh after merge, troubleshooting, and testing guidelines.
+- `web/docs/OG_IMAGE_IMPLEMENTATION.md` - **Dynamic OG image generation** for social sharing. Covers API route architecture, design specs, caching strategy, and troubleshooting.
 
 ## Database Schema
 

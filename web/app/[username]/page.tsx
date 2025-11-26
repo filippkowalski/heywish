@@ -47,35 +47,26 @@ export async function generateMetadata({
   }
 
   const displayName = profile.user.fullName || `@${profile.user.username}`;
-  const usernameDisplay = `@${profile.user.username}`;
+  const itemCount = profile.totals.wishCount;
 
-  // Enhanced SEO-friendly title and description
-  const title = `${usernameDisplay} • Jinnie - Wishlist`;
-  const description = profile.user.bio
-    ? `${profile.user.bio} | Browse ${displayName}'s wishlists on Jinnie.co - a modern wishlist platform for sharing gift ideas and making gift-giving effortless.`
-    : `Browse ${displayName}'s wishlists on Jinnie.co - discover their favorite items, gift ideas, and more. Make gift-giving effortless with Jinnie's modern wishlist platform.`;
+  // Dynamic title and description for social sharing
+  const title = `The official wishlist of ${displayName} ✨`;
+  const description = itemCount > 0
+    ? `Help me make some wishes come true! Check out my list of ${itemCount} ${itemCount === 1 ? 'item' : 'items'}. Surprise me or pick exactly what I need.`
+    : `Help me make some wishes come true! Check out my wishlist on Jinnie. Surprise me or pick exactly what I need.`;
 
   const canonicalPath = `/${username}`;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jinnie.co";
 
-  // Prepare OG image - use user avatar or fallback to default
-  const ogImages = profile.user.avatarUrl
-    ? [
-        {
-          url: profile.user.avatarUrl,
-          width: 400,
-          height: 400,
-          alt: `${displayName}'s profile picture`,
-        },
-      ]
-    : [
-        {
-          url: `${siteUrl}/og-image.png`,
-          width: 1200,
-          height: 630,
-          alt: "Jinnie - Your Modern Wishlist Platform",
-        },
-      ];
+  // Dynamic OG image - points to our generation API
+  const ogImages = [
+    {
+      url: `${siteUrl}/api/og/profile/${username}`,
+      width: 1200,
+      height: 630,
+      alt: `${displayName}'s wishlist on Jinnie`,
+    },
+  ];
 
   return {
     title,
