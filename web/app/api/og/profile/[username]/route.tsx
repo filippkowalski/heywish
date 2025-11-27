@@ -232,12 +232,22 @@ export async function GET(
                 left: 40,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
+                gap: 12,
               }}
             >
+              <img
+                src={`${baseUrl}/og/icon-circle.png`}
+                alt=""
+                width={48}
+                height={48}
+                style={{
+                  width: 48,
+                  height: 48,
+                }}
+              />
               <span
                 style={{
-                  fontSize: 28,
+                  fontSize: 36,
                   fontWeight: 700,
                   color: '#1a1a1a',
                   letterSpacing: '-0.5px',
@@ -245,7 +255,6 @@ export async function GET(
               >
                 Jinnie.co
               </span>
-              <span style={{ fontSize: 24 }}>✨</span>
             </div>
 
             {/* Avatar and username - bottom left */}
@@ -329,7 +338,7 @@ export async function GET(
               style={{
                 position: 'absolute',
                 bottom: 280,
-                left: 240,
+                left: 320,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 20,
