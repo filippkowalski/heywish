@@ -32,7 +32,10 @@ class _GuideDetailScreenState extends State<GuideDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _loadGuideDetails();
+    // Defer loading to avoid calling notifyListeners() during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadGuideDetails();
+    });
   }
 
   Future<void> _loadGuideDetails() async {

@@ -21,6 +21,7 @@ class VerticalGuideCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: 200,
+        clipBehavior: Clip.hardEdge,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
