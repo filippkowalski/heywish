@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.13.3+33] - 2025-11-27
+
+### Added
+- add dynamic OG images for profile social sharing
+
+### Changed
+- improve branding with circular logo and larger text
+
+### Fixed
+- resolve setState during build and RenderFlex overflow crashes
+
+
 ## [1.13.2+32] - 2025-11-26
 
 ### Added
