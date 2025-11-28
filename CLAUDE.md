@@ -137,25 +137,30 @@ The REST API is implemented using Next.js API routes. Key characteristics includ
 - Shadcn design, black and white, elegant, sleek
 - Tailwind.css, React
 
-### Cloudflare Pages Deployment - CRITICAL REQUIREMENTS
-**⚠️ APPLIES TO BOTH: `web/` and `web-internal-dashboard/`**
+### Cloudflare Pages Deployment
 
-- **⚠️ ALWAYS add `export const runtime = 'edge';` to ALL dynamic routes in BOTH projects**
-- Both `web/` (public app) and `web-internal-dashboard/` (admin) are deployed on Cloudflare Pages
-- Both use Edge runtime exclusively
-- **Any new page with dynamic segments (e.g., `/users/[id]/edit`, `/[username]`) MUST have edge runtime export**
-- Build will FAIL without edge runtime on dynamic routes
-- Build command: `npm run pages:build` (uses `npx @cloudflare/next-on-pages`)
-- Test build locally before pushing:
-  - For public web: `cd web && npm run pages:build`
-  - For admin dashboard: `cd web-internal-dashboard && npm run pages:build`
+**`web/` (public app)** - Uses **OpenNext** (`@opennextjs/cloudflare`)
+- **NO `export const runtime = 'edge'` needed** - OpenNext handles runtime automatically
+- Build command: `npm run cf:build` (uses `opennextjs-cloudflare build`)
+- Preview locally: `npm run preview` (builds and runs preview server)
+- Deploy: `npm run deploy` (builds and deploys to Cloudflare)
+- Configuration files: `wrangler.jsonc`, `open-next.config.ts`
+- Build output: `.open-next/` directory (gitignored)
 
-**Edge Runtime Requirements:**
-- No Node.js-specific APIs available (no `fs`, `path`, etc.)
-- All server-side code must be edge-compatible
-- Client components with hooks (useState, useEffect, useRouter) are fine but must be marked with "use client"
+**`web-internal-dashboard/` (admin)** - Uses legacy **@cloudflare/next-on-pages**
+- **⚠️ STILL requires `export const runtime = 'edge';` on ALL dynamic routes**
+- Build command: `npm run pages:build`
+- Any new page with dynamic segments MUST have edge runtime export
 
-**Required pattern for dynamic routes:**
+**Key differences:**
+| Feature | web/ (OpenNext) | web-internal-dashboard/ (next-on-pages) |
+|---------|-----------------|----------------------------------------|
+| Runtime export | Not needed | Required on dynamic routes |
+| Build command | `npm run cf:build` | `npm run pages:build` |
+| `next/og` ImageResponse | ✅ Works | ❌ Returns 0 bytes |
+| Node.js APIs | Limited support | Not available |
+
+**Required pattern for web-internal-dashboard dynamic routes:**
 ```typescript
 'use client';
 

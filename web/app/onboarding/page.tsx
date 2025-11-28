@@ -9,8 +9,6 @@ import { useAuth } from '@/lib/auth/AuthContext.client';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-export const runtime = 'edge';
-
 function OnboardingContent() {
   const { step } = useOnboarding();
   const { user, backendUser, loading } = useAuth();

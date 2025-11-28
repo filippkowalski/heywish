@@ -1,7 +1,5 @@
 'use client';
 
-export const runtime = 'edge';
-
 import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { detectPlatform, getAppStoreUrl } from '@/lib/platform-detection';
