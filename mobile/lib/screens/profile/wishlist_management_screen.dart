@@ -81,7 +81,7 @@ class _WishlistManagementScreenState extends State<WishlistManagementScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to delete wishlist'),
+              content: Text('profile.failed_to_delete_wishlist'.tr()),
               backgroundColor: Colors.red,
             ),
           );

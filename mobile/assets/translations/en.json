@@ -345,7 +345,8 @@
     "create_failed": "Failed to create wishlist",
     "created_successfully": "Wishlist created successfully",
     "updated_successfully": "Wishlist updated successfully",
-    "deleted_successfully": "Wishlist deleted successfully"
+    "deleted_successfully": "Wishlist deleted successfully",
+    "remove": "Remove"
   },
   "wish": {
     "title": "Wish",
@@ -432,7 +433,11 @@
     "paste_link": "Paste Link",
     "add_description": "Add Description",
     "add_price": "Add Price",
-    "choose_wishlist": "Choose Wishlist"
+    "choose_wishlist": "Choose Wishlist",
+    "description_hint": "Description",
+    "link_hint": "Link",
+    "could_not_load_product": "Could not load product details from link",
+    "failed_to_share": "Failed to share: {error}"
   },
   "profile": {
     "title": "Profile",
@@ -441,6 +446,8 @@
     "crop_avatar": "Crop Avatar",
     "failed_to_upload_avatar": "Failed to upload avatar image",
     "failed_to_delete_wishlist": "Failed to delete wishlist",
+    "photo_library_access_required_title": "Photo Library Access Required",
+    "photo_library_access_required_message": "Jinnie needs access to your photo library to select header images for your wishlists. Please grant permission in Settings.",
     "check_friend_requests": "Check your friend requests in the Friends tab",
     "respond_to_request": "Respond to Request",
     "email_support_error": "Could not open email app. Please email us at bobbyfischer77+jinnie@icloud.com",
@@ -678,7 +685,8 @@
     "error_loading_categories": "Failed to load categories",
     "error_loading_guides": "Failed to load guides",
     "retry": "Retry",
-    "open_link": "View Product"
+    "open_link": "View Product",
+    "guides_rotate_hint": "Guides rotate daily • Showing {shown} of {total}"
   },
   "share": {
     "your_links": "Your Links",

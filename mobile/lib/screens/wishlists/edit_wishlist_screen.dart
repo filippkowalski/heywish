@@ -226,21 +226,21 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Photo Library Access Required'),
-        content: const Text(
-          'Jinnie needs access to your photo library to select header images for your wishlists. Please grant permission in Settings.',
+        title: Text('profile.photo_library_access_required_title'.tr()),
+        content: Text(
+          'profile.photo_library_access_required_message'.tr(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('app.cancel'.tr()),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               openAppSettings();
             },
-            child: const Text('Open Settings'),
+            child: Text('permissions.open_settings'.tr()),
           ),
         ],
       ),
@@ -449,7 +449,7 @@ class _EditWishlistScreenState extends State<EditWishlistScreen> {
             OutlinedButton.icon(
               onPressed: _removeHeaderImage,
               icon: const Icon(Icons.delete_outline),
-              label: const Text('Remove'),
+              label: Text('wishlist.remove'.tr()),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(100, 48),
                 foregroundColor: Colors.red,

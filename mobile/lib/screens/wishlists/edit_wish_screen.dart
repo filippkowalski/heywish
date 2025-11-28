@@ -422,7 +422,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
                             child: WishFormTextField(
                               controller: _descriptionController,
                               focusNode: _descriptionFocusNode,
-                              hintText: 'Description',
+                              hintText: 'wish.description_hint'.tr(),
                               fontSize: 17,
                               fontWeight: FontWeight.w500,
                               maxLines: 3,
@@ -451,7 +451,7 @@ class _EditWishScreenState extends State<EditWishScreen> {
                             child: WishFormTextField(
                               controller: _urlController,
                               focusNode: _urlFocusNode,
-                              hintText: 'Link',
+                              hintText: 'wish.link_hint'.tr(),
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                               keyboardType: TextInputType.url,

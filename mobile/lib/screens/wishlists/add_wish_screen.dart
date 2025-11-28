@@ -633,8 +633,8 @@ class _AddWishScreenState extends State<AddWishScreen> {
               children: [
                 const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
                 const SizedBox(width: 8),
-                const Expanded(
-                  child: Text('Could not load product details from link'),
+                Expanded(
+                  child: Text('wish.could_not_load_product'.tr()),
                 ),
               ],
             ),
@@ -974,7 +974,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
                           child: WishFormTextField(
                             controller: _descriptionController,
                             focusNode: _descriptionFocusNode,
-                            hintText: 'Description',
+                            hintText: 'wish.description_hint'.tr(),
                             fontSize: 17,
                             fontWeight: FontWeight.w500,
                             maxLines: 3,
@@ -1003,7 +1003,7 @@ class _AddWishScreenState extends State<AddWishScreen> {
                           child: WishFormTextField(
                             controller: _urlController,
                             focusNode: _urlFocusNode,
-                            hintText: 'Link',
+                            hintText: 'wish.link_hint'.tr(),
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                             keyboardType: TextInputType.url,

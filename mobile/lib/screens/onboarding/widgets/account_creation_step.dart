@@ -669,7 +669,7 @@ class _AccountCreationStepState extends State<AccountCreationStep>
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
             action: SnackBarAction(
-              label: 'Retry',
+              label: 'app.retry'.tr(),
               textColor: Colors.white,
               onPressed: () => _skipAccountCreation(context),
             ),

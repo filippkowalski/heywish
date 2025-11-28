@@ -183,7 +183,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           Padding(
             padding: const EdgeInsets.only(left: 20, top: 8, right: 20),
             child: Text(
-              'Guides rotate daily • Showing ${displayGuides.length} of ${allGuides.length}',
+              'discover.guides_rotate_hint'.tr(namedArgs: {
+                'shown': displayGuides.length.toString(),
+                'total': allGuides.length.toString(),
+              }),
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey.shade500,
