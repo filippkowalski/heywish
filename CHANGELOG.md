@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.13.4+34] - 2025-11-28
+
+### Fixed
+- remove reserved ASSETS binding from wrangler config
+- rename wrangler.jsonc to wrangler.json
+- add pages_build_output_dir to wrangler config
+- migrate to OpenNext for OG image generation
+
+
 ## [1.13.3+33] - 2025-11-27
 
 ### Added
