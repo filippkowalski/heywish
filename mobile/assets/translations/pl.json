@@ -660,6 +660,24 @@
   "add_wish": {
     "paste": "Wklej"
   },
+  "discover": {
+    "title": "Odkrywaj",
+    "search_placeholder": "Szukaj pomysłów na prezent...",
+    "section_shopping": "Przeglądaj według zainteresowań",
+    "section_occasion": "Przeglądaj według okazji",
+    "section_recipient": "Przeglądaj według obdarowywanej osoby",
+    "section_price_style": "Przeglądaj według ceny i stylu",
+    "no_guides_title": "Brak przewodników",
+    "no_guides_subtitle": "Zajrzyj tu wkrótce po nowe inspiracje prezentowe!",
+    "items_count": "{count} przedmiotów",
+    "similar_guides": "Mogą Ci się też spodobać",
+    "featured": "Polecane",
+    "loading": "Ładujemy pomysły na prezenty...",
+    "error_loading_categories": "Nie udało się załadować kategorii",
+    "error_loading_guides": "Nie udało się załadować przewodników",
+    "retry": "Spróbuj ponownie",
+    "open_link": "Zobacz produkt"
+  },
   "share": {
     "your_links": "Twoje Linki",
     "share_description": "Udostępnij swój profil lub konkretne listy życzeń znajomym i rodzinie",

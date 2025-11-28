@@ -660,6 +660,24 @@
   "add_wish": {
     "paste": "Coller"
   },
+  "discover": {
+    "title": "Découvrir",
+    "search_placeholder": "Cherche des idées cadeaux...",
+    "section_shopping": "Explorer par centre d’intérêt",
+    "section_occasion": "Explorer par occasion",
+    "section_recipient": "Explorer selon la personne",
+    "section_price_style": "Explorer par budget et style",
+    "no_guides_title": "Pas encore de guides",
+    "no_guides_subtitle": "Reviens vite pour faire le plein d’idées cadeaux !",
+    "items_count": "{count} articles",
+    "similar_guides": "Ça peut aussi te plaire",
+    "featured": "À la une",
+    "loading": "Chargement des idées cadeaux...",
+    "error_loading_categories": "Impossible de charger les catégories",
+    "error_loading_guides": "Impossible de charger les guides",
+    "retry": "Réessayer",
+    "open_link": "Voir le produit"
+  },
   "share": {
     "your_links": "Vos Liens",
     "share_description": "Partagez votre profil ou des listes de souhaits spécifiques avec vos proches",

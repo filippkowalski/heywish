@@ -662,6 +662,24 @@
   "add_wish": {
     "paste": "Colar"
   },
+  "discover": {
+    "title": "Descobrir",
+    "search_placeholder": "Busque ideias de presente...",
+    "section_shopping": "Explorar por interesse",
+    "section_occasion": "Explorar por ocasião",
+    "section_recipient": "Explorar por quem vai ganhar",
+    "section_price_style": "Explorar por preço e estilo",
+    "no_guides_title": "Ainda não temos guias",
+    "no_guides_subtitle": "Volte em breve para mais inspirações de presente!",
+    "items_count": "{count} itens",
+    "similar_guides": "Você também pode gostar",
+    "featured": "Destaques",
+    "loading": "Carregando ideias de presentes...",
+    "error_loading_categories": "Não foi possível carregar as categorias",
+    "error_loading_guides": "Não foi possível carregar os guias",
+    "retry": "Tentar novamente",
+    "open_link": "Ver produto"
+  },
   "share": {
     "your_links": "Seus Links",
     "share_description": "Compartilhe seu perfil ou listas de desejos específicas com amigos e família",

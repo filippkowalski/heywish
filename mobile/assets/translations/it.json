@@ -660,6 +660,24 @@
   "add_wish": {
     "paste": "Incolla"
   },
+  "discover": {
+    "title": "Scopri",
+    "search_placeholder": "Cerca idee regalo...",
+    "section_shopping": "Esplora per interesse",
+    "section_occasion": "Esplora per occasione",
+    "section_recipient": "Esplora in base alla persona",
+    "section_price_style": "Esplora per prezzo e stile",
+    "no_guides_title": "Ancora nessuna guida",
+    "no_guides_subtitle": "Torna presto per nuove idee regalo!",
+    "items_count": "{count} articoli",
+    "similar_guides": "Potrebbe piacerti anche",
+    "featured": "In evidenza",
+    "loading": "Caricamento delle idee regalo...",
+    "error_loading_categories": "Impossibile caricare le categorie",
+    "error_loading_guides": "Impossibile caricare le guide",
+    "retry": "Riprova",
+    "open_link": "Vedi prodotto"
+  },
   "share": {
     "your_links": "I Tuoi Link",
     "share_description": "Condividi il tuo profilo o liste dei desideri specifiche con amici e familiari",

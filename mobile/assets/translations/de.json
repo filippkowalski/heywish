@@ -660,6 +660,24 @@
   "add_wish": {
     "paste": "Einfügen"
   },
+  "discover": {
+    "title": "Entdecken",
+    "search_placeholder": "Finde Geschenkideen...",
+    "section_shopping": "Nach Interessen stöbern",
+    "section_occasion": "Nach Anlass stöbern",
+    "section_recipient": "Nach Person stöbern",
+    "section_price_style": "Nach Preis & Stil stöbern",
+    "no_guides_title": "Noch keine Guides",
+    "no_guides_subtitle": "Schau bald wieder vorbei für frische Geschenkideen!",
+    "items_count": "{count} Artikel",
+    "similar_guides": "Das könnte dir auch gefallen",
+    "featured": "Highlights",
+    "loading": "Geschenkideen werden geladen...",
+    "error_loading_categories": "Kategorien konnten nicht geladen werden",
+    "error_loading_guides": "Guides konnten nicht geladen werden",
+    "retry": "Erneut versuchen",
+    "open_link": "Produkt ansehen"
+  },
   "share": {
     "your_links": "Deine Links",
     "share_description": "Teile dein Profil oder bestimmte Wunschlisten mit Freunden und Familie",
