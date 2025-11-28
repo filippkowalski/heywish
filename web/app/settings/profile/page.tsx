@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Camera, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
+export const runtime = 'edge';
+
 type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'error' | 'invalid';
 
 export default function EditProfilePage() {

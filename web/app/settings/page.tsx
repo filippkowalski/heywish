@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from 'sonner';
 
+export const runtime = 'edge';
+
 export default function SettingsPage() {
   const { user, loading, getIdToken, signOut } = useAuth();
   const router = useRouter();

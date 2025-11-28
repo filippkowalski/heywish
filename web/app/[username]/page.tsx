@@ -1,5 +1,7 @@
 import { cache } from "react";
 import type { Metadata } from "next";
+
+export const runtime = 'edge';
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { api, PublicProfileResponse } from "@/lib/api";

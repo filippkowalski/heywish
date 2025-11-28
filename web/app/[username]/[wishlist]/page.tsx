@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { redirect, notFound } from "next/navigation";
 import { cache } from "react";
 import { api } from "@/lib/api";
+
+export const runtime = 'edge';
 import { matchesWishlistSlug, getWishlistSlug } from "@/lib/slug";
 
 const getProfile = cache((username: string) => api.getPublicProfile(username));

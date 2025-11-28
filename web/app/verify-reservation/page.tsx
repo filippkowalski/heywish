@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import VerifyReservationContent from "./verify-reservation-content";
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 export default function VerifyReservationPage() {
   return (
