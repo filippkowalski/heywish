@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.13.5+35] - 2025-11-28
+
+### Fixed
+- replace hardcoded strings with localization keys
+- update OG image URL path to /jinnie/v1/og/
+- point OG images to Render backend instead of CF Worker
+
+
 ## [1.13.4+34] - 2025-11-28
 
 ### Fixed
