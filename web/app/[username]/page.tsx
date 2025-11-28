@@ -58,10 +58,11 @@ export async function generateMetadata({
   const canonicalPath = `/${username}`;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jinnie.co";
 
-  // Dynamic OG image - points to our generation API
+  // Dynamic OG image - points to Render backend for reliable image generation with caching
+  const ogApiUrl = process.env.NEXT_PUBLIC_API_URL ?? "https://openai-rewrite.onrender.com";
   const ogImages = [
     {
-      url: `${siteUrl}/api/og/profile/${username}`,
+      url: `${ogApiUrl}/jinnie/og/profile/${username}`,
       width: 1200,
       height: 630,
       alt: `${displayName}'s wishlist on Jinnie`,
