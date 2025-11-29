@@ -655,58 +655,61 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                             ],
                             // Stats section
                             const SizedBox(height: 12),
-                            Row(
+                            Wrap(
+                              spacing: 16,
+                              runSpacing: 8,
                               children: [
                                 // Wishlists count
                                 Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
                                       Icons.card_giftcard_outlined,
-                                      size: 18,
+                                      size: 16,
                                       color: AppTheme.primaryAccent,
                                     ),
-                                    const SizedBox(width: 6),
+                                    const SizedBox(width: 4),
                                     Text(
                                       '${_wishlists.length}',
                                       style: const TextStyle(
-                                        fontSize: 15,
+                                        fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black,
                                       ),
                                     ),
-                                    const SizedBox(width: 4),
+                                    const SizedBox(width: 3),
                                     Text(
                                       _wishlists.length == 1 ? 'wishlist' : 'wishlists',
                                       style: const TextStyle(
-                                        fontSize: 15,
+                                        fontSize: 14,
                                         color: Color(0xFF8E8E93),
                                       ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(width: 20),
                                 // Wishes count
                                 Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
                                       Icons.favorite_outline,
-                                      size: 18,
+                                      size: 16,
                                       color: Colors.pinkAccent.shade100,
                                     ),
-                                    const SizedBox(width: 6),
+                                    const SizedBox(width: 4),
                                     Text(
                                       '$totalWishesCount',
                                       style: const TextStyle(
-                                        fontSize: 15,
+                                        fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black,
                                       ),
                                     ),
-                                    const SizedBox(width: 4),
+                                    const SizedBox(width: 3),
                                     Text(
                                       totalWishesCount == 1 ? 'wish' : 'wishes',
                                       style: const TextStyle(
-                                        fontSize: 15,
+                                        fontSize: 14,
                                         color: Color(0xFF8E8E93),
                                       ),
                                     ),
@@ -813,6 +816,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 Icons.check_circle,
@@ -820,11 +824,14 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 color: Colors.green.shade600,
               ),
               const SizedBox(width: 8),
-              Text(
-                'friends.status_friends'.tr(),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+              Flexible(
+                child: Text(
+                  'friends.status_friends'.tr(),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -859,14 +866,18 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 )
               : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.close, size: 18),
                     const SizedBox(width: 8),
-                    Text(
-                      'friends.cancel_request'.tr(),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                    Flexible(
+                      child: Text(
+                        'friends.cancel_request'.tr(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -900,14 +911,18 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.person_add, size: 18),
               const SizedBox(width: 8),
-              Text(
-                'profile.respond_to_request'.tr(),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+              Flexible(
+                child: Text(
+                  'profile.respond_to_request'.tr(),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -943,14 +958,18 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.person_add, size: 18),
                   const SizedBox(width: 8),
-                  Text(
-                    'friends.add_friend'.tr(),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  Flexible(
+                    child: Text(
+                      'friends.add_friend'.tr(),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],

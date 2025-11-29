@@ -19,6 +19,8 @@ class AddItemTipBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Material(
       color: Colors.transparent,
       child: Container(
@@ -26,8 +28,7 @@ class AddItemTipBottomSheet extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        child: SafeArea(
-          child: Stack(
+        child: Stack(
           children: [
             // Main content
             Column(
@@ -99,7 +100,8 @@ class AddItemTipBottomSheet extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      // Bottom padding for safe area (notch/home indicator)
+                      SizedBox(height: bottomPadding + 24),
                     ],
                   ),
                 ),
@@ -130,7 +132,6 @@ class AddItemTipBottomSheet extends StatelessWidget {
           ],
         ),
       ),
-    ),
     );
   }
 }
