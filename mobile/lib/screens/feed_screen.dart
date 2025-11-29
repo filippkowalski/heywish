@@ -999,6 +999,8 @@ class _FeedScreenState extends State<FeedScreen> {
                               fontWeight: FontWeight.w600,
                               color: AppTheme.primary,
                             ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       if (item.wishDescription != null && item.wishDescription!.isNotEmpty) ...[
                         const SizedBox(height: 6),
