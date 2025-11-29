@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.7+37] - 2025-11-29
+
+### Fixed
+- improve small screen support for profile and bottom sheets
+- limit Inspo feed item titles to 2 lines
+
+
 ## [1.13.6+36] - 2025-11-29
 
 ### Fixed
