@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.6+36] - 2025-11-29
+
+### Fixed
+- add missing navigation.discover localization key
+- hardcode Share Extension version to avoid App Store validation errors
+
+
 ## [1.13.5+35] - 2025-11-28
 
 ### Fixed
