@@ -6,6 +6,10 @@
 	<string>Jinnie</string>
 	<key>CFBundleName</key>
 	<string>Share Extension</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.1.0</string>
+	<key>CFBundleVersion</key>
+	<string>10</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionAttributes</key>
